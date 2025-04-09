@@ -28,3 +28,21 @@ export interface JourneyProgress {
   totalSubsteps: number;
   percentage: number;
 }
+
+// Types for the database progress tables
+export type UserJourneyProgress = {
+  id?: string;
+  user_id: string;
+  step_id: number;
+  is_completed: boolean;
+  updated_at?: string;
+};
+
+export type UserSubstepProgress = {
+  id?: string;
+  user_id: string;
+  step_id: number;
+  substep_title: string;
+  is_completed: boolean;
+  updated_at?: string;
+};

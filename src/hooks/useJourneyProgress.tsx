@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { Step, JourneyProgress } from "@/types/journey";
+import { Step, JourneyProgress, UserJourneyProgress, UserSubstepProgress } from "@/types/journey";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -63,13 +63,13 @@ export const useJourneyProgress = (steps: Step[]) => {
     const { data: stepProgress, error: stepError } = await supabase
       .from('user_journey_progress')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', userId) as { data: UserJourneyProgress[] | null, error: any };
       
     // Fetch substep progress
     const { data: substepProgress, error: substepError } = await supabase
       .from('user_substep_progress')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', userId) as { data: UserSubstepProgress[] | null, error: any };
     
     if (stepError || substepError) {
       console.error('Error fetching progress:', stepError || substepError);
@@ -132,14 +132,15 @@ export const useJourneyProgress = (steps: Step[]) => {
     
     if (targetStep) {
       // Update in database
+      const progressData: UserJourneyProgress = {
+        user_id: userId,
+        step_id: stepId,
+        is_completed: !!targetStep.isCompleted
+      };
+      
       const { error } = await supabase
         .from('user_journey_progress')
-        .upsert({
-          user_id: userId,
-          step_id: stepId,
-          is_completed: targetStep.isCompleted,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id,step_id' });
+        .upsert(progressData, { onConflict: 'user_id,step_id' });
         
       if (error) {
         console.error('Error updating step progress:', error);
@@ -196,15 +197,16 @@ export const useJourneyProgress = (steps: Step[]) => {
     
     if (targetStep && targetSubStep) {
       // Update in database
+      const substepProgressData: UserSubstepProgress = {
+        user_id: userId,
+        step_id: stepId,
+        substep_title: subStepTitle,
+        is_completed: !!targetSubStep.isCompleted
+      };
+      
       const { error } = await supabase
         .from('user_substep_progress')
-        .upsert({
-          user_id: userId,
-          step_id: stepId,
-          substep_title: subStepTitle,
-          is_completed: targetSubStep.isCompleted,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id,step_id,substep_title' });
+        .upsert(substepProgressData, { onConflict: 'user_id,step_id,substep_title' });
         
       if (error) {
         console.error('Error updating substep progress:', error);
