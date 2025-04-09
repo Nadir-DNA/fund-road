@@ -1,91 +1,73 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Filter, DollarSign, PiggyBank, Wallet, Coins } from "lucide-react";
+import { Search, Filter, DollarSign } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
+
+interface Investor {
+  id: string;
+  name: string;
+  type: string[];
+  sectors: string[];
+  stage: string[];
+  ticket: string[];
+  location: string[];
+  description: string;
+}
 
 export default function Financing() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [investors, setInvestors] = useState<Investor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
-  const investors = [
-    {
-      id: 1,
-      name: "TechVentures Capital",
-      type: "Fonds d'investissement",
-      sectors: ["Tech", "SaaS", "IA"],
-      stage: "Amorçage à Série A",
-      ticket: "500K€ - 3M€",
-      location: "Paris, France",
-      description: "TechVentures Capital investit dans des startups tech innovantes à fort potentiel de croissance."
-    },
-    {
-      id: 2,
-      name: "GreenInvest",
-      type: "Fonds Impact",
-      sectors: ["CleanTech", "Développement Durable"],
-      stage: "Amorçage à Série B",
-      ticket: "1M€ - 5M€",
-      location: "Berlin, Allemagne",
-      description: "Fonds dédié aux technologies durables qui répondent aux défis environnementaux et climatiques."
-    },
-    {
-      id: 3,
-      name: "Growth Partners",
-      type: "Capital Développement",
-      sectors: ["Logiciels B2B", "FinTech", "HealthTech"],
-      stage: "Série B à Série C",
-      ticket: "10M€ - 30M€",
-      location: "Paris, France",
-      description: "Accompagnement d'entreprises établies avec des modèles économiques éprouvés prêtes à se développer."
-    },
-    {
-      id: 4,
-      name: "Alpha Angels",
-      type: "Réseau de Business Angels",
-      sectors: ["Tech", "Consommation", "Marketplace"],
-      stage: "Pré-amorçage à Amorçage",
-      ticket: "100K€ - 500K€",
-      location: "Lyon, France",
-      description: "Un réseau d'entrepreneurs expérimentés investissant dans des startups early-stage avec des équipes solides."
-    },
-    {
-      id: 5,
-      name: "Innovation Fund",
-      type: "Corporate VC",
-      sectors: ["DeepTech", "Robotique", "Industrie Avancée"],
-      stage: "Amorçage à Série A",
-      ticket: "1M€ - 8M€",
-      location: "Marseille, France",
-      description: "Branche capital-risque d'entreprise concentrée sur des investissements stratégiques en technologies de pointe."
-    },
-    {
-      id: 6,
-      name: "Founders Capital",
-      type: "Micro VC",
-      sectors: ["SaaS B2B", "Outils Développeurs", "IA"],
-      stage: "Pré-amorçage à Amorçage",
-      ticket: "250K€ - 1M€",
-      location: "Nantes, France",
-      description: "Fondé par des entrepreneurs à succès pour soutenir la nouvelle génération de fondateurs tech."
-    }
-  ];
+  // Fetch investors from Supabase
+  useEffect(() => {
+    const fetchInvestors = async () => {
+      setIsLoading(true);
+      
+      try {
+        const { data, error } = await supabase
+          .from('investors')
+          .select('*');
+        
+        if (error) throw error;
+        
+        setInvestors(data || []);
+      } catch (error) {
+        console.error('Error fetching investors:', error);
+        toast({
+          title: "Erreur de chargement",
+          description: "Impossible de charger les données d'investisseurs.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchInvestors();
+  }, []);
 
-  const filterInvestorsByType = (investors, type) => {
+  const filterInvestorsByType = (investors: Investor[], type: string) => {
     if (type === "all") return investors;
-    return investors.filter(investor => investor.type.toLowerCase().includes(type.toLowerCase()));
+    return investors.filter(investor => 
+      investor.type.some(t => t.toLowerCase().includes(type.toLowerCase()))
+    );
   };
 
-  const filterInvestorsBySearch = (investors, term) => {
+  const filterInvestorsBySearch = (investors: Investor[], term: string) => {
     if (!term) return investors;
     const lowerTerm = term.toLowerCase();
     return investors.filter(investor => 
       investor.name.toLowerCase().includes(lowerTerm) ||
       investor.sectors.some(sector => sector.toLowerCase().includes(lowerTerm)) ||
-      investor.location.toLowerCase().includes(lowerTerm) ||
+      investor.location.some(loc => loc.toLowerCase().includes(lowerTerm)) ||
       investor.description.toLowerCase().includes(lowerTerm)
     );
   };
@@ -122,10 +104,10 @@ export default function Financing() {
           <Tabs defaultValue="all" className="mb-8" onValueChange={setActiveTab}>
             <TabsList className="bg-black/40 border border-white/10">
               <TabsTrigger value="all">Tous les Organismes</TabsTrigger>
-              <TabsTrigger value="Fonds">Fonds d'Investissement</TabsTrigger>
+              <TabsTrigger value="Venture">Venture Capital</TabsTrigger>
               <TabsTrigger value="Angel">Business Angels</TabsTrigger>
               <TabsTrigger value="Corporate">Corporate VC</TabsTrigger>
-              <TabsTrigger value="Impact">Fonds Impact</TabsTrigger>
+              <TabsTrigger value="Private">Private Equity</TabsTrigger>
             </TabsList>
           </Tabs>
           
@@ -137,60 +119,70 @@ export default function Financing() {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredInvestors.map((investor) => (
-            <div 
-              key={investor.id} 
-              className="bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:translate-y-[-5px]"
-            >
-              <h3 className="text-xl font-semibold mb-2">{investor.name}</h3>
-              <div className="flex flex-wrap gap-2 mb-4">
-                <span className="text-xs px-3 py-1 bg-primary/20 text-primary rounded-full">
-                  {investor.type}
-                </span>
-                {investor.sectors.slice(0, 2).map((sector, index) => (
-                  <span key={index} className="text-xs px-3 py-1 bg-white/10 text-white/80 rounded-full">
-                    {sector}
-                  </span>
-                ))}
-                {investor.sectors.length > 2 && (
-                  <span className="text-xs px-3 py-1 bg-white/10 text-white/80 rounded-full">
-                    +{investor.sectors.length - 2}
-                  </span>
-                )}
-              </div>
-              
-              <p className="text-white/70 text-sm mb-4">
-                {investor.description}
-              </p>
-              
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between">
-                  <span className="text-white/50 text-sm">Stade:</span>
-                  <span className="text-sm">{investor.stage}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50 text-sm">Ticket moyen:</span>
-                  <span className="text-sm">{investor.ticket}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50 text-sm">Localisation:</span>
-                  <span className="text-sm">{investor.location}</span>
-                </div>
-              </div>
-              
-              <Button className="w-full bg-white/10 hover:bg-white/20 text-white">
-                Voir le Profil
-              </Button>
-            </div>
-          ))}
-        </div>
-        
-        {filteredInvestors.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-xl text-white/70">Aucun organisme ne correspond à vos critères.</p>
-            <p className="text-white/50 mt-2">Essayez d'ajuster votre recherche ou vos filtres.</p>
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
           </div>
+        ) : (
+          <>
+            {filteredInvestors.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredInvestors.map((investor) => (
+                  <div 
+                    key={investor.id} 
+                    className="bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:translate-y-[-5px]"
+                  >
+                    <h3 className="text-xl font-semibold mb-2">{investor.name}</h3>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {investor.type && investor.type.length > 0 && (
+                        <span className="text-xs px-3 py-1 bg-primary/20 text-primary rounded-full">
+                          {investor.type[0]}
+                        </span>
+                      )}
+                      {investor.sectors && investor.sectors.slice(0, 2).map((sector, index) => (
+                        <span key={index} className="text-xs px-3 py-1 bg-white/10 text-white/80 rounded-full">
+                          {sector}
+                        </span>
+                      ))}
+                      {investor.sectors && investor.sectors.length > 2 && (
+                        <span className="text-xs px-3 py-1 bg-white/10 text-white/80 rounded-full">
+                          +{investor.sectors.length - 2}
+                        </span>
+                      )}
+                    </div>
+                    
+                    <p className="text-white/70 text-sm mb-4">
+                      {investor.description}
+                    </p>
+                    
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between">
+                        <span className="text-white/50 text-sm">Stade:</span>
+                        <span className="text-sm">{investor.stage ? investor.stage.join(", ") : 'Non spécifié'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-white/50 text-sm">Ticket moyen:</span>
+                        <span className="text-sm">{investor.ticket ? investor.ticket.join(" - ") : 'Variable'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-white/50 text-sm">Localisation:</span>
+                        <span className="text-sm">{investor.location ? investor.location.join(", ") : 'International'}</span>
+                      </div>
+                    </div>
+                    
+                    <Button className="w-full bg-white/10 hover:bg-white/20 text-white">
+                      Voir le Profil
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <p className="text-xl text-white/70">Aucun organisme ne correspond à vos critères.</p>
+                <p className="text-white/50 mt-2">Essayez d'ajuster votre recherche ou vos filtres.</p>
+              </div>
+            )}
+          </>
         )}
       </main>
       
