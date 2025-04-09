@@ -1,9 +1,9 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import JourneyTimeline from "@/components/JourneyTimeline";
+import JourneyProgressIndicator from "@/components/journey/JourneyProgressIndicator";
 import { ChevronRight, CheckCircle, Presentation, FileText, Lightbulb, TrendingUp, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -28,23 +28,7 @@ export default function Features() {
           </div>
           
           {/* Progress Indicator */}
-          <div className="max-w-3xl mx-auto mb-12 glass-card p-6 rounded-lg">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-lg font-medium">Progression du parcours</h3>
-              <span className="text-primary font-bold">{journeyProgress}%</span>
-            </div>
-            <Progress value={journeyProgress} className="h-2" />
-            <div className="grid grid-cols-2 gap-4 mt-6">
-              <div className="flex items-center gap-2">
-                <Flag className="h-4 w-4 text-primary" />
-                <span className="text-sm">7/10 étapes abordées</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                <span className="text-sm">26 ressources consultées</span>
-              </div>
-            </div>
-          </div>
+          <JourneyProgressIndicator />
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <div className="glass-card p-6 rounded-lg">

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,15 +33,21 @@ export function AdminInvestorForm() {
       // Convert comma-separated sectors to array
       const sectorsArray = sectors.split(",").map(sector => sector.trim());
       
+      // Convert comma-separated location, stage, type, and ticket to arrays
+      const locationArray = location.split(",").map(loc => loc.trim());
+      const stageArray = stage.split(",").map(st => st.trim());
+      const typeArray = type.split(",").map(t => t.trim());
+      const ticketArray = ticket.split(",").map(t => t.trim());
+      
       const { error } = await supabase
         .from('investors')
         .insert({
           name,
-          type,
+          type: typeArray,
           sectors: sectorsArray,
-          stage,
-          ticket,
-          location,
+          stage: stageArray,
+          ticket: ticketArray,
+          location: locationArray,
           description
         } as Database['public']['Tables']['investors']['Insert']);
       

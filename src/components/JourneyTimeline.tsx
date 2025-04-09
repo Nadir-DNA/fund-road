@@ -5,12 +5,20 @@ import { Step, SubStep } from "@/types/journey";
 import TimelineStep from "./journey/TimelineStep";
 import StepDetail from "./journey/StepDetail";
 import { journeySteps } from "@/data/journeySteps";
+import { useJourneyProgress } from "@/hooks/useJourneyProgress";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function JourneyTimeline() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStep, setSelectedStep] = useState<Step | null>(null);
   const [selectedSubStep, setSelectedSubStep] = useState<SubStep | null>(null);
-  const [localSteps, setLocalSteps] = useState(journeySteps);
+  
+  const {
+    localSteps,
+    toggleStepCompletion,
+    toggleSubStepCompletion,
+    isLoading
+  } = useJourneyProgress(journeySteps);
 
   const handleStepClick = (step: Step) => {
     setSelectedStep(step);
@@ -24,31 +32,28 @@ export default function JourneyTimeline() {
     setDialogOpen(true);
   };
 
-  const toggleStepCompletion = (stepId: number) => {
-    setLocalSteps(prev => 
-      prev.map(step => 
-        step.id === stepId
-          ? { ...step, isCompleted: !step.isCompleted }
-          : step
-      )
+  if (isLoading) {
+    return (
+      <div className="py-16 px-4">
+        <div className="text-center mb-16">
+          <Skeleton className="h-10 w-96 mx-auto mb-4" />
+          <Skeleton className="h-6 w-2/3 mx-auto" />
+        </div>
+        <div className="max-w-4xl mx-auto space-y-12">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex">
+              <Skeleton className="h-7 w-7 rounded-full mr-4" />
+              <div className="w-full space-y-4">
+                <Skeleton className="h-8 w-3/4" />
+                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     );
-  };
-
-  const toggleSubStepCompletion = (stepId: number, subStepTitle: string) => {
-    setLocalSteps(prev => 
-      prev.map(step => {
-        if (step.id === stepId && step.subSteps) {
-          const updatedSubSteps = step.subSteps.map(subStep => 
-            subStep.title === subStepTitle
-              ? { ...subStep, isCompleted: !subStep.isCompleted }
-              : subStep
-          );
-          return { ...step, subSteps: updatedSubSteps };
-        }
-        return step;
-      })
-    );
-  };
+  }
 
   return (
     <div className="py-16 px-4">

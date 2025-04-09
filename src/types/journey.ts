@@ -20,3 +20,11 @@ export type Step = {
   subSteps?: SubStep[];
   detailedDescription?: string;
 };
+
+export interface JourneyProgress {
+  completedSteps: number;
+  totalSteps: number;
+  completedSubsteps: number;
+  totalSubsteps: number;
+  percentage: number;
+}
