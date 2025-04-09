@@ -63,13 +63,13 @@ export const useJourneyProgress = (steps: Step[]) => {
     const { data: stepProgress, error: stepError } = await supabase
       .from('user_journey_progress')
       .select('*')
-      .eq('user_id', userId) as { data: UserJourneyProgress[] | null, error: any };
+      .eq('user_id', userId);
       
     // Fetch substep progress
     const { data: substepProgress, error: substepError } = await supabase
       .from('user_substep_progress')
       .select('*')
-      .eq('user_id', userId) as { data: UserSubstepProgress[] | null, error: any };
+      .eq('user_id', userId);
     
     if (stepError || substepError) {
       console.error('Error fetching progress:', stepError || substepError);
@@ -132,15 +132,13 @@ export const useJourneyProgress = (steps: Step[]) => {
     
     if (targetStep) {
       // Update in database
-      const progressData: UserJourneyProgress = {
-        user_id: userId,
-        step_id: stepId,
-        is_completed: !!targetStep.isCompleted
-      };
-      
       const { error } = await supabase
         .from('user_journey_progress')
-        .upsert(progressData, { onConflict: 'user_id,step_id' });
+        .upsert({
+          user_id: userId,
+          step_id: stepId,
+          is_completed: !!targetStep.isCompleted
+        }, { onConflict: 'user_id,step_id' });
         
       if (error) {
         console.error('Error updating step progress:', error);
@@ -197,16 +195,14 @@ export const useJourneyProgress = (steps: Step[]) => {
     
     if (targetStep && targetSubStep) {
       // Update in database
-      const substepProgressData: UserSubstepProgress = {
-        user_id: userId,
-        step_id: stepId,
-        substep_title: subStepTitle,
-        is_completed: !!targetSubStep.isCompleted
-      };
-      
       const { error } = await supabase
         .from('user_substep_progress')
-        .upsert(substepProgressData, { onConflict: 'user_id,step_id,substep_title' });
+        .upsert({
+          user_id: userId,
+          step_id: stepId,
+          substep_title: subStepTitle,
+          is_completed: !!targetSubStep.isCompleted
+        }, { onConflict: 'user_id,step_id,substep_title' });
         
       if (error) {
         console.error('Error updating substep progress:', error);
