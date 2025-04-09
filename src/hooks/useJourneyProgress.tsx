@@ -232,3 +232,4 @@ export const useJourneyProgress = (steps: Step[]) => {
     isLoading
   };
 };
+

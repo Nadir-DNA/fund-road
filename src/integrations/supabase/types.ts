@@ -195,6 +195,63 @@ export type Database = {
         }
         Relationships: []
       }
+      user_journey_progress: {
+        Row: {
+          created_at: string
+          id: string
+          is_completed: boolean
+          step_id: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          step_id: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          step_id?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_substep_progress: {
+        Row: {
+          created_at: string
+          id: string
+          is_completed: boolean
+          step_id: number
+          substep_title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          step_id: number
+          substep_title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          step_id?: number
+          substep_title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
