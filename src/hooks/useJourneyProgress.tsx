@@ -4,6 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Step, JourneyProgress, UserJourneyProgress, UserSubstepProgress } from "@/types/journey";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { Database } from "@/integrations/supabase/types";
+
+// Define specific types for our Supabase data
+type JourneyProgressRow = Database['public']['Tables']['user_journey_progress']['Row'];
+type SubstepProgressRow = Database['public']['Tables']['user_substep_progress']['Row'];
 
 export const useJourneyProgress = (steps: Step[]) => {
   const [localSteps, setLocalSteps] = useState<Step[]>(steps);
@@ -63,13 +68,13 @@ export const useJourneyProgress = (steps: Step[]) => {
     const { data: stepProgress, error: stepError } = await supabase
       .from('user_journey_progress')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', userId) as { data: JourneyProgressRow[] | null; error: any };
       
     // Fetch substep progress
     const { data: substepProgress, error: substepError } = await supabase
       .from('user_substep_progress')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', userId) as { data: SubstepProgressRow[] | null; error: any };
     
     if (stepError || substepError) {
       console.error('Error fetching progress:', stepError || substepError);
@@ -232,4 +237,3 @@ export const useJourneyProgress = (steps: Step[]) => {
     isLoading
   };
 };
-
