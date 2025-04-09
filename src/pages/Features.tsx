@@ -1,12 +1,17 @@
 
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import JourneyTimeline from "@/components/JourneyTimeline";
-import { ChevronRight, CheckCircle, Presentation, FileText, Lightbulb } from "lucide-react";
+import { ChevronRight, CheckCircle, Presentation, FileText, Lightbulb, TrendingUp, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Features() {
+  const [journeyProgress, setJourneyProgress] = useState(74);
+
   return (
     <div className="min-h-screen bg-black text-white">
       <Navbar />
@@ -20,6 +25,25 @@ export default function Features() {
               De l'idéation au financement : un accompagnement complet pour structurer votre projet 
               et maximiser vos chances de succès.
             </p>
+          </div>
+          
+          {/* Progress Indicator */}
+          <div className="max-w-3xl mx-auto mb-12 glass-card p-6 rounded-lg">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-medium">Progression du parcours</h3>
+              <span className="text-primary font-bold">{journeyProgress}%</span>
+            </div>
+            <Progress value={journeyProgress} className="h-2" />
+            <div className="grid grid-cols-2 gap-4 mt-6">
+              <div className="flex items-center gap-2">
+                <Flag className="h-4 w-4 text-primary" />
+                <span className="text-sm">7/10 étapes abordées</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <span className="text-sm">26 ressources consultées</span>
+              </div>
+            </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -94,9 +118,50 @@ export default function Features() {
           </div>
         </section>
         
-        {/* Timeline Section */}
-        <section className="py-16 bg-gradient-to-b from-transparent to-black/40">
-          <JourneyTimeline />
+        {/* Parcours Tabs */}
+        <section className="container mx-auto px-4 py-8">
+          <Tabs defaultValue="timeline" className="w-full max-w-4xl mx-auto">
+            <TabsList className="grid w-full grid-cols-2 bg-black/20 border border-white/10">
+              <TabsTrigger value="timeline">Parcours chronologique</TabsTrigger>
+              <TabsTrigger value="themes">Parcours par thématique</TabsTrigger>
+            </TabsList>
+            <TabsContent value="timeline" className="mt-6">
+              {/* Timeline Section */}
+              <div className="py-8 bg-gradient-to-b from-transparent to-black/40">
+                <JourneyTimeline />
+              </div>
+            </TabsContent>
+            <TabsContent value="themes" className="mt-6">
+              <div className="glass-card p-6 rounded-lg text-center">
+                <h3 className="text-xl font-medium mb-4">Parcours thématiques</h3>
+                <p className="text-white/70 mb-6">
+                  Explorez nos parcours spécifiques selon vos besoins et votre secteur d'activité.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 border border-primary/30 rounded-lg">
+                    <h4 className="font-medium mb-2">Startups Tech</h4>
+                    <p className="text-sm text-white/70 mb-2">Parcours optimisé pour les startups technologiques</p>
+                    <Button variant="outline" size="sm" className="w-full">Explorer</Button>
+                  </div>
+                  <div className="p-4 border border-primary/30 rounded-lg">
+                    <h4 className="font-medium mb-2">Biotechnologies</h4>
+                    <p className="text-sm text-white/70 mb-2">Spécificités pour les projets biotech et santé</p>
+                    <Button variant="outline" size="sm" className="w-full">Explorer</Button>
+                  </div>
+                  <div className="p-4 border border-primary/30 rounded-lg">
+                    <h4 className="font-medium mb-2">E-commerce</h4>
+                    <p className="text-sm text-white/70 mb-2">Structurer votre projet de commerce en ligne</p>
+                    <Button variant="outline" size="sm" className="w-full">Explorer</Button>
+                  </div>
+                  <div className="p-4 border border-primary/30 rounded-lg">
+                    <h4 className="font-medium mb-2">Économie sociale</h4>
+                    <p className="text-sm text-white/70 mb-2">Projets à impact social et environnemental</p>
+                    <Button variant="outline" size="sm" className="w-full">Explorer</Button>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </section>
         
         {/* Resources Section */}

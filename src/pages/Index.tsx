@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Zap } from "lucide-react";
+import { ArrowRight, Zap, BookOpen, CheckCircle2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -94,6 +94,7 @@ export default function Index() {
             <p className="text-white/70">
               Structurez votre modèle d'affaires avec notre méthodologie pas à pas et nos templates spécialisés.
             </p>
+            <Link to="/features" className="text-primary hover:underline text-sm mt-3 inline-block">En savoir plus</Link>
           </div>
           
           <div className="glass-card p-6 rounded-lg">
@@ -106,6 +107,7 @@ export default function Index() {
             <p className="text-white/70">
               Créez un plan d'affaires solide avec nos guides détaillés et nos outils de projection financière.
             </p>
+            <Link to="/features" className="text-primary hover:underline text-sm mt-3 inline-block">En savoir plus</Link>
           </div>
           
           <div className="glass-card p-6 rounded-lg">
@@ -121,6 +123,55 @@ export default function Index() {
             <p className="text-white/70">
               Concevez une présentation efficace pour convaincre investisseurs et partenaires avec nos templates.
             </p>
+            <Link to="/features" className="text-primary hover:underline text-sm mt-3 inline-block">En savoir plus</Link>
+          </div>
+        </div>
+        
+        {/* SEO Optimized Content Block */}
+        <div className="max-w-5xl mx-auto mb-20 glass-card p-8 rounded-lg">
+          <h2 className="text-2xl font-bold mb-4">Solutions complètes pour la levée de fonds et startups</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-3 flex items-center">
+                <Star className="h-5 w-5 text-primary mr-2" />
+                Guide levée de fonds
+              </h3>
+              <p className="text-white/70 mb-4">
+                Découvrez nos méthodologies éprouvées pour réussir votre levée de fonds. 
+                Identifiez les sources de financement adaptées à votre stade de développement et maximisez vos chances de succès.
+              </p>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span className="text-sm">Préparation à la levée de fonds</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span className="text-sm">Cartographie d'investisseurs</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-semibold mb-3 flex items-center">
+                <BookOpen className="h-5 w-5 text-primary mr-2" />
+                Ressources entrepreneur
+              </h3>
+              <p className="text-white/70 mb-4">
+                Accédez à nos nombreuses ressources pour startups : guides sur les brevets, templates de business plan, 
+                et méthodologie de création de pitch deck impactants.
+              </p>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span className="text-sm">Protection de la propriété intellectuelle</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span className="text-sm">Business Model Canvas interactif</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
         
