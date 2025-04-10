@@ -13,7 +13,7 @@ interface StepDetailProps {
 }
 
 export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
-  const [activeTab, setActiveTab] = useState<string>("overview");
+  const [activeTab, setActiveTab] = useState<string>(selectedSubStep ? "resources" : "overview");
 
   return (
     <div className="px-2">
@@ -27,7 +27,7 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
           </DialogClose>
         </div>
         <DialogDescription>
-          {step.description}
+          {selectedSubStep ? selectedSubStep.description : step.description}
         </DialogDescription>
       </DialogHeader>
 
