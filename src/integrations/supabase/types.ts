@@ -27,6 +27,51 @@ export type Database = {
         }
         Relationships: []
       }
+      entrepreneur_resources: {
+        Row: {
+          course_content: string | null
+          created_at: string | null
+          description: string | null
+          file_url: string | null
+          id: string
+          is_mandatory: boolean | null
+          resource_type: string
+          step_id: number
+          substep_id: string
+          substep_title: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          course_content?: string | null
+          created_at?: string | null
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          is_mandatory?: boolean | null
+          resource_type: string
+          step_id: number
+          substep_id: string
+          substep_title: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          course_content?: string | null
+          created_at?: string | null
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          is_mandatory?: boolean | null
+          resource_type?: string
+          step_id?: number
+          substep_id?: string
+          substep_title?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       investors: {
         Row: {
           created_at: string
@@ -218,6 +263,39 @@ export type Database = {
           is_completed?: boolean
           step_id?: number
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_resources: {
+        Row: {
+          content: Json
+          created_at: string | null
+          id: string
+          resource_type: string
+          step_id: number
+          substep_title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string | null
+          id?: string
+          resource_type: string
+          step_id: number
+          substep_title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string | null
+          id?: string
+          resource_type?: string
+          step_id?: number
+          substep_title?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
