@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Step, SubStep } from "@/types/journey";
 import { Button } from "@/components/ui/button";
@@ -44,6 +43,21 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
     fetchCourseContent();
   }, [step.id, selectedSubStep]);
 
+  const formatCourseContent = () => {
+    if (!courseContent) return "";
+    
+    let formattedContent = courseContent
+      .replace(/(\d+\.)\s+/g, '<div class="list-item"><span class="list-number">$1</span> ')
+      .replace(/\n/g, '</div>\n<div class="list-item">')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    formattedContent = '<div class="list-item">' + formattedContent + '</div>';
+    
+    formattedContent = formattedContent.replace(/<div class="list-item"><\/div>/g, '');
+
+    return formattedContent;
+  };
+
   return (
     <div className="px-2">
       <DialogHeader className="mb-6">
@@ -73,8 +87,21 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
             </div>
           ) : courseContent ? (
-            <div className="prose prose-sm max-w-none">
-              <div dangerouslySetInnerHTML={{ __html: courseContent }} />
+            <div className="prose prose-sm max-w-none course-content">
+              <style jsx global>{`
+                .course-content .list-item {
+                  margin-bottom: 0.75rem;
+                  line-height: 1.5;
+                }
+                .course-content .list-number {
+                  font-weight: 600;
+                  margin-right: 0.25rem;
+                }
+                .course-content strong {
+                  font-weight: 600;
+                }
+              `}</style>
+              <div dangerouslySetInnerHTML={{ __html: formatCourseContent() }} />
             </div>
           ) : (
             <div className="space-y-6">
@@ -128,7 +155,12 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
                   <div key={i} className="p-4 border rounded-lg">
                     <h4 className="font-medium">{resource.title}</h4>
                     <p className="text-muted-foreground text-sm mt-1">{resource.description}</p>
-                    <Button variant="outline" size="sm" className="mt-3">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-3"
+                      onClick={() => window.open(resource.url || '#', '_blank')}
+                    >
                       Accéder à la ressource
                     </Button>
                   </div>

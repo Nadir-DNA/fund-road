@@ -10,6 +10,7 @@ interface ResourceCardProps {
   icon: React.ReactNode;
   href: string;
   className?: string;
+  onClick?: () => void;
 }
 
 export default function ResourceCard({ 
@@ -17,8 +18,16 @@ export default function ResourceCard({
   description, 
   icon, 
   href, 
-  className 
+  className,
+  onClick
 }: ResourceCardProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
   return (
     <div className={cn(
       "glass-card p-6 transition-all duration-300 hover:translate-y-[-5px]", 
@@ -29,7 +38,7 @@ export default function ResourceCard({
       </div>
       <h3 className="text-xl font-semibold mb-2">{title}</h3>
       <p className="text-muted-foreground mb-4">{description}</p>
-      <Button asChild variant="outline" className="w-full">
+      <Button asChild variant="outline" className="w-full" onClick={handleClick}>
         <Link to={href} className="flex items-center justify-center gap-2">
           <BookOpen className="h-4 w-4" />
           <span>Accéder</span>
