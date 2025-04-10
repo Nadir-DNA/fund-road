@@ -47,15 +47,36 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
   const formatCourseContent = () => {
     if (!courseContent) return "";
     
+    // Process sections with proper headings and formatting
     let formattedContent = courseContent
-      .replace(/(\d+\.)\s+/g, '<div class="list-item"><span class="list-number">$1</span> ')
-      .replace(/\n/g, '</div>\n<div class="list-item">')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      // Convert markdown-style headings to HTML headings
+      .replace(/^# (.*?)$/gm, '<h2 class="text-xl font-bold mt-6 mb-3">$1</h2>')
+      .replace(/^## (.*?)$/gm, '<h3 class="text-lg font-semibold mt-5 mb-2">$1</h3>')
+      .replace(/^### (.*?)$/gm, '<h4 class="text-base font-medium mt-4 mb-1">$1</h4>')
+      
+      // Process numbered lists with proper formatting
+      .replace(/(\d+\.)\s+(.*?)$/gm, '<div class="list-item"><span class="list-number">$1</span> $2</div>')
+      
+      // Process bullet points
+      .replace(/^\* (.*?)$/gm, '<div class="bullet-item">• $1</div>')
+      
+      // Process bold text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      
+      // Process italics
+      .replace(/\_(.*?)\_/g, '<em>$1</em>')
+      
+      // Handle paragraphs and line breaks
+      .replace(/\n\n/g, '</p><p class="mb-4">')
+      
+      // Clean up any leftover newlines that aren't part of lists
+      .replace(/\n(?!<div class)/g, '<br>');
 
-    formattedContent = '<div class="list-item">' + formattedContent + '</div>';
+    // Wrap in paragraph if it doesn't start with a heading or list
+    if (!formattedContent.startsWith('<h') && !formattedContent.startsWith('<div class')) {
+      formattedContent = '<p class="mb-4">' + formattedContent + '</p>';
+    }
     
-    formattedContent = formattedContent.replace(/<div class="list-item"><\/div>/g, '');
-
     return formattedContent;
   };
 
@@ -98,8 +119,22 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
                   font-weight: 600;
                   margin-right: 0.25rem;
                 }
+                .course-content .bullet-item {
+                  margin-bottom: 0.75rem;
+                  line-height: 1.5;
+                  padding-left: 0.5rem;
+                }
                 .course-content strong {
                   font-weight: 600;
+                }
+                .course-content h2, .course-content h3, .course-content h4 {
+                  margin-top: 1.5rem;
+                  margin-bottom: 0.75rem;
+                  font-weight: 600;
+                }
+                .course-content p {
+                  margin-bottom: 1rem;
+                  line-height: 1.6;
                 }
               `}</style>
               <div dangerouslySetInnerHTML={{ __html: formatCourseContent() }} />
@@ -160,9 +195,10 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
                       variant="outline" 
                       size="sm" 
                       className="mt-3"
-                      onClick={() => window.open('#', '_blank')}
+                      onClick={() => resource.url ? window.open(resource.url, '_blank') : null}
+                      disabled={!resource.url}
                     >
-                      Accéder à la ressource
+                      {resource.url ? 'Accéder à la ressource' : 'Ressource non disponible'}
                     </Button>
                   </div>
                 ))}
