@@ -23,6 +23,18 @@ interface ResourceFormProps {
   defaultValues?: any;
 }
 
+// Définir un type pour les données de ressource utilisateur
+interface UserResource {
+  id?: string;
+  user_id: string;
+  step_id: number;
+  substep_title: string;
+  resource_type: string;
+  content: any;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export default function ResourceForm({
   stepId,
   substepTitle,
@@ -53,13 +65,14 @@ export default function ResourceForm({
       }
       
       try {
+        // Utiliser le type générique pour spécifier le type de retour
         const { data, error } = await supabase
-          .from("user_resources")
-          .select("*")
-          .eq("user_id", session.session.user.id)
-          .eq("step_id", stepId)
-          .eq("substep_title", substepTitle)
-          .eq("resource_type", resourceType)
+          .from('user_resources')
+          .select('*')
+          .eq('user_id', session.session.user.id)
+          .eq('step_id', stepId)
+          .eq('substep_title', substepTitle)
+          .eq('resource_type', resourceType)
           .single();
           
         if (error && error.code !== "PGRST116") {
@@ -68,8 +81,10 @@ export default function ResourceForm({
         }
         
         if (data) {
-          setFormData(data.content);
-          if (onDataSaved) onDataSaved(data.content);
+          // Accéder au contenu de manière sécurisée
+          const resourceData = data as UserResource;
+          setFormData(resourceData.content);
+          if (onDataSaved) onDataSaved(resourceData.content);
         }
       } catch (error) {
         console.error("Error fetching saved data:", error);
@@ -105,17 +120,19 @@ export default function ResourceForm({
     setIsSaving(true);
     
     try {
+      // Préparer les données pour l'upsert
+      const resourceData: UserResource = {
+        user_id: session.session.user.id,
+        step_id: stepId,
+        substep_title: substepTitle,
+        resource_type: resourceType,
+        content: formData,
+      };
+      
       // Upsert (insert ou update)
       const { error } = await supabase
-        .from("user_resources")
-        .upsert({
-          user_id: session.session.user.id,
-          step_id: stepId,
-          substep_title: substepTitle,
-          resource_type: resourceType,
-          content: formData,
-          updated_at: new Date().toISOString()
-        }, { onConflict: "user_id, step_id, substep_title, resource_type" });
+        .from('user_resources')
+        .upsert(resourceData, { onConflict: 'user_id,step_id,substep_title,resource_type' });
         
       if (error) throw error;
       
