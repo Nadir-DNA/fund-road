@@ -1,10 +1,11 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Step, SubStep } from "@/types/journey";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DialogClose, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import ResourceManager from "./ResourceManager";
 
 interface StepDetailProps {
@@ -14,6 +15,34 @@ interface StepDetailProps {
 
 export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
   const [activeTab, setActiveTab] = useState<string>(selectedSubStep ? "resources" : "overview");
+  const [courseContent, setCourseContent] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    const fetchCourseContent = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('entrepreneur_resources')
+          .select('course_content')
+          .eq('step_id', step.id)
+          .eq('substep_title', selectedSubStep ? selectedSubStep.title : step.title)
+          .single();
+
+        if (error) {
+          console.error("Error fetching course content:", error);
+        } else if (data && data.course_content) {
+          setCourseContent(data.course_content);
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCourseContent();
+  }, [step.id, selectedSubStep]);
 
   return (
     <div className="px-2">
@@ -39,34 +68,44 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
         </TabsList>
         
         <TabsContent value="overview" className="py-4">
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Description détaillée</h3>
-              <p className="text-muted-foreground">{step.detailedDescription}</p>
+          {isLoading ? (
+            <div className="flex justify-center p-8">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
             </div>
-            
-            {selectedSubStep ? (
+          ) : courseContent ? (
+            <div className="prose prose-sm max-w-none">
+              <div dangerouslySetInnerHTML={{ __html: courseContent }} />
+            </div>
+          ) : (
+            <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold mb-2">Sous-étape sélectionnée</h3>
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-medium">{selectedSubStep.title}</h4>
-                  <p className="text-muted-foreground mt-1">{selectedSubStep.description}</p>
-                </div>
+                <h3 className="text-lg font-semibold mb-2">Description détaillée</h3>
+                <p className="text-muted-foreground">{step.detailedDescription}</p>
               </div>
-            ) : step.subSteps && step.subSteps.length > 0 ? (
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Sous-étapes</h3>
-                <div className="space-y-3">
-                  {step.subSteps.map((subStep, i) => (
-                    <div key={i} className="p-4 border rounded-lg">
-                      <h4 className="font-medium">{subStep.title}</h4>
-                      <p className="text-muted-foreground mt-1">{subStep.description}</p>
-                    </div>
-                  ))}
+              
+              {selectedSubStep ? (
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Sous-étape sélectionnée</h3>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium">{selectedSubStep.title}</h4>
+                    <p className="text-muted-foreground mt-1">{selectedSubStep.description}</p>
+                  </div>
                 </div>
-              </div>
-            ) : null}
-          </div>
+              ) : step.subSteps && step.subSteps.length > 0 ? (
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Sous-étapes</h3>
+                  <div className="space-y-3">
+                    {step.subSteps.map((subStep, i) => (
+                      <div key={i} className="p-4 border rounded-lg">
+                        <h4 className="font-medium">{subStep.title}</h4>
+                        <p className="text-muted-foreground mt-1">{subStep.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
         </TabsContent>
         
         <TabsContent value="resources" className="py-4">
