@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Step, SubStep } from "@/types/journey";
 import { Button } from "@/components/ui/button";
@@ -88,7 +89,7 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
             </div>
           ) : courseContent ? (
             <div className="prose prose-sm max-w-none course-content">
-              <style jsx global>{`
+              <style>{`
                 .course-content .list-item {
                   margin-bottom: 0.75rem;
                   line-height: 1.5;
@@ -159,7 +160,7 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
                       variant="outline" 
                       size="sm" 
                       className="mt-3"
-                      onClick={() => window.open(resource.url || '#', '_blank')}
+                      onClick={() => window.open('#', '_blank')}
                     >
                       Accéder à la ressource
                     </Button>
