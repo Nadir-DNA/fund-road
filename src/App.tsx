@@ -13,6 +13,7 @@ import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
+import Resources from "./pages/Resources";
 import CookieConsent from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/features" element={<Features />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/blog" element={<Blog />} />
+            <Route path="/resources" element={<Resources />} />
             <Route path="/financing" element={<Financing />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/auth" element={<Auth />} />

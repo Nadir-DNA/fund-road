@@ -73,10 +73,9 @@ export default function ResourceForm({
           .eq('step_id', stepId)
           .eq('substep_title', substepTitle)
           .eq('resource_type', resourceType)
-          .single();
+          .maybeSingle(); // Utiliser maybeSingle au lieu de single pour éviter l'erreur
           
-        if (error && error.code !== "PGRST116") {
-          // PGRST116 signifie qu'aucune ligne n'a été trouvée
+        if (error) {
           console.error("Error fetching data:", error);
         }
         

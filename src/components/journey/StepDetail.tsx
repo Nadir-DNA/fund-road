@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Step, SubStep } from "@/types/journey";
+import { Step, SubStep, Resource } from "@/types/journey";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DialogClose, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -110,7 +110,8 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
             </div>
           ) : courseContent ? (
             <div className="prose prose-sm max-w-none course-content">
-              <style>{`
+              <style>
+                {`
                 .course-content .list-item {
                   margin-bottom: 0.75rem;
                   line-height: 1.5;
@@ -136,7 +137,8 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
                   margin-bottom: 1rem;
                   line-height: 1.6;
                 }
-              `}</style>
+              `}
+              </style>
               <div dangerouslySetInnerHTML={{ __html: formatCourseContent() }} />
             </div>
           ) : (

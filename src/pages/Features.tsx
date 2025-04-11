@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -175,8 +176,8 @@ export default function Features() {
                 <p className="text-white/70 mb-4">
                   Apprenez à structurer et valider votre modèle d'affaires avec cet outil stratégique incontournable.
                 </p>
-                <Link to="/blog" className="inline-flex items-center text-primary hover:underline">
-                  Télécharger le guide <ChevronRight className="ml-1 h-4 w-4" />
+                <Link to="/resources" className="inline-flex items-center text-primary hover:underline">
+                  Consulter la ressource <ChevronRight className="ml-1 h-4 w-4" />
                 </Link>
               </div>
             </div>
@@ -195,8 +196,8 @@ export default function Features() {
                 <p className="text-white/70 mb-4">
                   Structure slide par slide pour créer une présentation convaincante et séduire vos investisseurs.
                 </p>
-                <Link to="/blog" className="inline-flex items-center text-primary hover:underline">
-                  Télécharger le template <ChevronRight className="ml-1 h-4 w-4" />
+                <Link to="/resources" className="inline-flex items-center text-primary hover:underline">
+                  Consulter le template <ChevronRight className="ml-1 h-4 w-4" />
                 </Link>
               </div>
             </div>
@@ -214,8 +215,8 @@ export default function Features() {
                 <p className="text-white/70 mb-4">
                   Panorama des options de financement adaptées à chaque étape de développement de votre startup.
                 </p>
-                <Link to="/financing" className="inline-flex items-center text-primary hover:underline">
-                  Découvrir les options <ChevronRight className="ml-1 h-4 w-4" />
+                <Link to="/resources" className="inline-flex items-center text-primary hover:underline">
+                  Découvrir les ressources <ChevronRight className="ml-1 h-4 w-4" />
                 </Link>
               </div>
             </div>
@@ -223,7 +224,7 @@ export default function Features() {
           
           <div className="flex justify-center mt-12">
             <Button asChild variant="outline" className="border-white/20 hover:bg-white/10">
-              <Link to="/blog">
+              <Link to="/resources">
                 Voir toutes les ressources
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Link>
