@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Filter, DollarSign } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
@@ -155,7 +155,7 @@ export default function Financing() {
                       {investor.description}
                     </p>
                     
-                    <div className="space-y-2 mb-4">
+                    <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-white/50 text-sm">Stade:</span>
                         <span className="text-sm">{investor.stage ? investor.stage.join(", ") : 'Non spécifié'}</span>
@@ -170,9 +170,7 @@ export default function Financing() {
                       </div>
                     </div>
                     
-                    <Button className="w-full bg-white/10 hover:bg-white/20 text-white">
-                      Voir le Profil
-                    </Button>
+                    {/* Le bouton "Voir le Profil" a été supprimé */}
                   </div>
                 ))}
               </div>

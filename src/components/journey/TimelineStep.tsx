@@ -27,9 +27,9 @@ export default function TimelineStep({
 }: TimelineStepProps) {
   return (
     <div className="relative flex">
-      {/* Timeline connector */}
+      {/* Timeline connector - Fixed positioning to not overlap with checkboxes */}
       {index < stepsLength - 1 && (
-        <div className="absolute top-7 left-3.5 h-full w-0.5 bg-border" />
+        <div className="absolute top-7 left-3.5 bottom-0 w-0.5 bg-border z-0" />
       )}
       
       {/* Step content */}
@@ -39,7 +39,7 @@ export default function TimelineStep({
             <Tooltip>
               <TooltipTrigger asChild>
                 <button 
-                  className="relative flex items-center justify-center mr-4 focus:outline-none"
+                  className="relative flex items-center justify-center mr-4 focus:outline-none bg-background z-10"
                   onClick={() => onToggleStepCompletion(step.id)}
                 >
                   {step.isCompleted ? (
