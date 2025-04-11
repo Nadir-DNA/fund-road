@@ -11,7 +11,7 @@ interface OverviewTabProps {
 
 export default function OverviewTab({ step, selectedSubStep, isLoading }: OverviewTabProps) {
   return (
-    <div className="py-4">
+    <div className="py-4 w-full">
       <CourseContentDisplay 
         stepId={step.id} 
         substepTitle={selectedSubStep?.title || null} 
@@ -19,10 +19,10 @@ export default function OverviewTab({ step, selectedSubStep, isLoading }: Overvi
       />
       
       {!isLoading && !selectedSubStep && (
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-full">
           <div>
             <h3 className="text-lg font-semibold mb-2">Description détaillée</h3>
-            <p className="text-muted-foreground">{step.detailedDescription}</p>
+            <p className="text-muted-foreground text-sm sm:text-base">{step.detailedDescription}</p>
           </div>
           
           {step.subSteps && step.subSteps.length > 0 ? (
@@ -30,9 +30,9 @@ export default function OverviewTab({ step, selectedSubStep, isLoading }: Overvi
               <h3 className="text-lg font-semibold mb-2">Sous-étapes</h3>
               <div className="space-y-3">
                 {step.subSteps.map((subStep, i) => (
-                  <li key={i} className="p-4 border rounded-lg list-none">
-                    <h4 className="font-medium">{subStep.title}</h4>
-                    <p className="text-muted-foreground mt-1">{subStep.description}</p>
+                  <li key={i} className="p-3 sm:p-4 border rounded-lg list-none hover:border-primary/50 transition-colors">
+                    <h4 className="font-medium text-sm sm:text-base">{subStep.title}</h4>
+                    <p className="text-muted-foreground mt-1 text-xs sm:text-sm">{subStep.description}</p>
                   </li>
                 ))}
               </div>

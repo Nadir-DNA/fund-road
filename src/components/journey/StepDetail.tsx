@@ -19,26 +19,26 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   return (
-    <div className="px-2">
-      <DialogHeader className="mb-6">
+    <div className="px-2 w-full">
+      <DialogHeader className="mb-4 sm:mb-6">
         <div className="flex items-center justify-between">
-          <DialogTitle className="text-2xl">{step.title}</DialogTitle>
+          <DialogTitle className="text-xl sm:text-2xl">{step.title}</DialogTitle>
           <DialogClose asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
+            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
               <X className="h-4 w-4" />
             </Button>
           </DialogClose>
         </div>
-        <DialogDescription>
+        <DialogDescription className="text-sm sm:text-base mt-2">
           {selectedSubStep ? selectedSubStep.description : step.description}
         </DialogDescription>
       </DialogHeader>
 
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Aperçu</TabsTrigger>
-          <TabsTrigger value="resources">Ressources</TabsTrigger>
-          <TabsTrigger value="help">Aide</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 mb-2">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm">Aperçu</TabsTrigger>
+          <TabsTrigger value="resources" className="text-xs sm:text-sm">Ressources</TabsTrigger>
+          <TabsTrigger value="help" className="text-xs sm:text-sm">Aide</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview">
