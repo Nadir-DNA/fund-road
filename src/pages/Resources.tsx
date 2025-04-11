@@ -7,10 +7,9 @@ import ResourceCard from "@/components/ResourceCard";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, BookOpen, PresentationIcon, Search, Filter } from "lucide-react";
+import { FileText, BookOpen, PresentationIcon, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { journeySteps } from "@/data/journeySteps";
 
@@ -86,8 +85,9 @@ export default function Resources() {
     }
     
     // Filtre par recherche textuelle
-    if (filters.searchQuery && !resource.title.toLowerCase().includes(filters.searchQuery.toLowerCase()) && 
-        !resource.description.toLowerCase().includes(filters.searchQuery.toLowerCase())) {
+    if (filters.searchQuery && 
+        !resource.title?.toLowerCase().includes(filters.searchQuery.toLowerCase()) && 
+        !resource.description?.toLowerCase().includes(filters.searchQuery.toLowerCase())) {
       return false;
     }
     
@@ -196,7 +196,7 @@ export default function Resources() {
               </div>
             ) : Object.keys(resourcesByStep).length > 0 ? (
               <div className="space-y-10">
-                {Object.entries(resourcesByStep).map(([stepId, stepResources]) => (
+                {Object.entries(resourcesByStep).sort((a, b) => Number(a[0]) - Number(b[0])).map(([stepId, stepResources]) => (
                   <div key={stepId} className="mb-8">
                     <h2 className="text-2xl font-bold mb-4 border-b border-white/10 pb-2">
                       {getStepName(Number(stepId))}
@@ -234,6 +234,18 @@ export default function Resources() {
             {isLoading ? (
               <div className="animate-pulse">
                 {/* Contenus de chargement similaires à la vue par étape */}
+                <div className="grid grid-cols-1 gap-8">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="glass-card p-6 rounded-lg">
+                      <div className="h-8 bg-white/10 rounded mb-4 w-1/3"></div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {[1, 2, 3].map(j => (
+                          <div key={j} className="h-40 bg-white/5 rounded"></div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : filteredResources.length > 0 ? (
               <div className="space-y-10">
@@ -332,6 +344,7 @@ export default function Resources() {
                   <div>
                     <span className="text-sm text-muted-foreground">Étape: {getStepName(selectedResource.step_id)}</span>
                     <p className="text-sm text-muted-foreground">Type: {selectedResource.resource_type}</p>
+                    <p className="text-sm text-muted-foreground">Sous-étape: {selectedResource.substep_title}</p>
                   </div>
                 </div>
                 
@@ -354,10 +367,11 @@ export default function Resources() {
                       className="mt-4"
                       onClick={() => {
                         setResourceModalOpen(false);
-                        // Rediriger vers l'étape correspondante (à implémenter)
+                        // Rediriger vers l'étape correspondante
+                        window.location.href = '/';
                       }}
                     >
-                      Aller à l'étape
+                      Aller au parcours
                     </Button>
                   </div>
                 )}

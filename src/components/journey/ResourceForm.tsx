@@ -82,8 +82,8 @@ export default function ResourceForm({
         if (data) {
           // Accéder au contenu de manière sécurisée
           const resourceData = data as UserResource;
-          setFormData(resourceData.content);
-          if (onDataSaved) onDataSaved(resourceData.content);
+          setFormData(resourceData.content || {});
+          if (onDataSaved) onDataSaved(resourceData.content || {});
         }
       } catch (error) {
         console.error("Error fetching saved data:", error);
@@ -119,13 +119,16 @@ export default function ResourceForm({
     setIsSaving(true);
     
     try {
+      // S'assurer que formData n'est pas null ou undefined
+      const safeFormData = formData || {};
+      
       // Préparer les données pour l'upsert
       const resourceData: UserResource = {
         user_id: session.session.user.id,
         step_id: stepId,
         substep_title: substepTitle,
         resource_type: resourceType,
-        content: formData,
+        content: safeFormData,
       };
       
       // Upsert (insert ou update)
@@ -140,7 +143,7 @@ export default function ResourceForm({
         description: "Vos données ont été enregistrées avec succès."
       });
       
-      if (onDataSaved) onDataSaved(formData);
+      if (onDataSaved) onDataSaved(safeFormData);
       
     } catch (error: any) {
       console.error("Error saving resource:", error);

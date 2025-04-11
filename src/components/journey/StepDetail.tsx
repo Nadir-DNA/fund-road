@@ -137,7 +137,7 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
                   margin-bottom: 1rem;
                   line-height: 1.6;
                 }
-              `}
+                `}
               </style>
               <div dangerouslySetInnerHTML={{ __html: formatCourseContent() }} />
             </div>
@@ -161,10 +161,10 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
                   <h3 className="text-lg font-semibold mb-2">Sous-étapes</h3>
                   <div className="space-y-3">
                     {step.subSteps.map((subStep, i) => (
-                      <div key={i} className="p-4 border rounded-lg">
+                      <li key={i} className="p-4 border rounded-lg list-none">
                         <h4 className="font-medium">{subStep.title}</h4>
                         <p className="text-muted-foreground mt-1">{subStep.description}</p>
-                      </div>
+                      </li>
                     ))}
                   </div>
                 </div>

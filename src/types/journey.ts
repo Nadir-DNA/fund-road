@@ -8,7 +8,7 @@ export type SubStep = {
 export type Resource = {
   title: string;
   description: string;
-  url?: string; // Ajout de la propriété url comme optionnelle
+  url?: string;
 };
 
 export type Step = {
