@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X, LogOut } from "lucide-react";
@@ -14,12 +13,10 @@ export default function Navbar() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is authenticated
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
       
-      // Check if user is admin
       if (session) {
         const { data: profile, error } = await supabase
           .from('profiles')
@@ -35,16 +32,13 @@ export default function Navbar() {
     
     checkAuth();
     
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setIsAuthenticated(!!session);
         
-        // Reset admin status when signing out
         if (event === 'SIGNED_OUT') {
           setIsAdmin(false);
         } 
-        // Check admin status when signing in
         else if (event === 'SIGNED_IN' && session) {
           const { data: profile, error } = await supabase
             .from('profiles')
@@ -95,10 +89,6 @@ export default function Navbar() {
             <Link to="/faq" className="text-foreground/80 hover:text-primary transition-colors">
               FAQ
             </Link>
-            <Link to="/blog" className="text-foreground/80 hover:text-primary transition-colors relative">
-              Ressources
-              <span className="absolute -top-1 -right-6 bg-primary/20 text-white text-xs px-1.5 py-0.5 rounded-full">24</span>
-            </Link>
             <Link to="/financing" className="text-foreground/80 hover:text-primary transition-colors">
               Financements
             </Link>
@@ -138,7 +128,6 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile menu */}
         {isMenuOpen && (
           <div className="mt-4 md:hidden flex flex-col space-y-4 py-4 animate-fade-in">
             <Link to="/" className="text-foreground/80 hover:text-primary transition-colors">
@@ -149,9 +138,6 @@ export default function Navbar() {
             </Link>
             <Link to="/faq" className="text-foreground/80 hover:text-primary transition-colors">
               FAQ
-            </Link>
-            <Link to="/blog" className="text-foreground/80 hover:text-primary transition-colors">
-              Ressources
             </Link>
             <Link to="/financing" className="text-foreground/80 hover:text-primary transition-colors">
               Financements
