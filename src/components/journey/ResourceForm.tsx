@@ -157,6 +157,95 @@ export default function ResourceForm({
     }
   };
 
+  // Fonction pour formater les données selon le format d'export demandé
+  const formatDataForExport = (data: any, format: "pdf" | "docx" | "xlsx", projectName: string) => {
+    // Ajouter des métadonnées communes
+    const exportData = {
+      ...data,
+      projectName,
+      resourceType,
+      title,
+      exportDate: new Date().toLocaleDateString('fr-FR'),
+    };
+
+    // Formatter selon le type de ressource
+    switch (resourceType) {
+      case "Business Model Canvas":
+        return formatBusinessModelCanvas(exportData);
+      case "SWOT Analysis":
+        return formatSWOTAnalysis(exportData);
+      case "Matrice d'empathie":
+        return formatEmpathyMap(exportData);
+      case "Problem Solution Matrix":
+        return formatProblemSolutionMatrix(exportData);
+      default:
+        return exportData;
+    }
+  };
+
+  // Formatters spécifiques pour chaque type de ressource
+  const formatBusinessModelCanvas = (data: any) => {
+    return {
+      title: `Business Model Canvas - ${data.projectName}`,
+      date: data.exportDate,
+      sections: [
+        { name: "Partenaires clés", content: data.keyPartners || "" },
+        { name: "Activités clés", content: data.keyActivities || "" },
+        { name: "Ressources clés", content: data.keyResources || "" },
+        { name: "Proposition de valeur", content: data.valueProposition || "" },
+        { name: "Relations clients", content: data.customerRelationships || "" },
+        { name: "Canaux de distribution", content: data.channels || "" },
+        { name: "Segments clients", content: data.customerSegments || "" },
+        { name: "Structure de coûts", content: data.costStructure || "" },
+        { name: "Sources de revenus", content: data.revenueStreams || "" }
+      ]
+    };
+  };
+
+  const formatSWOTAnalysis = (data: any) => {
+    return {
+      title: `Analyse SWOT - ${data.projectName}`,
+      date: data.exportDate,
+      sections: [
+        { name: "Forces", content: data.strengths || "" },
+        { name: "Faiblesses", content: data.weaknesses || "" },
+        { name: "Opportunités", content: data.opportunities || "" },
+        { name: "Menaces", content: data.threats || "" }
+      ]
+    };
+  };
+
+  const formatEmpathyMap = (data: any) => {
+    return {
+      title: `Matrice d'Empathie - ${data.projectName}`,
+      date: data.exportDate,
+      sections: [
+        { name: "Utilisateur", content: data.userPersona || "" },
+        { name: "Ce qu'il pense", content: data.thinks || "" },
+        { name: "Ce qu'il ressent", content: data.feels || "" },
+        { name: "Ce qu'il dit", content: data.says || "" },
+        { name: "Ce qu'il fait", content: data.does || "" },
+        { name: "Points douloureux", content: data.pains || "" },
+        { name: "Gains potentiels", content: data.gains || "" }
+      ]
+    };
+  };
+
+  const formatProblemSolutionMatrix = (data: any) => {
+    return {
+      title: `Matrice Problème-Solution - ${data.projectName}`,
+      date: data.exportDate,
+      sections: [
+        { name: "Problème 1", content: data.problem1 || "" },
+        { name: "Solution 1", content: data.solution1 || "" },
+        { name: "Problème 2", content: data.problem2 || "" },
+        { name: "Solution 2", content: data.solution2 || "" },
+        { name: "Problème 3", content: data.problem3 || "" },
+        { name: "Solution 3", content: data.solution3 || "" }
+      ]
+    };
+  };
+
   const exportToFile = async (format: "pdf" | "docx" | "xlsx") => {
     setIsExporting(true);
     
@@ -169,39 +258,88 @@ export default function ResourceForm({
     }
     
     try {
-      // Formatage des données pour l'export
-      const exportData = {
-        ...formData,
-        projectName,
-        resourceType,
-        title,
-        exportDate: new Date().toLocaleDateString(),
-      };
+      // Formatage des données pour l'export selon le type de ressource
+      const exportData = formatDataForExport(formData, format, projectName);
       
-      // Dans une application réelle, il faudrait implémenter la génération de fichier
-      // Pour le moment, simulons l'export avec un délai
-      setTimeout(() => {
-        // Simuler la création d'un blob pour téléchargement
-        const json = JSON.stringify(exportData, null, 2);
-        const blob = new Blob([json], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        
-        // Nom du fichier selon le format
-        const filename = `${resourceType.replace(/\s+/g, "_")}_${projectName.replace(/\s+/g, "_")}.${format}`;
-        
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        toast({
-          title: "Export réussi",
-          description: `Le fichier ${filename} a été téléchargé.`
-        });
-      }, 1000);
+      // Création du contenu selon le format
+      let contentType = "";
+      let fileContent = "";
+      let blob;
+      
+      switch (format) {
+        case "pdf":
+          contentType = "application/pdf";
+          // Pour un vrai PDF, il faudrait utiliser une librairie comme jsPDF
+          // Simulons avec du JSON formaté
+          fileContent = JSON.stringify(exportData, null, 2);
+          blob = new Blob([fileContent], { type: "application/json" });
+          break;
+          
+        case "docx":
+          contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+          // Pour un vrai DOCX, il faudrait utiliser une librairie comme docx
+          // Simulons avec un texte formaté
+          fileContent = `# ${exportData.title}\nDate: ${exportData.date}\n\n`;
+          
+          if (exportData.sections) {
+            exportData.sections.forEach((section: any) => {
+              fileContent += `## ${section.name}\n${section.content || 'Non renseigné'}\n\n`;
+            });
+          } else {
+            // Fallback pour les ressources sans sections définies
+            Object.entries(exportData).forEach(([key, value]) => {
+              if (key !== 'title' && key !== 'date' && key !== 'projectName' && key !== 'exportDate') {
+                fileContent += `## ${key}\n${value || 'Non renseigné'}\n\n`;
+              }
+            });
+          }
+          
+          blob = new Blob([fileContent], { type: "text/plain" });
+          break;
+          
+        case "xlsx":
+          contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+          // Pour un vrai XLSX, il faudrait utiliser une librairie comme xlsx
+          // Simulons avec du CSV
+          fileContent = `"Catégorie","Contenu"\n`;
+          
+          if (exportData.sections) {
+            exportData.sections.forEach((section: any) => {
+              fileContent += `"${section.name}","${section.content || ''}"\n`;
+            });
+          } else {
+            // Fallback pour les ressources sans sections définies
+            Object.entries(exportData).forEach(([key, value]) => {
+              if (key !== 'title' && key !== 'date' && key !== 'projectName' && key !== 'exportDate') {
+                fileContent += `"${key}","${value || ''}"\n`;
+              }
+            });
+          }
+          
+          blob = new Blob([fileContent], { type: "text/csv" });
+          break;
+      }
+      
+      // Création du lien de téléchargement
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      
+      // Nom du fichier selon le format et le type de ressource
+      const resourceTypeSafe = resourceType.replace(/\s+/g, "_");
+      const projectNameSafe = projectName.replace(/\s+/g, "_");
+      const filename = `${resourceTypeSafe}_${projectNameSafe}.${format}`;
+      
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Export réussi",
+        description: `Le fichier ${filename} a été téléchargé.`
+      });
     } catch (error) {
       console.error("Error exporting file:", error);
       toast({
