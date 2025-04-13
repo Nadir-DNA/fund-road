@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState } from "react";  // Add explicit React import
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
