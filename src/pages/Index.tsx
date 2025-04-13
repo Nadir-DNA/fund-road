@@ -1,22 +1,21 @@
-
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Zap, BookOpen, CheckCircle2, Star } from "lucide-react";
+import { ArrowRight, Zap, BookOpen, CheckCircle2, Star, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import TaskCard from "@/components/TaskCard";
+import LazyLoad from "@/components/LazyLoad";
+
+const TaskCard = lazy(() => import("@/components/TaskCard"));
 
 export default function Index() {
   const [count, setCount] = useState(0);
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden relative">
-      {/* Background gradient effects */}
       <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.15),transparent_60%)]"></div>
       <div className="absolute bottom-0 left-0 w-full h-full bg-[radial-gradient(circle_at_bottom_left,rgba(124,58,237,0.15),transparent_60%)]"></div>
       
-      {/* Side navigation indicators */}
       <div className="fixed left-8 top-1/2 -translate-y-1/2 z-10 hidden lg:flex flex-col gap-6">
         <button className="p-4 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -44,7 +43,6 @@ export default function Index() {
       <Navbar />
       
       <main className="relative pt-32 pb-20 px-4 container mx-auto z-10">
-        {/* Feature badge */}
         <div className="flex justify-center mb-6">
           <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 text-white backdrop-blur-sm gap-2">
             <Zap className="h-4 w-4 text-primary" />
@@ -52,7 +50,6 @@ export default function Index() {
           </div>
         </div>
         
-        {/* Hero section */}
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
             Structurez votre projet et<br />
@@ -80,7 +77,6 @@ export default function Index() {
           </div>
         </div>
         
-        {/* Feature blocks */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-16">
           <div className="glass-card p-6 rounded-lg">
             <div className="bg-primary/20 w-12 h-12 rounded-full flex items-center justify-center mb-4">
@@ -127,7 +123,6 @@ export default function Index() {
           </div>
         </div>
         
-        {/* SEO Optimized Content Block */}
         <div className="max-w-5xl mx-auto mb-20 glass-card p-8 rounded-lg">
           <h2 className="text-2xl font-bold mb-4">Solutions complètes pour la levée de fonds et startups</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -175,51 +170,105 @@ export default function Index() {
           </div>
         </div>
         
-        {/* Task cards showcase */}
         <div className="relative mt-16 grid grid-cols-12 gap-4">
-          {/* Resources Card */}
           <div className="col-span-12 md:col-span-4 lg:col-span-3 transform -rotate-3 translate-y-6 md:translate-x-12">
-            <TaskCard 
-              title="Ressources disponibles" 
-              stats={{
-                value: "127",
-                label: "Templates, guides et outils gratuits"
-              }}
-              className="transform hover:translate-y-[-5px] transition-transform duration-300"
-            />
+            <Suspense fallback={<div className="h-64 glass-card animate-pulse"></div>}>
+              <LazyLoad height={320}>
+                <TaskCard 
+                  title="Ressources disponibles" 
+                  stats={{
+                    value: "127",
+                    label: "Templates, guides et outils gratuits"
+                  }}
+                  className="transform hover:translate-y-[-5px] transition-transform duration-300"
+                />
+              </LazyLoad>
+            </Suspense>
           </div>
           
-          {/* Journey Progress Card */}
           <div className="col-span-12 md:col-span-5 lg:col-span-4 z-20 transform translate-y-16 md:translate-x-8 md:translate-y-0">
-            <TaskCard 
-              title="Progression parcours" 
-              chartData={{
-                percentage: 74,
-                label: "Avancement parcours",
-                secondaryStats: [
-                  { label: "Business Plan", value: "92%" },
-                  { label: "Pitch Deck", value: "45%" }
-                ]
-              }}
-              className="transform hover:translate-y-[-5px] transition-transform duration-300"
-            />
+            <Suspense fallback={<div className="h-64 glass-card animate-pulse"></div>}>
+              <LazyLoad height={320}>
+                <TaskCard 
+                  title="Progression parcours" 
+                  chartData={{
+                    percentage: 74,
+                    label: "Avancement parcours",
+                    secondaryStats: [
+                      { label: "Business Plan", value: "92%" },
+                      { label: "Pitch Deck", value: "45%" }
+                    ]
+                  }}
+                  className="transform hover:translate-y-[-5px] transition-transform duration-300"
+                />
+              </LazyLoad>
+            </Suspense>
           </div>
           
-          {/* Journey Steps Card */}
           <div className="col-span-12 md:col-span-5 lg:col-span-4 transform rotate-2 translate-y-8 md:-translate-x-8">
-            <TaskCard 
-              title="Étapes du parcours" 
-              subtitle="(10)"
-              tasks={[
-                { id: "1", text: "Phase d'idéation & découverte du problème", completed: true },
-                { id: "2", text: "Validation du concept", completed: false }
-              ]}
-              className="transform hover:translate-y-[-5px] transition-transform duration-300"
-            />
+            <Suspense fallback={<div className="h-64 glass-card animate-pulse"></div>}>
+              <LazyLoad height={320}>
+                <TaskCard 
+                  title="Étapes du parcours" 
+                  subtitle="(10)"
+                  tasks={[
+                    { id: "1", text: "Phase d'idéation & découverte du problème", completed: true },
+                    { id: "2", text: "Validation du concept", completed: false }
+                  ]}
+                  className="transform hover:translate-y-[-5px] transition-transform duration-300"
+                />
+              </LazyLoad>
+            </Suspense>
           </div>
         </div>
         
-        {/* CTA Section */}
+        <div className="max-w-5xl mx-auto mt-24 mb-16 glass-card p-8 rounded-lg border border-primary/20">
+          <div className="flex items-start gap-4">
+            <div className="bg-primary/20 p-3 rounded-full">
+              <Search className="h-6 w-6 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold mb-3">Offre d'accompagnement stratégique</h3>
+              <p className="text-white/80 mb-4">
+                Bénéficiez d'un accompagnement sur mesure pour structurer et valoriser votre projet :
+              </p>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                  <span>Mise en relation avec nos partenaires privilégiés en propriété intellectuelle (brevets, marques, contrats).</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                  <span>Rédaction de votre dossier de financement, incluant :</span>
+                </li>
+                <ul className="pl-7 space-y-2 mt-2 mb-2">
+                  <li className="flex items-start gap-2">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                    <span>Un business plan professionnel,</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                    <span>Un pitch deck percutant, prêt à présenter à des investisseurs.</span>
+                  </li>
+                </ul>
+              </ul>
+              <div className="mb-4">
+                <p className="flex items-center gap-2 font-medium">
+                  <ArrowRight className="h-4 w-4 text-primary" />
+                  Vous souhaitez en savoir plus ?
+                </p>
+                <p className="text-white/70 text-sm">Cliquez ci-dessous pour obtenir un devis personnalisé adapté à votre projet.</p>
+              </div>
+              <Button asChild className="bg-gradient-to-r from-primary to-accent text-white">
+                <Link to="/contact">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Obtenir un devis
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+        
         <div className="mt-24 text-center">
           <h2 className="text-3xl font-bold mb-6">Prêt à structurer votre projet ?</h2>
           <p className="text-white/70 max-w-2xl mx-auto mb-8">

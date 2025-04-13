@@ -1,18 +1,21 @@
 
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import JourneyTimeline from "@/components/JourneyTimeline";
-import JourneyProgressIndicator from "@/components/journey/JourneyProgressIndicator";
 import { ChevronRight, CheckCircle, Presentation, FileText, Lightbulb, TrendingUp, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Lazy load heavy components
+const JourneyTimeline = lazy(() => import("@/components/JourneyTimeline"));
+const JourneyProgressIndicator = lazy(() => import("@/components/journey/JourneyProgressIndicator"));
 
 export default function Features() {
   const [journeyProgress, setJourneyProgress] = useState(74);
-
+  
   return (
     <div className="min-h-screen bg-black text-white">
       <Navbar />
@@ -28,8 +31,10 @@ export default function Features() {
             </p>
           </div>
           
-          {/* Progress Indicator */}
-          <JourneyProgressIndicator />
+          {/* Progress Indicator - Lazy loaded */}
+          <Suspense fallback={<Skeleton className="w-full h-20" />}>
+            <JourneyProgressIndicator />
+          </Suspense>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <div className="glass-card p-6 rounded-lg">
@@ -111,9 +116,30 @@ export default function Features() {
               <TabsTrigger value="themes">Parcours par thématique</TabsTrigger>
             </TabsList>
             <TabsContent value="timeline" className="mt-6">
-              {/* Timeline Section */}
+              {/* Timeline Section - Lazy loaded */}
               <div className="py-8 bg-gradient-to-b from-transparent to-black/40">
-                <JourneyTimeline />
+                <Suspense fallback={
+                  <div className="py-16 px-4">
+                    <div className="text-center mb-16">
+                      <Skeleton className="h-10 w-96 mx-auto mb-4" />
+                      <Skeleton className="h-6 w-2/3 mx-auto" />
+                    </div>
+                    <div className="space-y-12">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="flex">
+                          <Skeleton className="h-7 w-7 rounded-full mr-4" />
+                          <div className="w-full space-y-4">
+                            <Skeleton className="h-8 w-3/4" />
+                            <Skeleton className="h-6 w-full" />
+                            <Skeleton className="h-20 w-full" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                }>
+                  <JourneyTimeline />
+                </Suspense>
               </div>
             </TabsContent>
             <TabsContent value="themes" className="mt-6">
