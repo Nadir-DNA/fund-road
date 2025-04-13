@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { Step, JourneyProgress, UserJourneyProgress, UserSubstepProgress } from "@/types/journey";
+import { Step, JourneyProgress } from "@/types/journey";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Database } from "@/integrations/supabase/types";
@@ -64,26 +64,44 @@ export const useJourneyProgress = (steps: Step[]) => {
     
     const userId = session.session.user.id;
     
-    // Fetch step progress
-    const { data: stepProgress, error: stepError } = await supabase
-      .from('user_journey_progress')
-      .select('*')
-      .eq('user_id', userId) as { data: JourneyProgressRow[] | null; error: any };
+    try {
+      // Fetch step progress
+      const { data: stepProgress, error: stepError } = await supabase
+        .from('user_journey_progress')
+        .select('*')
+        .eq('user_id', userId) as { data: JourneyProgressRow[] | null; error: any };
+        
+      // Fetch substep progress
+      const { data: substepProgress, error: substepError } = await supabase
+        .from('user_substep_progress')
+        .select('*')
+        .eq('user_id', userId) as { data: SubstepProgressRow[] | null; error: any };
       
-    // Fetch substep progress
-    const { data: substepProgress, error: substepError } = await supabase
-      .from('user_substep_progress')
-      .select('*')
-      .eq('user_id', userId) as { data: SubstepProgressRow[] | null; error: any };
-    
-    if (stepError || substepError) {
-      console.error('Error fetching progress:', stepError || substepError);
+      if (stepError || substepError) {
+        console.error('Error fetching progress:', stepError || substepError);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Update local steps with database progress
+      const updatedSteps = updateStepsWithProgress(steps, stepProgress, substepProgress);
+      
+      setLocalSteps(updatedSteps);
+      setProgress(calculateProgress(updatedSteps));
+    } catch (error) {
+      console.error('Error in fetchUserProgress:', error);
+    } finally {
       setIsLoading(false);
-      return;
     }
-    
-    // Update local steps with database progress
-    const updatedSteps = steps.map(step => {
+  };
+  
+  // Update steps with progress data from database
+  const updateStepsWithProgress = (
+    steps: Step[], 
+    stepProgress: JourneyProgressRow[] | null, 
+    substepProgress: SubstepProgressRow[] | null
+  ): Step[] => {
+    return steps.map(step => {
       const stepData = stepProgress?.find(p => p.step_id === step.id);
       const updatedStep = {
         ...step,
@@ -105,10 +123,6 @@ export const useJourneyProgress = (steps: Step[]) => {
       
       return updatedStep;
     });
-    
-    setLocalSteps(updatedSteps);
-    setProgress(calculateProgress(updatedSteps));
-    setIsLoading(false);
   };
 
   // Update step completion status
@@ -136,32 +150,35 @@ export const useJourneyProgress = (steps: Step[]) => {
     const targetStep = updatedSteps.find(s => s.id === stepId);
     
     if (targetStep) {
-      // Update in database
-      const { error } = await supabase
-        .from('user_journey_progress')
-        .upsert({
-          user_id: userId,
-          step_id: stepId,
-          is_completed: !!targetStep.isCompleted
-        }, { onConflict: 'user_id,step_id' });
+      try {
+        // Update in database
+        const { error } = await supabase
+          .from('user_journey_progress')
+          .upsert({
+            user_id: userId,
+            step_id: stepId,
+            is_completed: !!targetStep.isCompleted
+          }, { onConflict: 'user_id,step_id' });
+          
+        if (error) {
+          throw error;
+        }
         
-      if (error) {
+        // Update progress state
+        setProgress(calculateProgress(updatedSteps));
+        
+        toast({
+          title: targetStep.isCompleted ? "Étape complétée" : "Étape rouverte",
+          description: targetStep.title
+        });
+      } catch (error: any) {
         console.error('Error updating step progress:', error);
         toast({
           title: "Erreur",
           description: "Impossible d'enregistrer votre progression.",
           variant: "destructive"
         });
-        return;
       }
-      
-      // Update progress state
-      setProgress(calculateProgress(updatedSteps));
-      
-      toast({
-        title: targetStep.isCompleted ? "Étape complétée" : "Étape rouverte",
-        description: targetStep.title
-      });
     }
   };
 
@@ -199,28 +216,31 @@ export const useJourneyProgress = (steps: Step[]) => {
     const targetSubStep = targetStep?.subSteps?.find(s => s.title === subStepTitle);
     
     if (targetStep && targetSubStep) {
-      // Update in database
-      const { error } = await supabase
-        .from('user_substep_progress')
-        .upsert({
-          user_id: userId,
-          step_id: stepId,
-          substep_title: subStepTitle,
-          is_completed: !!targetSubStep.isCompleted
-        }, { onConflict: 'user_id,step_id,substep_title' });
+      try {
+        // Update in database
+        const { error } = await supabase
+          .from('user_substep_progress')
+          .upsert({
+            user_id: userId,
+            step_id: stepId,
+            substep_title: subStepTitle,
+            is_completed: !!targetSubStep.isCompleted
+          }, { onConflict: 'user_id,step_id,substep_title' });
+          
+        if (error) {
+          throw error;
+        }
         
-      if (error) {
+        // Update progress state
+        setProgress(calculateProgress(updatedSteps));
+      } catch (error: any) {
         console.error('Error updating substep progress:', error);
         toast({
           title: "Erreur",
           description: "Impossible d'enregistrer votre progression.",
           variant: "destructive"
         });
-        return;
       }
-      
-      // Update progress state
-      setProgress(calculateProgress(updatedSteps));
     }
   };
 

@@ -1,24 +1,13 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-
-interface Category {
-  id: string;
-  name: string;
-}
+import { CategorySelect } from "./admin/CategorySelect";
 
 export function AdminResourceForm() {
   const [title, setTitle] = useState("");
@@ -27,28 +16,7 @@ export function AdminResourceForm() {
   const [categoryId, setCategoryId] = useState("");
   const [tags, setTags] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
   const { toast } = useToast();
-  
-  useEffect(() => {
-    // Fetch categories when component mounts
-    const fetchCategories = async () => {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('id, name');
-      
-      if (error) {
-        console.error('Error fetching categories:', error);
-        return;
-      }
-      
-      if (data) {
-        setCategories(data);
-      }
-    };
-    
-    fetchCategories();
-  }, []);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,47 +46,7 @@ export function AdminResourceForm() {
       
       if (resourceError) throw resourceError;
       
-      // Process tags
-      if (tags.trim()) {
-        const tagList = tags.split(',').map(tag => tag.trim());
-        
-        // Insert each tag if it doesn't exist and create resource_tag relation
-        for (const tagName of tagList) {
-          // Check if tag exists
-          let { data: existingTags, error: tagError } = await supabase
-            .from('tags')
-            .select('id')
-            .eq('name', tagName);
-          
-          if (tagError) throw tagError;
-          
-          let tagId;
-          
-          if (!existingTags || existingTags.length === 0) {
-            // Create new tag
-            const { data: newTag, error: newTagError } = await supabase
-              .from('tags')
-              .insert({ name: tagName } as Database['public']['Tables']['tags']['Insert'])
-              .select('id')
-              .single();
-            
-            if (newTagError) throw newTagError;
-            tagId = newTag?.id;
-          } else {
-            tagId = existingTags[0].id;
-          }
-          
-          // Create resource_tag relation
-          const { error: relationError } = await supabase
-            .from('resource_tags')
-            .insert({
-              resource_id: resource?.id,
-              tag_id: tagId
-            } as Database['public']['Tables']['resource_tags']['Insert']);
-          
-          if (relationError) throw relationError;
-        }
-      }
+      await processTags(tags, resource?.id);
       
       toast({
         title: "Ressource enregistrée",
@@ -127,11 +55,7 @@ export function AdminResourceForm() {
       });
       
       // Reset form
-      setTitle("");
-      setExcerpt("");
-      setContent("");
-      setCategoryId("");
-      setTags("");
+      resetForm();
     } catch (error: any) {
       toast({
         title: "Erreur",
@@ -140,6 +64,57 @@ export function AdminResourceForm() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+  
+  const resetForm = () => {
+    setTitle("");
+    setExcerpt("");
+    setContent("");
+    setCategoryId("");
+    setTags("");
+  };
+  
+  const processTags = async (tagString: string, resourceId: string | undefined) => {
+    if (!tagString.trim() || !resourceId) return;
+    
+    const tagList = tagString.split(',').map(tag => tag.trim());
+    
+    // Insert each tag if it doesn't exist and create resource_tag relation
+    for (const tagName of tagList) {
+      // Check if tag exists
+      let { data: existingTags, error: tagError } = await supabase
+        .from('tags')
+        .select('id')
+        .eq('name', tagName);
+      
+      if (tagError) throw tagError;
+      
+      let tagId;
+      
+      if (!existingTags || existingTags.length === 0) {
+        // Create new tag
+        const { data: newTag, error: newTagError } = await supabase
+          .from('tags')
+          .insert({ name: tagName } as Database['public']['Tables']['tags']['Insert'])
+          .select('id')
+          .single();
+        
+        if (newTagError) throw newTagError;
+        tagId = newTag?.id;
+      } else {
+        tagId = existingTags[0].id;
+      }
+      
+      // Create resource_tag relation
+      const { error: relationError } = await supabase
+        .from('resource_tags')
+        .insert({
+          resource_id: resourceId,
+          tag_id: tagId
+        } as Database['public']['Tables']['resource_tags']['Insert']);
+      
+      if (relationError) throw relationError;
     }
   };
   
@@ -185,24 +160,10 @@ export function AdminResourceForm() {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="category">Catégorie</Label>
-            <Select 
-              value={categoryId} 
-              onValueChange={setCategoryId}
-            >
-              <SelectTrigger className="bg-black/40 border-white/10 text-white">
-                <SelectValue placeholder="Sélectionner une catégorie" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <CategorySelect 
+            value={categoryId}
+            onChange={setCategoryId}
+          />
           
           <div className="space-y-2">
             <Label htmlFor="tags">Tags (séparés par des virgules)</Label>
