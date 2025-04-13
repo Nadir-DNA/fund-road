@@ -134,7 +134,9 @@ export default function ResourceForm({
       // Upsert (insert ou update)
       const { error } = await supabase
         .from('user_resources')
-        .upsert(resourceData, { onConflict: 'user_id,step_id,substep_title,resource_type' });
+        .upsert(resourceData, { 
+          onConflict: 'user_id,step_id,substep_title,resource_type'
+        });
         
       if (error) throw error;
       
@@ -170,14 +172,18 @@ export default function ResourceForm({
 
     // Formatter selon le type de ressource
     switch (resourceType) {
-      case "Business Model Canvas":
+      case "business_model_canvas":
         return formatBusinessModelCanvas(exportData);
-      case "SWOT Analysis":
+      case "swot_analysis":
         return formatSWOTAnalysis(exportData);
-      case "Matrice d'empathie":
+      case "empathy_map":
         return formatEmpathyMap(exportData);
-      case "Problem Solution Matrix":
+      case "problem_solution_matrix":
         return formatProblemSolutionMatrix(exportData);
+      case "mvp_selector":
+        return formatMVPSelector(exportData);
+      case "cap_table":
+        return formatCapTable(exportData);
       default:
         return exportData;
     }
@@ -189,15 +195,15 @@ export default function ResourceForm({
       title: `Business Model Canvas - ${data.projectName}`,
       date: data.exportDate,
       sections: [
-        { name: "Partenaires clés", content: data.keyPartners || "" },
-        { name: "Activités clés", content: data.keyActivities || "" },
-        { name: "Ressources clés", content: data.keyResources || "" },
-        { name: "Proposition de valeur", content: data.valueProposition || "" },
-        { name: "Relations clients", content: data.customerRelationships || "" },
+        { name: "Partenaires clés", content: data.key_partners || "" },
+        { name: "Activités clés", content: data.key_activities || "" },
+        { name: "Ressources clés", content: data.key_resources || "" },
+        { name: "Proposition de valeur", content: data.value_propositions || "" },
+        { name: "Relations clients", content: data.customer_relationships || "" },
         { name: "Canaux de distribution", content: data.channels || "" },
-        { name: "Segments clients", content: data.customerSegments || "" },
-        { name: "Structure de coûts", content: data.costStructure || "" },
-        { name: "Sources de revenus", content: data.revenueStreams || "" }
+        { name: "Segments clients", content: data.customer_segments || "" },
+        { name: "Structure de coûts", content: data.cost_structure || "" },
+        { name: "Sources de revenus", content: data.revenue_streams || "" }
       ]
     };
   };
@@ -210,7 +216,11 @@ export default function ResourceForm({
         { name: "Forces", content: data.strengths || "" },
         { name: "Faiblesses", content: data.weaknesses || "" },
         { name: "Opportunités", content: data.opportunities || "" },
-        { name: "Menaces", content: data.threats || "" }
+        { name: "Menaces", content: data.threats || "" },
+        { name: "Stratégie S-O", content: data.strategy_so || "" },
+        { name: "Stratégie S-T", content: data.strategy_st || "" },
+        { name: "Stratégie W-O", content: data.strategy_wo || "" },
+        { name: "Stratégie W-T", content: data.strategy_wt || "" }
       ]
     };
   };
@@ -220,13 +230,15 @@ export default function ResourceForm({
       title: `Matrice d'Empathie - ${data.projectName}`,
       date: data.exportDate,
       sections: [
-        { name: "Utilisateur", content: data.userPersona || "" },
-        { name: "Ce qu'il pense", content: data.thinks || "" },
+        { name: "Utilisateur", content: `${data.persona_name || ""}${data.persona_role ? ` - ${data.persona_role}` : ""}${data.persona_age ? ` (${data.persona_age} ans)` : ""}` },
+        { name: "Ce qu'il pense et dit", content: data.thinks_says || "" },
         { name: "Ce qu'il ressent", content: data.feels || "" },
-        { name: "Ce qu'il dit", content: data.says || "" },
+        { name: "Ce qu'il entend", content: data.hears || "" },
+        { name: "Ce qu'il voit", content: data.sees || "" },
         { name: "Ce qu'il fait", content: data.does || "" },
         { name: "Points douloureux", content: data.pains || "" },
-        { name: "Gains potentiels", content: data.gains || "" }
+        { name: "Gains potentiels", content: data.gains || "" },
+        { name: "Objectifs", content: data.goals || "" }
       ]
     };
   };
@@ -236,12 +248,76 @@ export default function ResourceForm({
       title: `Matrice Problème-Solution - ${data.projectName}`,
       date: data.exportDate,
       sections: [
+        { name: "Proposition de valeur", content: data.value_proposition || "" },
+        { name: "Segment cible", content: data.target_users || "" },
         { name: "Problème 1", content: data.problem1 || "" },
-        { name: "Solution 1", content: data.solution1 || "" },
+        { name: "Solution 1", content: data.problem1_solution || "" },
+        { name: "Validation 1", content: data.problem1_validation || "" },
         { name: "Problème 2", content: data.problem2 || "" },
-        { name: "Solution 2", content: data.solution2 || "" },
+        { name: "Solution 2", content: data.problem2_solution || "" },
+        { name: "Validation 2", content: data.problem2_validation || "" },
         { name: "Problème 3", content: data.problem3 || "" },
-        { name: "Solution 3", content: data.solution3 || "" }
+        { name: "Solution 3", content: data.problem3_solution || "" },
+        { name: "Validation 3", content: data.problem3_validation || "" }
+      ]
+    };
+  };
+  
+  const formatMVPSelector = (data: any) => {
+    if (!data.features) return { title: `MVP Selector - ${data.projectName || 'Mon Projet'}`, sections: [] };
+    
+    const mvpFeatures = data.features.filter((f: any) => f.inMvp);
+    const futureFeatures = data.features.filter((f: any) => !f.inMvp);
+    
+    const getPriorityLabel = (priority: string) => {
+      switch (priority) {
+        case 'must': return 'Must have';
+        case 'should': return 'Should have';
+        case 'could': return 'Could have';
+        case 'wont': return 'Won\'t have';
+        default: return '';
+      }
+    };
+    
+    return {
+      title: `Sélecteur de MVP - ${data.projectName}`,
+      date: data.exportDate,
+      sections: [
+        { 
+          name: "Fonctionnalités MVP", 
+          content: mvpFeatures.map((f: any) => 
+            `${f.name} (${getPriorityLabel(f.priority)}) - Impact: ${f.impact}, Complexité: ${f.complexity}\n${f.description}`
+          ).join('\n\n') 
+        },
+        { 
+          name: "Fonctionnalités futures", 
+          content: futureFeatures.map((f: any) => 
+            `${f.name} (${getPriorityLabel(f.priority)}) - Impact: ${f.impact}, Complexité: ${f.complexity}\n${f.description}`
+          ).join('\n\n') 
+        }
+      ]
+    };
+  };
+  
+  const formatCapTable = (data: any) => {
+    if (!data.shareholders) return { title: `Cap Table - ${data.projectName || 'Mon Projet'}`, sections: [] };
+    
+    return {
+      title: `Table de Capitalisation - ${data.projectName}`,
+      date: data.exportDate,
+      sections: [
+        {
+          name: "Actionnaires",
+          content: data.shareholders.map((s: any) => 
+            `${s.name}: ${s.shares} actions (${s.percentage}%)`
+          ).join('\n')
+        },
+        {
+          name: "Investissements",
+          content: data.investmentHistory ? data.investmentHistory.map((inv: any) => 
+            `${inv.investor}: ${inv.amount} € (${inv.shares} actions)`
+          ).join('\n') : "Aucun investissement"
+        }
       ]
     };
   };
@@ -263,61 +339,135 @@ export default function ResourceForm({
       
       // Création du contenu selon le format
       let contentType = "";
-      let fileContent = "";
       let blob;
       
       switch (format) {
-        case "pdf":
-          contentType = "application/pdf";
-          // Pour un vrai PDF, il faudrait utiliser une librairie comme jsPDF
-          // Simulons avec du JSON formaté
-          fileContent = JSON.stringify(exportData, null, 2);
-          blob = new Blob([fileContent], { type: "application/json" });
-          break;
-          
-        case "docx":
-          contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-          // Pour un vrai DOCX, il faudrait utiliser une librairie comme docx
-          // Simulons avec un texte formaté
-          fileContent = `# ${exportData.title}\nDate: ${exportData.date}\n\n`;
+        case "pdf": {
+          // Génération de PDF structuré
+          const docDefinition = {
+            content: [
+              { text: exportData.title, style: 'header' },
+              { text: `Date: ${exportData.date}`, style: 'subheader' },
+              '\n\n'
+            ],
+            styles: {
+              header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
+              subheader: { fontSize: 14, bold: true, margin: [0, 10, 0, 5] },
+              sectionHeader: { fontSize: 14, bold: true, margin: [0, 15, 0, 5] },
+              content: { fontSize: 12, margin: [0, 0, 0, 10] }
+            }
+          };
           
           if (exportData.sections) {
             exportData.sections.forEach((section: any) => {
-              fileContent += `## ${section.name}\n${section.content || 'Non renseigné'}\n\n`;
-            });
-          } else {
-            // Fallback pour les ressources sans sections définies
-            Object.entries(exportData).forEach(([key, value]) => {
-              if (key !== 'title' && key !== 'date' && key !== 'projectName' && key !== 'exportDate') {
-                fileContent += `## ${key}\n${value || 'Non renseigné'}\n\n`;
+              if (section.content) {
+                docDefinition.content.push(
+                  { text: section.name, style: 'sectionHeader' },
+                  { text: section.content, style: 'content' }
+                );
               }
             });
           }
           
-          blob = new Blob([fileContent], { type: "text/plain" });
-          break;
-          
-        case "xlsx":
-          contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-          // Pour un vrai XLSX, il faudrait utiliser une librairie comme xlsx
-          // Simulons avec du CSV
-          fileContent = `"Catégorie","Contenu"\n`;
+          // Convert to HTML for blob creation
+          let htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <title>${exportData.title}</title>
+              <meta charset="utf-8">
+              <style>
+                body { font-family: Arial, sans-serif; margin: 40px; }
+                h1 { color: #333; }
+                h2 { color: #555; margin-top: 20px; }
+                p { margin-bottom: 15px; }
+              </style>
+            </head>
+            <body>
+              <h1>${exportData.title}</h1>
+              <p><strong>Date:</strong> ${exportData.date}</p>
+          `;
           
           if (exportData.sections) {
             exportData.sections.forEach((section: any) => {
-              fileContent += `"${section.name}","${section.content || ''}"\n`;
-            });
-          } else {
-            // Fallback pour les ressources sans sections définies
-            Object.entries(exportData).forEach(([key, value]) => {
-              if (key !== 'title' && key !== 'date' && key !== 'projectName' && key !== 'exportDate') {
-                fileContent += `"${key}","${value || ''}"\n`;
+              if (section.content) {
+                htmlContent += `
+                  <h2>${section.name}</h2>
+                  <p>${section.content.replace(/\n/g, '<br>')}</p>
+                `;
               }
             });
           }
           
-          blob = new Blob([fileContent], { type: "text/csv" });
+          htmlContent += `
+            </body>
+            </html>
+          `;
+          
+          blob = new Blob([htmlContent], { type: "text/html" });
+          contentType = "text/html";
           break;
+        }
+          
+        case "docx": {
+          // Génération de DOCX structuré (simulé avec HTML)
+          let htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <title>${exportData.title}</title>
+              <meta charset="utf-8">
+              <style>
+                body { font-family: 'Cambria', serif; margin: 2.5cm; }
+                h1 { color: #000; }
+                h2 { color: #333; margin-top: 24pt; }
+                p { margin-bottom: 12pt; line-height: 1.5; }
+              </style>
+            </head>
+            <body>
+              <h1>${exportData.title}</h1>
+              <p><strong>Date:</strong> ${exportData.date}</p>
+          `;
+          
+          if (exportData.sections) {
+            exportData.sections.forEach((section: any) => {
+              if (section.content) {
+                htmlContent += `
+                  <h2>${section.name}</h2>
+                  <p>${section.content.replace(/\n/g, '<br>')}</p>
+                `;
+              }
+            });
+          }
+          
+          htmlContent += `
+            </body>
+            </html>
+          `;
+          
+          blob = new Blob([htmlContent], { type: "text/html" });
+          contentType = "text/html";
+          break;
+        }
+          
+        case "xlsx": {
+          // Génération de XLSX structuré (simulé avec CSV)
+          let csvContent = `"${exportData.title}"\n"Date: ${exportData.date}"\n\n`;
+          
+          if (exportData.sections) {
+            exportData.sections.forEach((section: any) => {
+              if (section.content) {
+                // Nettoyer les guillemets dans le contenu pour éviter les problèmes de format CSV
+                const cleanContent = section.content.replace(/"/g, '""');
+                csvContent += `"${section.name}","${cleanContent}"\n`;
+              }
+            });
+          }
+          
+          blob = new Blob([csvContent], { type: "text/csv" });
+          contentType = "text/csv";
+          break;
+        }
       }
       
       // Création du lien de téléchargement
