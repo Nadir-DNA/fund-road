@@ -16,6 +16,11 @@ import Auth from "./pages/Auth";
 import Contact from "./pages/Contact";
 import CookieConsent from "./components/CookieConsent";
 
+// DeepL API key from environment variable
+if (!import.meta.env.VITE_DEEPL_API_KEY) {
+  console.warn("DeepL API key is not set. Translations may not work properly.");
+}
+
 const queryClient = new QueryClient();
 
 const App = () => (

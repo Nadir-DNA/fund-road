@@ -1,13 +1,12 @@
 
-import { useState, lazy, Suspense } from "react";
+import { useState, lazy, Suspense, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { ChevronRight, CheckCircle, Presentation, FileText, Lightbulb, TrendingUp, Flag } from "lucide-react";
+import { ChevronRight, CheckCircle, Presentation, FileText, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Lazy load heavy components
 const JourneyTimeline = lazy(() => import("@/components/JourneyTimeline"));
@@ -15,6 +14,26 @@ const JourneyProgressIndicator = lazy(() => import("@/components/journey/Journey
 
 export default function Features() {
   const [journeyProgress, setJourneyProgress] = useState(74);
+  const { t, translateContent } = useLanguage();
+  const [dynamicContent, setDynamicContent] = useState({
+    subHeading: "",
+    ideaDesc: "",
+    docsDesc: "",
+    pitchDesc: ""
+  });
+  
+  useEffect(() => {
+    const translateDynamicContent = async () => {
+      setDynamicContent({
+        subHeading: await translateContent("De l'idéation au financement : un accompagnement complet pour structurer votre projet et maximiser vos chances de succès."),
+        ideaDesc: await translateContent("Méthodologie pour transformer votre idée en concept viable et validé par le marché."),
+        docsDesc: await translateContent("Créez tous les documents nécessaires à la structuration de votre projet entrepreneurial."),
+        pitchDesc: await translateContent("Préparez votre pitch et identifiez les sources de financement adaptées à votre projet.")
+      });
+    };
+    
+    translateDynamicContent();
+  }, [translateContent]);
   
   return (
     <div className="min-h-screen bg-black text-white">
@@ -24,10 +43,9 @@ export default function Features() {
         {/* Hero Section */}
         <section className="container mx-auto px-4 mb-16">
           <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Parcours Entrepreneur</h1>
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">{t("page.features")}</h1>
             <p className="text-xl text-white/70 max-w-3xl mx-auto">
-              De l'idéation au financement : un accompagnement complet pour structurer votre projet 
-              et maximiser vos chances de succès.
+              {t("features.subtitle") || dynamicContent.subHeading}
             </p>
           </div>
           
@@ -41,9 +59,9 @@ export default function Features() {
               <div className="bg-primary/20 w-12 h-12 rounded-full flex items-center justify-center mb-4">
                 <Lightbulb className="text-primary" />
               </div>
-              <h3 className="text-xl font-bold mb-2">De l'idée au concept</h3>
+              <h3 className="text-xl font-bold mb-2">{t("features.idea.title")}</h3>
               <p className="text-white/70 mb-4">
-                Méthodologie pour transformer votre idée en concept viable et validé par le marché.
+                {t("features.idea.description") || dynamicContent.ideaDesc}
               </p>
               <ul className="space-y-2">
                 <li className="flex items-center">
@@ -61,9 +79,9 @@ export default function Features() {
               <div className="bg-primary/20 w-12 h-12 rounded-full flex items-center justify-center mb-4">
                 <FileText className="text-primary" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Documentation business</h3>
+              <h3 className="text-xl font-bold mb-2">{t("features.docs.title")}</h3>
               <p className="text-white/70 mb-4">
-                Créez tous les documents nécessaires à la structuration de votre projet entrepreneurial.
+                {t("features.docs.description") || dynamicContent.docsDesc}
               </p>
               <ul className="space-y-2">
                 <li className="flex items-center">
@@ -81,9 +99,9 @@ export default function Features() {
               <div className="bg-primary/20 w-12 h-12 rounded-full flex items-center justify-center mb-4">
                 <Presentation className="text-primary" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Pitch et financement</h3>
+              <h3 className="text-xl font-bold mb-2">{t("features.pitch.title")}</h3>
               <p className="text-white/70 mb-4">
-                Préparez votre pitch et identifiez les sources de financement adaptées à votre projet.
+                {t("features.pitch.description") || dynamicContent.pitchDesc}
               </p>
               <ul className="space-y-2">
                 <li className="flex items-center">
@@ -101,41 +119,38 @@ export default function Features() {
           <div className="flex justify-center mt-12">
             <Button asChild className="bg-gradient-to-r from-primary to-accent text-white px-8">
               <Link to="/financing">
-                Explorer les options de financement
+                {t("button.learnMore")}
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </div>
         </section>
         
-        {/* Parcours Tabs */}
+        {/* Timeline Section - Lazy loaded */}
         <section className="container mx-auto px-4 py-8">
-          <div className="mt-6">
-            {/* Timeline Section - Lazy loaded */}
-            <div className="py-8 bg-gradient-to-b from-transparent to-black/40">
-              <Suspense fallback={
-                <div className="py-16 px-4">
-                  <div className="text-center mb-16">
-                    <Skeleton className="h-10 w-96 mx-auto mb-4" />
-                    <Skeleton className="h-6 w-2/3 mx-auto" />
-                  </div>
-                  <div className="space-y-12">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="flex">
-                        <Skeleton className="h-7 w-7 rounded-full mr-4" />
-                        <div className="w-full space-y-4">
-                          <Skeleton className="h-8 w-3/4" />
-                          <Skeleton className="h-6 w-full" />
-                          <Skeleton className="h-20 w-full" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+          <div className="py-8 bg-gradient-to-b from-transparent to-black/40">
+            <Suspense fallback={
+              <div className="py-16 px-4">
+                <div className="text-center mb-16">
+                  <Skeleton className="h-10 w-96 mx-auto mb-4" />
+                  <Skeleton className="h-6 w-2/3 mx-auto" />
                 </div>
-              }>
-                <JourneyTimeline />
-              </Suspense>
-            </div>
+                <div className="space-y-12">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex">
+                      <Skeleton className="h-7 w-7 rounded-full mr-4" />
+                      <div className="w-full space-y-4">
+                        <Skeleton className="h-8 w-3/4" />
+                        <Skeleton className="h-6 w-full" />
+                        <Skeleton className="h-20 w-full" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            }>
+              <JourneyTimeline />
+            </Suspense>
           </div>
         </section>
       </main>

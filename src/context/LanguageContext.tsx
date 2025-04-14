@@ -1,5 +1,6 @@
 
-import { createContext, useState, useContext, ReactNode } from "react";
+import { createContext, useState, useContext, ReactNode, useEffect } from "react";
+import { translateText } from "@/utils/translationUtils";
 
 type Language = "fr" | "en";
 
@@ -7,11 +8,12 @@ type LanguageContextType = {
   language: Language;
   setLanguage: (language: Language) => void;
   t: (key: string) => string;
+  translateContent: (text: string) => Promise<string>;
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-// Translations for the site
+// Base translations for the site (French is the source language)
 const translations = {
   fr: {
     // Navigation
@@ -98,13 +100,33 @@ const translations = {
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguage] = useState<Language>("fr");
+  const [dynamicTranslations, setDynamicTranslations] = useState<Record<string, string>>({});
+  
+  // Function to translate text using DeepL API
+  const translateContent = async (text: string): Promise<string> => {
+    if (language === "fr") return text; // If French (source language), no need to translate
+    try {
+      return await translateText(text, language.toUpperCase(), "FR");
+    } catch (error) {
+      console.error("Translation error:", error);
+      return text;
+    }
+  };
   
   const t = (key: string): string => {
-    return translations[language][key as keyof typeof translations[typeof language]] || key;
+    // First check if we have a static translation
+    const staticTranslation = translations[language][key as keyof typeof translations[typeof language]];
+    if (staticTranslation) return staticTranslation;
+    
+    // Then check dynamic translations
+    if (dynamicTranslations[key]) return dynamicTranslations[key];
+    
+    // If no translation is found, return the key
+    return key;
   };
   
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, translateContent }}>
       {children}
     </LanguageContext.Provider>
   );
