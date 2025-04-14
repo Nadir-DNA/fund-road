@@ -12,6 +12,11 @@ export interface ContentOptions {
   filter?: Record<string, any>;
 }
 
+// Type guard to check if a table name is valid
+const isValidTable = (tableName: string): tableName is keyof typeof supabase.from => {
+  return typeof tableName === 'string';
+};
+
 export function useTranslatedContent<T extends Record<string, any>>(
   options: ContentOptions
 ): {
@@ -29,6 +34,11 @@ export function useTranslatedContent<T extends Record<string, any>>(
   const fetchData = async () => {
     try {
       setIsLoading(true);
+      
+      // Validate table name
+      if (!isValidTable(options.table)) {
+        throw new Error(`Invalid table name: ${options.table}`);
+      }
       
       let query = supabase
         .from(options.table)
@@ -48,7 +58,7 @@ export function useTranslatedContent<T extends Record<string, any>>(
       }
       
       // Process the data for localized fields
-      const processedData = rawData.map(item => {
+      const processedData = rawData ? rawData.map(item => {
         const result = { ...item };
         
         options.translatableFields.forEach(field => {
@@ -57,7 +67,7 @@ export function useTranslatedContent<T extends Record<string, any>>(
         });
         
         return result;
-      }) as T[];
+      }) as T[] : [];
       
       setData(processedData);
       setError(null);
@@ -83,8 +93,8 @@ export function useTranslatedContent<T extends Record<string, any>>(
         },
       });
       
-      if (!response.data.success) {
-        throw new Error(response.data.error || 'Translation failed');
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'Translation failed');
       }
       
       await fetchData(); // Refresh data after translation

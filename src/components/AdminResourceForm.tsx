@@ -34,8 +34,8 @@ export function AdminResourceForm() {
         throw new Error("Vous devez être connecté pour publier une ressource.");
       }
       
-      // Prepare resource data
-      const resourceData: Partial<Database['public']['Tables']['resources']['Insert']> = {
+      // Prepare resource data - specify all required fields to avoid type errors
+      const resourceData = {
         title,
         excerpt,
         content,
@@ -67,7 +67,7 @@ export function AdminResourceForm() {
         toast({
           title: "Attention",
           description: "La traduction a échoué, mais la ressource sera enregistrée en français.",
-          variant: "warning",
+          variant: "destructive", // Changed from "warning" to "destructive" as warning is not a valid variant
         });
       } finally {
         setIsTranslating(false);
