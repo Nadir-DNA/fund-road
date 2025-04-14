@@ -21,6 +21,8 @@ const translations = {
     "nav.faq": "FAQ",
     "nav.contact": "Contact",
     "nav.login": "Se connecter",
+    "nav.signup": "Inscription",
+    "nav.logout": "Déconnexion",
     
     // Common buttons
     "button.getStarted": "Commencer",
@@ -41,6 +43,14 @@ const translations = {
     "features.pitch.title": "Pitch et financement",
     "features.pitch.description": "Préparez votre pitch et identifiez les sources de financement adaptées à votre projet.",
     
+    // Financing page
+    "financing.title": "Trouvez le Financement Adapté à Votre Projet",
+    "financing.subtitle": "Connectez-vous avec les investisseurs adaptés à votre startup, selon votre secteur, stade de développement et besoins de financement.",
+    "financing.search": "Recherche par nom, secteur ou localisation...",
+    "financing.filter": "Filtres Avancés",
+    "financing.noResults": "Aucun organisme ne correspond à vos critères.",
+    "financing.adjustSearch": "Essayez d'ajuster votre recherche ou vos filtres.",
+    
     // More translations can be added as needed
   },
   
@@ -52,6 +62,8 @@ const translations = {
     "nav.faq": "FAQ",
     "nav.contact": "Contact",
     "nav.login": "Login",
+    "nav.signup": "Sign Up",
+    "nav.logout": "Logout",
     
     // Common buttons
     "button.getStarted": "Get Started",
@@ -71,6 +83,14 @@ const translations = {
     "features.docs.description": "Create all the necessary documents to structure your entrepreneurial project.",
     "features.pitch.title": "Pitch and Financing",
     "features.pitch.description": "Prepare your pitch and identify funding sources suited to your project.",
+    
+    // Financing page
+    "financing.title": "Find the Right Financing for Your Project",
+    "financing.subtitle": "Connect with investors suited to your startup based on your sector, development stage, and funding needs.",
+    "financing.search": "Search by name, sector or location...",
+    "financing.filter": "Advanced Filters",
+    "financing.noResults": "No organizations match your criteria.",
+    "financing.adjustSearch": "Try adjusting your search or filters.",
     
     // More translations can be added as needed
   }

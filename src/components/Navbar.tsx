@@ -4,6 +4,8 @@ import { Menu, X, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import LanguageSwitcher from "./LanguageSwitcher";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -11,6 +13,7 @@ export default function Navbar() {
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -81,16 +84,16 @@ export default function Navbar() {
           
           <div className="hidden md:flex items-center space-x-8">
             <Link to="/" className="text-foreground/80 hover:text-primary transition-colors">
-              Accueil
+              {t("nav.home")}
             </Link>
             <Link to="/features" className="text-foreground/80 hover:text-primary transition-colors">
-              Parcours Entrepreneur
+              {t("nav.features")}
             </Link>
             <Link to="/faq" className="text-foreground/80 hover:text-primary transition-colors">
-              FAQ
+              {t("nav.faq")}
             </Link>
             <Link to="/financing" className="text-foreground/80 hover:text-primary transition-colors">
-              Financements
+              {t("nav.financing")}
             </Link>
             {isAdmin && (
               <Link to="/admin" className="text-foreground/80 hover:text-primary transition-colors">
@@ -99,20 +102,22 @@ export default function Navbar() {
             )}
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-4">
+            <LanguageSwitcher />
+            
             <div className="hidden md:flex space-x-2">
               {isAuthenticated ? (
                 <Button variant="outline" onClick={handleSignOut} className="text-white border-white/20 hover:bg-white/10">
                   <LogOut className="h-4 w-4 mr-2" />
-                  Déconnexion
+                  {t("nav.logout")}
                 </Button>
               ) : (
                 <>
                   <Button variant="outline" asChild className="text-white border-white/20 hover:bg-white/10">
-                    <Link to="/auth">Connexion</Link>
+                    <Link to="/auth">{t("nav.login")}</Link>
                   </Button>
                   <Button asChild className="bg-white text-black hover:bg-white/90">
-                    <Link to="/auth">Inscription</Link>
+                    <Link to="/auth">{t("nav.signup")}</Link>
                   </Button>
                 </>
               )}
@@ -131,16 +136,16 @@ export default function Navbar() {
         {isMenuOpen && (
           <div className="mt-4 md:hidden flex flex-col space-y-4 py-4 animate-fade-in">
             <Link to="/" className="text-foreground/80 hover:text-primary transition-colors">
-              Accueil
+              {t("nav.home")}
             </Link>
             <Link to="/features" className="text-foreground/80 hover:text-primary transition-colors">
-              Parcours Entrepreneur
+              {t("nav.features")}
             </Link>
             <Link to="/faq" className="text-foreground/80 hover:text-primary transition-colors">
-              FAQ
+              {t("nav.faq")}
             </Link>
             <Link to="/financing" className="text-foreground/80 hover:text-primary transition-colors">
-              Financements
+              {t("nav.financing")}
             </Link>
             {isAdmin && (
               <Link to="/admin" className="text-foreground/80 hover:text-primary transition-colors">
@@ -151,15 +156,15 @@ export default function Navbar() {
               {isAuthenticated ? (
                 <Button variant="outline" onClick={handleSignOut} className="w-full text-white border-white/20 hover:bg-white/10">
                   <LogOut className="h-4 w-4 mr-2" />
-                  Déconnexion
+                  {t("nav.logout")}
                 </Button>
               ) : (
                 <>
                   <Button variant="outline" asChild className="w-full text-white border-white/20 hover:bg-white/10">
-                    <Link to="/auth">Connexion</Link>
+                    <Link to="/auth">{t("nav.login")}</Link>
                   </Button>
                   <Button asChild className="w-full bg-white text-black hover:bg-white/90">
-                    <Link to="/auth">Inscription</Link>
+                    <Link to="/auth">{t("nav.signup")}</Link>
                   </Button>
                 </>
               )}

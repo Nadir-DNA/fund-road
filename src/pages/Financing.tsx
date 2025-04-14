@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface Investor {
   id: string;
@@ -25,6 +26,7 @@ export default function Financing() {
   const [activeTab, setActiveTab] = useState("all");
   const [investors, setInvestors] = useState<Investor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { t } = useLanguage();
   
   // Fetch investors from Supabase
   useEffect(() => {
@@ -86,14 +88,14 @@ export default function Financing() {
       
       <main className="container mx-auto px-4 pt-32 pb-20 relative z-10">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Trouvez le Financement Adapté à Votre Projet</h1>
+          <h1 className="text-4xl font-bold mb-4">{t("financing.title")}</h1>
           <p className="text-white/70 max-w-2xl mx-auto mb-8">
-            Connectez-vous avec les investisseurs adaptés à votre startup, selon votre secteur, stade de développement et besoins de financement.
+            {t("financing.subtitle")}
           </p>
           
           <div className="max-w-md mx-auto relative mb-8">
             <Input
-              placeholder="Recherche par nom, secteur ou localisation..."
+              placeholder={t("financing.search")}
               className="bg-black/40 border-white/10 pl-10 text-white"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -114,7 +116,7 @@ export default function Financing() {
           <div className="flex justify-end mb-4">
             <Button variant="outline" size="sm" className="border-white/10 text-white hover:bg-white/10">
               <Filter className="h-4 w-4 mr-2" />
-              Filtres Avancés
+              {t("financing.filter")}
             </Button>
           </div>
         </div>
@@ -169,15 +171,13 @@ export default function Financing() {
                         <span className="text-sm">{investor.location ? investor.location.join(", ") : 'International'}</span>
                       </div>
                     </div>
-                    
-                    {/* Le bouton "Voir le Profil" a été supprimé */}
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-16">
-                <p className="text-xl text-white/70">Aucun organisme ne correspond à vos critères.</p>
-                <p className="text-white/50 mt-2">Essayez d'ajuster votre recherche ou vos filtres.</p>
+                <p className="text-xl text-white/70">{t("financing.noResults")}</p>
+                <p className="text-white/50 mt-2">{t("financing.adjustSearch")}</p>
               </div>
             )}
           </>
