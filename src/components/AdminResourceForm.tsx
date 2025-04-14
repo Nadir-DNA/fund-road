@@ -8,6 +8,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { CategorySelect } from "./admin/CategorySelect";
+import { translateContentFields } from "@/utils/translationUtils";
+import { useLanguage } from "@/context/LanguageContext";
 
 export function AdminResourceForm() {
   const [title, setTitle] = useState("");
@@ -16,7 +18,9 @@ export function AdminResourceForm() {
   const [categoryId, setCategoryId] = useState("");
   const [tags, setTags] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const { toast } = useToast();
+  const { language } = useLanguage();
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,17 +34,49 @@ export function AdminResourceForm() {
         throw new Error("Vous devez être connecté pour publier une ressource.");
       }
       
+      // Prepare resource data
+      const resourceData: Partial<Database['public']['Tables']['resources']['Insert']> = {
+        title,
+        excerpt,
+        content,
+        category_id: categoryId || null,
+        author_id: user.id,
+        published: true,
+      };
+      
+      // Translate content if needed
+      setIsTranslating(true);
+      try {
+        // Translate fields: title, excerpt, content
+        const translatedData = await translateContentFields(
+          { title, excerpt, content },
+          ['title', 'excerpt', 'content'],
+          'EN',
+          'FR'
+        );
+        
+        // Add translated fields to resource data
+        Object.assign(resourceData, {
+          title_en: translatedData.title_en,
+          excerpt_en: translatedData.excerpt_en,
+          content_en: translatedData.content_en
+        });
+      } catch (translationError) {
+        console.error("Translation error:", translationError);
+        // Continue with submission even if translation fails
+        toast({
+          title: "Attention",
+          description: "La traduction a échoué, mais la ressource sera enregistrée en français.",
+          variant: "warning",
+        });
+      } finally {
+        setIsTranslating(false);
+      }
+      
       // Insert resource
       const { data: resource, error: resourceError } = await supabase
         .from('resources')
-        .insert({
-          title,
-          excerpt,
-          content,
-          category_id: categoryId || null,
-          author_id: user.id,
-          published: true,
-        } as Database['public']['Tables']['resources']['Insert'])
+        .insert(resourceData)
         .select()
         .single();
       
@@ -50,7 +86,7 @@ export function AdminResourceForm() {
       
       toast({
         title: "Ressource enregistrée",
-        description: "La ressource a été enregistrée avec succès.",
+        description: "La ressource a été enregistrée avec succès et traduite en anglais.",
         variant: "default",
       });
       
@@ -183,7 +219,11 @@ export function AdminResourceForm() {
             className="bg-primary hover:bg-primary/90"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Enregistrement..." : "Publier la ressource"}
+            {isSubmitting 
+              ? isTranslating 
+                ? "Traduction et enregistrement..." 
+                : "Enregistrement..." 
+              : "Publier la ressource"}
           </Button>
         </div>
       </form>

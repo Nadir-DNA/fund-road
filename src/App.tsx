@@ -21,6 +21,16 @@ if (!import.meta.env.VITE_DEEPL_API_KEY) {
   console.warn("DeepL API key is not set. Translations may not work properly.");
 }
 
+// Create a Supabase edge function secret with the same key
+// The edge function will use this to call DeepL API
+try {
+  supabase.functions.invoke('check-deepl-key', {
+    body: { testKey: true },
+  });
+} catch (e) {
+  console.warn("Failed to check DeepL key in edge function:", e);
+}
+
 const queryClient = new QueryClient();
 
 const App = () => (

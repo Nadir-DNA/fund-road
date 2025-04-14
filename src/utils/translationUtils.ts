@@ -59,3 +59,61 @@ export async function translateBatch(
     return texts; // Return original texts if translation fails
   }
 }
+
+// Function to translate content fields and prepare them for storage
+export async function translateContentFields(
+  content: Record<string, any>,
+  fieldsToTranslate: string[],
+  targetLang: string = "EN",
+  sourceLang: string = "FR"
+): Promise<Record<string, any>> {
+  try {
+    const translationPromises: Promise<void>[] = [];
+    const result = { ...content }; // Clone the content to avoid modifying the original
+    
+    fieldsToTranslate.forEach(field => {
+      if (content[field] && typeof content[field] === 'string') {
+        // Only translate non-empty strings
+        if (content[field].trim().length > 0) {
+          const promise = translateText(content[field], targetLang, sourceLang)
+            .then(translation => {
+              result[`${field}_${targetLang.toLowerCase()}`] = translation;
+            });
+          translationPromises.push(promise);
+        } else {
+          result[`${field}_${targetLang.toLowerCase()}`] = content[field];
+        }
+      }
+    });
+    
+    // Wait for all translations to complete
+    await Promise.all(translationPromises);
+    
+    return result;
+  } catch (error) {
+    console.error("Content translation error:", error);
+    return content; // Return original content if translation fails
+  }
+}
+
+// Function to get the appropriate field based on language
+export function getLocalizedField(
+  obj: Record<string, any>,
+  fieldName: string,
+  language: string = "fr"
+): any {
+  const langLower = language.toLowerCase();
+  
+  // If not English, or the field doesn't have a language suffix
+  if (langLower === "fr") {
+    return obj[fieldName];
+  }
+  
+  // Try to get the field with language suffix
+  const localizedField = obj[`${fieldName}_${langLower}`];
+  
+  // Return the localized version if available, otherwise the original
+  return localizedField !== undefined && localizedField !== null 
+    ? localizedField 
+    : obj[fieldName];
+}
