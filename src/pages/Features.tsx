@@ -110,69 +110,33 @@ export default function Features() {
         
         {/* Parcours Tabs */}
         <section className="container mx-auto px-4 py-8">
-          <Tabs defaultValue="timeline" className="w-full max-w-4xl mx-auto">
-            <TabsList className="grid w-full grid-cols-2 bg-black/20 border border-white/10">
-              <TabsTrigger value="timeline">Parcours chronologique</TabsTrigger>
-              <TabsTrigger value="themes">Parcours par thématique</TabsTrigger>
-            </TabsList>
-            <TabsContent value="timeline" className="mt-6">
-              {/* Timeline Section - Lazy loaded */}
-              <div className="py-8 bg-gradient-to-b from-transparent to-black/40">
-                <Suspense fallback={
-                  <div className="py-16 px-4">
-                    <div className="text-center mb-16">
-                      <Skeleton className="h-10 w-96 mx-auto mb-4" />
-                      <Skeleton className="h-6 w-2/3 mx-auto" />
-                    </div>
-                    <div className="space-y-12">
-                      {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="flex">
-                          <Skeleton className="h-7 w-7 rounded-full mr-4" />
-                          <div className="w-full space-y-4">
-                            <Skeleton className="h-8 w-3/4" />
-                            <Skeleton className="h-6 w-full" />
-                            <Skeleton className="h-20 w-full" />
-                          </div>
+          <div className="mt-6">
+            {/* Timeline Section - Lazy loaded */}
+            <div className="py-8 bg-gradient-to-b from-transparent to-black/40">
+              <Suspense fallback={
+                <div className="py-16 px-4">
+                  <div className="text-center mb-16">
+                    <Skeleton className="h-10 w-96 mx-auto mb-4" />
+                    <Skeleton className="h-6 w-2/3 mx-auto" />
+                  </div>
+                  <div className="space-y-12">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="flex">
+                        <Skeleton className="h-7 w-7 rounded-full mr-4" />
+                        <div className="w-full space-y-4">
+                          <Skeleton className="h-8 w-3/4" />
+                          <Skeleton className="h-6 w-full" />
+                          <Skeleton className="h-20 w-full" />
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                }>
-                  <JourneyTimeline />
-                </Suspense>
-              </div>
-            </TabsContent>
-            <TabsContent value="themes" className="mt-6">
-              <div className="glass-card p-6 rounded-lg text-center">
-                <h3 className="text-xl font-medium mb-4">Parcours thématiques</h3>
-                <p className="text-white/70 mb-6">
-                  Explorez nos parcours spécifiques selon vos besoins et votre secteur d'activité.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 border border-primary/30 rounded-lg">
-                    <h4 className="font-medium mb-2">Startups Tech</h4>
-                    <p className="text-sm text-white/70 mb-2">Parcours optimisé pour les startups technologiques</p>
-                    <Button variant="outline" size="sm" className="w-full">Explorer</Button>
-                  </div>
-                  <div className="p-4 border border-primary/30 rounded-lg">
-                    <h4 className="font-medium mb-2">Biotechnologies</h4>
-                    <p className="text-sm text-white/70 mb-2">Spécificités pour les projets biotech et santé</p>
-                    <Button variant="outline" size="sm" className="w-full">Explorer</Button>
-                  </div>
-                  <div className="p-4 border border-primary/30 rounded-lg">
-                    <h4 className="font-medium mb-2">E-commerce</h4>
-                    <p className="text-sm text-white/70 mb-2">Structurer votre projet de commerce en ligne</p>
-                    <Button variant="outline" size="sm" className="w-full">Explorer</Button>
-                  </div>
-                  <div className="p-4 border border-primary/30 rounded-lg">
-                    <h4 className="font-medium mb-2">Économie sociale</h4>
-                    <p className="text-sm text-white/70 mb-2">Projets à impact social et environnemental</p>
-                    <Button variant="outline" size="sm" className="w-full">Explorer</Button>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+              }>
+                <JourneyTimeline />
+              </Suspense>
+            </div>
+          </div>
         </section>
       </main>
       

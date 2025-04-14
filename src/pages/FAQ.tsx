@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -13,48 +14,48 @@ export default function FAQ() {
   const faqData = [
     {
       id: 1,
-      question: "Qu'est-ce que Efficio et comment peut-il aider mon entreprise ?",
-      answer: "Efficio est une plateforme conçue pour accompagner les entrepreneurs à chaque étape de leur parcours, de l'idéation au financement. Elle offre des outils pour structurer votre business plan, créer un pitch deck percutant et vous connecter avec des investisseurs potentiels."
+      question: "Qu'est-ce que Fund Road et comment peut-il aider mon entreprise ?",
+      answer: "Fund Road est une plateforme conçue pour accompagner les entrepreneurs à chaque étape de leur parcours, de l'idéation au financement. Elle offre des outils pour structurer votre business plan, créer un pitch deck percutant et vous connecter avec des investisseurs potentiels."
     },
     {
       id: 2,
-      question: "Comment Efficio peut-il m'aider à trouver des financements pour ma startup ?",
-      answer: "Efficio vous donne accès à un réseau étendu de fonds d'investissement, de business angels et d'autres sources de financement. Vous pouvez filtrer les investisseurs par secteur, stade de développement et ticket moyen pour trouver ceux qui correspondent le mieux à votre projet."
+      question: "Comment Fund Road peut-il m'aider à trouver des financements pour ma startup ?",
+      answer: "Fund Road vous donne accès à un réseau étendu de fonds d'investissement, de business angels et d'autres sources de financement. Vous pouvez filtrer les investisseurs par secteur, stade de développement et ticket moyen pour trouver ceux qui correspondent le mieux à votre projet."
     },
     {
       id: 3,
-      question: "Quels types de ressources et de modèles Efficio met-il à disposition ?",
-      answer: "Efficio propose une variété de ressources, incluant des guides pratiques, des modèles de business plan, des templates de pitch deck et des check-lists pour vous aider à structurer votre projet et à gagner du temps."
+      question: "Quels types de ressources et de modèles Fund Road met-il à disposition ?",
+      answer: "Fund Road propose une variété de ressources, incluant des guides pratiques, des modèles de business plan, des templates de pitch deck et des check-lists pour vous aider à structurer votre projet et à gagner du temps."
     },
     {
       id: 4,
-      question: "Comment puis-je structurer mon business plan avec Efficio ?",
-      answer: "Efficio vous guide à travers les étapes clés de la création d'un business plan solide, en vous fournissant des modèles et des exemples pour chaque section (analyse de marché, stratégie, projections financières, etc.)."
+      question: "Comment puis-je structurer mon business plan avec Fund Road ?",
+      answer: "Fund Road vous guide à travers les étapes clés de la création d'un business plan solide, en vous fournissant des modèles et des exemples pour chaque section (analyse de marché, stratégie, projections financières, etc.)."
     },
     {
       id: 5,
-      question: "Comment créer un pitch deck percutant grâce à Efficio ?",
-      answer: "Efficio met à votre disposition des templates de pitch deck conçus par des experts, ainsi que des conseils pour mettre en valeur votre projet et convaincre les investisseurs."
+      question: "Comment créer un pitch deck percutant grâce à Fund Road ?",
+      answer: "Fund Road met à votre disposition des templates de pitch deck conçus par des experts, ainsi que des conseils pour mettre en valeur votre projet et convaincre les investisseurs."
     },
     {
       id: 6,
-      question: "Efficio propose-t-il un accompagnement personnalisé pour les entrepreneurs ?",
-      answer: "Oui, Efficio offre des services d'accompagnement personnalisé, incluant des sessions de coaching avec des experts, des revues de business plan et de pitch deck, et des mises en relation avec des investisseurs."
+      question: "Fund Road propose-t-il un accompagnement personnalisé pour les entrepreneurs ?",
+      answer: "Oui, Fund Road offre des services d'accompagnement personnalisé, incluant des sessions de coaching avec des experts, des revues de business plan et de pitch deck, et des mises en relation avec des investisseurs."
     },
     {
       id: 7,
-      question: "Comment puis-je contacter l'équipe Efficio si j'ai des questions ou des problèmes ?",
-      answer: "Vous pouvez contacter l'équipe Efficio par email ou par téléphone. Nous sommes à votre disposition pour répondre à vos questions et vous aider à tirer le meilleur parti de la plateforme."
+      question: "Comment puis-je contacter l'équipe Fund Road si j'ai des questions ou des problèmes ?",
+      answer: "Vous pouvez contacter l'équipe Fund Road par email ou par téléphone. Nous sommes à votre disposition pour répondre à vos questions et vous aider à tirer le meilleur parti de la plateforme."
     },
     {
       id: 8,
-      question: "Efficio est-il adapté à tous les types de projets et de secteurs d'activité ?",
-      answer: "Efficio s'adresse à tous les entrepreneurs, quel que soit leur secteur d'activité ou le stade de développement de leur projet. La plateforme est particulièrement adaptée aux startups innovantes et aux projets à fort potentiel de croissance."
+      question: "Fund Road est-il adapté à tous les types de projets et de secteurs d'activité ?",
+      answer: "Fund Road s'adresse à tous les entrepreneurs, quel que soit leur secteur d'activité ou le stade de développement de leur projet. La plateforme est particulièrement adaptée aux startups innovantes et aux projets à fort potentiel de croissance."
     },
     {
       id: 9,
-      question: "Comment puis-je m'inscrire à Efficio et commencer à utiliser la plateforme ?",
-      answer: "L'inscription à Efficio est simple et rapide. Il vous suffit de créer un compte sur notre site web et de choisir l'abonnement qui correspond le mieux à vos besoins."
+      question: "Comment puis-je m'inscrire à Fund Road et commencer à utiliser la plateforme ?",
+      answer: "L'inscription à Fund Road est simple et rapide. Il vous suffit de créer un compte sur notre site web et de choisir l'abonnement qui correspond le mieux à vos besoins."
     },
   ];
 
@@ -74,7 +75,7 @@ export default function FAQ() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">Foire aux Questions</h1>
           <p className="text-white/70 max-w-2xl mx-auto mb-8">
-            Trouvez rapidement les réponses à vos questions sur Efficio, le parcours entrepreneurial, le financement et les ressources disponibles.
+            Trouvez rapidement les réponses à vos questions sur Fund Road, le parcours entrepreneurial, le financement et les ressources disponibles.
           </p>
 
           <div className="max-w-md mx-auto relative mb-8">
