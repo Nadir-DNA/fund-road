@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +19,7 @@ export function AdminResourceForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const { toast } = useToast();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,8 +33,8 @@ export function AdminResourceForm() {
         throw new Error("Vous devez être connecté pour publier une ressource.");
       }
       
-      // Prepare resource data - specify all required fields to avoid type errors
-      const resourceData = {
+      // Prepare resource data with required fields
+      const resourceData: Record<string, any> = {
         title,
         excerpt,
         content,
@@ -67,7 +66,7 @@ export function AdminResourceForm() {
         toast({
           title: "Attention",
           description: "La traduction a échoué, mais la ressource sera enregistrée en français.",
-          variant: "destructive", // Changed from "warning" to "destructive" as warning is not a valid variant
+          variant: "destructive",
         });
       } finally {
         setIsTranslating(false);

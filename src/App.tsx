@@ -16,21 +16,41 @@ import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import Contact from "./pages/Contact";
 import CookieConsent from "./components/CookieConsent";
+import { toast } from "./components/ui/use-toast";
 
-// DeepL API key from environment variable
-if (!import.meta.env.VITE_DEEPL_API_KEY) {
-  console.warn("DeepL API key is not set. Translations may not work properly.");
-}
+// DeepL API key check
+const checkDeeplApiKey = async () => {
+  if (!import.meta.env.VITE_DEEPL_API_KEY) {
+    console.warn("DeepL API key is not set. Translations may not work properly.");
+    return;
+  }
 
-// Create a Supabase edge function secret with the same key
-// The edge function will use this to call DeepL API
-try {
-  supabase.functions.invoke('check-deepl-key', {
-    body: { testKey: true },
-  });
-} catch (e) {
-  console.warn("Failed to check DeepL key in edge function:", e);
-}
+  try {
+    // Check if the DeepL API key is valid using the edge function
+    const { data, error } = await supabase.functions.invoke('check-deepl-key', {
+      body: { testKey: true },
+    });
+    
+    if (error || !data?.success) {
+      console.error("DeepL API key validation failed:", error || data?.message);
+      toast({
+        title: "Translation Configuration Error",
+        description: "There was an issue with the DeepL API key. Some content may not be translated properly.",
+        variant: "destructive",
+        duration: 6000,
+      });
+    } else {
+      console.log("DeepL API key verified successfully");
+    }
+  } catch (e) {
+    console.warn("Failed to check DeepL key in edge function:", e);
+  }
+};
+
+// Run the check when the app loads
+setTimeout(() => {
+  checkDeeplApiKey();
+}, 2000); // Delay to ensure other components are loaded first
 
 const queryClient = new QueryClient();
 

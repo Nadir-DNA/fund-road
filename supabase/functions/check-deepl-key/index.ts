@@ -32,7 +32,7 @@ serve(async (req) => {
       );
     }
     
-    // Test the DeepL API key with a simple request
+    // Test the DeepL API key with a simple usage request
     const testResponse = await fetch("https://api-free.deepl.com/v2/usage", {
       method: "GET",
       headers: {
@@ -55,11 +55,41 @@ serve(async (req) => {
     
     const usage = await testResponse.json();
     
+    // Test a simple translation to verify translation functionality
+    const translationResponse = await fetch("https://api-free.deepl.com/v2/translate", {
+      method: "POST",
+      headers: {
+        "Authorization": `DeepL-Auth-Key ${apiKey}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        text: "Bonjour",
+        target_lang: "EN",
+        source_lang: "FR",
+      }).toString(),
+    });
+    
+    if (!translationResponse.ok) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: `DeepL translation test failed with status ${translationResponse.status}` 
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
+    
+    const translationResult = await translationResponse.json();
+    
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "DeepL API key is valid",
-        usage 
+        message: "DeepL API key is valid and translation is working properly",
+        usage,
+        testTranslation: translationResult.translations[0].text
       }),
       { 
         status: 200,
@@ -68,7 +98,11 @@ serve(async (req) => {
     );
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: "Server error", details: error.message }),
+      JSON.stringify({ 
+        success: false,
+        error: "Server error", 
+        details: error.message
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" }

@@ -12,11 +12,6 @@ export interface ContentOptions {
   filter?: Record<string, any>;
 }
 
-// Type guard to check if a table name is valid
-const isValidTable = (tableName: string): tableName is keyof typeof supabase.from => {
-  return typeof tableName === 'string';
-};
-
 export function useTranslatedContent<T extends Record<string, any>>(
   options: ContentOptions
 ): {
@@ -35,9 +30,10 @@ export function useTranslatedContent<T extends Record<string, any>>(
     try {
       setIsLoading(true);
       
-      // Validate table name
-      if (!isValidTable(options.table)) {
-        throw new Error(`Invalid table name: ${options.table}`);
+      // Validate table exists in the schema
+      const tableExists = await validateTableExists(options.table);
+      if (!tableExists) {
+        throw new Error(`Table does not exist: ${options.table}`);
       }
       
       let query = supabase
@@ -92,8 +88,33 @@ export function useTranslatedContent<T extends Record<string, any>>(
     }
   };
 
+  // Helper function to validate if the table exists in the schema
+  const validateTableExists = async (tableName: string): Promise<boolean> => {
+    try {
+      // Check if the table exists by attempting to get its information
+      const { error } = await supabase
+        .from(tableName)
+        .select('*')
+        .limit(1);
+      
+      // If no error occurred, the table exists
+      return !error;
+    } catch {
+      return false;
+    }
+  };
+
   const translateContent = async (contentId: string) => {
     try {
+      // Check if DeepL API key is configured
+      const checkResponse = await supabase.functions.invoke('check-deepl-key', {
+        body: { checkKey: true },
+      });
+      
+      if (!checkResponse.data?.success) {
+        throw new Error("DeepL API key is not configured or invalid");
+      }
+      
       const response = await supabase.functions.invoke('translate-content', {
         body: {
           contentType: options.table,
