@@ -59,15 +59,24 @@ export function useTranslatedContent<T extends Record<string, any>>(
       
       // Process the data for localized fields
       const processedData = rawData ? rawData.map(item => {
-        const result = { ...item };
+        // Create a new object manually instead of using spread
+        const result: Record<string, any> = {};
         
+        // Copy all properties from the original item
+        for (const key in item) {
+          if (Object.prototype.hasOwnProperty.call(item, key)) {
+            result[key] = item[key];
+          }
+        }
+        
+        // Handle translatable fields
         options.translatableFields.forEach(field => {
           const localizedValue = getLocalizedField(item, field, language);
           result[field] = localizedValue;
         });
         
-        return result;
-      }) as T[] : [];
+        return result as T;
+      }) : [];
       
       setData(processedData);
       setError(null);
