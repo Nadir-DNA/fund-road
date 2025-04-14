@@ -58,7 +58,7 @@ export function useTranslatedContent<T extends Record<string, any>>(
       }
       
       // Process the data for localized fields
-      const processedData = rawData ? rawData.map(item => {
+      const processedData = rawData ? rawData.map((item: Record<string, any>) => {
         // Create a new object manually instead of using spread
         const result: Record<string, any> = {};
         
