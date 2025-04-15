@@ -47,14 +47,14 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
   
   if (isLoading) {
     return (
-      <Card className="p-4 flex items-center justify-center min-h-[300px]">
+      <Card className="p-8 flex items-center justify-center min-h-[400px]">
         <Loader2 className="animate-spin h-8 w-8 text-primary" />
       </Card>
     );
   }
   
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-[95vw] lg:max-w-5xl mx-auto">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">{title}</h3>
         <div className="flex gap-2">
@@ -85,7 +85,7 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
         value={content}
         onChange={handleContentChange}
         placeholder="Saisissez votre texte ici..."
-        className="min-h-[300px] font-mono"
+        className="min-h-[450px] font-mono"
       />
       
       <div className="text-xs text-muted-foreground">

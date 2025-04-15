@@ -11,10 +11,10 @@ export default function HeroSection() {
     <section className="py-24 md:py-32 bg-black">
       <div className="container mx-auto px-4 text-center">
         <h1 className="text-4xl md:text-5xl font-bold mb-6">
-          De l'idée au financement : votre parcours entrepreneurial
+          Accompagnement entrepreneurial de l'idée au financement
         </h1>
         <p className="text-xl text-white/70 max-w-3xl mx-auto mb-12">
-          Structurez votre projet étape par étape et maximisez vos chances de réussite avec notre plateforme dédiée aux entrepreneurs.
+          Structurez votre projet et trouvez vos financements. Un parcours guidé pour vous accompagner à chaque étape clé de votre aventure entrepreneuriale, avec des ressources adaptées à chaque phase.
         </p>
         <div className="flex justify-center gap-4">
           <Button asChild className="bg-gradient-to-r from-primary to-accent text-white px-8 py-6 text-lg">

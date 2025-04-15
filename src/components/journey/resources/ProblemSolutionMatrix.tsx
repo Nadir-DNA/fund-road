@@ -4,6 +4,7 @@ import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 
 interface ProblemSolutionMatrixProps {
   stepId: number;
@@ -43,8 +44,8 @@ export default function ProblemSolutionMatrix({ stepId, substepTitle }: ProblemS
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">
-        <div>
-          <Label className="text-base font-medium">Proposition de valeur globale</Label>
+        <div className="p-4 border rounded-md bg-primary/5">
+          <Label className="text-base font-medium mb-3 block">Proposition de valeur globale</Label>
           <Textarea 
             placeholder="Comment résumeriez-vous votre proposition de valeur en une phrase?"
             className="mt-2"
@@ -53,8 +54,8 @@ export default function ProblemSolutionMatrix({ stepId, substepTitle }: ProblemS
           />
         </div>
 
-        <div>
-          <Label className="text-base font-medium">Segment d'utilisateurs ciblé</Label>
+        <div className="p-4 border rounded-md bg-blue-50/10">
+          <Label className="text-base font-medium mb-3 block">Segment d'utilisateurs ciblé</Label>
           <Textarea 
             placeholder="Décrivez précisément le segment d'utilisateurs visé par votre solution"
             className="mt-2"
@@ -63,96 +64,110 @@ export default function ProblemSolutionMatrix({ stepId, substepTitle }: ProblemS
           />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          <div className="md:col-span-3">
-            <h3 className="font-semibold">Problèmes et solutions</h3>
-            <p className="text-sm text-muted-foreground mb-2">
-              Identifiez les 3 principaux problèmes et les solutions correspondantes
-            </p>
-          </div>
+        <div className="space-y-8 mt-6">
+          <h3 className="font-medium text-lg">Problèmes et solutions</h3>
+          
+          {/* Premier problème */}
+          <Card className="p-5 bg-amber-50/5">
+            <h4 className="font-medium mb-4 border-l-4 border-amber-500 pl-3">Problème 1</h4>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm mb-1 block">Description du problème</Label>
+                <Textarea 
+                  placeholder="Premier problème identifié"
+                  className="min-h-[100px]"
+                  value={formData.problem1}
+                  onChange={(e) => handleChange('problem1', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-sm mb-1 block">Solution proposée</Label>
+                <Textarea 
+                  placeholder="Solution au premier problème"
+                  className="min-h-[100px]"
+                  value={formData.problem1_solution}
+                  onChange={(e) => handleChange('problem1_solution', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-sm mb-1 block">Méthode de validation</Label>
+                <Textarea 
+                  placeholder="Comment valider cette solution?"
+                  className="min-h-[80px]"
+                  value={formData.problem1_validation}
+                  onChange={(e) => handleChange('problem1_validation', e.target.value)}
+                />
+              </div>
+            </div>
+          </Card>
 
-          {/* Headers */}
-          <div className="hidden md:block font-medium">Problème</div>
-          <div className="hidden md:block font-medium">Solution proposée</div>
-          <div className="hidden md:block font-medium">Méthode de validation</div>
+          {/* Deuxième problème */}
+          <Card className="p-5 bg-amber-50/5">
+            <h4 className="font-medium mb-4 border-l-4 border-amber-500 pl-3">Problème 2</h4>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm mb-1 block">Description du problème</Label>
+                <Textarea 
+                  placeholder="Deuxième problème identifié"
+                  className="min-h-[100px]"
+                  value={formData.problem2}
+                  onChange={(e) => handleChange('problem2', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-sm mb-1 block">Solution proposée</Label>
+                <Textarea 
+                  placeholder="Solution au deuxième problème"
+                  className="min-h-[100px]"
+                  value={formData.problem2_solution}
+                  onChange={(e) => handleChange('problem2_solution', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-sm mb-1 block">Méthode de validation</Label>
+                <Textarea 
+                  placeholder="Comment valider cette solution?"
+                  className="min-h-[80px]"
+                  value={formData.problem2_validation}
+                  onChange={(e) => handleChange('problem2_validation', e.target.value)}
+                />
+              </div>
+            </div>
+          </Card>
 
-          {/* Row 1 */}
-          <div>
-            <Label className="md:hidden mb-1 block">Problème 1</Label>
-            <Textarea 
-              placeholder="Premier problème identifié"
-              value={formData.problem1}
-              onChange={(e) => handleChange('problem1', e.target.value)}
-            />
-          </div>
-          <div>
-            <Label className="md:hidden mb-1 block">Solution 1</Label>
-            <Textarea 
-              placeholder="Solution au premier problème"
-              value={formData.problem1_solution}
-              onChange={(e) => handleChange('problem1_solution', e.target.value)}
-            />
-          </div>
-          <div>
-            <Label className="md:hidden mb-1 block">Validation 1</Label>
-            <Textarea 
-              placeholder="Comment valider cette solution?"
-              value={formData.problem1_validation}
-              onChange={(e) => handleChange('problem1_validation', e.target.value)}
-            />
-          </div>
-
-          {/* Row 2 */}
-          <div>
-            <Label className="md:hidden mb-1 block">Problème 2</Label>
-            <Textarea 
-              placeholder="Deuxième problème identifié"
-              value={formData.problem2}
-              onChange={(e) => handleChange('problem2', e.target.value)}
-            />
-          </div>
-          <div>
-            <Label className="md:hidden mb-1 block">Solution 2</Label>
-            <Textarea 
-              placeholder="Solution au deuxième problème"
-              value={formData.problem2_solution}
-              onChange={(e) => handleChange('problem2_solution', e.target.value)}
-            />
-          </div>
-          <div>
-            <Label className="md:hidden mb-1 block">Validation 2</Label>
-            <Textarea 
-              placeholder="Comment valider cette solution?"
-              value={formData.problem2_validation}
-              onChange={(e) => handleChange('problem2_validation', e.target.value)}
-            />
-          </div>
-
-          {/* Row 3 */}
-          <div>
-            <Label className="md:hidden mb-1 block">Problème 3</Label>
-            <Textarea 
-              placeholder="Troisième problème identifié"
-              value={formData.problem3}
-              onChange={(e) => handleChange('problem3', e.target.value)}
-            />
-          </div>
-          <div>
-            <Label className="md:hidden mb-1 block">Solution 3</Label>
-            <Textarea 
-              placeholder="Solution au troisième problème"
-              value={formData.problem3_solution}
-              onChange={(e) => handleChange('problem3_solution', e.target.value)}
-            />
-          </div>
-          <div>
-            <Label className="md:hidden mb-1 block">Validation 3</Label>
-            <Textarea 
-              placeholder="Comment valider cette solution?"
-              value={formData.problem3_validation}
-              onChange={(e) => handleChange('problem3_validation', e.target.value)}
-            />
-          </div>
+          {/* Troisième problème */}
+          <Card className="p-5 bg-amber-50/5">
+            <h4 className="font-medium mb-4 border-l-4 border-amber-500 pl-3">Problème 3</h4>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm mb-1 block">Description du problème</Label>
+                <Textarea 
+                  placeholder="Troisième problème identifié"
+                  className="min-h-[100px]"
+                  value={formData.problem3}
+                  onChange={(e) => handleChange('problem3', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-sm mb-1 block">Solution proposée</Label>
+                <Textarea 
+                  placeholder="Solution au troisième problème"
+                  className="min-h-[100px]"
+                  value={formData.problem3_solution}
+                  onChange={(e) => handleChange('problem3_solution', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-sm mb-1 block">Méthode de validation</Label>
+                <Textarea 
+                  placeholder="Comment valider cette solution?"
+                  className="min-h-[80px]"
+                  value={formData.problem3_validation}
+                  onChange={(e) => handleChange('problem3_validation', e.target.value)}
+                />
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
     </ResourceForm>

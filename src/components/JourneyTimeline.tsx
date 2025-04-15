@@ -98,7 +98,7 @@ export default function JourneyTimeline() {
 
       {/* Detailed Information Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto glass-card">
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto glass-card p-6">
           {selectedStep && (
             <StepDetail step={selectedStep} selectedSubStep={selectedSubStep} />
           )}

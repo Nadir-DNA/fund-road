@@ -46,13 +46,13 @@ export default function ResourceForm({
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <p className="text-sm text-muted-foreground">{description}</p>
+    <Card className="w-full max-w-[95vw] lg:max-w-5xl">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl md:text-2xl">{title}</CardTitle>
+        <p className="text-sm text-muted-foreground mt-1">{description}</p>
       </CardHeader>
       
-      <CardContent>
+      <CardContent className="pt-4 pb-6">
         <FormContent 
           children={children}
           formData={formData}
@@ -61,7 +61,7 @@ export default function ResourceForm({
         />
       </CardContent>
       
-      <CardFooter className="flex justify-between border-t p-4 pt-4 mt-4">
+      <CardFooter className="flex flex-col sm:flex-row justify-between border-t p-4 pt-4 mt-2 gap-4">
         <SaveButton isSaving={isSaving} handleSave={handleSave} />
         
         <ExportPanel 
