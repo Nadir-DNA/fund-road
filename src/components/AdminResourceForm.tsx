@@ -11,6 +11,19 @@ import { CategorySelect } from "./admin/CategorySelect";
 import { translateContentFields } from "@/utils/translationUtils";
 import { useLanguage } from "@/context/LanguageContext";
 
+// Define an interface for the resource data that includes the translated fields
+interface ResourceData {
+  title: string;
+  excerpt: string;
+  content: string;
+  category_id: string | null;
+  author_id: string;
+  published: boolean;
+  title_en?: string;
+  excerpt_en?: string;
+  content_en?: string;
+}
+
 export function AdminResourceForm() {
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
@@ -35,7 +48,7 @@ export function AdminResourceForm() {
       }
       
       // Prepare resource data with required fields
-      const resourceData = {
+      const resourceData: ResourceData = {
         title,
         excerpt,
         content,
