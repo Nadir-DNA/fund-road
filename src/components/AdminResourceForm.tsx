@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +35,7 @@ export function AdminResourceForm() {
       }
       
       // Prepare resource data with required fields
-      const resourceData: Record<string, any> = {
+      const resourceData = {
         title,
         excerpt,
         content,
@@ -55,11 +56,9 @@ export function AdminResourceForm() {
         );
         
         // Add translated fields to resource data
-        Object.assign(resourceData, {
-          title_en: translatedData.title_en,
-          excerpt_en: translatedData.excerpt_en,
-          content_en: translatedData.content_en
-        });
+        if (translatedData.title_en) resourceData.title_en = translatedData.title_en;
+        if (translatedData.excerpt_en) resourceData.excerpt_en = translatedData.excerpt_en;
+        if (translatedData.content_en) resourceData.content_en = translatedData.content_en;
       } catch (translationError) {
         console.error("Translation error:", translationError);
         // Continue with submission even if translation fails
@@ -75,7 +74,7 @@ export function AdminResourceForm() {
       // Insert resource
       const { data: resource, error: resourceError } = await supabase
         .from('resources')
-        .insert(resourceData)
+        .insert(resourceData as Database['public']['Tables']['resources']['Insert'])
         .select()
         .single();
       
