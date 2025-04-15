@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import ResourceManager from "./ResourceManager";
 import OverviewTab from "./OverviewTab";
 import HelpTab from "./HelpTab";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface StepDetailProps {
   step: Step;
@@ -17,6 +19,26 @@ interface StepDetailProps {
 export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
   const [activeTab, setActiveTab] = useState<string>(selectedSubStep ? "resources" : "overview");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  
+  // Fetch course content for the selected step/substep
+  const { data: courseContent, isLoading: isLoadingContent } = useQuery({
+    queryKey: ['courseContent', step.id, selectedSubStep?.title],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('entrepreneur_resources')
+        .select('course_content')
+        .eq('step_id', step.id)
+        .eq('substep_title', selectedSubStep ? selectedSubStep.title : step.title)
+        .single();
+        
+      if (error) {
+        console.error("Error fetching course content:", error);
+        return "";
+      }
+      
+      return data?.course_content || "";
+    }
+  });
 
   return (
     <div className="px-2 w-full">
@@ -45,8 +67,8 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
           <OverviewTab 
             step={step} 
             selectedSubStep={selectedSubStep} 
-            isLoading={isLoading}
-            courseContent=""
+            isLoading={isLoadingContent}
+            courseContent={courseContent || ""}
           />
         </TabsContent>
         

@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { Step } from "@/types/journey";
 import { Card, CardContent } from "@/components/ui/card";

@@ -1,6 +1,7 @@
 
 import { Step, SubStep } from "@/types/journey";
 import CourseContentDisplay from "./CourseContentDisplay";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface OverviewTabProps {
   step: Step;
@@ -9,16 +10,23 @@ interface OverviewTabProps {
   courseContent: string;
 }
 
-export default function OverviewTab({ step, selectedSubStep, isLoading }: OverviewTabProps) {
+export default function OverviewTab({ step, selectedSubStep, isLoading, courseContent }: OverviewTabProps) {
   return (
     <div className="py-4 w-full">
-      <CourseContentDisplay 
-        stepId={step.id} 
-        substepTitle={selectedSubStep?.title || null} 
-        stepTitle={step.title}
-      />
-      
-      {!isLoading && !selectedSubStep && (
+      {isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-8 w-3/4" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+        </div>
+      ) : courseContent ? (
+        <CourseContentDisplay 
+          stepId={step.id} 
+          substepTitle={selectedSubStep?.title || null} 
+          stepTitle={step.title}
+        />
+      ) : (
         <div className="space-y-6 max-w-full">
           <div>
             <h3 className="text-lg font-semibold mb-2">Description détaillée</h3>

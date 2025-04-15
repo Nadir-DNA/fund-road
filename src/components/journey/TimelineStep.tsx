@@ -26,7 +26,7 @@ export default function TimelineStep({
   onToggleSubStepCompletion
 }: TimelineStepProps) {
   return (
-    <div className="relative flex">
+    <div className="relative flex" data-step-id={step.id}>
       {/* Timeline connector - Fixed positioning to not overlap with checkboxes */}
       {index < stepsLength - 1 && (
         <div className="absolute top-7 left-3.5 bottom-0 w-0.5 bg-border z-0" />

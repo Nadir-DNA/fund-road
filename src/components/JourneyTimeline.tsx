@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Step, SubStep } from "@/types/journey";
 import TimelineStep from "./journey/TimelineStep";
@@ -7,11 +7,15 @@ import StepDetail from "./journey/StepDetail";
 import { journeySteps } from "@/data/journeySteps";
 import { useJourneyProgress } from "@/hooks/useJourneyProgress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 export default function JourneyTimeline() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStep, setSelectedStep] = useState<Step | null>(null);
   const [selectedSubStep, setSelectedSubStep] = useState<SubStep | null>(null);
+  const navigate = useNavigate();
   
   const {
     localSteps,
@@ -19,6 +23,25 @@ export default function JourneyTimeline() {
     toggleSubStepCompletion,
     isLoading
   } = useJourneyProgress(journeySteps);
+  
+  // Check authentication when component mounts
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: session } = await supabase.auth.getSession();
+      
+      if (!session?.session) {
+        toast({
+          title: "Connexion requise",
+          description: "Vous devez être connecté pour accéder à votre parcours personnalisé.",
+          variant: "destructive",
+          duration: 5000,
+        });
+        navigate("/auth");
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
 
   const handleStepClick = (step: Step) => {
     setSelectedStep(step);
@@ -32,6 +55,7 @@ export default function JourneyTimeline() {
     setDialogOpen(true);
   };
 
+  // Show loading state while fetching progress
   if (isLoading) {
     return (
       <div className="py-16 px-4">
@@ -56,15 +80,7 @@ export default function JourneyTimeline() {
   }
 
   return (
-    <div className="py-16 px-4">
-      <div className="text-center mb-16">
-        <h2 className="text-3xl font-bold mb-4">Votre Parcours Entrepreneurial</h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Suivez ces 10 étapes pour naviguer du concept initial jusqu'à l'obtention de financement,
-          avec des ressources dédiées à chaque phase de votre projet.
-        </p>
-      </div>
-
+    <div className="py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {localSteps.map((step, index) => (
           <TimelineStep

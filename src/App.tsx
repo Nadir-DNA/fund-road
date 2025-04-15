@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import Contact from "./pages/Contact";
+import Roadmap from "./pages/Roadmap";
 import CookieConsent from "./components/CookieConsent";
 import { toast } from "./components/ui/use-toast";
 
@@ -67,6 +68,7 @@ const App = () => (
               <Route path="/features" element={<Features />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/financing" element={<Financing />} />
+              <Route path="/roadmap" element={<Roadmap />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/contact" element={<Contact />} />
