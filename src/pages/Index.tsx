@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -25,41 +26,43 @@ export default function Index() {
     return () => clearTimeout(timer);
   }, []);
   
+  // Définition des ressources avec des titres et descriptions statiques
   const resources = [
     {
-      title: t("index.resources.idea.title"),
-      description: t("index.resources.idea.description"),
+      title: "Idéation & Validation",
+      description: "Méthodologie pour transformer votre idée en concept viable et validé par le marché.",
       icon: <Lightbulb className="h-5 w-5" />,
       href: "/features",
     },
     {
-      title: t("index.resources.docs.title"),
-      description: t("index.resources.docs.description"),
+      title: "Documentation & Structure",
+      description: "Créez tous les documents nécessaires à la structuration de votre projet entrepreneurial.",
       icon: <FileText className="h-5 w-5" />,
       href: "/features",
     },
     {
-      title: t("index.resources.pitch.title"),
-      description: t("index.resources.pitch.description"),
+      title: "Pitch & Financement",
+      description: "Préparez votre pitch et identifiez les sources de financement adaptées à votre projet.",
       icon: <Presentation className="h-5 w-5" />,
       href: "/features",
     },
   ];
   
+  // Définition des tâches avec des textes statiques
   const tasks = [
     {
       id: "1",
-      text: t("index.tasks.task1"),
+      text: "Valider mon idée de business",
       completed: true,
     },
     {
       id: "2",
-      text: t("index.tasks.task2"),
+      text: "Créer mon Business Model Canvas",
       completed: false,
     },
     {
       id: "3",
-      text: t("index.tasks.task3"),
+      text: "Réaliser mon Business Plan",
       completed: false,
     },
   ];
@@ -132,9 +135,6 @@ export default function Index() {
     </section>
   );
   
-  // Insert the roadmap section into the page (this will vary based on your current Index.tsx structure)
-  // This is just a placeholder - you'll need to adjust based on your actual Index page layout
-  
   return (
     <div className="min-h-screen bg-black text-white">
       <Navbar />
@@ -143,15 +143,15 @@ export default function Index() {
       <section className="py-24 md:py-32 bg-black">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            {t("index.hero.title")}
+            De l'idée au financement : votre parcours entrepreneurial
           </h1>
           <p className="text-xl text-white/70 max-w-3xl mx-auto mb-12">
-            {t("index.hero.subtitle")}
+            Structurez votre projet étape par étape et maximisez vos chances de réussite avec notre plateforme dédiée aux entrepreneurs.
           </p>
           <div className="flex justify-center gap-4">
             <Button asChild className="bg-gradient-to-r from-primary to-accent text-white px-8 py-6 text-lg">
               <Link to="/features" className="flex items-center">
-                {t("button.learnMore")}
+                En savoir plus
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -165,9 +165,9 @@ export default function Index() {
       <section className="py-16 bg-black">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">{t("index.features.title")}</h2>
+            <h2 className="text-3xl font-bold mb-4">Fonctionnalités principales</h2>
             <p className="text-xl text-white/70 max-w-3xl mx-auto">
-              {t("index.features.subtitle")}
+              Découvrez les outils et ressources disponibles pour chaque étape de votre projet
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -182,39 +182,39 @@ export default function Index() {
       <section className="py-16 bg-black">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">{t("index.dashboard.title")}</h2>
+            <h2 className="text-3xl font-bold mb-4">Tableau de bord personnalisé</h2>
             <p className="text-xl text-white/70 max-w-3xl mx-auto">
-              {t("index.dashboard.subtitle")}
+              Suivez votre progression et accédez à tous vos projets en un coup d'œil
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <TaskCard
-              title={t("index.dashboard.taskCard.title")}
-              subtitle={t("index.dashboard.taskCard.subtitle")}
+              title="Tâches à compléter"
+              subtitle="Avancement du projet"
               tasks={tasks}
             />
             <TaskCard
-              title={t("index.dashboard.progressCard.title")}
+              title="Progression globale"
               chartData={{
                 percentage: 75,
-                label: t("index.dashboard.progressCard.label"),
+                label: "Parcours entrepreneurial",
                 secondaryStats: [
                   {
-                    label: t("index.dashboard.progressCard.stats.completed"),
+                    label: "Étapes complétées",
                     value: "12",
                   },
                   {
-                    label: t("index.dashboard.progressCard.stats.remaining"),
+                    label: "Étapes restantes",
                     value: "4",
                   },
                 ],
               }}
             />
             <TaskCard
-              title={t("index.dashboard.projectCard.title")}
+              title="Vos projets"
               stats={{
                 value: "3",
-                label: t("index.dashboard.projectCard.label"),
+                label: "Projets actifs",
               }}
             />
           </div>

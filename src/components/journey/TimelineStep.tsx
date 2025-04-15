@@ -25,6 +25,16 @@ export default function TimelineStep({
   onToggleStepCompletion,
   onToggleSubStepCompletion
 }: TimelineStepProps) {
+  // Fonction pour vérifier si une chaîne commence par "index."
+  const isTranslationKey = (text: string) => {
+    return text && typeof text === 'string' && text.startsWith('index.');
+  };
+
+  // Fonction pour obtenir un texte de remplacement si nécessaire
+  const getDisplayText = (text: string, fallback: string) => {
+    return isTranslationKey(text) ? fallback : text;
+  };
+
   return (
     <div className="relative flex" data-step-id={step.id}>
       {/* Timeline connector - Fixed positioning to not overlap with checkboxes */}
@@ -66,9 +76,11 @@ export default function TimelineStep({
                 step.isCompleted && "line-through decoration-primary/70"
               )}
             >
-              {step.title}
+              {getDisplayText(step.title, `Étape ${index + 1}`)}
             </button>
-            <p className="text-muted-foreground mb-4">{step.description}</p>
+            <p className="text-muted-foreground mb-4">
+              {getDisplayText(step.description, `Description de l'étape ${index + 1}`)}
+            </p>
             
             {/* Sub-steps */}
             {step.subSteps && (
@@ -76,7 +88,11 @@ export default function TimelineStep({
                 {step.subSteps.map((subStep, idx) => (
                   <SubStepItem 
                     key={idx} 
-                    subStep={subStep} 
+                    subStep={{
+                      ...subStep,
+                      title: getDisplayText(subStep.title, `Sous-étape ${idx + 1}`),
+                      description: getDisplayText(subStep.description, `Description de la sous-étape ${idx + 1}`)
+                    }}
                     stepId={step.id}
                     onToggleCompletion={onToggleSubStepCompletion}
                     onClick={() => onSubStepClick(step, subStep)}
