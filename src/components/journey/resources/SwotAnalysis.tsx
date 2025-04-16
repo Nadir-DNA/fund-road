@@ -1,8 +1,10 @@
+
 import { useState } from "react";
 import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import ExportPanel from "../resource-form/ExportPanel";
 
 interface SwotAnalysisProps {
   stepId: number;
@@ -16,6 +18,7 @@ export default function SwotAnalysis({ stepId, substepTitle }: SwotAnalysisProps
     opportunities: "",
     threats: ""
   });
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -30,6 +33,14 @@ export default function SwotAnalysis({ stepId, substepTitle }: SwotAnalysisProps
       description="Identifiez vos forces, faiblesses, opportunités et menaces."
       defaultValues={formData}
       onDataSaved={data => setFormData(data)}
+      exportPanel={
+        <ExportPanel 
+          formData={formData}
+          resourceType="swot_analysis"
+          isExporting={isExporting}
+          setIsExporting={setIsExporting}
+        />
+      }
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="p-4"><Label>Forces</Label>

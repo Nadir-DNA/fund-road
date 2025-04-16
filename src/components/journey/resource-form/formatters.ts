@@ -33,11 +33,20 @@ export const formatSWOTAnalysis = (data: any): FormattedExport => {
       { name: "Forces", content: data.strengths || "" },
       { name: "Faiblesses", content: data.weaknesses || "" },
       { name: "Opportunités", content: data.opportunities || "" },
-      { name: "Menaces", content: data.threats || "" },
-      { name: "Stratégie S-O", content: data.strategy_so || "" },
-      { name: "Stratégie S-T", content: data.strategy_st || "" },
-      { name: "Stratégie W-O", content: data.strategy_wo || "" },
-      { name: "Stratégie W-T", content: data.strategy_wt || "" }
+      { name: "Menaces", content: data.threats || "" }
+    ]
+  };
+};
+
+export const formatLegalStatusComparison = (data: any): FormattedExport => {
+  return {
+    title: `Comparaison des Statuts Juridiques - ${data.projectName}`,
+    date: data.exportDate,
+    sections: [
+      { name: "SAS", content: data.sas || "" },
+      { name: "SARL", content: data.sarl || "" },
+      { name: "Micro-entreprise", content: data.micro || "" },
+      { name: "Conclusion", content: data.conclusion || "" }
     ]
   };
 };
@@ -162,6 +171,8 @@ export const formatDataForExport = (data: any, format: "pdf" | "docx" | "xlsx", 
       return formatMVPSelector(exportData);
     case "cap_table":
       return formatCapTable(exportData);
+    case "legal_status_comparison":
+      return formatLegalStatusComparison(exportData);
     default:
       return {
         title: `${resourceType} - ${projectName}`,

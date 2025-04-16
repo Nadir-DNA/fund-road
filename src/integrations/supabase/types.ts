@@ -29,43 +29,49 @@ export type Database = {
       }
       entrepreneur_resources: {
         Row: {
+          component_name: string | null
           course_content: string | null
           created_at: string | null
           description: string | null
           file_url: string | null
           id: string
           is_mandatory: boolean | null
+          origin: string | null
           resource_type: string
           step_id: number
-          substep_id: string
+          substep_index: string
           substep_title: string
           title: string
           updated_at: string | null
         }
         Insert: {
+          component_name?: string | null
           course_content?: string | null
           created_at?: string | null
           description?: string | null
           file_url?: string | null
           id?: string
           is_mandatory?: boolean | null
+          origin?: string | null
           resource_type: string
           step_id: number
-          substep_id: string
+          substep_index: string
           substep_title: string
           title: string
           updated_at?: string | null
         }
         Update: {
+          component_name?: string | null
           course_content?: string | null
           created_at?: string | null
           description?: string | null
           file_url?: string | null
           id?: string
           is_mandatory?: boolean | null
+          origin?: string | null
           resource_type?: string
           step_id?: number
-          substep_id?: string
+          substep_index?: string
           substep_title?: string
           title?: string
           updated_at?: string | null

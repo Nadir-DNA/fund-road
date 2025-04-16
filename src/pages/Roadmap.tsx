@@ -124,10 +124,10 @@ export default function Roadmap() {
         <section className="container mx-auto px-4 py-8">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              {t("roadmap.title") || "Votre Parcours Entrepreneurial"}
+              Parcours Entrepreneurial
             </h1>
             <p className="text-xl text-white/70 max-w-3xl mx-auto">
-              {t("roadmap.subtitle") || "Suivez ces étapes pour transformer votre idée en entreprise, avec des ressources dédiées à chaque phase."}
+              Suivez ces étapes pour transformer votre idée en entreprise, avec des ressources dédiées à chaque phase.
             </p>
             
             {!isLoading && lastVisitedStep ? (

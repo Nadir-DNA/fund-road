@@ -102,9 +102,6 @@ export default function Navbar() {
             <Link to="/" className="text-foreground/80 hover:text-primary transition-colors">
               {t("nav.home")}
             </Link>
-            <Link to="/features" className="text-foreground/80 hover:text-primary transition-colors">
-              {t("nav.features")}
-            </Link>
             <Link to="/faq" className="text-foreground/80 hover:text-primary transition-colors">
               {t("nav.faq")}
             </Link>
@@ -156,9 +153,6 @@ export default function Navbar() {
           <div className="mt-4 md:hidden flex flex-col space-y-4 py-4 animate-fade-in">
             <Link to="/" className="text-foreground/80 hover:text-primary transition-colors">
               {t("nav.home")}
-            </Link>
-            <Link to="/features" className="text-foreground/80 hover:text-primary transition-colors">
-              {t("nav.features")}
             </Link>
             <Link to="/faq" className="text-foreground/80 hover:text-primary transition-colors">
               {t("nav.faq")}
