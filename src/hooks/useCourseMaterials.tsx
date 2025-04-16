@@ -137,12 +137,16 @@ export const useCourseMaterials = (stepId: number, substepTitle: string | null) 
         throw new Error("Vous n'avez pas les permissions nécessaires");
       }
       
+      // Generate a substep_id if not provided (using substep_title as a basis)
+      const substep_id = resourceData.substep_title?.toLowerCase().replace(/\s+/g, '-') || 'default';
+      
       // Créer ou mettre à jour le modèle de ressource
       const { data, error } = await supabase
         .from('entrepreneur_resources')
         .upsert({
           step_id: resourceData.step_id,
           substep_title: resourceData.substep_title,
+          substep_id: substep_id, // Add the required substep_id field
           title: resourceData.title,
           description: resourceData.description,
           resource_type: resourceData.resource_type,
