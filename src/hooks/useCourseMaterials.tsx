@@ -84,7 +84,7 @@ export const useCourseMaterials = (stepId: number, substepTitle: string | null) 
         .eq('user_id', userId)
         .eq('step_id', stepId)
         .eq('substep_title', substepTitle)
-        .single();
+        .maybeSingle();
         
       if (error && error.code !== 'PGRST116') { // Not found error
         throw error;
@@ -137,19 +137,19 @@ export const useCourseMaterials = (stepId: number, substepTitle: string | null) 
         throw new Error("Vous n'avez pas les permissions nécessaires");
       }
       
-      // Generate a substep_id if not provided (using substep_title as a basis)
+      // Generate a substep_id using substep_title as a basis
       const substep_id = resourceData.substep_title?.toLowerCase().replace(/\s+/g, '-') || 'default';
       
       // Créer ou mettre à jour le modèle de ressource
       const { data, error } = await supabase
         .from('entrepreneur_resources')
         .upsert({
-          step_id: resourceData.step_id,
-          substep_title: resourceData.substep_title,
+          step_id: resourceData.step_id!,
+          substep_title: resourceData.substep_title!,
           substep_id: substep_id, // Add the required substep_id field
-          title: resourceData.title,
+          title: resourceData.title!,
           description: resourceData.description,
-          resource_type: resourceData.resource_type,
+          resource_type: resourceData.resource_type!,
           file_url: resourceData.file_url,
           is_mandatory: resourceData.is_mandatory || false,
           course_content: resourceData.course_content

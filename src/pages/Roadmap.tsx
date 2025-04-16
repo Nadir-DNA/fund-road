@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import JourneyTimeline from "@/components/JourneyTimeline";
 import JourneyProgressIndicator from "@/components/journey/JourneyProgressIndicator";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { journeySteps } from "@/data/journeySteps";
 import { useJourneyProgress } from "@/hooks/useJourneyProgress";
 import { BookOpen, ChevronRight } from "lucide-react";
@@ -15,29 +16,29 @@ import { toast } from "@/components/ui/use-toast";
 
 export default function Roadmap() {
   const navigate = useNavigate();
-  const { t, translateContent } = useLanguage();
+  const { t } = useLanguage();
   const [lastVisitedStep, setLastVisitedStep] = useState<{ stepId: number, substepTitle: string | null } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { localSteps } = useJourneyProgress(journeySteps);
+  const { localSteps, isLoading: stepsLoading } = useJourneyProgress(journeySteps);
   
   // Check for authentication and get the user's last visited step
   useEffect(() => {
     const checkAuthAndGetProgress = async () => {
       setIsLoading(true);
       
-      const { data: session } = await supabase.auth.getSession();
-      
-      if (!session?.session) {
-        toast({
-          title: "Connexion requise",
-          description: "Vous devez être connecté pour accéder à votre parcours personnalisé.",
-          variant: "destructive",
-        });
-        navigate("/auth");
-        return;
-      }
-      
       try {
+        const { data: session } = await supabase.auth.getSession();
+        
+        if (!session?.session) {
+          toast({
+            title: "Connexion requise",
+            description: "Vous devez être connecté pour accéder à votre parcours personnalisé.",
+            variant: "destructive",
+          });
+          navigate("/auth");
+          return;
+        }
+        
         // Find the most recently updated substep progress
         const { data: substepProgress, error: substepError } = await supabase
           .from('user_substep_progress')
@@ -103,6 +104,8 @@ export default function Roadmap() {
   const handleContinueJourney = () => {
     const nextStep = findIncompleteStep();
     
+    if (!nextStep) return;
+    
     // This will open the step detail dialog in the JourneyTimeline component
     const stepElement = document.querySelector(`[data-step-id="${nextStep.stepId}"]`);
     if (stepElement) {
@@ -127,16 +130,19 @@ export default function Roadmap() {
               {t("roadmap.subtitle") || "Suivez ces étapes pour transformer votre idée en entreprise, avec des ressources dédiées à chaque phase."}
             </p>
             
-            {!isLoading && lastVisitedStep && (
+            {!isLoading && lastVisitedStep ? (
               <Button 
                 onClick={handleContinueJourney}
                 className="mt-6 bg-gradient-to-r from-primary to-accent text-white px-8"
+                disabled={stepsLoading}
               >
                 <BookOpen className="mr-2 h-4 w-4" />
                 {t("roadmap.continueJourney") || "Reprendre mon parcours"}
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
-            )}
+            ) : isLoading ? (
+              <Skeleton className="h-11 w-60 mx-auto mt-6" />
+            ) : null}
           </div>
           
           <JourneyProgressIndicator />

@@ -3,45 +3,48 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from "@/integrations/supabase/client";
 import { useJourneyProgress } from '@/hooks/useJourneyProgress';
 import { journeySteps } from '@/data/journeySteps';
 
 export default function RoadmapSection() {
-  const { progress } = useJourneyProgress(journeySteps);
+  const { progress, isLoading: progressLoading } = useJourneyProgress(journeySteps);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   
   useEffect(() => {
     const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      setIsAuthenticated(!!data.session);
+      setAuthLoading(true);
+      try {
+        const { data } = await supabase.auth.getSession();
+        setIsAuthenticated(!!data.session);
+      } catch (error) {
+        console.error("Error checking authentication:", error);
+      } finally {
+        setAuthLoading(false);
+      }
     };
     
     checkAuth();
   }, []);
   
   const renderRoadmapButton = () => {
-    if (isAuthenticated) {
-      return (
-        <Button asChild className="bg-gradient-to-r from-primary to-accent text-white px-8 py-6 text-lg">
-          <Link to="/roadmap" className="flex items-center">
-            <BookOpen className="mr-2 h-5 w-5" />
-            Accéder au parcours entrepreneurial
-            <ChevronRight className="ml-2 h-5 w-5" />
-          </Link>
-        </Button>
-      );
-    } else {
-      return (
-        <Button asChild className="bg-gradient-to-r from-primary to-accent text-white px-8 py-6 text-lg">
-          <Link to="/auth" className="flex items-center">
-            <BookOpen className="mr-2 h-5 w-5" />
-            Commencer mon parcours entrepreneurial
-            <ChevronRight className="ml-2 h-5 w-5" />
-          </Link>
-        </Button>
-      );
+    if (authLoading) {
+      return <Skeleton className="h-14 w-72" />;
     }
+    
+    return (
+      <Button asChild className="bg-gradient-to-r from-primary to-accent text-white px-8 py-6 text-lg">
+        <Link to={isAuthenticated ? "/roadmap" : "/auth"} className="flex items-center">
+          <BookOpen className="mr-2 h-5 w-5" />
+          {isAuthenticated 
+            ? "Accéder au parcours entrepreneurial" 
+            : "Commencer mon parcours entrepreneurial"}
+          <ChevronRight className="ml-2 h-5 w-5" />
+        </Link>
+      </Button>
+    );
   };
   
   return (
@@ -55,7 +58,7 @@ export default function RoadmapSection() {
           avec des outils et ressources pour chaque phase de développement.
         </p>
         
-        {isAuthenticated && progress.percentage > 0 && (
+        {isAuthenticated && !progressLoading && progress.percentage > 0 ? (
           <div className="mb-8">
             <div className="glass-card py-4 px-8 inline-flex items-center gap-4 mx-auto">
               <div className="text-2xl font-bold text-primary">{progress.percentage}%</div>
@@ -65,7 +68,11 @@ export default function RoadmapSection() {
               </div>
             </div>
           </div>
-        )}
+        ) : isAuthenticated && progressLoading ? (
+          <div className="mb-8">
+            <Skeleton className="h-16 w-48 mx-auto" />
+          </div>
+        ) : null}
         
         <div className="flex justify-center">
           {renderRoadmapButton()}

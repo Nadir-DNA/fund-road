@@ -7,7 +7,6 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ResourceManager from "./ResourceManager";
 import OverviewTab from "./OverviewTab";
-import HelpTab from "./HelpTab";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 
@@ -57,10 +56,9 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
       </DialogHeader>
 
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-2">
+        <TabsList className="grid w-full grid-cols-2 mb-2">
           <TabsTrigger value="overview" className="text-xs sm:text-sm">Aperçu</TabsTrigger>
           <TabsTrigger value="resources" className="text-xs sm:text-sm">Ressources</TabsTrigger>
-          <TabsTrigger value="help" className="text-xs sm:text-sm">Aide</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview">
@@ -77,10 +75,6 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
             step={step} 
             selectedSubstepTitle={selectedSubStep?.title}
           />
-        </TabsContent>
-        
-        <TabsContent value="help">
-          <HelpTab resources={step.resources} />
         </TabsContent>
       </Tabs>
     </div>
