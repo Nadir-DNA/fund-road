@@ -25,19 +25,19 @@ export const useCourseMaterials = (stepId: number, substepTitle: string | null) 
   const fetchMaterials = async () => {
     setIsLoading(true);
     
-    const { data: session } = await supabase.auth.getSession();
-    
-    if (!session?.session) {
-      toast({
-        title: "Connexion requise",
-        description: "Vous devez être connecté pour accéder aux ressources du cours.",
-        variant: "destructive",
-      });
-      navigate("/auth");
-      return [];
-    }
-    
     try {
+      const { data: session } = await supabase.auth.getSession();
+      
+      if (!session?.session) {
+        toast({
+          title: "Connexion requise",
+          description: "Vous devez être connecté pour accéder aux ressources du cours.",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return [];
+      }
+      
       // Query builder
       let query = supabase
         .from('entrepreneur_resources')
@@ -106,7 +106,7 @@ export const useCourseMaterials = (stepId: number, substepTitle: string | null) 
         .eq('step_id', stepId)
         .eq('substep_title', substepTitle)
         .eq('resource_type', resourceType)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no data is found
         
       if (error && error.code !== 'PGRST116') { // Not found error
         throw error;
@@ -158,6 +158,16 @@ export const useCourseMaterials = (stepId: number, substepTitle: string | null) 
         }).select();
       
       if (error) throw error;
+      
+      // Refresh materials list after creating/updating
+      fetchMaterials();
+      
+      toast({
+        title: "Succès",
+        description: "Ressource créée ou mise à jour avec succès",
+        variant: "default",
+      });
+      
       return data;
       
     } catch (error: any) {

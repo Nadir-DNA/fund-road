@@ -15,16 +15,23 @@ export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
   
   // Check if user is already authenticated
   useEffect(() => {
     const checkAuth = async () => {
-      console.log("Checking auth state...");
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log("Session:", session ? "exists" : "none");
-      setIsAuthenticated(!!session);
+      try {
+        console.log("Checking auth state...");
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Session:", session ? "exists" : "none");
+        setIsAuthenticated(!!session);
+      } catch (error) {
+        console.error("Error checking auth:", error);
+      } finally {
+        setCheckingAuth(false);
+      }
     };
     
     checkAuth();
@@ -115,6 +122,15 @@ export default function Auth() {
       setIsLoading(false);
     }
   };
+  
+  // Show loading state while checking auth
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
   
   // Redirect if authenticated
   if (isAuthenticated) {

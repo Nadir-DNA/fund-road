@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -26,12 +27,37 @@ export default function Financing() {
   const [activeTab, setActiveTab] = useState("all");
   const [investors, setInvestors] = useState<Investor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
+  const navigate = useNavigate();
   const { t } = useLanguage();
+  
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Uncomment this if you want to require authentication for this page
+      /*
+      if (!session?.session) {
+        toast({
+          title: "Connexion requise",
+          description: "Vous devez être connecté pour accéder à cette page.",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
+      */
+    };
+    
+    checkAuth();
+  }, [navigate]);
   
   // Fetch investors from Supabase
   useEffect(() => {
     const fetchInvestors = async () => {
       setIsLoading(true);
+      setLoadingError(null);
       
       try {
         const { data, error } = await supabase
@@ -41,15 +67,19 @@ export default function Financing() {
         if (error) throw error;
         
         setInvestors(data || []);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching investors:', error);
+        setLoadingError(error.message || "Impossible de charger les données d'investisseurs.");
         toast({
           title: "Erreur de chargement",
           description: "Impossible de charger les données d'investisseurs.",
           variant: "destructive",
         });
       } finally {
-        setIsLoading(false);
+        // Add a small delay to ensure UI displays properly
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 500);
       }
     };
     
@@ -59,7 +89,7 @@ export default function Financing() {
   const filterInvestorsByType = (investors: Investor[], type: string) => {
     if (type === "all") return investors;
     return investors.filter(investor => 
-      investor.type.some(t => t.toLowerCase().includes(type.toLowerCase()))
+      investor.type && investor.type.some(t => t.toLowerCase().includes(type.toLowerCase()))
     );
   };
 
@@ -67,10 +97,10 @@ export default function Financing() {
     if (!term) return investors;
     const lowerTerm = term.toLowerCase();
     return investors.filter(investor => 
-      investor.name.toLowerCase().includes(lowerTerm) ||
-      investor.sectors.some(sector => sector.toLowerCase().includes(lowerTerm)) ||
-      investor.location.some(loc => loc.toLowerCase().includes(lowerTerm)) ||
-      investor.description.toLowerCase().includes(lowerTerm)
+      (investor.name && investor.name.toLowerCase().includes(lowerTerm)) ||
+      (investor.sectors && investor.sectors.some(sector => sector.toLowerCase().includes(lowerTerm))) ||
+      (investor.location && investor.location.some(loc => loc.toLowerCase().includes(lowerTerm))) ||
+      (investor.description && investor.description.toLowerCase().includes(lowerTerm))
     );
   };
 
@@ -78,6 +108,10 @@ export default function Financing() {
     filterInvestorsByType(investors, activeTab),
     searchTerm
   );
+  
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -88,14 +122,14 @@ export default function Financing() {
       
       <main className="container mx-auto px-4 pt-32 pb-20 relative z-10">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">{t("financing.title")}</h1>
+          <h1 className="text-4xl font-bold mb-4">{t("financing.title") || "Sources de Financement"}</h1>
           <p className="text-white/70 max-w-2xl mx-auto mb-8">
-            {t("financing.subtitle")}
+            {t("financing.subtitle") || "Découvrez les sources de financement adaptées à votre stade de développement et à votre secteur d'activité."}
           </p>
           
           <div className="max-w-md mx-auto relative mb-8">
             <Input
-              placeholder={t("financing.search")}
+              placeholder={t("financing.search") || "Rechercher..."}
               className="bg-black/40 border-white/10 pl-10 text-white"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -103,7 +137,7 @@ export default function Financing() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 h-4 w-4" />
           </div>
           
-          <Tabs defaultValue="all" className="mb-8" onValueChange={setActiveTab}>
+          <Tabs defaultValue="all" className="mb-8" onValueChange={handleTabChange}>
             <TabsList className="bg-black/40 border border-white/10">
               <TabsTrigger value="all">Tous les Organismes</TabsTrigger>
               <TabsTrigger value="Venture">Venture Capital</TabsTrigger>
@@ -116,7 +150,7 @@ export default function Financing() {
           <div className="flex justify-end mb-4">
             <Button variant="outline" size="sm" className="border-white/10 text-white hover:bg-white/10">
               <Filter className="h-4 w-4 mr-2" />
-              {t("financing.filter")}
+              {t("financing.filter") || "Filtrer"}
             </Button>
           </div>
         </div>
@@ -124,6 +158,13 @@ export default function Financing() {
         {isLoading ? (
           <div className="flex justify-center items-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : loadingError ? (
+          <div className="text-center py-16">
+            <p className="text-xl text-white/70">Une erreur est survenue lors du chargement des données.</p>
+            <Button onClick={() => window.location.reload()} className="mt-4">
+              Réessayer
+            </Button>
           </div>
         ) : (
           <>
@@ -176,8 +217,8 @@ export default function Financing() {
               </div>
             ) : (
               <div className="text-center py-16">
-                <p className="text-xl text-white/70">{t("financing.noResults")}</p>
-                <p className="text-white/50 mt-2">{t("financing.adjustSearch")}</p>
+                <p className="text-xl text-white/70">{t("financing.noResults") || "Aucun résultat ne correspond à votre recherche."}</p>
+                <p className="text-white/50 mt-2">{t("financing.adjustSearch") || "Essayez d'ajuster vos critères de recherche."}</p>
               </div>
             )}
           </>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X, LogOut } from "lucide-react";
@@ -64,13 +65,28 @@ export default function Navbar() {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "Déconnexion réussie",
-      description: "Vous avez été déconnecté avec succès",
-      variant: "default",
-    });
-    navigate('/');
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Déconnexion réussie",
+        description: "Vous avez été déconnecté avec succès",
+        variant: "default",
+      });
+      navigate('/');
+    } catch (error: any) {
+      console.error("Erreur lors de la déconnexion:", error);
+      toast({
+        title: "Erreur",
+        description: "Un problème est survenu lors de la déconnexion",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAuthClick = () => {
+    navigate('/auth');
   };
 
   return (
@@ -95,6 +111,9 @@ export default function Navbar() {
             <Link to="/financing" className="text-foreground/80 hover:text-primary transition-colors">
               {t("nav.financing")}
             </Link>
+            <Link to="/roadmap" className="text-foreground/80 hover:text-primary transition-colors">
+              Roadmap
+            </Link>
             {isAdmin && (
               <Link to="/admin" className="text-foreground/80 hover:text-primary transition-colors">
                 Admin
@@ -113,11 +132,11 @@ export default function Navbar() {
                 </Button>
               ) : (
                 <>
-                  <Button variant="outline" asChild className="text-white border-white/20 hover:bg-white/10">
-                    <Link to="/auth">{t("nav.login")}</Link>
+                  <Button variant="outline" onClick={handleAuthClick} className="text-white border-white/20 hover:bg-white/10">
+                    {t("nav.login")}
                   </Button>
-                  <Button asChild className="bg-white text-black hover:bg-white/90">
-                    <Link to="/auth">{t("nav.signup")}</Link>
+                  <Button onClick={handleAuthClick} className="bg-white text-black hover:bg-white/90">
+                    {t("nav.signup")}
                   </Button>
                 </>
               )}
@@ -147,6 +166,9 @@ export default function Navbar() {
             <Link to="/financing" className="text-foreground/80 hover:text-primary transition-colors">
               {t("nav.financing")}
             </Link>
+            <Link to="/roadmap" className="text-foreground/80 hover:text-primary transition-colors">
+              Roadmap
+            </Link>
             {isAdmin && (
               <Link to="/admin" className="text-foreground/80 hover:text-primary transition-colors">
                 Admin
@@ -160,11 +182,11 @@ export default function Navbar() {
                 </Button>
               ) : (
                 <>
-                  <Button variant="outline" asChild className="w-full text-white border-white/20 hover:bg-white/10">
-                    <Link to="/auth">{t("nav.login")}</Link>
+                  <Button variant="outline" onClick={handleAuthClick} className="w-full text-white border-white/20 hover:bg-white/10">
+                    {t("nav.login")}
                   </Button>
-                  <Button asChild className="w-full bg-white text-black hover:bg-white/90">
-                    <Link to="/auth">{t("nav.signup")}</Link>
+                  <Button onClick={handleAuthClick} className="w-full bg-white text-black hover:bg-white/90">
+                    {t("nav.signup")}
                   </Button>
                 </>
               )}
