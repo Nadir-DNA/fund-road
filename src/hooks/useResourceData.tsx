@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 
-// Type for user resource data
+// Type pour les données de ressource utilisateur
 interface UserResource {
   id?: string;
   user_id: string;
@@ -26,6 +26,7 @@ export const useResourceData = (
   const [formData, setFormData] = useState<any>(defaultValues);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [resourceId, setResourceId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -42,7 +43,8 @@ export const useResourceData = (
       }
       
       try {
-        const { data, error } = await supabase
+        // Vérifier d'abord dans la table user_resources (ressources personnalisées)
+        const { data: userResource, error: userError } = await supabase
           .from('user_resources')
           .select('*')
           .eq('user_id', session.session.user.id)
@@ -51,17 +53,41 @@ export const useResourceData = (
           .eq('resource_type', resourceType)
           .maybeSingle();
           
-        if (error) {
-          console.error("Error fetching data:", error);
+        if (userResource) {
+          setFormData(userResource.content || {});
+          setResourceId(userResource.id);
+          if (onDataSaved) onDataSaved(userResource.content || {});
+          setIsLoading(false);
+          return;
         }
         
-        if (data) {
-          const resourceData = data as UserResource;
-          setFormData(resourceData.content || {});
-          if (onDataSaved) onDataSaved(resourceData.content || {});
+        // Si aucune ressource personnalisée, vérifier les ressources prédéfinies
+        const { data: templateResource, error: templateError } = await supabase
+          .from('entrepreneur_resources')
+          .select('*')
+          .eq('step_id', stepId)
+          .eq('substep_title', substepTitle)
+          .eq('resource_type', resourceType)
+          .maybeSingle();
+        
+        if (templateResource && templateResource.course_content) {
+          try {
+            // Si le contenu est stocké sous forme de JSON
+            const parsedContent = typeof templateResource.course_content === 'string' 
+              ? JSON.parse(templateResource.course_content) 
+              : templateResource.course_content;
+            
+            setFormData(parsedContent);
+            if (onDataSaved) onDataSaved(parsedContent);
+          } catch (e) {
+            console.error("Erreur lors du parsing du contenu de la ressource:", e);
+            // Si ce n'est pas du JSON valide, utiliser comme texte brut
+            setFormData({ content: templateResource.course_content });
+            if (onDataSaved) onDataSaved({ content: templateResource.course_content });
+          }
         }
       } catch (error) {
-        console.error("Error fetching saved data:", error);
+        console.error("Erreur lors de la récupération des données:", error);
       } finally {
         setIsLoading(false);
       }
@@ -105,13 +131,21 @@ export const useResourceData = (
         content: safeFormData,
       };
       
-      const { error } = await supabase
+      if (resourceId) {
+        resourceData.id = resourceId;
+      }
+      
+      const { error, data } = await supabase
         .from('user_resources')
         .upsert(resourceData, { 
           onConflict: 'user_id,step_id,substep_title,resource_type'
-        });
+        }).select();
         
       if (error) throw error;
+      
+      if (data && data[0]) {
+        setResourceId(data[0].id);
+      }
       
       toast({
         title: "Ressource sauvegardée",
@@ -121,7 +155,7 @@ export const useResourceData = (
       if (onDataSaved) onDataSaved(safeFormData);
       
     } catch (error: any) {
-      console.error("Error saving resource:", error);
+      console.error("Erreur lors de la sauvegarde de la ressource:", error);
       toast({
         title: "Erreur de sauvegarde",
         description: error.message || "Une erreur est survenue lors de la sauvegarde.",
@@ -138,6 +172,7 @@ export const useResourceData = (
     isSaving,
     handleFormChange,
     handleSave,
-    setFormData
+    setFormData,
+    resourceId
   };
 };

@@ -119,11 +119,60 @@ export const useCourseMaterials = (stepId: number, substepTitle: string | null) 
     }
   };
   
+  const createOrUpdateResourceTemplate = async (resourceData: Partial<CourseMaterial>) => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session) {
+        throw new Error("Vous devez être connecté pour effectuer cette action");
+      }
+      
+      // Vérifier si l'utilisateur est administrateur
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', session.session.user.id)
+        .single();
+        
+      if (!userProfile?.is_admin) {
+        throw new Error("Vous n'avez pas les permissions nécessaires");
+      }
+      
+      // Créer ou mettre à jour le modèle de ressource
+      const { data, error } = await supabase
+        .from('entrepreneur_resources')
+        .upsert({
+          step_id: resourceData.step_id,
+          substep_title: resourceData.substep_title,
+          title: resourceData.title,
+          description: resourceData.description,
+          resource_type: resourceData.resource_type,
+          file_url: resourceData.file_url,
+          is_mandatory: resourceData.is_mandatory || false,
+          course_content: resourceData.course_content
+        }, { 
+          onConflict: 'step_id,substep_title,resource_type' 
+        }).select();
+      
+      if (error) throw error;
+      return data;
+      
+    } catch (error: any) {
+      console.error("Error creating/updating resource template:", error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+  
   return {
     materials,
     isLoading,
     fetchMaterials,
     getUserProgress,
     getUserResource,
+    createOrUpdateResourceTemplate
   };
 };

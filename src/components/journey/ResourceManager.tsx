@@ -1,17 +1,24 @@
 
-import { Step, SubStep } from "@/types/journey";
+import { useState, useEffect } from "react";
+import { Step, SubStep, Resource } from "@/types/journey";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { useCourseMaterials } from "@/hooks/useCourseMaterials";
+import { supabase } from "@/integrations/supabase/client";
 
 // Composants de resources
-import ProblemSolutionMatrix from "./resources/ProblemSolutionMatrix";
+import ProblemSolutionMatrix from "./resources/ProblemSolutionCanvas";
 import BusinessModelCanvas from "./resources/BusinessModelCanvas";
 import SWOTAnalysis from "./resources/SWOTAnalysis";
 import CapTable from "./resources/CapTable";
 import EmpathyMap from "./resources/EmpathyMap";
 import MVPSelector from "./resources/MVPSelector";
+import UserResearchNotebook from "./resources/UserResearchNotebook";
+import OpportunityDefinition from "./resources/OpportunityDefinition";
+import MarketSizeEstimator from "./resources/MarketSizeEstimator";
+import PersonaBuilder from "./resources/UserResearchNotebook"; // Temporaire - à remplacer par le vrai composant
 
 interface ResourceManagerProps {
   step: Step;
@@ -19,12 +26,38 @@ interface ResourceManagerProps {
 }
 
 export default function ResourceManager({ step, selectedSubstepTitle }: ResourceManagerProps) {
+  // État pour stocker les ressources disponibles depuis Supabase
+  const [supabaseResources, setSupabaseResources] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
   // Trouver la sous-étape sélectionnée
   const selectedSubstep = step.subSteps?.find(
     substep => substep.title === selectedSubstepTitle
   );
   
-  // Obtenir les ressources à afficher
+  // Utiliser le hook existant pour charger les ressources depuis la base de données
+  const { fetchMaterials } = useCourseMaterials(step.id, selectedSubstepTitle || null);
+  
+  // Charger les ressources depuis Supabase au chargement du composant
+  useEffect(() => {
+    const loadSupabaseResources = async () => {
+      setIsLoading(true);
+      try {
+        const materials = await fetchMaterials();
+        setSupabaseResources(materials);
+      } catch (error) {
+        console.error("Erreur lors du chargement des ressources depuis Supabase:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (selectedSubstepTitle) {
+      loadSupabaseResources();
+    }
+  }, [step.id, selectedSubstepTitle]);
+  
+  // Obtenir les ressources à afficher, en combinant les ressources de la base de données et celles définies statiquement
   const getResourcesToShow = () => {
     // Si une sous-étape est sélectionnée et qu'elle a des ressources, on les affiche
     if (selectedSubstep?.resources?.length) {
@@ -48,8 +81,15 @@ export default function ResourceManager({ step, selectedSubstepTitle }: Resource
       case "CapTable":
         return <CapTable stepId={stepId} substepTitle={substepTitle} />;
       case "EmpathyMap":
-      case "UserResearchNotebook":
         return <EmpathyMap stepId={stepId} substepTitle={substepTitle} />;
+      case "UserResearchNotebook":
+        return <UserResearchNotebook stepId={stepId} substepTitle={substepTitle} />;
+      case "OpportunityDefinition":
+        return <OpportunityDefinition stepId={stepId} substepTitle={substepTitle} />;
+      case "MarketSizeEstimator":
+        return <MarketSizeEstimator stepId={stepId} substepTitle={substepTitle} />;
+      case "PersonaBuilder":
+        return <PersonaBuilder stepId={stepId} substepTitle={substepTitle} />; // Temporaire - à remplacer
       case "MVPSelector":
         return <MVPSelector stepId={stepId} substepTitle={substepTitle} />;
       default:
@@ -69,6 +109,19 @@ export default function ResourceManager({ step, selectedSubstepTitle }: Resource
         );
     }
   };
+
+  // Si chargement en cours
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-center text-muted-foreground">
+            Chargement des ressources...
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Afficher les ressources disponibles pour la sous-étape ou l'étape sélectionnée
   const resources = getResourcesToShow();
