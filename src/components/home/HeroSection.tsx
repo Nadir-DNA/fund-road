@@ -10,19 +10,31 @@ export default function HeroSection() {
   return (
     <section className="py-24 md:py-32 bg-black">
       <div className="container mx-auto px-4 text-center">
-        <h1 className="text-4xl md:text-5xl font-bold mb-6">
-          Accompagnement entrepreneurial de l'idée au financement
-        </h1>
-        <p className="text-xl text-white/70 max-w-3xl mx-auto mb-12">
-          Structurez votre projet et trouvez vos financements. Un parcours guidé pour vous accompagner à chaque étape clé de votre aventure entrepreneuriale, avec des ressources adaptées à chaque phase.
-        </p>
-        <div className="flex justify-center gap-4">
-          <Button asChild className="bg-gradient-to-r from-primary to-accent text-white px-8 py-6 text-lg">
-            <Link to="/features" className="flex items-center">
-              En savoir plus
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          </Button>
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-4xl md:text-5xl font-bold mb-8">
+            Accompagnement entrepreneurial <br className="hidden sm:inline" />
+            de l'idée au financement
+          </h1>
+          
+          <div className="text-xl text-white/70 space-y-1 mb-8">
+            <p className="font-medium text-2xl mb-2">
+              Structurez votre projet et <br className="hidden sm:inline" />
+              Trouvez vos financements
+            </p>
+            <p>
+              Un parcours guidé pour vous accompagner à chaque étape clé de votre aventure entrepreneuriale, 
+              avec des ressources adaptées à chaque phase.
+            </p>
+          </div>
+          
+          <div className="flex justify-center gap-4">
+            <Button asChild className="bg-gradient-to-r from-primary to-accent text-white px-8 py-6 text-lg">
+              <Link to="/roadmap" className="flex items-center">
+                Commencer mon parcours
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
     </section>

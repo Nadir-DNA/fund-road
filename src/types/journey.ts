@@ -3,12 +3,15 @@ export type SubStep = {
   title: string; 
   description: string; 
   isCompleted?: boolean;
+  resources?: Resource[];
 };
 
 export type Resource = {
   title: string;
   description: string;
   url?: string;
+  componentName?: string;
+  status?: 'available' | 'coming-soon' | 'beta';
 };
 
 export type Step = {

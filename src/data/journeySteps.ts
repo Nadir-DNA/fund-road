@@ -4,7 +4,7 @@ import { Step } from "@/types/journey";
 export const journeySteps: Step[] = [
   {
     id: 1,
-    title: "Phase d'idéation & découverte du problème",
+    title: "Idéation & découverte du problème",
     description: "Identifiez les besoins ou problèmes à résoudre et définissez votre opportunité de marché.",
     resources: [
       { title: "Guide d'observation terrain", description: "Méthodologies pour collecter des insights" },
@@ -16,12 +16,36 @@ export const journeySteps: Step[] = [
       { 
         title: "Identification des besoins ou problèmes", 
         description: "Observation terrain, entretiens utilisateurs, mapping des frustrations",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Journal d'observation utilisateur", 
+            componentName: "UserResearchNotebook",
+            description: "Documentez vos observations terrain et insights utilisateurs" 
+          }
+        ]
       },
       { 
         title: "Définition de l'opportunité", 
         description: "Validation du marché, analyse des tendances, positionnement préliminaire",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Synthèse qualitative", 
+            componentName: "OpportunityDefinition",
+            description: "Structurez les insights clés pour définir votre opportunité" 
+          },
+          { 
+            title: "Estimation TAM / SAM / SOM", 
+            componentName: "MarketSizeEstimator",
+            description: "Estimez la taille de votre marché adressable" 
+          },
+          { 
+            title: "Analyse concurrentielle", 
+            componentName: "CompetitiveAnalysisTable",
+            description: "Cartographiez le paysage concurrentiel" 
+          }
+        ]
       }
     ]
   },
@@ -38,12 +62,44 @@ export const journeySteps: Step[] = [
       { 
         title: "Construction du problème-solution fit", 
         description: "Formulation de l'hypothèse de valeur, proposition de valeur initiale, création de persona",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Canvas Problème / Solution", 
+            componentName: "ProblemSolutionCanvas",
+            description: "Visualisez l'adéquation entre le problème et votre solution" 
+          },
+          { 
+            title: "Fiche Persona utilisateur", 
+            componentName: "PersonaBuilder",
+            description: "Créez un profil détaillé de votre utilisateur cible" 
+          }
+        ]
       },
       { 
         title: "Tests préliminaires", 
         description: "Entretiens utilisateurs, prototypage rapide, landing page de test",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Fiche de retour utilisateur", 
+            componentName: "UserFeedbackSheet",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Test de landing page / prototypage", 
+            componentName: "LandingPageTest",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Grille de validation d'hypothèse", 
+            componentName: "HypothesisValidation",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       }
     ]
   },
@@ -60,17 +116,64 @@ export const journeySteps: Step[] = [
       { 
         title: "Création du Business Model Canvas", 
         description: "Segments clients, proposition de valeur, canaux, revenus, ressources",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Business Model Canvas", 
+            componentName: "BusinessModelCanvas",
+            description: "Construisez votre modèle d'affaires complet" 
+          }
+        ]
       },
       { 
         title: "Étude de marché", 
         description: "Analyse concurrentielle, taille du marché TAM/SAM/SOM, comportement clients",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Grille d'analyse sectorielle", 
+            componentName: "SectorAnalysisGrid",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Benchmark visuel", 
+            componentName: "VisualBenchmark",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Comportement client", 
+            componentName: "CustomerBehavior",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       },
       { 
         title: "Validation du modèle économique", 
         description: "Tests de monétisation, retours utilisateurs sur l'offre payante",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Résultats de tests de monétisation", 
+            componentName: "MonetizationTests",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Retour sur offre payante", 
+            componentName: "PaidOfferFeedback",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Synthèse feedback pricing", 
+            componentName: "PricingFeedback",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       }
     ]
   },
@@ -87,12 +190,52 @@ export const journeySteps: Step[] = [
       { 
         title: "Définition du MVP", 
         description: "Fonctionnalités cœur vs secondaires, cahier des charges, choix technologiques",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Matrice Impact / Effort", 
+            componentName: "ImpactEffortMatrix",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Cahier des charges fonctionnel", 
+            componentName: "FunctionalSpecs",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Outils / tech no-code", 
+            componentName: "NoCodeTools",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       },
       { 
         title: "Feuille de route produit", 
         description: "Roadmap 6-12 mois, phasage des livraisons, objectifs SMART",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Roadmap 6-12 mois", 
+            componentName: "ProductRoadmap",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Objectifs SMART par jalon", 
+            componentName: "SmartObjectives",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Backlog produit", 
+            componentName: "ProductBacklog",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       }
     ]
   },
@@ -109,12 +252,46 @@ export const journeySteps: Step[] = [
       { 
         title: "Choix du statut juridique", 
         description: "SAS, SARL, Auto-entrepreneur, pacte d'associés, répartition des parts",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Comparateur SAS / SARL / Auto-E", 
+            componentName: "LegalStatusComparator",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Grille décisionnelle", 
+            componentName: "DecisionGrid",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       },
       { 
         title: "Constitution de l'équipe fondatrice", 
         description: "Répartition des rôles, alignement vision/valeurs, plan de recrutement",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Fiche cofondateur", 
+            componentName: "CofounderProfile",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Matrice alignement vision / valeurs", 
+            componentName: "VisionValuesAlignment",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Plan de recrutement", 
+            componentName: "RecruitmentPlan",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       }
     ]
   },
@@ -131,17 +308,58 @@ export const journeySteps: Step[] = [
       { 
         title: "Objectifs du Business Plan", 
         description: "Feuille de route stratégique interne, communication externe",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Fiche intention stratégique", 
+            componentName: "StrategicIntent",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       },
       { 
         title: "Contenu détaillé du BP", 
         description: "Résumé exécutif, analyse marché, stratégie commerciale, projections financières",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Editeur BP par section", 
+            componentName: "BusinessPlanEditor",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Structure guidée", 
+            componentName: "GuidedStructure",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       },
       { 
         title: "Annexes clés", 
         description: "Tableaux financiers, courbes de croissance, analyse SWOT",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Tableaux financiers", 
+            componentName: "FinancialTables",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "SWOT", 
+            componentName: "SWOTAnalysis",
+            description: "Analysez les forces, faiblesses, opportunités et menaces"
+          },
+          { 
+            title: "Analyse de croissance", 
+            componentName: "GrowthAnalysis",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       }
     ]
   },
@@ -156,14 +374,42 @@ export const journeySteps: Step[] = [
     detailedDescription: "Votre Pitch Deck est souvent le premier contact avec les investisseurs potentiels. Cette présentation concise doit captiver l'attention, exposer clairement la valeur de votre projet, et démontrer pourquoi votre équipe est la mieux placée pour réussir. Un bon pitch combine storytelling efficace et données convaincantes.",
     subSteps: [
       { 
-        title: "Structure standard d'un pitch investisseur", 
+        title: "Structure du pitch investisseur", 
         description: "Vision, problème, solution, marché, business model, équipe, roadmap",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Slide builder (slide-by-slide)", 
+            componentName: "SlideBuilder",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Checklist pitch VC", 
+            componentName: "VCPitchChecklist",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       },
       { 
-        title: "Bonnes pratiques de design et narration", 
+        title: "Design & narration", 
         description: "Clarté, impact visuel, storytelling efficace",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Conseils IA storytelling", 
+            componentName: "AIStorytelling",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Bonnes pratiques design", 
+            componentName: "DesignPractices",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       }
     ]
   },
@@ -180,17 +426,58 @@ export const journeySteps: Step[] = [
       { 
         title: "Cartographie des sources de financement", 
         description: "Love money, Business Angels, incubateurs, prêts d'honneur, VC",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Annuaire interactif / moteur de tri", 
+            componentName: "FundingDirectory",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       },
       { 
         title: "Outils d'aide à la levée", 
         description: "Table de capitalisation, simulateur de dilution, term sheet",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Table de capitalisation", 
+            componentName: "CapTable",
+            description: "Gérez la répartition du capital et la dilution"
+          },
+          { 
+            title: "Simulateur dilution", 
+            componentName: "DilutionSimulator",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Term sheet simplifiée", 
+            componentName: "SimpleTermSheet",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       },
       { 
         title: "Stratégie d'approche", 
         description: "Mapping d'investisseurs, approche personnalisée, préparation aux objections",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Scripts d'email", 
+            componentName: "EmailScripts",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Plan de suivi relances", 
+            componentName: "FollowUpPlan",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       }
     ]
   },
@@ -207,17 +494,41 @@ export const journeySteps: Step[] = [
       { 
         title: "Pourquoi protéger son innovation", 
         description: "Valeur ajoutée pour l'investisseur, délimitation des actifs stratégiques",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Auto-diagnostic PI", 
+            componentName: "IPDiagnostic",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       },
       { 
         title: "Procédures en Europe & Afrique", 
         description: "OEB, INPI, OAPI, ARIPO, dépôts de brevets et marques",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Checklist INPI / OAPI / ARIPO", 
+            componentName: "IPRegistrationChecklist",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       },
       { 
         title: "Stratégie PI adaptée aux startups", 
         description: "Brevets, secret, open innovation, valorisation financière",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Canvas décisionnel PI", 
+            componentName: "IPDecisionCanvas",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       }
     ]
   },
@@ -232,19 +543,55 @@ export const journeySteps: Step[] = [
     detailedDescription: "Le succès d'une startup repose sur sa capacité à mesurer ses progrès, itérer rapidement, et s'entourer des bonnes ressources. Définissez les KPIs adaptés à votre phase de développement, recherchez l'accompagnement adéquat (incubateurs, mentors), et adoptez les outils qui optimiseront votre efficacité.",
     subSteps: [
       { 
-        title: "KPI à suivre selon la phase", 
+        title: "KPIs selon la phase", 
         description: "Early stage: engagement, acquisition; Growth: MRR, churn, CAC/LTV",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Dashboard early stage / growth", 
+            componentName: "KPIDashboard",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       },
       { 
-        title: "Accompagnement / coaching", 
+        title: "Coaching & mentors", 
         description: "Incubateurs, mentors, bootcamps, conseils juridiques",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Fiche de suivi coach", 
+            componentName: "CoachTracking",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Historique d'accompagnement", 
+            componentName: "MentorshipHistory",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       },
       { 
-        title: "Outils à intégrer", 
+        title: "Outils startup", 
         description: "Notion, Airtable, Figma, outils IA pour optimiser le parcours",
-        isCompleted: false
+        isCompleted: false,
+        resources: [
+          { 
+            title: "Sélecteur d'outils IA / no-code", 
+            componentName: "AIToolSelector",
+            description: "En cours de développement",
+            status: "coming-soon"
+          },
+          { 
+            title: "Liens directs vers Notion, Airtable, Figma...", 
+            componentName: "DirectToolLinks",
+            description: "En cours de développement",
+            status: "coming-soon"
+          }
+        ]
       }
     ]
   },

@@ -84,7 +84,7 @@ export default function TimelineStep({
             
             {/* Sub-steps */}
             {step.subSteps && (
-              <div className="mb-4 space-y-3 pl-2">
+              <div className="mb-4 space-y-4">
                 {step.subSteps.map((subStep, idx) => (
                   <SubStepItem 
                     key={idx} 
