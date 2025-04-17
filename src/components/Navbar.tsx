@@ -94,13 +94,16 @@ export default function Navbar() {
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <img src="/lovable-uploads/5766c4d5-0e50-4267-9dce-865a0a4882ec.png" alt="Fund Road Logo" className="h-10 w-auto" />
+            <img src="/lovable-uploads/965b31f2-63c1-45e2-9ab0-95b60a8b9d83.png" alt="Fund Road Logo" className="h-10 w-auto" />
             <Link to="/" className="font-bold text-xl">Fund Road</Link>
           </div>
           
           <div className="hidden md:flex items-center space-x-8">
             <Link to="/" className="text-foreground/80 hover:text-primary transition-colors">
               {t("nav.home")}
+            </Link>
+            <Link to="/about" className="text-foreground/80 hover:text-primary transition-colors">
+              À propos
             </Link>
             <Link to="/faq" className="text-foreground/80 hover:text-primary transition-colors">
               {t("nav.faq")}
@@ -110,6 +113,9 @@ export default function Navbar() {
             </Link>
             <Link to="/roadmap" className="text-foreground/80 hover:text-primary transition-colors">
               Roadmap
+            </Link>
+            <Link to="/contact" className="text-foreground/80 hover:text-primary transition-colors">
+              Contact
             </Link>
             {isAdmin && (
               <Link to="/admin" className="text-foreground/80 hover:text-primary transition-colors">
@@ -154,6 +160,9 @@ export default function Navbar() {
             <Link to="/" className="text-foreground/80 hover:text-primary transition-colors">
               {t("nav.home")}
             </Link>
+            <Link to="/about" className="text-foreground/80 hover:text-primary transition-colors">
+              À propos
+            </Link>
             <Link to="/faq" className="text-foreground/80 hover:text-primary transition-colors">
               {t("nav.faq")}
             </Link>
@@ -162,6 +171,9 @@ export default function Navbar() {
             </Link>
             <Link to="/roadmap" className="text-foreground/80 hover:text-primary transition-colors">
               Roadmap
+            </Link>
+            <Link to="/contact" className="text-foreground/80 hover:text-primary transition-colors">
+              Contact
             </Link>
             {isAdmin && (
               <Link to="/admin" className="text-foreground/80 hover:text-primary transition-colors">

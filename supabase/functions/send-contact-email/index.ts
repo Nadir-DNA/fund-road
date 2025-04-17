@@ -33,7 +33,11 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     // Récupérer les données du formulaire
     const formData: ContactFormData = await req.json();
-    const { name, email, phone, projectType, projectStage, message, recipientEmail, subject } = formData;
+    const { name, email, phone, projectType, projectStage, message } = formData;
+
+    // Définir l'email de réception à hello@fund-road.com
+    const recipientEmail = "hello@fund-road.com";
+    const subject = `Nouvelle demande de devis: ${projectType}`;
 
     // Créer le contenu HTML de l'email
     const htmlContent = `

@@ -1,8 +1,7 @@
 
 import { Link } from "react-router-dom";
-import { Book, Facebook, Github, Instagram, Linkedin, Twitter } from "lucide-react";
+import { Facebook, Github, Instagram, Linkedin, Twitter } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 export default function Footer() {
   return (
@@ -11,7 +10,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-8 sm:mb-12">
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <Book className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              <img src="/lovable-uploads/965b31f2-63c1-45e2-9ab0-95b60a8b9d83.png" alt="Fund Road Logo" className="h-8 w-auto" />
               <span className="font-bold text-lg sm:text-xl">Fund Road</span>
             </div>
             <p className="text-white/60 max-w-xs text-sm sm:text-base">
@@ -40,22 +39,22 @@ export default function Footer() {
             <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Parcours Entrepreneur</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/features" className="text-white/60 hover:text-primary transition-colors text-sm sm:text-base">
+                <Link to="/roadmap" className="text-white/60 hover:text-primary transition-colors text-sm sm:text-base">
                   Étapes du parcours
                 </Link>
               </li>
               <li>
-                <Link to="/features" className="text-white/60 hover:text-primary transition-colors text-sm sm:text-base">
+                <Link to="/roadmap" className="text-white/60 hover:text-primary transition-colors text-sm sm:text-base">
                   Business Model Canvas
                 </Link>
               </li>
               <li>
-                <Link to="/features" className="text-white/60 hover:text-primary transition-colors text-sm sm:text-base">
+                <Link to="/roadmap" className="text-white/60 hover:text-primary transition-colors text-sm sm:text-base">
                   Business Plan
                 </Link>
               </li>
               <li>
-                <Link to="/features" className="text-white/60 hover:text-primary transition-colors text-sm sm:text-base">
+                <Link to="/roadmap" className="text-white/60 hover:text-primary transition-colors text-sm sm:text-base">
                   Pitch Deck
                 </Link>
               </li>
@@ -68,21 +67,16 @@ export default function Footer() {
           </div>
           
           <div>
-            <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Ressources</h3>
+            <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Liens utiles</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/blog" className="text-white/60 hover:text-primary transition-colors text-sm sm:text-base">
-                  Guides pratiques
+                <Link to="/about" className="text-white/60 hover:text-primary transition-colors text-sm sm:text-base">
+                  À propos de nous
                 </Link>
               </li>
               <li>
-                <Link to="/blog" className="text-white/60 hover:text-primary transition-colors text-sm sm:text-base">
-                  Templates
-                </Link>
-              </li>
-              <li>
-                <Link to="/blog" className="text-white/60 hover:text-primary transition-colors text-sm sm:text-base">
-                  Check-lists
+                <Link to="/contact" className="text-white/60 hover:text-primary transition-colors text-sm sm:text-base">
+                  Nous contacter
                 </Link>
               </li>
               <li>

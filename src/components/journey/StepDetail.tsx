@@ -19,7 +19,7 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
   const [activeTab, setActiveTab] = useState<string>(selectedSubStep ? "resources" : "overview");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
-  // Fetch course content for the selected step/substep
+  // Fetch course content for the selected step/substep with optimized query
   const { data: courseContent, isLoading: isLoadingContent } = useQuery({
     queryKey: ['courseContent', step.id, selectedSubStep?.title],
     queryFn: async () => {
@@ -36,7 +36,8 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
       }
       
       return data?.course_content || "";
-    }
+    },
+    staleTime: 1000 * 60 * 5, // Cache content for 5 minutes
   });
 
   return (
@@ -57,7 +58,7 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
 
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-2">
-          <TabsTrigger value="overview" className="text-xs sm:text-sm">Aperçu</TabsTrigger>
+          <TabsTrigger value="overview" className="text-xs sm:text-sm">Cours</TabsTrigger>
           <TabsTrigger value="resources" className="text-xs sm:text-sm">Ressources</TabsTrigger>
         </TabsList>
         

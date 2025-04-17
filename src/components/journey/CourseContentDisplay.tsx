@@ -1,6 +1,7 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import LazyLoad from "../LazyLoad";
 
 interface CourseContentDisplayProps {
   stepId: number;
@@ -8,7 +9,7 @@ interface CourseContentDisplayProps {
   stepTitle: string;
 }
 
-export default function CourseContentDisplay({ stepId, substepTitle, stepTitle }: CourseContentDisplayProps) {
+const CourseContentDisplay = ({ stepId, substepTitle, stepTitle }: CourseContentDisplayProps) => {
   const [courseContent, setCourseContent] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -38,11 +39,12 @@ export default function CourseContentDisplay({ stepId, substepTitle, stepTitle }
     fetchCourseContent();
   }, [stepId, substepTitle, stepTitle]);
 
-  const formatCourseContent = () => {
+  // Memoize the formatted content to prevent unnecessary re-rendering
+  const formattedContent = useMemo(() => {
     if (!courseContent) return "";
     
     // Process sections with proper headings and formatting
-    let formattedContent = courseContent
+    return courseContent
       // Convert markdown-style headings to HTML headings
       .replace(/^# (.*?)$/gm, '<h2 class="text-xl font-bold mt-6 mb-3">$1</h2>')
       .replace(/^## (.*?)$/gm, '<h3 class="text-lg font-semibold mt-5 mb-2">$1</h3>')
@@ -65,14 +67,7 @@ export default function CourseContentDisplay({ stepId, substepTitle, stepTitle }
       
       // Clean up any leftover newlines that aren't part of lists
       .replace(/\n(?!<div class)/g, '<br>');
-
-    // Wrap in paragraph if it doesn't start with a heading or list
-    if (!formattedContent.startsWith('<h') && !formattedContent.startsWith('<div class')) {
-      formattedContent = '<p class="mb-4">' + formattedContent + '</p>';
-    }
-    
-    return formattedContent;
-  };
+  }, [courseContent]);
 
   if (isLoading) {
     return (
@@ -83,41 +78,50 @@ export default function CourseContentDisplay({ stepId, substepTitle, stepTitle }
   }
 
   if (!courseContent) {
-    return null;
+    return (
+      <div className="text-center p-4">
+        <p className="text-muted-foreground">Aucun contenu de cours n'est disponible pour cette section.</p>
+      </div>
+    );
   }
 
   return (
-    <div className="prose prose-sm max-w-none course-content">
-      <style>
-        {`
-        .course-content .list-item {
-          margin-bottom: 0.75rem;
-          line-height: 1.5;
-        }
-        .course-content .list-number {
-          font-weight: 600;
-          margin-right: 0.25rem;
-        }
-        .course-content .bullet-item {
-          margin-bottom: 0.75rem;
-          line-height: 1.5;
-          padding-left: 0.5rem;
-        }
-        .course-content strong {
-          font-weight: 600;
-        }
-        .course-content h2, .course-content h3, .course-content h4 {
-          margin-top: 1.5rem;
-          margin-bottom: 0.75rem;
-          font-weight: 600;
-        }
-        .course-content p {
-          margin-bottom: 1rem;
-          line-height: 1.6;
-        }
-        `}
-      </style>
-      <div dangerouslySetInnerHTML={{ __html: formatCourseContent() }} />
-    </div>
+    <LazyLoad height={400}>
+      <div className="prose prose-sm max-w-none course-content">
+        <style>
+          {`
+          .course-content .list-item {
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+          }
+          .course-content .list-number {
+            font-weight: 600;
+            margin-right: 0.25rem;
+          }
+          .course-content .bullet-item {
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+            padding-left: 0.5rem;
+          }
+          .course-content strong {
+            font-weight: 600;
+          }
+          .course-content h2, .course-content h3, .course-content h4 {
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+          }
+          .course-content p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+          }
+          `}
+        </style>
+        <div dangerouslySetInnerHTML={{ __html: formattedContent.startsWith('<p') ? formattedContent : `<p class="mb-4">${formattedContent}</p>` }} />
+      </div>
+    </LazyLoad>
   );
-}
+};
+
+// Use React.memo to prevent unnecessary re-renders
+export default React.memo(CourseContentDisplay);

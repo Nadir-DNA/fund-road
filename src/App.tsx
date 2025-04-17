@@ -53,7 +53,17 @@ setTimeout(() => {
   checkDeeplApiKey();
 }, 2000); // Delay to ensure other components are loaded first
 
-const queryClient = new QueryClient();
+// Configure React Query with optimized settings for better performance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+      networkMode: 'online'
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
