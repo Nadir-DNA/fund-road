@@ -4,36 +4,21 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Clock, CheckCircle, AlertTriangle } from "lucide-react";
 import { useCourseMaterials } from "@/hooks/useCourseMaterials";
-import { supabase } from "@/integrations/supabase/client";
-
-// Composants de resources
-import ProblemSolutionMatrix from "./resources/ProblemSolutionCanvas";
-import BusinessModelCanvas from "./resources/BusinessModelCanvas";
-import SwotAnalysis from "./resources/SwotAnalysis";
-import CapTableEditor from "./resources/CapTableEditor";
-import EmpathyMap from "./resources/EmpathyMap";
-import UserResearchNotebook from "./resources/UserResearchNotebook";
-import OpportunityDefinition from "./resources/OpportunityDefinition";
-import MarketSizeEstimator from "./resources/MarketSizeEstimator";
-import PersonaBuilder from "./resources/PersonaBuilder";
-import DilutionSimulator from "./resources/DilutionSimulator";
-import GrowthProjection from "./resources/GrowthProjection";
-import LegalStatusComparison from "./resources/LegalStatusComparison";
+import { renderResourceComponent } from "./utils/resourceRenderer";
 
 export default function ResourceManager({ step, selectedSubstepTitle }) {
-  // État pour stocker les ressources disponibles depuis Supabase
-  const [supabaseResources, setSupabaseResources] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Trouver la sous-étape sélectionnée
+  // Find the selected sub-step
   const selectedSubstep = step.subSteps?.find(
     substep => substep.title === selectedSubstepTitle
   );
   
-  // Utiliser le hook existant pour charger les ressources depuis la base de données
+  // Use the existing hook to load resources from the database
   const { fetchMaterials } = useCourseMaterials(step.id, selectedSubstepTitle || null);
+  const [supabaseResources, setSupabaseResources] = useState([]);
   
-  // Charger les ressources depuis Supabase au chargement du composant
+  // Load resources from Supabase when component mounts
   useEffect(() => {
     const loadSupabaseResources = async () => {
       setIsLoading(true);
@@ -50,83 +35,19 @@ export default function ResourceManager({ step, selectedSubstepTitle }) {
     if (selectedSubstepTitle) {
       loadSupabaseResources();
     }
-  }, [step.id, selectedSubstepTitle]);
+  }, [step.id, selectedSubstepTitle, fetchMaterials]);
   
-  // Obtenir les ressources à afficher, en combinant les ressources de la base de données et celles définies statiquement
+  // Get resources to display
   const getResourcesToShow = () => {
-    // Si une sous-étape est sélectionnée et qu'elle a des ressources, on les affiche
+    // If a sub-step is selected and it has resources, show them
     if (selectedSubstep?.resources?.length) {
       return selectedSubstep.resources;
     }
-    
-    // Sinon, on affiche les ressources de l'étape
+    // Otherwise, show the step's resources
     return step.resources;
   };
-  
-  // Rendu du composant correspondant à la ressource
-  const renderResourceComponent = (componentName, stepId, substepTitle) => {
-    switch (componentName) {
-      case "ProblemSolutionCanvas":
-      case "ProblemSolutionMatrix":
-        return <ProblemSolutionMatrix stepId={stepId} substepTitle={substepTitle} />;
-      case "BusinessModelCanvas":
-        return <BusinessModelCanvas stepId={stepId} substepTitle={substepTitle} />;
-      case "SWOTAnalysis":
-      case "SwotAnalysis":
-        return <SwotAnalysis stepId={stepId} substepTitle={substepTitle} />;
-      case "CapTable":
-      case "CapTableEditor":
-        return <CapTableEditor stepId={stepId} substepTitle={substepTitle} />;
-      case "EmpathyMap":
-        return <EmpathyMap stepId={stepId} substepTitle={substepTitle} />;
-      case "UserResearchNotebook":
-        return <UserResearchNotebook stepId={stepId} substepTitle={substepTitle} />;
-      case "OpportunityDefinition":
-        return <OpportunityDefinition stepId={stepId} substepTitle={substepTitle} />;
-      case "MarketSizeEstimator":
-        return <MarketSizeEstimator stepId={stepId} substepTitle={substepTitle} />;
-      case "PersonaBuilder":
-        return <PersonaBuilder stepId={stepId} substepTitle={substepTitle} />;
-      case "MVPSelector":
-        return (
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-center flex-col gap-2 text-center py-8">
-                <AlertTriangle className="h-12 w-12 text-muted-foreground/60" />
-                <p className="text-center text-muted-foreground mt-2">
-                  Composant <strong>MVPSelector</strong> en cours de développement.
-                  <br />
-                  Cette ressource sera disponible prochainement.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      case "DilutionSimulator":
-        return <DilutionSimulator stepId={stepId} substepTitle={substepTitle} />;
-      case "GrowthProjection":
-        return <GrowthProjection stepId={stepId} substepTitle={substepTitle} />;
-      case "LegalStatusComparison":
-        return <LegalStatusComparison stepId={stepId} substepTitle={substepTitle} />;
-      default:
-        return (
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-center flex-col gap-2 text-center py-8">
-                <AlertTriangle className="h-12 w-12 text-muted-foreground/60" />
-                <p className="text-center text-muted-foreground mt-2">
-                  Composant <strong>{componentName}</strong> non trouvé ou en cours de développement.
-                  <br />
-                  Cette ressource sera disponible prochainement.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        );
-    }
-  };
 
-  // Si chargement en cours
+  // If loading
   if (isLoading) {
     return (
       <Card>
@@ -139,9 +60,10 @@ export default function ResourceManager({ step, selectedSubstepTitle }) {
     );
   }
 
-  // Afficher les ressources disponibles pour la sous-étape ou l'étape sélectionnée
+  // Get resources to show
   const resources = getResourcesToShow();
   
+  // If no resources available
   if (resources.length === 0) {
     return (
       <Card>
@@ -156,7 +78,7 @@ export default function ResourceManager({ step, selectedSubstepTitle }) {
     );
   }
   
-  // S'il y a une seule ressource disponible et un composant associé, l'afficher directement
+  // If only one available resource with selected sub-step
   const availableResources = resources.filter(r => r.componentName && r.status !== 'coming-soon');
   
   if (availableResources.length === 1 && selectedSubstepTitle) {
@@ -171,12 +93,13 @@ export default function ResourceManager({ step, selectedSubstepTitle }) {
           </Badge>
         </div>
         <p className="text-muted-foreground mb-6 text-sm">{resource.description}</p>
-        {renderResourceComponent(resource.componentName!, step.id, selectedSubstepTitle)}
+        {resource.componentName && selectedSubstepTitle && 
+          renderResourceComponent(resource.componentName, step.id, selectedSubstepTitle)}
       </div>
     );
   }
   
-  // S'il y a plusieurs ressources ou si aucune sous-étape n'est sélectionnée, afficher la liste
+  // Multiple resources or no sub-step selected
   return (
     <div className="mt-4">
       <h3 className="text-lg font-medium mb-4">Ressources disponibles</h3>
@@ -201,9 +124,8 @@ export default function ResourceManager({ step, selectedSubstepTitle }) {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mb-4">{resource.description}</p>
-                    {resource.componentName && selectedSubstepTitle && (
-                      renderResourceComponent(resource.componentName, step.id, selectedSubstepTitle)
-                    )}
+                    {resource.componentName && selectedSubstepTitle && 
+                      renderResourceComponent(resource.componentName, step.id, selectedSubstepTitle)}
                   </div>
                 ))
             ) : (
