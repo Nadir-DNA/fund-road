@@ -1,4 +1,3 @@
-
 import { Step } from "@/types/journey";
 
 export const journeySteps: Step[] = [
@@ -21,7 +20,8 @@ export const journeySteps: Step[] = [
           { 
             title: "Journal d'observation utilisateur", 
             componentName: "UserResearchNotebook",
-            description: "Documentez vos observations terrain et insights utilisateurs" 
+            description: "Documentez vos observations terrain et insights utilisateurs",
+            status: 'available' // Updated
           }
         ]
       },
@@ -33,17 +33,20 @@ export const journeySteps: Step[] = [
           { 
             title: "Synthèse qualitative", 
             componentName: "OpportunityDefinition",
-            description: "Structurez les insights clés pour définir votre opportunité" 
+            description: "Structurez les insights clés pour définir votre opportunité",
+            status: 'available' // Updated
           },
           { 
             title: "Estimation TAM / SAM / SOM", 
             componentName: "MarketSizeEstimator",
-            description: "Estimez la taille de votre marché adressable" 
+            description: "Estimez la taille de votre marché adressable",
+            status: 'available' // Updated
           },
           { 
             title: "Analyse concurrentielle", 
             componentName: "CompetitiveAnalysisTable",
-            description: "Cartographiez le paysage concurrentiel" 
+            description: "Cartographiez le paysage concurrentiel",
+            status: 'available' // Updated
           }
         ]
       }
@@ -67,12 +70,14 @@ export const journeySteps: Step[] = [
           { 
             title: "Canvas Problème / Solution", 
             componentName: "ProblemSolutionCanvas",
-            description: "Visualisez l'adéquation entre le problème et votre solution" 
+            description: "Visualisez l'adéquation entre le problème et votre solution",
+            status: 'available'
           },
           { 
             title: "Fiche Persona utilisateur", 
             componentName: "PersonaBuilder",
-            description: "Créez un profil détaillé de votre utilisateur cible" 
+            description: "Créez un profil détaillé de votre utilisateur cible",
+            status: 'available'
           }
         ]
       },
@@ -121,7 +126,8 @@ export const journeySteps: Step[] = [
           { 
             title: "Business Model Canvas", 
             componentName: "BusinessModelCanvas",
-            description: "Construisez votre modèle d'affaires complet" 
+            description: "Construisez votre modèle d'affaires complet",
+            status: 'available'
           }
         ]
       },
@@ -351,7 +357,8 @@ export const journeySteps: Step[] = [
           { 
             title: "SWOT", 
             componentName: "SWOTAnalysis",
-            description: "Analysez les forces, faiblesses, opportunités et menaces"
+            description: "Analysez les forces, faiblesses, opportunités et menaces",
+            status: 'available'
           },
           { 
             title: "Analyse de croissance", 
@@ -444,7 +451,8 @@ export const journeySteps: Step[] = [
           { 
             title: "Table de capitalisation", 
             componentName: "CapTable",
-            description: "Gérez la répartition du capital et la dilution"
+            description: "Gérez la répartition du capital et la dilution",
+            status: 'available'
           },
           { 
             title: "Simulateur dilution", 
