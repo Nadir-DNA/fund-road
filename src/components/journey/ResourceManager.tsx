@@ -9,14 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 // Composants de resources
 import ProblemSolutionMatrix from "./resources/ProblemSolutionCanvas";
 import BusinessModelCanvas from "./resources/BusinessModelCanvas";
-import SwotAnalysis from "./resources/SwotAnalysis"; // Fixed import name
-import CapTable from "./resources/CapTable";
+import SwotAnalysis from "./resources/SwotAnalysis";
+import CapTableEditor from "./resources/CapTableEditor";
 import EmpathyMap from "./resources/EmpathyMap";
-import MVPSelector from "./resources/MVPSelector";
 import UserResearchNotebook from "./resources/UserResearchNotebook";
 import OpportunityDefinition from "./resources/OpportunityDefinition";
 import MarketSizeEstimator from "./resources/MarketSizeEstimator";
-import PersonaBuilder from "./resources/UserResearchNotebook"; // Temporaire - à remplacer par le vrai composant
+import PersonaBuilder from "./resources/PersonaBuilder";
 import DilutionSimulator from "./resources/DilutionSimulator";
 import GrowthProjection from "./resources/GrowthProjection";
 import LegalStatusComparison from "./resources/LegalStatusComparison";
@@ -76,7 +75,8 @@ export default function ResourceManager({ step, selectedSubstepTitle }) {
       case "SwotAnalysis":
         return <SwotAnalysis stepId={stepId} substepTitle={substepTitle} />;
       case "CapTable":
-        return <CapTable stepId={stepId} substepTitle={substepTitle} />;
+      case "CapTableEditor":
+        return <CapTableEditor stepId={stepId} substepTitle={substepTitle} />;
       case "EmpathyMap":
         return <EmpathyMap stepId={stepId} substepTitle={substepTitle} />;
       case "UserResearchNotebook":
@@ -86,9 +86,22 @@ export default function ResourceManager({ step, selectedSubstepTitle }) {
       case "MarketSizeEstimator":
         return <MarketSizeEstimator stepId={stepId} substepTitle={substepTitle} />;
       case "PersonaBuilder":
-        return <PersonaBuilder stepId={stepId} substepTitle={substepTitle} />; // Temporaire - à remplacer
+        return <PersonaBuilder stepId={stepId} substepTitle={substepTitle} />;
       case "MVPSelector":
-        return <MVPSelector stepId={stepId} substepTitle={substepTitle} />;
+        return (
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center flex-col gap-2 text-center py-8">
+                <AlertTriangle className="h-12 w-12 text-muted-foreground/60" />
+                <p className="text-center text-muted-foreground mt-2">
+                  Composant <strong>MVPSelector</strong> en cours de développement.
+                  <br />
+                  Cette ressource sera disponible prochainement.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        );
       case "DilutionSimulator":
         return <DilutionSimulator stepId={stepId} substepTitle={substepTitle} />;
       case "GrowthProjection":

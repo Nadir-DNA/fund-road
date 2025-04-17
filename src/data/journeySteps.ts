@@ -1,4 +1,3 @@
-
 import { Step } from "@/types/journey";
 
 export const journeySteps: Step[] = [
@@ -92,7 +91,7 @@ export const journeySteps: Step[] = [
             title: "Sélection de MVP", 
             componentName: "MVPSelector",
             description: "Choisissez la stratégie MVP la plus adaptée",
-            status: 'available'
+            status: 'coming-soon'
           },
           { 
             title: "Cahier des charges MVP", 
