@@ -13,7 +13,7 @@ export const resourceComponentsMap: Record<string, React.LazyExoticComponent<any
   // Business analysis
   "ProblemSolutionMatrix.tsx": lazy(() => import("./resources/ProblemSolutionMatrix")),
   "ProblemSolutionCanvas.tsx": lazy(() => import("./resources/ProblemSolutionCanvas")),
-  "SwotAnalysis.tsx": lazy(() => import("./resources/SwotAnalysis")),
+  "SwotAnalysis.tsx": lazy(() => import("./resources/SwotAnalysis")), // Corrected filename
   "BusinessModelCanvas.tsx": lazy(() => import("./resources/BusinessModelCanvas")),
   "CompetitiveAnalysisTable.tsx": lazy(() => import("./resources/CompetitiveAnalysisTable")),
   "MarketAnalysisGrid.tsx": lazy(() => import("./resources/MarketAnalysisGrid")),
@@ -33,6 +33,8 @@ export const resourceComponentsMap: Record<string, React.LazyExoticComponent<any
   "FinancialTables.tsx": lazy(() => import("./resources/FinancialTables")),
   "MonetizationTestGrid.tsx": lazy(() => import("./resources/MonetizationTestGrid")),
   "PaidOfferFeedback.tsx": lazy(() => import("./resources/PaidOfferFeedback")),
+  "GrowthProjection.tsx": lazy(() => import("./resources/GrowthProjection")),
+  "DilutionSimulator.tsx": lazy(() => import("./resources/DilutionSimulator")),
   
   // Legal and Team
   "LegalStatusSelector.tsx": lazy(() => import("./resources/LegalStatusSelector")),
@@ -41,4 +43,5 @@ export const resourceComponentsMap: Record<string, React.LazyExoticComponent<any
   "CofounderAlignment.tsx": lazy(() => import("./resources/CofounderAlignment")),
   "RecruitmentPlan.tsx": lazy(() => import("./resources/RecruitmentPlan")),
   "CapTable.tsx": lazy(() => import("./resources/CapTable")),
+  "CapTableEditor.tsx": lazy(() => import("./resources/CapTableEditor")),
 };

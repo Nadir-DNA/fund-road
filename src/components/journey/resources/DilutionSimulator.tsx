@@ -1,8 +1,10 @@
+
 import { useState } from "react";
 import ResourceForm from "../ResourceForm";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import ExportPanel from "../resource-form/ExportPanel";
 
 interface DilutionSimulatorProps {
   stepId: number;
@@ -16,6 +18,7 @@ export default function DilutionSimulator({ stepId, substepTitle }: DilutionSimu
     post_money_valuation: "",
     investor_equity: ""
   });
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleChange = (field: string, value: string) => {
     const nextState = { ...formData, [field]: value };
@@ -39,6 +42,14 @@ export default function DilutionSimulator({ stepId, substepTitle }: DilutionSimu
       description="Estimez la part du capital que prendrait un investisseur après votre levée."
       defaultValues={formData}
       onDataSaved={data => setFormData(data)}
+      exportPanel={
+        <ExportPanel 
+          formData={formData}
+          resourceType="dilution_simulator"
+          isExporting={isExporting}
+          setIsExporting={setIsExporting}
+        />
+      }
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="p-5">
@@ -60,7 +71,7 @@ export default function DilutionSimulator({ stepId, substepTitle }: DilutionSimu
         </Card>
 
         <Card className="p-5 md:col-span-2">
-          <Label>Part de l’investisseur estimée</Label>
+          <Label>Part de l'investisseur estimée</Label>
           <Input
             readOnly
             value={formData.investor_equity}

@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { Step, SubStep, Resource } from "@/types/journey";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 // Composants de resources
 import ProblemSolutionMatrix from "./resources/ProblemSolutionCanvas";
 import BusinessModelCanvas from "./resources/BusinessModelCanvas";
-import SWOTAnalysis from "./resources/SWOTAnalysis";
+import SwotAnalysis from "./resources/SwotAnalysis"; // Fixed import name
 import CapTable from "./resources/CapTable";
 import EmpathyMap from "./resources/EmpathyMap";
 import MVPSelector from "./resources/MVPSelector";
@@ -20,14 +19,9 @@ import OpportunityDefinition from "./resources/OpportunityDefinition";
 import MarketSizeEstimator from "./resources/MarketSizeEstimator";
 import PersonaBuilder from "./resources/UserResearchNotebook"; // Temporaire - à remplacer par le vrai composant
 
-interface ResourceManagerProps {
-  step: Step;
-  selectedSubstepTitle?: string;
-}
-
-export default function ResourceManager({ step, selectedSubstepTitle }: ResourceManagerProps) {
+export default function ResourceManager({ step, selectedSubstepTitle }) {
   // État pour stocker les ressources disponibles depuis Supabase
-  const [supabaseResources, setSupabaseResources] = useState<any[]>([]);
+  const [supabaseResources, setSupabaseResources] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
   // Trouver la sous-étape sélectionnée
@@ -69,7 +63,7 @@ export default function ResourceManager({ step, selectedSubstepTitle }: Resource
   };
   
   // Rendu du composant correspondant à la ressource
-  const renderResourceComponent = (componentName: string, stepId: number, substepTitle: string) => {
+  const renderResourceComponent = (componentName, stepId, substepTitle) => {
     switch (componentName) {
       case "ProblemSolutionCanvas":
       case "ProblemSolutionMatrix":
@@ -77,7 +71,8 @@ export default function ResourceManager({ step, selectedSubstepTitle }: Resource
       case "BusinessModelCanvas":
         return <BusinessModelCanvas stepId={stepId} substepTitle={substepTitle} />;
       case "SWOTAnalysis":
-        return <SWOTAnalysis stepId={stepId} substepTitle={substepTitle} />;
+      case "SwotAnalysis":
+        return <SwotAnalysis stepId={stepId} substepTitle={substepTitle} />;
       case "CapTable":
         return <CapTable stepId={stepId} substepTitle={substepTitle} />;
       case "EmpathyMap":

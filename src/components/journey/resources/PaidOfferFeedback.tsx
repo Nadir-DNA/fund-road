@@ -1,8 +1,10 @@
+
 import { useState } from "react";
 import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
 
 interface PaidOfferFeedbackProps {
   stepId: number;
@@ -11,14 +13,14 @@ interface PaidOfferFeedbackProps {
 
 export default function PaidOfferFeedback({ stepId, substepTitle }: PaidOfferFeedbackProps) {
   const [formData, setFormData] = useState({
-    offer_tested: "",
-    user_reaction: "",
-    objections: "",
-    perceived_value: "",
-    pricing_feedback: ""
+    value_perception: 0,
+    price_appropriateness: 0,
+    pricing_feedback: "",
+    user_quote: "",
+    improvement_suggestions: ""
   });
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -27,44 +29,75 @@ export default function PaidOfferFeedback({ stepId, substepTitle }: PaidOfferFee
       stepId={stepId}
       substepTitle={substepTitle}
       resourceType="paid_offer_feedback"
-      title="Retour sur offre payante"
-      description="Collectez les retours d’utilisateurs sur une offre tarifée testée pour ajuster votre modèle économique."
+      title="Retours sur offre payante"
+      description="Collectez les retours des premiers clients payants pour améliorer votre offre."
       defaultValues={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">
-        <Card className="p-5"><Label>Offre testée</Label>
+        <Card className="p-5">
+          <Label className="mb-2 block">Perception de la valeur (1-10)</Label>
+          <div className="py-4">
+            <Slider 
+              value={[formData.value_perception]} 
+              min={0} 
+              max={10} 
+              step={1}
+              onValueChange={val => handleChange("value_perception", val[0])}
+            />
+            <div className="flex justify-between mt-2 text-sm text-muted-foreground">
+              <span>Faible</span>
+              <span>Score: {formData.value_perception}</span>
+              <span>Élevée</span>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <Label className="mb-2 block">Adéquation du prix (1-10)</Label>
+          <div className="py-4">
+            <Slider 
+              value={[formData.price_appropriateness]} 
+              min={0} 
+              max={10} 
+              step={1}
+              onValueChange={val => handleChange("price_appropriateness", val[0])}
+            />
+            <div className="flex justify-between mt-2 text-sm text-muted-foreground">
+              <span>Trop bas</span>
+              <span>Score: {formData.price_appropriateness}</span>
+              <span>Trop élevé</span>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <Label>Retours sur le prix</Label>
           <Textarea
-            placeholder="Description de l’offre proposée à vos utilisateurs"
-            className="min-h-[100px]"
-            value={formData.offer_tested}
-            onChange={(e) => handleChange("offer_tested", e.target.value)}
+            placeholder="Que pensent les clients du prix par rapport à la valeur perçue ?"
+            value={formData.pricing_feedback}
+            onChange={(e) => handleChange("pricing_feedback", e.target.value)}
           />
         </Card>
-        <Card className="p-5"><Label>Réaction générale</Label>
+
+        <Card className="p-5">
+          <Label>Citation client marquante</Label>
           <Textarea
-            placeholder="Est-ce que l’utilisateur a compris, trouvé ça utile, exprimé un intérêt ?"
-            className="min-h-[100px]"
-            value={formData.user_reaction}
-            onChange={(e) => handleChange("user_reaction", e.target.value)}
+            placeholder="Une citation client particulièrement révélatrice..."
+            value={formData.user_quote}
+            onChange={(e) => handleChange("user_quote", e.target.value)}
           />
         </Card>
-        <Card className="p-5"><Label>Objections émises</Label>
+
+        <Card className="p-5">
+          <Label>Suggestions d'amélioration</Label>
           <Textarea
-            placeholder="Qu’est-ce qui a pu bloquer ?"
-            className="min-h-[100px]"
-            value={formData.objections}
-            onChange={(e) => handleChange("objections", e.target.value)}
+            placeholder="Quelles améliorations les clients aimeraient voir ?"
+            value={formData.improvement_suggestions}
+            onChange={(e) => handleChange("improvement_suggestions", e.target.value)}
           />
         </Card>
-        <Card className="p-5"><Label>Valeur perçue</Label>
-          <Textarea
-            placeholder="Comment l’utilisateur perçoit l’intérêt ou la valeur ajoutée ?"
-            className="min-h-[100px]"
-            value={formData.perceived_value}
-            onChange={(e) => handleChange("perceived_value", e.target.value)}
-          />
-        </Card>
-        <Card className="p-5"><Label>Feedback sur le prix</Label>
-          <Textarea
-            placeholder="Est-ce que le prix semblait justifié, trop élevé, trop
+      </div>
+    </ResourceForm>
+  );
+}
