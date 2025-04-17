@@ -4,6 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle } from "lucide-react";
 import { resourceComponentsMap } from "../resourceComponentsMap";
 
+// Define the props interface that all resource components should have
+interface ResourceComponentProps {
+  stepId: number;
+  substepTitle: string;
+}
+
 // Fallback loading component
 const ResourceLoadingCard = () => (
   <Card>
@@ -36,7 +42,8 @@ const ResourceNotFoundCard = ({ componentName }: { componentName: string }) => (
 
 // Render resource component
 export const renderResourceComponent = (componentName: string, stepId: number, substepTitle: string) => {
-  const ResourceComponent = resourceComponentsMap[componentName];
+  // Get the component from the map, ensuring it's typed as a React component that accepts ResourceComponentProps
+  const ResourceComponent = resourceComponentsMap[componentName] as React.LazyExoticComponent<React.ComponentType<ResourceComponentProps>>;
   
   if (!ResourceComponent) {
     return <ResourceNotFoundCard componentName={componentName} />;

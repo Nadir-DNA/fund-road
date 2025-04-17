@@ -1,8 +1,14 @@
 
 import { lazy } from "react";
 
-// Using React.lazy for dynamic imports
-export const resourceComponentsMap: Record<string, React.LazyExoticComponent<any>> = {
+// Define the props interface that all resource components should have
+interface ResourceComponentProps {
+  stepId: number;
+  substepTitle: string;
+}
+
+// Using React.lazy for dynamic imports with proper typing
+export const resourceComponentsMap: Record<string, React.LazyExoticComponent<React.ComponentType<ResourceComponentProps>>> = {
   // User research and ideation
   "UserResearchNotebook": lazy(() => import("./resources/UserResearchNotebook")),
   "CustomerBehaviorNotes": lazy(() => import("./resources/CustomerBehaviorNotes")),
