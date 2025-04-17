@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -18,6 +17,9 @@ import UserResearchNotebook from "./resources/UserResearchNotebook";
 import OpportunityDefinition from "./resources/OpportunityDefinition";
 import MarketSizeEstimator from "./resources/MarketSizeEstimator";
 import PersonaBuilder from "./resources/UserResearchNotebook"; // Temporaire - à remplacer par le vrai composant
+import DilutionSimulator from "./resources/DilutionSimulator";
+import GrowthProjection from "./resources/GrowthProjection";
+import LegalStatusComparison from "./resources/LegalStatusComparison";
 
 export default function ResourceManager({ step, selectedSubstepTitle }) {
   // État pour stocker les ressources disponibles depuis Supabase
@@ -87,6 +89,12 @@ export default function ResourceManager({ step, selectedSubstepTitle }) {
         return <PersonaBuilder stepId={stepId} substepTitle={substepTitle} />; // Temporaire - à remplacer
       case "MVPSelector":
         return <MVPSelector stepId={stepId} substepTitle={substepTitle} />;
+      case "DilutionSimulator":
+        return <DilutionSimulator stepId={stepId} substepTitle={substepTitle} />;
+      case "GrowthProjection":
+        return <GrowthProjection stepId={stepId} substepTitle={substepTitle} />;
+      case "LegalStatusComparison":
+        return <LegalStatusComparison stepId={stepId} substepTitle={substepTitle} />;
       default:
         return (
           <Card>

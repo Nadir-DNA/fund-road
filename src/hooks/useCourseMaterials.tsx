@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -137,16 +136,13 @@ export const useCourseMaterials = (stepId: number, substepTitle: string | null) 
         throw new Error("Vous n'avez pas les permissions nécessaires");
       }
       
-      // Generate a substep_id using substep_title as a basis
-      const substep_id = resourceData.substep_title?.toLowerCase().replace(/\s+/g, '-') || 'default';
-      
       // Créer ou mettre à jour le modèle de ressource
       const { data, error } = await supabase
         .from('entrepreneur_resources')
         .upsert({
           step_id: resourceData.step_id!,
           substep_title: resourceData.substep_title!,
-          substep_id: substep_id, // Add the required substep_id field
+          substep_index: resourceData.substep_title?.toLowerCase().replace(/\s+/g, '-') || 'default', // Use substep_index instead of substep_id
           title: resourceData.title!,
           description: resourceData.description,
           resource_type: resourceData.resource_type!,

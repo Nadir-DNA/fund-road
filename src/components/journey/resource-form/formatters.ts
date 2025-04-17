@@ -1,4 +1,3 @@
-
 // Utility functions to format different resource types for export
 
 export interface FormattedExport {
@@ -47,6 +46,31 @@ export const formatLegalStatusComparison = (data: any): FormattedExport => {
       { name: "SARL", content: data.sarl || "" },
       { name: "Micro-entreprise", content: data.micro || "" },
       { name: "Conclusion", content: data.conclusion || "" }
+    ]
+  };
+};
+
+export const formatDilutionSimulator = (data: any): FormattedExport => {
+  return {
+    title: `Simulateur de Dilution - ${data.projectName}`,
+    date: data.exportDate,
+    sections: [
+      { name: "Valorisation post-money", content: data.post_money_valuation || "" },
+      { name: "Montant levé", content: data.funding_asked || "" },
+      { name: "Part de l'investisseur estimée", content: data.investor_equity || "" }
+    ]
+  };
+};
+
+export const formatGrowthProjection = (data: any): FormattedExport => {
+  return {
+    title: `Projection de Croissance - ${data.projectName}`,
+    date: data.exportDate,
+    sections: [
+      { name: "Jalons clés", content: data.key_milestones || "" },
+      { name: "Objectifs de croissance", content: data.expected_growth || "" },
+      { name: "Évolution de l'équipe", content: data.team_scaling || "" },
+      { name: "Évolution produit / tech", content: data.product_scaling || "" }
     ]
   };
 };
@@ -173,6 +197,10 @@ export const formatDataForExport = (data: any, format: "pdf" | "docx" | "xlsx", 
       return formatCapTable(exportData);
     case "legal_status_comparison":
       return formatLegalStatusComparison(exportData);
+    case "dilution_simulator":
+      return formatDilutionSimulator(exportData);
+    case "growth_projection":
+      return formatGrowthProjection(exportData);
     default:
       return {
         title: `${resourceType} - ${projectName}`,
