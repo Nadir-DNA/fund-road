@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Le nom doit avoir au moins 2 caractères" }),
@@ -48,19 +49,36 @@ export default function Contact() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     
-    // Simulate form submission
-    setTimeout(() => {
-      console.log(values);
-      setIsSubmitting(false);
+    try {
+      // Envoyer l'email via la fonction Supabase
+      const { error } = await supabase.functions.invoke('send-contact-email', {
+        body: { 
+          ...values,
+          recipientEmail: 'hello@fund-road.com',
+          subject: `Demande de devis - ${values.projectType}`
+        }
+      });
+      
+      if (error) throw error;
+      
       setIsSubmitted(true);
       toast({
         title: "Demande envoyée",
         description: "Nous vous contacterons prochainement pour discuter de votre projet.",
       });
-    }, 1500);
+    } catch (error: any) {
+      console.error("Erreur lors de l'envoi du formulaire:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'envoi de votre demande. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -158,6 +176,8 @@ export default function Contact() {
                               <SelectItem value="innovation">Innovation technologique</SelectItem>
                               <SelectItem value="service">Service</SelectItem>
                               <SelectItem value="commerce">Commerce</SelectItem>
+                              <SelectItem value="ip-strategy">Stratégie de propriété intellectuelle</SelectItem>
+                              <SelectItem value="mvp-website">Création de MVP/Site web</SelectItem>
                               <SelectItem value="other">Autre</SelectItem>
                             </SelectContent>
                           </Select>

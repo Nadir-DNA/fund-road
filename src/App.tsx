@@ -15,6 +15,7 @@ import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import Contact from "./pages/Contact";
 import Roadmap from "./pages/Roadmap";
+import AboutUs from "./pages/AboutUs";
 import CookieConsent from "./components/CookieConsent";
 import { toast } from "./components/ui/use-toast";
 
@@ -71,6 +72,7 @@ const App = () => (
               <Route path="/admin" element={<Admin />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/about" element={<AboutUs />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
