@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,20 +7,31 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { LanguageProvider } from "./context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Suspense, lazy } from "react";
 import Navbar from "./components/Navbar";
 import Index from "./pages/Index";
-import Financing from "./pages/Financing";
-import FAQ from "./pages/FAQ";
-import NotFound from "./pages/NotFound";
-import Admin from "./pages/Admin";
-import Auth from "./pages/Auth";
-import Contact from "./pages/Contact";
-import Roadmap from "./pages/Roadmap";
-import AboutUs from "./pages/AboutUs";
+import { LoadingIndicator } from "./components/ui/LoadingIndicator";
 import CookieConsent from "./components/CookieConsent";
 import { toast } from "./components/ui/use-toast";
-import TermsOfService from "./pages/TermsOfService";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
+
+// Lazy load non-critical pages
+const Financing = lazy(() => import("./pages/Financing"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Roadmap = lazy(() => import("./pages/Roadmap"));
+const AboutUs = lazy(() => import("./pages/AboutUs"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+
+// Create a loading component for lazy-loaded routes
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <LoadingIndicator size="lg" />
+  </div>
+);
 
 const checkDeeplApiKey = async () => {
   if (!import.meta.env.VITE_DEEPL_API_KEY) {
@@ -72,20 +84,22 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Navbar />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/features" element={<Navigate to="/roadmap" replace />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/financing" element={<Financing />} />
-              <Route path="/roadmap" element={<Roadmap />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/about" element={<AboutUs />} />
-              <Route path="/terms" element={<TermsOfService />} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/features" element={<Navigate to="/roadmap" replace />} />
+                <Route path="/faq" element={<FAQ />} />
+                <Route path="/financing" element={<Financing />} />
+                <Route path="/roadmap" element={<Roadmap />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/about" element={<AboutUs />} />
+                <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
             <CookieConsent />
           </BrowserRouter>
         </TooltipProvider>

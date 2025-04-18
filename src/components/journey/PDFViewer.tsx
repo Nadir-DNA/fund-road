@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Download, ExternalLink } from 'lucide-react';
+import { LoadingIndicator } from '@/components/ui/LoadingIndicator';
 
 interface PDFViewerProps {
   url: string;
@@ -31,7 +32,11 @@ export default function PDFViewer({ url, title }: PDFViewerProps) {
       </div>
       
       <div className="relative w-full aspect-[4/3] border border-border rounded-md overflow-hidden">
-        {isLoading && <Skeleton className="absolute inset-0 z-10" />}
+        {isLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80">
+            <LoadingIndicator size="md" />
+          </div>
+        )}
         <iframe 
           src={`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`}
           title={title}

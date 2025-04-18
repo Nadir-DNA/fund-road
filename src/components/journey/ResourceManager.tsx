@@ -1,10 +1,12 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { Clock, CheckCircle } from "lucide-react";
 import { useCourseMaterials } from "@/hooks/useCourseMaterials";
 import { renderResourceComponent } from "./utils/resourceRenderer";
+import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 
 export default function ResourceManager({ step, selectedSubstepTitle }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -51,7 +53,8 @@ export default function ResourceManager({ step, selectedSubstepTitle }) {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-6">
+        <CardContent className="p-6 flex flex-col items-center justify-center py-12">
+          <LoadingIndicator size="lg" className="mb-4" />
           <p className="text-center text-muted-foreground">
             Chargement des ressources...
           </p>

@@ -9,6 +9,7 @@ import ResourceManager from "./ResourceManager";
 import OverviewTab from "./OverviewTab";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 
 interface StepDetailProps {
   step: Step;
@@ -83,12 +84,19 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
         </TabsList>
         
         <TabsContent value="overview">
-          <OverviewTab 
-            step={step} 
-            selectedSubStep={selectedSubStep} 
-            isLoading={isLoadingContent}
-            courseContent={courseContent || ""}
-          />
+          {isLoadingContent ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <LoadingIndicator size="lg" className="mb-4" />
+              <p className="text-muted-foreground">Chargement du contenu...</p>
+            </div>
+          ) : (
+            <OverviewTab 
+              step={step} 
+              selectedSubStep={selectedSubStep} 
+              isLoading={false}
+              courseContent={courseContent || ""}
+            />
+          )}
         </TabsContent>
         
         <TabsContent value="resources" className="py-4">

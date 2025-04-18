@@ -10,6 +10,8 @@ import { Search, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { useLanguage } from "@/context/LanguageContext";
+import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
+import LazyLoad from "@/components/LazyLoad";
 
 interface Investor {
   id: string;
@@ -156,8 +158,9 @@ export default function Financing() {
         </div>
         
         {isLoading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          <div className="flex flex-col justify-center items-center py-20">
+            <LoadingIndicator size="lg" className="mb-4" />
+            <p className="text-white/70">Chargement des investisseurs...</p>
           </div>
         ) : loadingError ? (
           <div className="text-center py-16">
@@ -170,49 +173,50 @@ export default function Financing() {
           <>
             {filteredInvestors.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredInvestors.map((investor) => (
-                  <div 
-                    key={investor.id} 
-                    className="bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:translate-y-[-5px]"
-                  >
-                    <h3 className="text-xl font-semibold mb-2">{investor.name}</h3>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {investor.type && investor.type.length > 0 && (
-                        <span className="text-xs px-3 py-1 bg-primary/20 text-primary rounded-full">
-                          {investor.type[0]}
-                        </span>
-                      )}
-                      {investor.sectors && investor.sectors.slice(0, 2).map((sector, index) => (
-                        <span key={index} className="text-xs px-3 py-1 bg-white/10 text-white/80 rounded-full">
-                          {sector}
-                        </span>
-                      ))}
-                      {investor.sectors && investor.sectors.length > 2 && (
-                        <span className="text-xs px-3 py-1 bg-white/10 text-white/80 rounded-full">
-                          +{investor.sectors.length - 2}
-                        </span>
-                      )}
+                {filteredInvestors.map((investor, index) => (
+                  <LazyLoad key={investor.id} height={300} delay={(index % 6) * 100} showLoader={true}>
+                    <div 
+                      className="bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-6 hover:border-primary/50 transition-all duration-300 hover:translate-y-[-5px]"
+                    >
+                      <h3 className="text-xl font-semibold mb-2">{investor.name}</h3>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {investor.type && investor.type.length > 0 && (
+                          <span className="text-xs px-3 py-1 bg-primary/20 text-primary rounded-full">
+                            {investor.type[0]}
+                          </span>
+                        )}
+                        {investor.sectors && investor.sectors.slice(0, 2).map((sector, index) => (
+                          <span key={index} className="text-xs px-3 py-1 bg-white/10 text-white/80 rounded-full">
+                            {sector}
+                          </span>
+                        ))}
+                        {investor.sectors && investor.sectors.length > 2 && (
+                          <span className="text-xs px-3 py-1 bg-white/10 text-white/80 rounded-full">
+                            +{investor.sectors.length - 2}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <p className="text-white/70 text-sm mb-4">
+                        {investor.description}
+                      </p>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-white/50 text-sm">Stade:</span>
+                          <span className="text-sm">{investor.stage ? investor.stage.join(", ") : 'Non spécifié'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-white/50 text-sm">Ticket moyen:</span>
+                          <span className="text-sm">{investor.ticket ? investor.ticket.join(" - ") : 'Variable'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-white/50 text-sm">Localisation:</span>
+                          <span className="text-sm">{investor.location ? investor.location.join(", ") : 'International'}</span>
+                        </div>
+                      </div>
                     </div>
-                    
-                    <p className="text-white/70 text-sm mb-4">
-                      {investor.description}
-                    </p>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-white/50 text-sm">Stade:</span>
-                        <span className="text-sm">{investor.stage ? investor.stage.join(", ") : 'Non spécifié'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-white/50 text-sm">Ticket moyen:</span>
-                        <span className="text-sm">{investor.ticket ? investor.ticket.join(" - ") : 'Variable'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-white/50 text-sm">Localisation:</span>
-                        <span className="text-sm">{investor.location ? investor.location.join(", ") : 'International'}</span>
-                      </div>
-                    </div>
-                  </div>
+                  </LazyLoad>
                 ))}
               </div>
             ) : (
