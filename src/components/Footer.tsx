@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Facebook, Github, Instagram, Linkedin, Twitter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -98,10 +97,10 @@ export default function Footer() {
             © {new Date().getFullYear()} Fund Road. Tous droits réservés.
           </p>
           <div className="flex space-x-4 mt-4 sm:mt-0 text-xs sm:text-sm">
-            <Link to="/faq" className="text-white/60 hover:text-primary transition-colors">
+            <Link to="/terms" className="text-white/60 hover:text-primary transition-colors">
               Conditions d'utilisation
             </Link>
-            <Link to="/faq" className="text-white/60 hover:text-primary transition-colors">
+            <Link to="/privacy" className="text-white/60 hover:text-primary transition-colors">
               Politique de confidentialité
             </Link>
             <Link to="/faq" className="text-white/60 hover:text-primary transition-colors">

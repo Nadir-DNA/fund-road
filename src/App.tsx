@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,8 +17,9 @@ import Roadmap from "./pages/Roadmap";
 import AboutUs from "./pages/AboutUs";
 import CookieConsent from "./components/CookieConsent";
 import { toast } from "./components/ui/use-toast";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
-// DeepL API key check
 const checkDeeplApiKey = async () => {
   if (!import.meta.env.VITE_DEEPL_API_KEY) {
     console.warn("DeepL API key is not set. Translations may not work properly.");
@@ -27,7 +27,6 @@ const checkDeeplApiKey = async () => {
   }
 
   try {
-    // Check if the DeepL API key is valid using the edge function
     const { data, error } = await supabase.functions.invoke('check-deepl-key', {
       body: { testKey: true },
     });
@@ -48,17 +47,15 @@ const checkDeeplApiKey = async () => {
   }
 };
 
-// Run the check when the app loads
 setTimeout(() => {
   checkDeeplApiKey();
-}, 2000); // Delay to ensure other components are loaded first
+}, 2000);
 
-// Configure React Query with optimized settings for better performance
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 5,
       retry: 1,
       networkMode: 'online'
     },
@@ -83,7 +80,8 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/about" element={<AboutUs />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <CookieConsent />
