@@ -1,86 +1,18 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import LanguageSwitcher from "./LanguageSwitcher";
 import { NavLinks } from "./nav/NavLinks";
 import { AuthButtons } from "./nav/AuthButtons";
 import { MobileMenu } from "./nav/MobileMenu";
+import LanguageSwitcher from "./LanguageSwitcher";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-      
-      if (session) {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', session.user.id)
-          .single();
-          
-        if (!error && profile && profile.is_admin) {
-          setIsAdmin(true);
-        }
-      }
-    };
-    
-    checkAuth();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setIsAuthenticated(!!session);
-        
-        if (event === 'SIGNED_OUT') {
-          setIsAdmin(false);
-        } 
-        else if (event === 'SIGNED_IN' && session) {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('is_admin')
-            .eq('id', session.user.id)
-            .single();
-            
-          if (!error && profile && profile.is_admin) {
-            setIsAdmin(true);
-          }
-        }
-      }
-    );
-    
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleSignOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      toast({
-        title: "Déconnexion réussie",
-        description: "Vous avez été déconnecté avec succès",
-        variant: "default",
-      });
-      navigate('/');
-    } catch (error: any) {
-      console.error("Erreur lors de la déconnexion:", error);
-      toast({
-        title: "Erreur",
-        description: "Un problème est survenu lors de la déconnexion",
-        variant: "destructive",
-      });
-    }
-  };
+  const { isAuthenticated, handleSignOut } = useAuthStatus();
 
   const handleAuthClick = () => {
     navigate('/auth');
