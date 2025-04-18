@@ -50,7 +50,7 @@ export default function Auth() {
     return () => subscription.unsubscribe();
   }, []);
   
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     
@@ -111,7 +111,7 @@ export default function Auth() {
         // Switch to login view after successful signup
         setIsLogin(true);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Erreur d'authentification:", error);
       toast({
         title: isLogin ? "Échec de connexion" : "Échec d'inscription",
