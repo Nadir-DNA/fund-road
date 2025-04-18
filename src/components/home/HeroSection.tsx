@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -44,7 +43,7 @@ export default function HeroSection() {
           <div className="flex justify-center gap-4">
             <Button asChild className="bg-gradient-to-r from-primary to-accent text-white px-8 py-6 text-lg">
               <Link to={isAuthenticated ? "/roadmap" : "/auth"} className="flex items-center">
-                {isAuthenticated ? "Accéder à mon parcours" : "Commencer mon parcours"}
+                Inscris-toi pour commencer ton parcours gratuitement
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
