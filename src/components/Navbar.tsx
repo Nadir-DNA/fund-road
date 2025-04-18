@@ -1,17 +1,14 @@
+
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, LogOut, ChevronDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import LanguageSwitcher from "./LanguageSwitcher";
-import { useLanguage } from "@/context/LanguageContext";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { NavLinks } from "./nav/NavLinks";
+import { AuthButtons } from "./nav/AuthButtons";
+import { MobileMenu } from "./nav/MobileMenu";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -19,7 +16,6 @@ export default function Navbar() {
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { t } = useLanguage();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -65,10 +61,6 @@ export default function Navbar() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
   const handleSignOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -100,65 +92,25 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <img src="/lovable-uploads/965b31f2-63c1-45e2-9ab0-95b60a8b9d83.png" alt="Fund Road Logo" className="h-10 w-auto" />
-            <Link to="/" className="font-bold text-xl">Fund Road</Link>
+            <a href="/" className="font-bold text-xl">Fund Road</a>
           </div>
           
-          <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-foreground/80 hover:text-primary transition-colors">
-              Accueil
-            </Link>
-            <Link to={isAuthenticated ? "/roadmap" : "/auth"} className="text-foreground/80 hover:text-primary transition-colors">
-              Roadmap
-            </Link>
-            <Link to={isAuthenticated ? "/financing" : "/auth"} className="text-foreground/80 hover:text-primary transition-colors">
-              Financement
-            </Link>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger className="text-foreground/80 hover:text-primary transition-colors inline-flex items-center">
-                Nous découvrir
-                <ChevronDown className="ml-1 h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem asChild>
-                  <Link to="/about">À propos</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/faq">FAQ</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/contact">Contact</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <NavLinks isAuthenticated={isAuthenticated} />
 
           <div className="flex items-center space-x-4">
             <LanguageSwitcher />
             
-            <div className="hidden md:flex space-x-2">
-              {isAuthenticated ? (
-                <Button variant="outline" onClick={handleSignOut} className="text-white border-white/20 hover:bg-white/10">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  {t("nav.logout")}
-                </Button>
-              ) : (
-                <>
-                  <Button variant="outline" onClick={handleAuthClick} className="text-white border-white/20 hover:bg-white/10">
-                    {t("nav.login")}
-                  </Button>
-                  <Button onClick={handleAuthClick} className="bg-white text-black hover:bg-white/90">
-                    {t("nav.signup")}
-                  </Button>
-                </>
-              )}
-            </div>
+            <AuthButtons 
+              isAuthenticated={isAuthenticated}
+              onSignOut={handleSignOut}
+              onAuthClick={handleAuthClick}
+            />
             
             <Button 
               variant="ghost" 
               size="icon" 
               className="md:hidden" 
-              onClick={toggleMenu}
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
@@ -166,44 +118,11 @@ export default function Navbar() {
         </div>
 
         {isMenuOpen && (
-          <div className="mt-4 md:hidden flex flex-col space-y-4 py-4 animate-fade-in">
-            <Link to="/" className="text-foreground/80 hover:text-primary transition-colors">
-              Accueil
-            </Link>
-            <Link to={isAuthenticated ? "/roadmap" : "/auth"} className="text-foreground/80 hover:text-primary transition-colors">
-              Roadmap
-            </Link>
-            <Link to={isAuthenticated ? "/financing" : "/auth"} className="text-foreground/80 hover:text-primary transition-colors">
-              Financement
-            </Link>
-            <Link to="/about" className="text-foreground/80 hover:text-primary transition-colors">
-              À propos
-            </Link>
-            <Link to="/faq" className="text-foreground/80 hover:text-primary transition-colors">
-              FAQ
-            </Link>
-            <Link to="/contact" className="text-foreground/80 hover:text-primary transition-colors">
-              Contact
-            </Link>
-            
-            <div className="flex space-x-2 pt-2">
-              {isAuthenticated ? (
-                <Button variant="outline" onClick={handleSignOut} className="w-full text-white border-white/20 hover:bg-white/10">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  {t("nav.logout")}
-                </Button>
-              ) : (
-                <>
-                  <Button variant="outline" onClick={handleAuthClick} className="w-full text-white border-white/20 hover:bg-white/10">
-                    {t("nav.login")}
-                  </Button>
-                  <Button onClick={handleAuthClick} className="w-full bg-white text-black hover:bg-white/90">
-                    {t("nav.signup")}
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
+          <MobileMenu
+            isAuthenticated={isAuthenticated}
+            onSignOut={handleSignOut}
+            onAuthClick={handleAuthClick}
+          />
         )}
       </div>
     </nav>
