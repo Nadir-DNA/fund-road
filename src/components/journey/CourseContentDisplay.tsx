@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import LazyLoad from "../LazyLoad";
 
