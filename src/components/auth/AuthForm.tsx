@@ -60,27 +60,36 @@ export default function AuthForm({ isLogin, onToggleMode }: AuthFormProps) {
         if (error) throw error;
         
         // Send custom verification email
-        const response = await fetch('https://lhvuoorzmjjnaasahmyw.supabase.co/functions/v1/send-email-verification', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email,
-            confirmation_url: data?.confirmation_url || ''
-          })
-        });
+        try {
+          const response = await fetch('https://lhvuoorzmjjnaasahmyw.supabase.co/functions/v1/send-email-verification', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email,
+              confirmation_url: `https://fund-road.com/auth?email=${encodeURIComponent(email)}`
+            })
+          });
 
-        if (!response.ok) {
-          throw new Error('Failed to send verification email');
+          if (!response.ok) {
+            throw new Error('Failed to send verification email');
+          }
+          
+          toast({
+            title: "Inscription réussie",
+            description: "Veuillez vérifier votre email pour confirmer votre compte",
+          });
+          
+          onToggleMode();
+        } catch (emailError) {
+          console.error("Erreur d'envoi d'email:", emailError);
+          toast({
+            title: "Problème d'envoi d'email",
+            description: "L'inscription a réussi mais nous n'avons pas pu envoyer l'email de vérification",
+            variant: "destructive",
+          });
         }
-        
-        toast({
-          title: "Inscription réussie",
-          description: "Veuillez vérifier votre email pour confirmer votre compte",
-        });
-        
-        onToggleMode();
       }
     } catch (error: any) {
       console.error("Erreur d'authentification:", error);
