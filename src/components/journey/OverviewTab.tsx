@@ -25,6 +25,7 @@ export default function OverviewTab({ step, selectedSubStep, isLoading, courseCo
           stepId={step.id} 
           substepTitle={selectedSubStep?.title || null} 
           stepTitle={step.title}
+          courseContent={courseContent}
         />
       ) : (
         <div className="space-y-6 max-w-full">

@@ -15,6 +15,11 @@ interface StepDetailProps {
   selectedSubStep: SubStep | null;
 }
 
+interface CourseContentResult {
+  course_content: string;
+  substep_title?: string | null;
+}
+
 export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
   const [activeTab, setActiveTab] = useState<string>(selectedSubStep ? "resources" : "overview");
   
@@ -25,7 +30,7 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
       try {
         const { data, error } = await supabase
           .from('entrepreneur_resources')
-          .select('course_content')
+          .select('course_content, substep_title')
           .eq('step_id', step.id);
         
         if (error) throw error;
@@ -34,10 +39,14 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
         let content = "";
         if (data && data.length > 0) {
           if (selectedSubStep) {
-            const substepContent = data.find(item => item.substep_title === selectedSubStep.title);
+            const substepContent = data.find((item: CourseContentResult) => 
+              item.substep_title === selectedSubStep.title
+            );
             content = substepContent?.course_content || "";
           } else {
-            const stepContent = data.find(item => !item.substep_title || item.substep_title === step.title);
+            const stepContent = data.find((item: CourseContentResult) => 
+              !item.substep_title || item.substep_title === step.title
+            );
             content = stepContent?.course_content || "";
           }
         }

@@ -6,19 +6,16 @@ interface CourseContentDisplayProps {
   stepId: number;
   substepTitle: string | null;
   stepTitle: string;
+  courseContent: string;
 }
 
-const CourseContentDisplay = ({ stepId, substepTitle, stepTitle }: CourseContentDisplayProps) => {
-  // Fetch is now handled by the parent component using React Query
-  
+const CourseContentDisplay = ({ stepId, substepTitle, stepTitle, courseContent }: CourseContentDisplayProps) => {
   // Memoize the formatted content to prevent unnecessary re-rendering
   const formattedContent = useMemo(() => {
-    if (!window.courseContent) return "";
-    
-    const content = window.courseContent;
+    if (!courseContent) return "";
     
     // Process sections with proper headings and formatting
-    return content
+    return courseContent
       // Convert markdown-style headings to HTML headings
       .replace(/^# (.*?)$/gm, '<h2 class="text-xl font-bold mt-6 mb-3">$1</h2>')
       .replace(/^## (.*?)$/gm, '<h3 class="text-lg font-semibold mt-5 mb-2">$1</h3>')
@@ -41,7 +38,7 @@ const CourseContentDisplay = ({ stepId, substepTitle, stepTitle }: CourseContent
       
       // Clean up any leftover newlines that aren't part of lists
       .replace(/\n(?!<div class)/g, '<br>');
-  }, [window.courseContent]);
+  }, [courseContent]);
 
   return (
     <LazyLoad height={400}>
