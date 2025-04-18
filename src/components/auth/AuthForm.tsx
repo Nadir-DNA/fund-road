@@ -52,9 +52,28 @@ export default function AuthForm({ isLogin, onToggleMode }: AuthFormProps) {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: 'https://fund-road.com'
+          }
         });
         
         if (error) throw error;
+        
+        // Send custom verification email
+        const response = await fetch('https://lhvuoorzmjjnaasahmyw.supabase.co/functions/v1/send-email-verification', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            confirmation_url: data?.confirmation_url || ''
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to send verification email');
+        }
         
         toast({
           title: "Inscription réussie",
@@ -79,6 +98,9 @@ export default function AuthForm({ isLogin, onToggleMode }: AuthFormProps) {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
+        options: {
+          redirectTo: 'https://fund-road.com'
+        }
       });
       
       if (error) throw error;
