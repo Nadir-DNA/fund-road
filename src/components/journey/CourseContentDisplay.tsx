@@ -1,6 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useMemo } from "react";
 import LazyLoad from "../LazyLoad";
 
 interface CourseContentDisplayProps {
@@ -10,41 +9,16 @@ interface CourseContentDisplayProps {
 }
 
 const CourseContentDisplay = ({ stepId, substepTitle, stepTitle }: CourseContentDisplayProps) => {
-  const [courseContent, setCourseContent] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    const fetchCourseContent = async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('entrepreneur_resources')
-          .select('course_content')
-          .eq('step_id', stepId)
-          .eq('substep_title', substepTitle ? substepTitle : stepTitle)
-          .single();
-
-        if (error) {
-          console.error("Error fetching course content:", error);
-        } else if (data && data.course_content) {
-          setCourseContent(data.course_content);
-        }
-      } catch (error) {
-        console.error("Error:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCourseContent();
-  }, [stepId, substepTitle, stepTitle]);
-
+  // Fetch is now handled by the parent component using React Query
+  
   // Memoize the formatted content to prevent unnecessary re-rendering
   const formattedContent = useMemo(() => {
-    if (!courseContent) return "";
+    if (!window.courseContent) return "";
+    
+    const content = window.courseContent;
     
     // Process sections with proper headings and formatting
-    return courseContent
+    return content
       // Convert markdown-style headings to HTML headings
       .replace(/^# (.*?)$/gm, '<h2 class="text-xl font-bold mt-6 mb-3">$1</h2>')
       .replace(/^## (.*?)$/gm, '<h3 class="text-lg font-semibold mt-5 mb-2">$1</h3>')
@@ -67,23 +41,7 @@ const CourseContentDisplay = ({ stepId, substepTitle, stepTitle }: CourseContent
       
       // Clean up any leftover newlines that aren't part of lists
       .replace(/\n(?!<div class)/g, '<br>');
-  }, [courseContent]);
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center p-8">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-      </div>
-    );
-  }
-
-  if (!courseContent) {
-    return (
-      <div className="text-center p-4">
-        <p className="text-muted-foreground">Aucun contenu de cours n'est disponible pour cette section.</p>
-      </div>
-    );
-  }
+  }, [window.courseContent]);
 
   return (
     <LazyLoad height={400}>

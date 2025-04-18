@@ -17,25 +17,36 @@ interface StepDetailProps {
 
 export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
   const [activeTab, setActiveTab] = useState<string>(selectedSubStep ? "resources" : "overview");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   
   // Fetch course content for the selected step/substep with optimized query
   const { data: courseContent, isLoading: isLoadingContent } = useQuery({
     queryKey: ['courseContent', step.id, selectedSubStep?.title],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('entrepreneur_resources')
-        .select('course_content')
-        .eq('step_id', step.id)
-        .eq('substep_title', selectedSubStep ? selectedSubStep.title : step.title)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('entrepreneur_resources')
+          .select('course_content')
+          .eq('step_id', step.id);
         
-      if (error) {
-        console.error("Error fetching course content:", error);
+        if (error) throw error;
+        
+        // Filter for the specific substep if one is selected
+        let content = "";
+        if (data && data.length > 0) {
+          if (selectedSubStep) {
+            const substepContent = data.find(item => item.substep_title === selectedSubStep.title);
+            content = substepContent?.course_content || "";
+          } else {
+            const stepContent = data.find(item => !item.substep_title || item.substep_title === step.title);
+            content = stepContent?.course_content || "";
+          }
+        }
+        
+        return content;
+      } catch (err) {
+        console.error("Error fetching course content:", err);
         return "";
       }
-      
-      return data?.course_content || "";
     },
     staleTime: 1000 * 60 * 5, // Cache content for 5 minutes
   });

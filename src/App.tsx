@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +17,7 @@ import Contact from "./pages/Contact";
 import Roadmap from "./pages/Roadmap";
 import AboutUs from "./pages/AboutUs";
 import CookieConsent from "./components/CookieConsent";
+import BetaTag from "./components/common/BetaTag";
 import { toast } from "./components/ui/use-toast";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -70,6 +72,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <BetaTag />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/features" element={<Navigate to="/roadmap" replace />} />
