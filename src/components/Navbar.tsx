@@ -1,12 +1,17 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, LogOut } from "lucide-react";
+import { Menu, X, LogOut, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useLanguage } from "@/context/LanguageContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -100,28 +105,32 @@ export default function Navbar() {
           
           <div className="hidden md:flex items-center space-x-8">
             <Link to="/" className="text-foreground/80 hover:text-primary transition-colors">
-              {t("nav.home")}
+              Accueil
             </Link>
-            <Link to="/about" className="text-foreground/80 hover:text-primary transition-colors">
-              À propos
-            </Link>
-            <Link to="/faq" className="text-foreground/80 hover:text-primary transition-colors">
-              {t("nav.faq")}
-            </Link>
-            <Link to="/financing" className="text-foreground/80 hover:text-primary transition-colors">
-              {t("nav.financing")}
-            </Link>
-            <Link to="/roadmap" className="text-foreground/80 hover:text-primary transition-colors">
+            <Link to={isAuthenticated ? "/roadmap" : "/auth"} className="text-foreground/80 hover:text-primary transition-colors">
               Roadmap
             </Link>
-            <Link to="/contact" className="text-foreground/80 hover:text-primary transition-colors">
-              Contact
+            <Link to={isAuthenticated ? "/financing" : "/auth"} className="text-foreground/80 hover:text-primary transition-colors">
+              Financement
             </Link>
-            {isAdmin && (
-              <Link to="/admin" className="text-foreground/80 hover:text-primary transition-colors">
-                Admin
-              </Link>
-            )}
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger className="text-foreground/80 hover:text-primary transition-colors inline-flex items-center">
+                Nous découvrir
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem asChild>
+                  <Link to="/about">À propos</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/faq">FAQ</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/contact">Contact</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -144,6 +153,7 @@ export default function Navbar() {
                 </>
               )}
             </div>
+            
             <Button 
               variant="ghost" 
               size="icon" 
@@ -158,28 +168,24 @@ export default function Navbar() {
         {isMenuOpen && (
           <div className="mt-4 md:hidden flex flex-col space-y-4 py-4 animate-fade-in">
             <Link to="/" className="text-foreground/80 hover:text-primary transition-colors">
-              {t("nav.home")}
+              Accueil
+            </Link>
+            <Link to={isAuthenticated ? "/roadmap" : "/auth"} className="text-foreground/80 hover:text-primary transition-colors">
+              Roadmap
+            </Link>
+            <Link to={isAuthenticated ? "/financing" : "/auth"} className="text-foreground/80 hover:text-primary transition-colors">
+              Financement
             </Link>
             <Link to="/about" className="text-foreground/80 hover:text-primary transition-colors">
               À propos
             </Link>
             <Link to="/faq" className="text-foreground/80 hover:text-primary transition-colors">
-              {t("nav.faq")}
-            </Link>
-            <Link to="/financing" className="text-foreground/80 hover:text-primary transition-colors">
-              {t("nav.financing")}
-            </Link>
-            <Link to="/roadmap" className="text-foreground/80 hover:text-primary transition-colors">
-              Roadmap
+              FAQ
             </Link>
             <Link to="/contact" className="text-foreground/80 hover:text-primary transition-colors">
               Contact
             </Link>
-            {isAdmin && (
-              <Link to="/admin" className="text-foreground/80 hover:text-primary transition-colors">
-                Admin
-              </Link>
-            )}
+            
             <div className="flex space-x-2 pt-2">
               {isAuthenticated ? (
                 <Button variant="outline" onClick={handleSignOut} className="w-full text-white border-white/20 hover:bg-white/10">
