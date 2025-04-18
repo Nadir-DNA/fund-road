@@ -2,12 +2,8 @@
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
-
-interface AuthButtonsProps {
-  isAuthenticated: boolean;
-  onSignOut: () => void;
-  onAuthClick: () => void;
-}
+import { SignInUpButtons } from "./auth/SignInUpButtons";
+import type { AuthButtonsProps } from "@/types/auth";
 
 export const AuthButtons = ({ isAuthenticated, onSignOut, onAuthClick }: AuthButtonsProps) => {
   const { t } = useLanguage();
@@ -20,14 +16,7 @@ export const AuthButtons = ({ isAuthenticated, onSignOut, onAuthClick }: AuthBut
           {t("nav.logout")}
         </Button>
       ) : (
-        <>
-          <Button variant="outline" onClick={onAuthClick} className="text-white border-white/20 hover:bg-white/10">
-            {t("nav.login")}
-          </Button>
-          <Button onClick={onAuthClick} className="bg-white text-black hover:bg-white/90">
-            {t("nav.signup")}
-          </Button>
-        </>
+        <SignInUpButtons onAuthClick={onAuthClick} />
       )}
     </div>
   );
