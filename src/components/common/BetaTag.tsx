@@ -1,12 +1,16 @@
 
 import React from 'react';
+import { Info } from 'lucide-react';
 
 export default function BetaTag() {
   return (
     <div className="fixed top-4 right-4 z-50">
-      <span className="px-2 py-1 text-xs font-medium bg-white/10 text-white/70 rounded-full border border-white/20 backdrop-blur-sm">
-        Beta
-      </span>
+      <div className="flex items-center space-x-2 bg-primary/20 text-primary px-3 py-1.5 rounded-full border border-primary/30 shadow-sm hover:bg-primary/30 transition-colors">
+        <Info className="w-4 h-4" />
+        <span className="text-xs font-semibold uppercase tracking-wider">
+          Beta
+        </span>
+      </div>
     </div>
   );
 }
