@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Google } from "lucide-react";
+import { LogIn } from "lucide-react";
 
 interface AuthFormProps {
   isLogin: boolean;
@@ -158,7 +158,7 @@ export default function AuthForm({ isLogin, onToggleMode }: AuthFormProps) {
           className="w-full"
           onClick={handleGoogleSignIn}
         >
-          <Google className="mr-2" />
+          <LogIn className="mr-2" />
           Continuer avec Google
         </Button>
       </form>
