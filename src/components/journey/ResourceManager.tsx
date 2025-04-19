@@ -1,15 +1,11 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Clock, CheckCircle } from "lucide-react";
-import { useCourseMaterials } from "@/hooks/useCourseMaterials";
+import ResourceList from "./resource-manager/ResourceList";
 import { renderResourceComponent } from "./utils/resourceRenderer";
-import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { isBrowser } from "@/utils/navigationUtils";
 
 interface ResourceManagerProps {
-  step: any; // Using any for Step to avoid circular dependencies
+  step: any;
   selectedSubstepTitle: string | undefined;
   selectedResourceName?: string | null;
 }
@@ -19,162 +15,33 @@ export default function ResourceManager({
   selectedSubstepTitle,
   selectedResourceName
 }: ResourceManagerProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [componentExists, setComponentExists] = useState<boolean>(true);
-  
-  // Find the selected sub-step
-  const selectedSubstep = step.subSteps?.find(
-    (substep: any) => substep.title === selectedSubstepTitle
-  );
-  
-  // Use the existing hook to load resources from the database
-  const { fetchMaterials } = useCourseMaterials(step.id, selectedSubstepTitle || null);
-  const [supabaseResources, setSupabaseResources] = useState([]);
-  
-  // Load resources from Supabase when component mounts
-  useEffect(() => {
-    if (!selectedSubstepTitle) return;
-    
-    const loadSupabaseResources = async () => {
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        const materials = await fetchMaterials();
-        setSupabaseResources(materials);
-      } catch (error) {
-        console.error("Erreur lors du chargement des ressources depuis Supabase:", error);
-        setError("Impossible de charger les ressources. Veuillez réessayer plus tard.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadSupabaseResources();
-  }, [step.id, selectedSubstepTitle, fetchMaterials]);
-  
-  // Verify the selected resource exists in the map
-  useEffect(() => {
-    if (selectedResourceName) {
-      const resources = getResourcesToShow();
-      const resourceExists = resources.some(r => r.componentName === selectedResourceName);
-      setComponentExists(resourceExists);
-    }
-  }, [selectedResourceName, step, selectedSubstepTitle]);
-  
-  // Get resources to display
-  const getResourcesToShow = () => {
-    // If a sub-step is selected and it has resources, show them
-    if (selectedSubstep?.resources?.length) {
-      return selectedSubstep.resources;
-    }
-    // Otherwise, show the step's resources
-    return step.resources || [];
-  };
-
-  // If loading
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6 flex flex-col items-center justify-center py-12">
-          <LoadingIndicator size="lg" className="mb-4" />
-          <p className="text-center text-muted-foreground">
-            Chargement des ressources...
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  // If error
-  if (error) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <p className="text-destructive mb-2">{error}</p>
-          <p className="text-muted-foreground">
-            Essayez de rafraîchir la page ou revenez plus tard.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Get resources to show
-  const resources = getResourcesToShow();
-  
-  // If a specific resource is selected via URL parameter
+  // Si une ressource spécifique est sélectionnée
   if (selectedResourceName && selectedSubstepTitle) {
-    const selectedResource = resources.find(r => r.componentName === selectedResourceName);
+    const selectedResource = step.resources?.find(r => r.componentName === selectedResourceName);
     
     if (selectedResource) {
       return (
         <div className="mt-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium">{selectedResource.title}</h3>
-            <Badge variant="outline" className="bg-primary/10">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Outil interactif
-            </Badge>
           </div>
           <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
           {isBrowser() && renderResourceComponent(selectedResourceName, step.id, selectedSubstepTitle)}
         </div>
       );
-    } else if (!componentExists) {
-      return (
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-center text-destructive mb-2">
-              La ressource demandée n'existe pas ou n'est plus disponible.
-            </p>
-            <p className="text-center text-muted-foreground">
-              Veuillez sélectionner une autre ressource dans la liste.
-            </p>
-          </CardContent>
-        </Card>
-      );
     }
   }
   
-  // If no resources available
-  if (resources.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <p className="text-center text-muted-foreground">
-            Aucune ressource interactive n'est actuellement disponible pour cette section.
-            <br />
-            De nouvelles ressources seront ajoutées prochainement.
-          </p>
-        </CardContent>
-      </Card>
+  // Get resources to show
+  const getResourcesToShow = () => {
+    const selectedSubstep = step.subSteps?.find(
+      (substep: any) => substep.title === selectedSubstepTitle
     );
-  }
-  
-  // If only one available resource with selected sub-step
-  const availableResources = resources.filter(r => r.componentName && r.status !== 'coming-soon');
-  
-  if (availableResources.length === 1 && selectedSubstepTitle) {
-    const resource = availableResources[0];
-    return (
-      <div className="mt-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium">{resource.title}</h3>
-          <Badge variant="outline" className="bg-primary/10">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Disponible
-          </Badge>
-        </div>
-        <p className="text-muted-foreground mb-6 text-sm">{resource.description}</p>
-        {resource.componentName && selectedSubstepTitle && isBrowser() && 
-          renderResourceComponent(resource.componentName, step.id, selectedSubstepTitle)}
-      </div>
-    );
-  }
-  
-  // Multiple resources or no sub-step selected
+    return selectedSubstep?.resources?.length ? selectedSubstep.resources : step.resources || [];
+  };
+
+  const resources = getResourcesToShow();
+
   return (
     <div className="mt-4">
       <h3 className="text-lg font-medium mb-4">Ressources disponibles</h3>
@@ -185,61 +52,20 @@ export default function ResourceManager({
         </TabsList>
         
         <TabsContent value="available">
-          <div className="space-y-6">
-            {resources.filter(r => r.status !== 'coming-soon').length > 0 ? (
-              resources
-                .filter(r => r.status !== 'coming-soon')
-                .map((resource, idx) => (
-                  <div key={idx} className="mb-8">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-base font-medium">{resource.title}</h4>
-                      <Badge variant="outline" className="bg-primary/10">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Disponible
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-4">{resource.description}</p>
-                    {resource.componentName && selectedSubstepTitle && isBrowser() && 
-                      renderResourceComponent(resource.componentName, step.id, selectedSubstepTitle)}
-                  </div>
-                ))
-            ) : (
-              <Card>
-                <CardContent className="p-6">
-                  <p className="text-center text-muted-foreground">
-                    Aucune ressource n'est encore disponible pour cette section.
-                    <br />
-                    Consultez l'onglet "À venir" pour voir ce qui est en préparation.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          <ResourceList 
+            resources={resources.filter(r => r.status !== 'coming-soon')}
+            stepId={step.id}
+            substepTitle={selectedSubstepTitle || ""}
+            selectedResourceName={selectedResourceName}
+          />
         </TabsContent>
         
         <TabsContent value="coming">
-          <div className="space-y-4 mt-2">
-            {resources.filter(r => r.status === 'coming-soon').length > 0 ? (
-              resources
-                .filter(r => r.status === 'coming-soon')
-                .map((resource, idx) => (
-                  <Card key={idx} className="p-4 hover:border-primary/20 transition-colors">
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="font-medium text-base">{resource.title}</h4>
-                      <Badge variant="outline" className="bg-muted/20">
-                        <Clock className="h-3 w-3 mr-1" />
-                        À venir
-                      </Badge>
-                    </div>
-                    <p className="text-muted-foreground text-sm">{resource.description}</p>
-                  </Card>
-                ))
-            ) : (
-              <p className="text-center text-muted-foreground">
-                Toutes les ressources prévues pour cette section sont déjà disponibles.
-              </p>
-            )}
-          </div>
+          <ResourceList 
+            resources={resources.filter(r => r.status === 'coming-soon')}
+            stepId={step.id}
+            substepTitle={selectedSubstepTitle || ""}
+          />
         </TabsContent>
       </Tabs>
     </div>
