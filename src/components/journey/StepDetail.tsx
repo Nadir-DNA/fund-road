@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Step, SubStep } from "@/types/journey";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -50,11 +49,13 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
           return "";
         }
         
-        console.log(`Fetching course content for step: ${step.id}, substep: ${selectedSubStep?.title || 'main step'}`);
+        // Log fetch attempt with clear parameters
+        console.log(`Fetching course content for step ID: ${step.id}, substep: ${selectedSubStep?.title || 'main step'}`);
         
+        // Simplified query to get all relevant resources for this step
         const { data, error } = await supabase
           .from('entrepreneur_resources')
-          .select('course_content, substep_title, resource_type')
+          .select('*')
           .eq('step_id', step.id);
         
         if (error) {
@@ -66,34 +67,65 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
         console.log("Resources data:", data);
         
         let content = "";
+        
+        // Process retrieved data
         if (data && data.length > 0) {
+          // Find content specifically for a substep if selected
           if (selectedSubStep) {
-            const substepContent = data.find(item => 
+            // Try to find course content for this specific substep
+            // First look for resources marked as 'course' type
+            const substepCourse = data.find(item => 
               item.substep_title === selectedSubStep.title && 
-              (item.resource_type === 'course' || !item.resource_type)
+              item.resource_type === 'course'
             );
             
-            if (substepContent) {
-              console.log(`Found course content for substep: ${selectedSubStep.title}`);
-              content = substepContent.course_content || "";
+            // If found with 'course' type, use it
+            if (substepCourse?.course_content) {
+              console.log(`Found course content for substep "${selectedSubStep.title}" with resource_type "course"`);
+              content = substepCourse.course_content;
             } else {
-              console.log(`No specific course content found for substep: ${selectedSubStep.title}`);
+              // Otherwise try to find any content for this substep
+              const anySubstepContent = data.find(item => 
+                item.substep_title === selectedSubStep.title && 
+                item.course_content
+              );
+              
+              if (anySubstepContent?.course_content) {
+                console.log(`Found content for substep "${selectedSubStep.title}" with alternative resource_type`);
+                content = anySubstepContent.course_content;
+              } else {
+                console.log(`No specific course content found for substep: "${selectedSubStep.title}"`);
+              }
             }
           } else {
-            const stepContent = data.find(item => 
+            // Try to find content for the main step
+            // First look for resources marked as 'course' type with no substep
+            const mainStepCourse = data.find(item => 
               (!item.substep_title || item.substep_title === step.title) && 
-              (item.resource_type === 'course' || !item.resource_type)
+              item.resource_type === 'course'
             );
             
-            if (stepContent) {
-              console.log(`Found course content for main step: ${step.title}`);
-              content = stepContent.course_content || "";
+            // If found with 'course' type, use it
+            if (mainStepCourse?.course_content) {
+              console.log(`Found course content for main step "${step.title}" with resource_type "course"`);
+              content = mainStepCourse.course_content;
             } else {
-              console.log(`No specific course content found for main step: ${step.title}`);
+              // Otherwise try to find any content for the main step
+              const anyMainContent = data.find(item => 
+                (!item.substep_title || item.substep_title === step.title) && 
+                item.course_content
+              );
+              
+              if (anyMainContent?.course_content) {
+                console.log(`Found content for main step "${step.title}" with alternative resource_type`);
+                content = anyMainContent.course_content;
+              } else {
+                console.log(`No specific course content found for main step: "${step.title}"`);
+              }
             }
           }
         } else {
-          console.log("No resources found for this step");
+          console.log(`No resources found for step ID: ${step.id}`);
         }
         
         return content;
@@ -107,8 +139,8 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
         return "";
       }
     },
-    staleTime: 1000 * 60 * 5,
-    retry: 2
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    retry: 3 // Increase retry attempts
   });
 
   const handleDialogClose = () => {

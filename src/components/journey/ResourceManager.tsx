@@ -3,6 +3,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import ResourceList from "./resource-manager/ResourceList";
 import { renderResourceComponent } from "./utils/resourceRenderer";
 import { isBrowser } from "@/utils/navigationUtils";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 
 interface ResourceManagerProps {
   step: any;
@@ -15,9 +18,65 @@ export default function ResourceManager({
   selectedSubstepTitle,
   selectedResourceName
 }: ResourceManagerProps) {
+  // Get the resources to display
+  const { data: resources, isLoading } = useQuery({
+    queryKey: ['resources', step.id, selectedSubstepTitle],
+    queryFn: async () => {
+      try {
+        console.log(`Fetching resources for step ID: ${step.id}, substep: ${selectedSubstepTitle || 'main step'}`);
+        
+        const { data: session } = await supabase.auth.getSession();
+        
+        if (!session?.session) {
+          console.log("No authenticated session found when fetching resources");
+          return step.resources || [];
+        }
+        
+        // Fetch resources from Supabase
+        const { data, error } = await supabase
+          .from('entrepreneur_resources')
+          .select('*')
+          .eq('step_id', step.id)
+          .eq(selectedSubstepTitle ? 'substep_title' : 'resource_type', 
+               selectedSubstepTitle || 'resource');
+        
+        if (error) {
+          console.error("Error fetching resources:", error);
+          return step.resources || [];
+        }
+        
+        console.log(`Retrieved ${data?.length || 0} resources from Supabase for step ${step.id}`);
+        
+        if (data && data.length > 0) {
+          // Map Supabase resources to our Resource type
+          return data.map(item => ({
+            title: item.title,
+            description: item.description || '',
+            componentName: item.component_name,
+            status: 'available'
+          }));
+        }
+        
+        // If no resources found in Supabase, use the static ones from the step
+        return selectedSubstepTitle 
+          ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)?.resources || [] 
+          : step.resources || [];
+      } catch (err) {
+        console.error("Error in resource query:", err);
+        // Fallback to static resources
+        return selectedSubstepTitle 
+          ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)?.resources || [] 
+          : step.resources || [];
+      }
+    },
+    staleTime: 1000 * 60 * 5 // Cache for 5 minutes
+  });
+  
   // Si une ressource spécifique est sélectionnée
   if (selectedResourceName && selectedSubstepTitle) {
-    const selectedResource = step.resources?.find(r => r.componentName === selectedResourceName);
+    // Find the selected resource
+    const selectedResource = resources?.find(r => r.componentName === selectedResourceName) || 
+                            step.resources?.find(r => r.componentName === selectedResourceName);
     
     if (selectedResource) {
       return (
@@ -32,15 +91,19 @@ export default function ResourceManager({
     }
   }
   
-  // Get resources to show
-  const getResourcesToShow = () => {
-    const selectedSubstep = step.subSteps?.find(
-      (substep: any) => substep.title === selectedSubstepTitle
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-12">
+        <LoadingIndicator size="lg" />
+      </div>
     );
-    return selectedSubstep?.resources?.length ? selectedSubstep.resources : step.resources || [];
-  };
-
-  const resources = getResourcesToShow();
+  }
+  
+  // Get resources to show
+  const resourcesToShow = resources || 
+    (selectedSubstepTitle 
+      ? step.subSteps?.find((substep: any) => substep.title === selectedSubstepTitle)?.resources 
+      : step.resources) || [];
 
   return (
     <div className="mt-4">
@@ -53,7 +116,7 @@ export default function ResourceManager({
         
         <TabsContent value="available">
           <ResourceList 
-            resources={resources.filter(r => r.status !== 'coming-soon')}
+            resources={resourcesToShow.filter((r: any) => r.status !== 'coming-soon')}
             stepId={step.id}
             substepTitle={selectedSubstepTitle || ""}
             selectedResourceName={selectedResourceName}
@@ -62,7 +125,7 @@ export default function ResourceManager({
         
         <TabsContent value="coming">
           <ResourceList 
-            resources={resources.filter(r => r.status === 'coming-soon')}
+            resources={resourcesToShow.filter((r: any) => r.status === 'coming-soon')}
             stepId={step.id}
             substepTitle={selectedSubstepTitle || ""}
           />
