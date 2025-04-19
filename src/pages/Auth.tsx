@@ -1,22 +1,34 @@
 
 import { useState, useEffect } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthForm from "@/components/auth/AuthForm";
 import BetaTag from "@/components/common/BetaTag";
+import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const navigate = useNavigate();
   
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         setIsAuthenticated(!!session);
+        
+        // If authenticated, redirect to the last visited page or home
+        if (session) {
+          // Get last visited page from localStorage or default to "/"
+          const lastPath = localStorage.getItem('lastPath') || '/';
+          // Reset for next time
+          localStorage.removeItem('lastPath');
+          // Navigate after a short delay to ensure state is updated
+          setTimeout(() => navigate(lastPath), 100);
+        }
       } catch (error) {
         console.error("Error checking auth:", error);
       } finally {
@@ -30,6 +42,8 @@ export default function Auth() {
       (event, session) => {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           setIsAuthenticated(true);
+          // Navigate after state update
+          setTimeout(() => navigate('/'), 100);
         } else if (event === 'SIGNED_OUT') {
           setIsAuthenticated(false);
         }
@@ -37,12 +51,15 @@ export default function Auth() {
     );
     
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
   
   if (checkingAuth) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <div className="flex flex-col items-center gap-4">
+          <LoadingIndicator size="lg" />
+          <p className="text-white/70">Vérification de l'authentification...</p>
+        </div>
       </div>
     );
   }

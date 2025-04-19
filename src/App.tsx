@@ -3,11 +3,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { LanguageProvider } from "./context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import Index from "./pages/Index";
 import { LoadingIndicator } from "./components/ui/LoadingIndicator";
@@ -26,12 +26,28 @@ const AboutUs = lazy(() => import("./pages/AboutUs"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 
-// Create a loading component for lazy-loaded routes
+// Create an improved loading component for lazy-loaded routes
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center">
+  <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white">
     <LoadingIndicator size="lg" />
+    <p className="text-white/70 mt-4">Chargement en cours...</p>
   </div>
 );
+
+// Path tracker component to save navigation history
+const PathTracker = () => {
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Only track main routes, not query params
+    const mainPath = location.pathname;
+    if (mainPath !== '/auth') { // Don't save auth page as a return destination
+      localStorage.setItem('lastPath', mainPath);
+    }
+  }, [location]);
+  
+  return null;
+};
 
 const checkDeeplApiKey = async () => {
   if (!import.meta.env.VITE_DEEPL_API_KEY) {
@@ -47,8 +63,8 @@ const checkDeeplApiKey = async () => {
     if (error || !data?.success) {
       console.error("DeepL API key validation failed:", error || data?.message);
       toast({
-        title: "Translation Configuration Error",
-        description: "There was an issue with the DeepL API key. Some content may not be translated properly.",
+        title: "Erreur de configuration de traduction",
+        description: "Il y a eu un problème avec la clé API DeepL. Certains contenus pourraient ne pas être traduits correctement.",
         variant: "destructive",
         duration: 6000,
       });
@@ -60,6 +76,7 @@ const checkDeeplApiKey = async () => {
   }
 };
 
+// Delay the DeepL check to avoid blocking initial render
 setTimeout(() => {
   checkDeeplApiKey();
 }, 2000);
@@ -83,6 +100,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <PathTracker />
             <Navbar />
             <Suspense fallback={<PageLoader />}>
               <Routes>

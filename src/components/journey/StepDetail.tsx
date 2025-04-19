@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { useSearchParams } from "react-router-dom";
+import { toast } from "@/components/ui/use-toast";
 
 interface StepDetailProps {
   step: Step;
@@ -23,9 +24,9 @@ interface CourseContentResult {
 }
 
 export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const selectedResourceName = searchParams.get('resource');
-  const [activeTab, setActiveTab] = useState<string>(selectedResourceName || selectedSubStep ? "resources" : "overview");
+  const [activeTab, setActiveTab] = useState<string>(selectedResourceName ? "resources" : "overview");
   
   // If there's a resource param in the URL, switch to resources tab
   useEffect(() => {
@@ -34,11 +35,45 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
     }
   }, [selectedResourceName]);
   
+  // If the user comes back from a resource, this will help restore the previous tab
+  useEffect(() => {
+    const handlePopState = () => {
+      // Check if we have a resource parameter
+      const params = new URLSearchParams(window.location.search);
+      const currentResource = params.get('resource');
+      
+      // Update the active tab based on URL parameters
+      if (currentResource) {
+        setActiveTab("resources");
+      } else {
+        // If no resource in URL but we're in resources tab, maybe switch back to overview
+        if (activeTab === "resources") {
+          // Check if we should go back to overview based on user flow
+          setActiveTab("overview");
+        }
+      }
+    };
+    
+    // Add listener for navigation events
+    window.addEventListener('popstate', handlePopState);
+    
+    // Clean up
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [activeTab]);
+  
   // Fetch course content for the selected step/substep with optimized query
   const { data: courseContent, isLoading: isLoadingContent } = useQuery({
     queryKey: ['courseContent', step.id, selectedSubStep?.title],
     queryFn: async () => {
       try {
+        // Check auth session first
+        const { data: session, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !session.session) {
+          // Don't show error toast here, let the component handle authentication
+          return "";
+        }
+        
         const { data, error } = await supabase
           .from('entrepreneur_resources')
           .select('course_content, substep_title')
@@ -65,11 +100,34 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
         return content;
       } catch (err) {
         console.error("Error fetching course content:", err);
+        toast({
+          title: "Erreur de chargement",
+          description: "Impossible de charger le contenu du cours.",
+          variant: "destructive"
+        });
         return "";
       }
     },
     staleTime: 1000 * 60 * 5, // Cache content for 5 minutes
+    retry: 1
   });
+
+  // Handle tab change
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    
+    // Update URL if needed without reloading the page
+    if (value === "resources" && !selectedResourceName) {
+      // We're switching to resources but no resource is selected in URL
+      // Do nothing with URL here
+    } else if (value === "overview" && selectedResourceName) {
+      // We're switching to overview but resource is in the URL
+      // Remove resource from URL without affecting other params
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('resource');
+      setSearchParams(newParams);
+    }
+  };
 
   return (
     <div className="px-2 w-full">
@@ -87,7 +145,7 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
         </DialogDescription>
       </DialogHeader>
 
-      <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-2">
           <TabsTrigger value="overview" className="text-xs sm:text-sm">Cours</TabsTrigger>
           <TabsTrigger value="resources" className="text-xs sm:text-sm">Ressources</TabsTrigger>

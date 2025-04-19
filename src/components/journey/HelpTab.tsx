@@ -1,10 +1,13 @@
 
+import { useState } from "react";
 import { Resource } from "@/types/journey";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, FileText, Package } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
+import { toast } from "@/components/ui/use-toast";
 
 interface HelpTabProps {
   resources: Resource[];
@@ -14,18 +17,36 @@ interface HelpTabProps {
 
 export default function HelpTab({ resources, stepId, substepTitle }: HelpTabProps) {
   const navigate = useNavigate();
+  const [loadingResource, setLoadingResource] = useState<string | null>(null);
 
-  const handleResourceClick = (resource: Resource) => {
-    // If there's a URL, open it in a new tab
-    if (resource.url) {
-      window.open(resource.url, '_blank');
-      return;
-    }
+  const handleResourceClick = async (resource: Resource) => {
+    try {
+      setLoadingResource(resource.title);
+      
+      // If there's a URL, open it in a new tab
+      if (resource.url) {
+        window.open(resource.url, '_blank');
+        return;
+      }
 
-    // If there's a componentName but no URL, navigate to the resource in the roadmap
-    if (resource.componentName && stepId && substepTitle) {
-      navigate(`/roadmap?step=${stepId}&substep=${encodeURIComponent(substepTitle)}&resource=${encodeURIComponent(resource.componentName)}`);
-      return;
+      // If there's a componentName but no URL, navigate to the resource in the roadmap
+      if (resource.componentName && stepId && substepTitle) {
+        // Save current URL in localStorage before navigating away
+        localStorage.setItem('lastResourcePath', window.location.pathname + window.location.search);
+        
+        const resourceUrl = `/roadmap?step=${stepId}&substep=${encodeURIComponent(substepTitle)}&resource=${encodeURIComponent(resource.componentName)}`;
+        navigate(resourceUrl);
+        return;
+      }
+    } catch (error) {
+      console.error("Error navigating to resource:", error);
+      toast({
+        title: "Erreur de navigation",
+        description: "Impossible d'accéder à cette ressource pour le moment.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingResource(null);
     }
   };
 
@@ -61,9 +82,18 @@ export default function HelpTab({ resources, stepId, substepTitle }: HelpTabProp
                       size="sm" 
                       className="text-xs sm:text-sm mt-1"
                       onClick={() => handleResourceClick(resource)}
-                      disabled={resource.status === 'coming-soon' || (!resource.url && (!resource.componentName || !stepId || !substepTitle))}
+                      disabled={
+                        loadingResource === resource.title || 
+                        resource.status === 'coming-soon' || 
+                        (!resource.url && (!resource.componentName || !stepId || !substepTitle))
+                      }
                     >
-                      {resource.url ? (
+                      {loadingResource === resource.title ? (
+                        <>
+                          <LoadingIndicator size="sm" className="mr-2" />
+                          Chargement...
+                        </>
+                      ) : resource.url ? (
                         <>
                           Accéder à la ressource
                           <ExternalLink className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />

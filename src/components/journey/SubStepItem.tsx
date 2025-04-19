@@ -1,10 +1,13 @@
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { SubStep } from "@/types/journey";
 import { CheckCircle2, ChevronRight, BookOpen } from "lucide-react";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 
 interface SubStepItemProps {
   subStep: SubStep;
@@ -14,11 +17,25 @@ interface SubStepItemProps {
 }
 
 export default function SubStepItem({ subStep, stepId, onToggleCompletion, onClick }: SubStepItemProps) {
-  const handleResourceClick = (e: React.MouseEvent, resourceComponent: string) => {
+  const [loadingResource, setLoadingResource] = useState<string | null>(null);
+  const navigate = useNavigate();
+  
+  const handleResourceClick = (e: React.MouseEvent, resourceComponent: string, resourceTitle: string) => {
     e.stopPropagation();
+    setLoadingResource(resourceTitle);
     
-    const url = `/roadmap?step=${stepId}&substep=${encodeURIComponent(subStep.title)}&resource=${encodeURIComponent(resourceComponent)}`;
-    window.location.href = url;
+    try {
+      const url = `/roadmap?step=${stepId}&substep=${encodeURIComponent(subStep.title)}&resource=${encodeURIComponent(resourceComponent)}`;
+      
+      // Store the current path for potential back navigation
+      localStorage.setItem('lastPath', window.location.pathname + window.location.search);
+      
+      // Navigate to the resource page
+      navigate(url);
+    } catch (error) {
+      console.error("Error navigating to resource:", error);
+      setLoadingResource(null);
+    }
   };
   
   return (
@@ -33,6 +50,7 @@ export default function SubStepItem({ subStep, stepId, onToggleCompletion, onCli
                   e.stopPropagation();
                   onToggleCompletion(stepId, subStep.title);
                 }}
+                aria-label={subStep.isCompleted ? "Marquer comme non complété" : "Marquer comme complété"}
               >
                 {subStep.isCompleted ? (
                   <CheckCircle2 className="h-4 w-4 text-primary" />
@@ -81,14 +99,18 @@ export default function SubStepItem({ subStep, stepId, onToggleCompletion, onCli
                 className="h-6 px-2 text-xs"
                 onClick={(e) => {
                   if (resource.componentName) {
-                    handleResourceClick(e, resource.componentName);
+                    handleResourceClick(e, resource.componentName, resource.title);
                   } else {
                     onClick();
                   }
                 }}
-                disabled={resource.status === 'coming-soon'}
+                disabled={resource.status === 'coming-soon' || loadingResource === resource.title}
               >
-                <BookOpen className="h-3 w-3 mr-1" />
+                {loadingResource === resource.title ? (
+                  <LoadingIndicator size="sm" className="mr-1" />
+                ) : (
+                  <BookOpen className="h-3 w-3 mr-1" />
+                )}
                 {resource.title}
               </Button>
             </div>
