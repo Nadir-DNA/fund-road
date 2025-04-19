@@ -24,7 +24,7 @@ export default function OverviewTab({ step, selectedSubStep, isLoading, courseCo
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-5/6" />
         </div>
-      ) : courseContent && courseContent.trim() !== "" ? (
+      ) : courseContent && courseContent.trim().length > 0 ? (
         <CourseContentDisplay 
           stepId={step.id} 
           substepTitle={selectedSubStep?.title || null} 

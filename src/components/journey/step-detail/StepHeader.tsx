@@ -15,11 +15,9 @@ export default function StepHeader({ step, selectedSubStep, onClose }: StepHeade
     <DialogHeader className="mb-4 sm:mb-6">
       <div className="flex items-center justify-between">
         <DialogTitle className="text-xl sm:text-2xl">{step.title}</DialogTitle>
-        <DialogClose asChild onClick={onClose}>
-          <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
-            <X className="h-4 w-4" />
-          </Button>
-        </DialogClose>
+        <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={onClose}>
+          <X className="h-4 w-4" />
+        </Button>
       </div>
       <DialogDescription className="text-sm sm:text-base mt-2">
         {selectedSubStep ? selectedSubStep.description : step.description}
