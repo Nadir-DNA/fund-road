@@ -10,6 +10,7 @@ interface LazyLoadProps {
   showLoader?: boolean;
   delay?: number;
   fallback?: React.ReactNode;
+  priority?: boolean; // Add priority option for immediate loading
 }
 
 export default function LazyLoad({ 
@@ -18,14 +19,21 @@ export default function LazyLoad({
   className = "", 
   showLoader = false,
   delay = 100,
-  fallback
+  fallback,
+  priority = false
 }: LazyLoadProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(priority);
   const timeoutRef = useRef<number | null>(null);
   const mountedRef = useRef(true);
 
   useEffect(() => {
-    // Set up the timeout
+    // If priority is true, we skip the delay
+    if (priority) {
+      setIsLoaded(true);
+      return;
+    }
+    
+    // Set up the timeout for non-priority content
     timeoutRef.current = window.setTimeout(() => {
       if (mountedRef.current) {
         setIsLoaded(true);
@@ -39,7 +47,7 @@ export default function LazyLoad({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [delay]);
+  }, [delay, priority]);
 
   if (!isLoaded) {
     if (fallback) {

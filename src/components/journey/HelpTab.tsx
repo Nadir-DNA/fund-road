@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { toast } from "@/components/ui/use-toast";
+import { buildResourceUrl, saveResourceReturnPath } from "@/utils/navigationUtils";
 
 interface HelpTabProps {
   resources: Resource[];
@@ -20,24 +21,39 @@ export default function HelpTab({ resources, stepId, substepTitle }: HelpTabProp
   const [loadingResource, setLoadingResource] = useState<string | null>(null);
 
   const handleResourceClick = async (resource: Resource) => {
+    if (loadingResource) return; // Prevent multiple clicks
+    
     try {
       setLoadingResource(resource.title);
       
       // If there's a URL, open it in a new tab
       if (resource.url) {
         window.open(resource.url, '_blank');
+        setTimeout(() => setLoadingResource(null), 300);
         return;
       }
 
       // If there's a componentName but no URL, navigate to the resource in the roadmap
       if (resource.componentName && stepId && substepTitle) {
-        // Save current URL in localStorage before navigating away
-        localStorage.setItem('lastResourcePath', window.location.pathname + window.location.search);
+        // Save current URL before navigating away
+        saveResourceReturnPath(window.location.pathname + window.location.search);
         
-        const resourceUrl = `/roadmap?step=${stepId}&substep=${encodeURIComponent(substepTitle)}&resource=${encodeURIComponent(resource.componentName)}`;
-        navigate(resourceUrl);
+        const resourceUrl = buildResourceUrl(stepId, substepTitle, resource.componentName);
+        
+        // Use setTimeout to ensure UI updates before navigation
+        setTimeout(() => {
+          navigate(resourceUrl);
+          
+          // Reset loading state after navigation begins
+          setTimeout(() => setLoadingResource(null), 300);
+        }, 100);
+        
         return;
       }
+      
+      // If we reach here, there was no valid navigation target
+      setLoadingResource(null);
+      
     } catch (error) {
       console.error("Error navigating to resource:", error);
       toast({
@@ -45,7 +61,6 @@ export default function HelpTab({ resources, stepId, substepTitle }: HelpTabProp
         description: "Impossible d'accéder à cette ressource pour le moment.",
         variant: "destructive",
       });
-    } finally {
       setLoadingResource(null);
     }
   };

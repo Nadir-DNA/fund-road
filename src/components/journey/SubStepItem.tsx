@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import { buildResourceUrl } from "@/utils/navigationUtils";
+import { buildResourceUrl, saveCurrentPath } from "@/utils/navigationUtils";
 
 interface SubStepItemProps {
   subStep: SubStep;
@@ -30,12 +30,16 @@ export default function SubStepItem({ subStep, stepId, onToggleCompletion, onCli
     setLoadingResource(resourceTitle);
     
     try {
+      // Save current path before navigating
+      saveCurrentPath();
+      
       const url = buildResourceUrl(stepId, subStep.title, resourceComponent);
       
-      // Use setTimeout to ensure the UI updates before navigation
+      // Add a small delay to ensure UI updates before navigation
       setTimeout(() => {
-        navigate(url);
-        // Reset loading state after a short delay
+        navigate(url, { replace: false });
+        
+        // Reset loading state after navigation
         setTimeout(() => {
           setLoadingResource(null);
         }, 300);

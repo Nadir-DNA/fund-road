@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { safeDecodeURIComponent } from "@/utils/navigationUtils";
 
 export default function JourneyTimeline() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -38,7 +39,8 @@ export default function JourneyTimeline() {
         setSelectedStep(step);
         
         if (substepTitleParam && step.subSteps) {
-          const subStep = step.subSteps.find(ss => ss.title === substepTitleParam);
+          const decodedTitle = safeDecodeURIComponent(substepTitleParam);
+          const subStep = step.subSteps.find(ss => ss.title === decodedTitle);
           if (subStep) {
             setSelectedSubStep(subStep);
           }

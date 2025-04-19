@@ -10,8 +10,9 @@ import OverviewTab from "./OverviewTab";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
+import { getResourceReturnPath, clearResourceReturnPath } from "@/utils/navigationUtils";
 
 interface StepDetailProps {
   step: Step;
@@ -26,6 +27,7 @@ interface CourseContentResult {
 export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedResourceName = searchParams.get('resource');
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>(selectedResourceName ? "resources" : "overview");
   
   // If there's a resource param in the URL, switch to resources tab
@@ -35,31 +37,23 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
     }
   }, [selectedResourceName]);
   
-  // If the user comes back from a resource, this will help restore the previous tab
+  // Handle back navigation
   useEffect(() => {
-    const handlePopState = () => {
-      // Check if we have a resource parameter
-      const params = new URLSearchParams(window.location.search);
-      const currentResource = params.get('resource');
-      
-      // Update the active tab based on URL parameters
-      if (currentResource) {
-        setActiveTab("resources");
-      } else {
-        // If no resource in URL but we're in resources tab, maybe switch back to overview
-        if (activeTab === "resources") {
-          // Check if we should go back to overview based on user flow
-          setActiveTab("overview");
-        }
+    const handleBackNavigation = () => {
+      // Check if we should go back to a previous resource path
+      const returnPath = getResourceReturnPath();
+      if (returnPath) {
+        clearResourceReturnPath();
+        navigate(returnPath);
       }
     };
     
-    // Add listener for navigation events
-    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('popstate', handleBackNavigation);
     
-    // Clean up
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [activeTab]);
+    return () => {
+      window.removeEventListener('popstate', handleBackNavigation);
+    };
+  }, [navigate]);
   
   // Fetch course content for the selected step/substep with optimized query
   const { data: courseContent, isLoading: isLoadingContent } = useQuery({
@@ -116,7 +110,7 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     
-    // Update URL if needed without reloading the page
+    // Update URL if switching between resources and overview tab
     if (value === "resources" && !selectedResourceName) {
       // We're switching to resources but no resource is selected in URL
       // Do nothing with URL here
@@ -125,8 +119,14 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
       // Remove resource from URL without affecting other params
       const newParams = new URLSearchParams(searchParams);
       newParams.delete('resource');
-      setSearchParams(newParams);
+      setSearchParams(newParams, { replace: true }); // Use replace to avoid adding to history
     }
+  };
+
+  // Handle dialog close - cleanup URL params
+  const handleDialogClose = () => {
+    // Remove all params and navigate to /roadmap
+    navigate('/roadmap', { replace: true });
   };
 
   return (
@@ -134,7 +134,7 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
       <DialogHeader className="mb-4 sm:mb-6">
         <div className="flex items-center justify-between">
           <DialogTitle className="text-xl sm:text-2xl">{step.title}</DialogTitle>
-          <DialogClose asChild>
+          <DialogClose asChild onClick={handleDialogClose}>
             <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
               <X className="h-4 w-4" />
             </Button>

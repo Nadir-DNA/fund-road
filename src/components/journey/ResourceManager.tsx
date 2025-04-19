@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -7,6 +6,7 @@ import { Clock, CheckCircle } from "lucide-react";
 import { useCourseMaterials } from "@/hooks/useCourseMaterials";
 import { renderResourceComponent } from "./utils/resourceRenderer";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
+import { isBrowser } from "@/utils/navigationUtils";
 
 interface ResourceManagerProps {
   step: any; // Using any for Step to avoid circular dependencies
@@ -20,6 +20,8 @@ export default function ResourceManager({
   selectedResourceName
 }: ResourceManagerProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [componentExists, setComponentExists] = useState<boolean>(true);
   
   // Find the selected sub-step
   const selectedSubstep = step.subSteps?.find(
@@ -32,22 +34,34 @@ export default function ResourceManager({
   
   // Load resources from Supabase when component mounts
   useEffect(() => {
+    if (!selectedSubstepTitle) return;
+    
     const loadSupabaseResources = async () => {
       setIsLoading(true);
+      setError(null);
+      
       try {
         const materials = await fetchMaterials();
         setSupabaseResources(materials);
       } catch (error) {
         console.error("Erreur lors du chargement des ressources depuis Supabase:", error);
+        setError("Impossible de charger les ressources. Veuillez réessayer plus tard.");
       } finally {
         setIsLoading(false);
       }
     };
     
-    if (selectedSubstepTitle) {
-      loadSupabaseResources();
-    }
+    loadSupabaseResources();
   }, [step.id, selectedSubstepTitle, fetchMaterials]);
+  
+  // Verify the selected resource exists in the map
+  useEffect(() => {
+    if (selectedResourceName) {
+      const resources = getResourcesToShow();
+      const resourceExists = resources.some(r => r.componentName === selectedResourceName);
+      setComponentExists(resourceExists);
+    }
+  }, [selectedResourceName, step, selectedSubstepTitle]);
   
   // Get resources to display
   const getResourcesToShow = () => {
@@ -56,7 +70,7 @@ export default function ResourceManager({
       return selectedSubstep.resources;
     }
     // Otherwise, show the step's resources
-    return step.resources;
+    return step.resources || [];
   };
 
   // If loading
@@ -67,6 +81,20 @@ export default function ResourceManager({
           <LoadingIndicator size="lg" className="mb-4" />
           <p className="text-center text-muted-foreground">
             Chargement des ressources...
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // If error
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <p className="text-destructive mb-2">{error}</p>
+          <p className="text-muted-foreground">
+            Essayez de rafraîchir la page ou revenez plus tard.
           </p>
         </CardContent>
       </Card>
@@ -91,8 +119,21 @@ export default function ResourceManager({
             </Badge>
           </div>
           <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
-          {renderResourceComponent(selectedResourceName, step.id, selectedSubstepTitle)}
+          {isBrowser() && renderResourceComponent(selectedResourceName, step.id, selectedSubstepTitle)}
         </div>
+      );
+    } else if (!componentExists) {
+      return (
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-center text-destructive mb-2">
+              La ressource demandée n'existe pas ou n'est plus disponible.
+            </p>
+            <p className="text-center text-muted-foreground">
+              Veuillez sélectionner une autre ressource dans la liste.
+            </p>
+          </CardContent>
+        </Card>
       );
     }
   }
@@ -127,7 +168,7 @@ export default function ResourceManager({
           </Badge>
         </div>
         <p className="text-muted-foreground mb-6 text-sm">{resource.description}</p>
-        {resource.componentName && selectedSubstepTitle && 
+        {resource.componentName && selectedSubstepTitle && isBrowser() && 
           renderResourceComponent(resource.componentName, step.id, selectedSubstepTitle)}
       </div>
     );
@@ -158,7 +199,7 @@ export default function ResourceManager({
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mb-4">{resource.description}</p>
-                    {resource.componentName && selectedSubstepTitle && 
+                    {resource.componentName && selectedSubstepTitle && isBrowser() && 
                       renderResourceComponent(resource.componentName, step.id, selectedSubstepTitle)}
                   </div>
                 ))
