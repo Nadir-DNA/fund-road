@@ -38,33 +38,62 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
     return () => window.removeEventListener('popstate', handleBackNavigation);
   }, [navigate]);
 
-  // Fetch course content with improved error handling
+  // Fetch course content with improved error handling and more detailed query
   const { data: courseContent, isLoading: isLoadingContent } = useQuery({
     queryKey: ['courseContent', step.id, selectedSubStep?.title],
     queryFn: async () => {
       try {
-        const { data: session, error: sessionError } = await supabase.auth.getSession();
+        const { data: session } = await supabase.auth.getSession();
         
-        if (sessionError || !session.session) {
+        if (!session?.session) {
+          console.log("No authenticated session found");
           return "";
         }
         
+        console.log(`Fetching course content for step: ${step.id}, substep: ${selectedSubStep?.title || 'main step'}`);
+        
         const { data, error } = await supabase
           .from('entrepreneur_resources')
-          .select('course_content, substep_title')
+          .select('course_content, substep_title, resource_type')
           .eq('step_id', step.id);
         
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase query error:", error);
+          throw error;
+        }
+        
+        console.log(`Retrieved ${data?.length || 0} resource records from Supabase`);
+        console.log("Resources data:", data);
         
         let content = "";
         if (data && data.length > 0) {
           if (selectedSubStep) {
-            const substepContent = data.find(item => item.substep_title === selectedSubStep.title);
-            content = substepContent?.course_content || "";
+            const substepContent = data.find(item => 
+              item.substep_title === selectedSubStep.title && 
+              (item.resource_type === 'course' || !item.resource_type)
+            );
+            
+            if (substepContent) {
+              console.log(`Found course content for substep: ${selectedSubStep.title}`);
+              content = substepContent.course_content || "";
+            } else {
+              console.log(`No specific course content found for substep: ${selectedSubStep.title}`);
+            }
           } else {
-            const stepContent = data.find(item => !item.substep_title || item.substep_title === step.title);
-            content = stepContent?.course_content || "";
+            const stepContent = data.find(item => 
+              (!item.substep_title || item.substep_title === step.title) && 
+              (item.resource_type === 'course' || !item.resource_type)
+            );
+            
+            if (stepContent) {
+              console.log(`Found course content for main step: ${step.title}`);
+              content = stepContent.course_content || "";
+            } else {
+              console.log(`No specific course content found for main step: ${step.title}`);
+            }
           }
+        } else {
+          console.log("No resources found for this step");
         }
         
         return content;
@@ -79,7 +108,7 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
       }
     },
     staleTime: 1000 * 60 * 5,
-    retry: 1
+    retry: 2
   });
 
   const handleDialogClose = () => {
@@ -106,12 +135,19 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
               <LoadingIndicator size="lg" className="mb-4" />
               <p className="text-muted-foreground">Chargement du contenu...</p>
             </div>
+          ) : courseContent ? (
+            <OverviewTab 
+              step={step} 
+              selectedSubStep={selectedSubStep} 
+              isLoading={false}
+              courseContent={courseContent}
+            />
           ) : (
             <OverviewTab 
               step={step} 
               selectedSubStep={selectedSubStep} 
               isLoading={false}
-              courseContent={courseContent || ""}
+              courseContent=""
             />
           )}
         </TabsContent>
