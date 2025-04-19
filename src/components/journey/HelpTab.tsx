@@ -4,12 +4,31 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, FileText, Package } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 
 interface HelpTabProps {
   resources: Resource[];
+  stepId: number;
+  substepTitle?: string | null;
 }
 
-export default function HelpTab({ resources }: HelpTabProps) {
+export default function HelpTab({ resources, stepId, substepTitle }: HelpTabProps) {
+  const navigate = useNavigate();
+
+  const handleResourceClick = (resource: Resource) => {
+    // If there's a URL, open it in a new tab
+    if (resource.url) {
+      window.open(resource.url, '_blank');
+      return;
+    }
+
+    // If there's a componentName but no URL, navigate to the resource in the roadmap
+    if (resource.componentName && stepId && substepTitle) {
+      navigate(`/roadmap?step=${stepId}&substep=${encodeURIComponent(substepTitle)}&resource=${encodeURIComponent(resource.componentName)}`);
+      return;
+    }
+  };
+
   return (
     <div className="py-6 w-full">
       <div className="space-y-6">
@@ -41,15 +60,15 @@ export default function HelpTab({ resources }: HelpTabProps) {
                       variant="outline" 
                       size="sm" 
                       className="text-xs sm:text-sm mt-1"
-                      onClick={() => resource.url ? window.open(resource.url, '_blank') : null}
-                      disabled={!resource.url}
+                      onClick={() => handleResourceClick(resource)}
+                      disabled={resource.status === 'coming-soon' || (!resource.url && (!resource.componentName || !stepId || !substepTitle))}
                     >
                       {resource.url ? (
                         <>
                           Accéder à la ressource
                           <ExternalLink className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                         </>
-                      ) : 'Ressource non disponible'}
+                      ) : resource.componentName ? 'Ouvrir l\'outil' : 'Ressource non disponible'}
                     </Button>
                   </div>
                 </div>

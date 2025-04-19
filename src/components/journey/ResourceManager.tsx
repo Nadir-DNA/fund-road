@@ -8,12 +8,22 @@ import { useCourseMaterials } from "@/hooks/useCourseMaterials";
 import { renderResourceComponent } from "./utils/resourceRenderer";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 
-export default function ResourceManager({ step, selectedSubstepTitle }) {
+interface ResourceManagerProps {
+  step: any; // Using any for Step to avoid circular dependencies
+  selectedSubstepTitle: string | undefined;
+  selectedResourceName?: string | null;
+}
+
+export default function ResourceManager({ 
+  step, 
+  selectedSubstepTitle,
+  selectedResourceName
+}: ResourceManagerProps) {
   const [isLoading, setIsLoading] = useState(false);
   
   // Find the selected sub-step
   const selectedSubstep = step.subSteps?.find(
-    substep => substep.title === selectedSubstepTitle
+    (substep: any) => substep.title === selectedSubstepTitle
   );
   
   // Use the existing hook to load resources from the database
@@ -65,6 +75,27 @@ export default function ResourceManager({ step, selectedSubstepTitle }) {
 
   // Get resources to show
   const resources = getResourcesToShow();
+  
+  // If a specific resource is selected via URL parameter
+  if (selectedResourceName && selectedSubstepTitle) {
+    const selectedResource = resources.find(r => r.componentName === selectedResourceName);
+    
+    if (selectedResource) {
+      return (
+        <div className="mt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium">{selectedResource.title}</h3>
+            <Badge variant="outline" className="bg-primary/10">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Outil interactif
+            </Badge>
+          </div>
+          <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
+          {renderResourceComponent(selectedResourceName, step.id, selectedSubstepTitle)}
+        </div>
+      );
+    }
+  }
   
   // If no resources available
   if (resources.length === 0) {

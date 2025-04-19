@@ -14,6 +14,13 @@ interface SubStepItemProps {
 }
 
 export default function SubStepItem({ subStep, stepId, onToggleCompletion, onClick }: SubStepItemProps) {
+  const handleResourceClick = (e: React.MouseEvent, resourceComponent: string) => {
+    e.stopPropagation();
+    
+    const url = `/roadmap?step=${stepId}&substep=${encodeURIComponent(subStep.title)}&resource=${encodeURIComponent(resourceComponent)}`;
+    window.location.href = url;
+  };
+  
   return (
     <div className="pl-3 border-l border-primary/30">
       <div className="flex gap-2 mb-1.5">
@@ -57,7 +64,7 @@ export default function SubStepItem({ subStep, stepId, onToggleCompletion, onCli
       
       {subStep.resources && subStep.resources.length > 0 && (
         <div className="pl-6 mt-2 space-y-1.5">
-          {subStep.resources.map((resource, idx) => (
+          {subStep.resources.filter(resource => resource.componentName).map((resource, idx) => (
             <div key={idx} className="flex items-center gap-2">
               <Badge 
                 variant={resource.status === 'coming-soon' ? "outline" : "secondary"}
@@ -73,8 +80,11 @@ export default function SubStepItem({ subStep, stepId, onToggleCompletion, onCli
                 size="sm" 
                 className="h-6 px-2 text-xs"
                 onClick={(e) => {
-                  e.stopPropagation();
-                  onClick();
+                  if (resource.componentName) {
+                    handleResourceClick(e, resource.componentName);
+                  } else {
+                    onClick();
+                  }
                 }}
                 disabled={resource.status === 'coming-soon'}
               >

@@ -9,13 +9,14 @@ import { useJourneyProgress } from "@/hooks/useJourneyProgress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function JourneyTimeline() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStep, setSelectedStep] = useState<Step | null>(null);
   const [selectedSubStep, setSelectedSubStep] = useState<SubStep | null>(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   const {
     localSteps,
@@ -23,6 +24,30 @@ export default function JourneyTimeline() {
     toggleSubStepCompletion,
     isLoading
   } = useJourneyProgress(journeySteps);
+  
+  // Check URL parameters on load
+  useEffect(() => {
+    const stepIdParam = searchParams.get('step');
+    const substepTitleParam = searchParams.get('substep');
+    
+    if (stepIdParam && !isLoading) {
+      const stepId = parseInt(stepIdParam);
+      const step = localSteps.find(s => s.id === stepId);
+      
+      if (step) {
+        setSelectedStep(step);
+        
+        if (substepTitleParam && step.subSteps) {
+          const subStep = step.subSteps.find(ss => ss.title === substepTitleParam);
+          if (subStep) {
+            setSelectedSubStep(subStep);
+          }
+        }
+        
+        setDialogOpen(true);
+      }
+    }
+  }, [searchParams, localSteps, isLoading]);
   
   // Check authentication when component mounts
   useEffect(() => {
@@ -43,16 +68,31 @@ export default function JourneyTimeline() {
     checkAuth();
   }, [navigate]);
 
+  // Update URL when dialog closes
+  const handleDialogChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      // Remove the URL parameters when dialog is closed
+      navigate('/roadmap', { replace: true });
+    }
+  };
+
   const handleStepClick = (step: Step) => {
     setSelectedStep(step);
     setSelectedSubStep(null);
     setDialogOpen(true);
+    
+    // Update URL with step parameter
+    navigate(`/roadmap?step=${step.id}`, { replace: true });
   };
 
   const handleSubStepClick = (step: Step, subStep: SubStep) => {
     setSelectedStep(step);
     setSelectedSubStep(subStep);
     setDialogOpen(true);
+    
+    // Update URL with step and substep parameters
+    navigate(`/roadmap?step=${step.id}&substep=${encodeURIComponent(subStep.title)}`, { replace: true });
   };
 
   // Show loading state while fetching progress
@@ -97,7 +137,7 @@ export default function JourneyTimeline() {
       </div>
 
       {/* Detailed Information Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
         <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto glass-card p-6">
           {selectedStep && (
             <StepDetail step={selectedStep} selectedSubStep={selectedSubStep} />

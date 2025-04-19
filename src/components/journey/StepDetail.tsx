@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Step, SubStep } from "@/types/journey";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DialogClose, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -10,6 +10,7 @@ import OverviewTab from "./OverviewTab";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
+import { useSearchParams } from "react-router-dom";
 
 interface StepDetailProps {
   step: Step;
@@ -22,7 +23,16 @@ interface CourseContentResult {
 }
 
 export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
-  const [activeTab, setActiveTab] = useState<string>(selectedSubStep ? "resources" : "overview");
+  const [searchParams] = useSearchParams();
+  const selectedResourceName = searchParams.get('resource');
+  const [activeTab, setActiveTab] = useState<string>(selectedResourceName || selectedSubStep ? "resources" : "overview");
+  
+  // If there's a resource param in the URL, switch to resources tab
+  useEffect(() => {
+    if (selectedResourceName) {
+      setActiveTab("resources");
+    }
+  }, [selectedResourceName]);
   
   // Fetch course content for the selected step/substep with optimized query
   const { data: courseContent, isLoading: isLoadingContent } = useQuery({
@@ -77,7 +87,7 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
         </DialogDescription>
       </DialogHeader>
 
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-2">
           <TabsTrigger value="overview" className="text-xs sm:text-sm">Cours</TabsTrigger>
           <TabsTrigger value="resources" className="text-xs sm:text-sm">Ressources</TabsTrigger>
@@ -103,6 +113,7 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
           <ResourceManager 
             step={step} 
             selectedSubstepTitle={selectedSubStep?.title}
+            selectedResourceName={selectedResourceName}
           />
         </TabsContent>
       </Tabs>
