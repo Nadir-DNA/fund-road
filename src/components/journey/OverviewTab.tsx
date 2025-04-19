@@ -13,6 +13,8 @@ interface OverviewTabProps {
 }
 
 export default function OverviewTab({ step, selectedSubStep, isLoading, courseContent }: OverviewTabProps) {
+  console.log("OverviewTab received courseContent:", courseContent ? "Yes (length: " + courseContent.length + ")" : "No");
+  
   return (
     <div className="py-4 w-full">
       {isLoading ? (
@@ -22,7 +24,7 @@ export default function OverviewTab({ step, selectedSubStep, isLoading, courseCo
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-5/6" />
         </div>
-      ) : courseContent ? (
+      ) : courseContent && courseContent.trim() !== "" ? (
         <CourseContentDisplay 
           stepId={step.id} 
           substepTitle={selectedSubStep?.title || null} 

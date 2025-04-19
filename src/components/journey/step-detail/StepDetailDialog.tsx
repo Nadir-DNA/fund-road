@@ -22,6 +22,9 @@ export default function StepDetailDialog({
   courseContent,
   isLoading
 }: StepDetailDialogProps) {
+  // Log pour voir si le contenu du cours est bien reçu
+  console.log("StepDetailDialog received courseContent:", courseContent ? `${courseContent.substring(0, 50)}...` : "Empty");
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto glass-card p-6">

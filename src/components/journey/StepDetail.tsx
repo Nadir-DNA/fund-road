@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { Step, SubStep } from "@/types/journey";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useCourseMaterials } from "@/hooks/useCourseMaterials";
+import { useCourseMaterials } from "@/hooks/course/useCourseMaterials";
 import { getResourceReturnPath, clearResourceReturnPath } from "@/utils/navigationUtils";
 import StepDetailDialog from "./step-detail/StepDetailDialog";
 
@@ -36,8 +36,12 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
   // Get course content from materials
   const courseContent = materials?.find(material => 
     material.resource_type === 'course' && 
-    material.substep_title === selectedSubStep?.title
+    (selectedSubStep?.title ? material.substep_title === selectedSubStep?.title : material.substep_title === null)
   )?.course_content || "";
+
+  console.log("Step materials:", materials);
+  console.log("Selected substep:", selectedSubStep?.title);
+  console.log("Found course content:", courseContent ? "Yes (length: " + courseContent.length + ")" : "No");
 
   const handleDialogClose = () => {
     navigate('/roadmap', { replace: true });
