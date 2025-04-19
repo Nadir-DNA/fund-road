@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 
@@ -9,6 +9,7 @@ interface LazyLoadProps {
   className?: string;
   showLoader?: boolean;
   delay?: number;
+  fallback?: React.ReactNode;
 }
 
 export default function LazyLoad({ 
@@ -16,19 +17,35 @@ export default function LazyLoad({
   height = 200, 
   className = "", 
   showLoader = false,
-  delay = 100
+  delay = 100,
+  fallback
 }: LazyLoadProps) {
   const [isLoaded, setIsLoaded] = useState(false);
+  const timeoutRef = useRef<number | null>(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoaded(true);
+    // Set up the timeout
+    timeoutRef.current = window.setTimeout(() => {
+      if (mountedRef.current) {
+        setIsLoaded(true);
+      }
     }, delay);
 
-    return () => clearTimeout(timer);
+    // Cleanup
+    return () => {
+      mountedRef.current = false;
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, [delay]);
 
   if (!isLoaded) {
+    if (fallback) {
+      return <>{fallback}</>;
+    }
+    
     return (
       <div className={`w-full ${className}`} style={{ height }}>
         {showLoader ? (

@@ -3,16 +3,16 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { LanguageProvider } from "./context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Suspense, lazy, useEffect } from "react";
-import Navbar from "./components/Navbar";
 import Index from "./pages/Index";
 import { LoadingIndicator } from "./components/ui/LoadingIndicator";
 import CookieConsent from "./components/CookieConsent";
 import { toast } from "./components/ui/use-toast";
+import { saveCurrentPath } from "./utils/navigationUtils";
 
 // Lazy load non-critical pages
 const Financing = lazy(() => import("./pages/Financing"));
@@ -37,14 +37,30 @@ const PageLoader = () => (
 // Path tracker component to save navigation history
 const PathTracker = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   
   useEffect(() => {
-    // Only track main routes, not query params
-    const mainPath = location.pathname;
-    if (mainPath !== '/auth') { // Don't save auth page as a return destination
-      localStorage.setItem('lastPath', mainPath);
-    }
-  }, [location]);
+    // Track page visits for potential returns
+    saveCurrentPath();
+    
+    // Handle navigation errors with a global error boundary
+    const handleError = (event: ErrorEvent) => {
+      console.error("Navigation error:", event.error);
+      // Only toast for client-side navigation errors
+      if (event.error && event.error.message && event.error.message.includes('navigation')) {
+        toast({
+          title: "Erreur de navigation",
+          description: "Un problème est survenu lors de la navigation. Rechargement de la page...",
+          variant: "destructive",
+        });
+        // Attempt recovery by navigating to homepage after delay
+        setTimeout(() => navigate('/'), 2000);
+      }
+    };
+    
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, [location, navigate]);
   
   return null;
 };
@@ -101,7 +117,6 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <PathTracker />
-            <Navbar />
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Index />} />

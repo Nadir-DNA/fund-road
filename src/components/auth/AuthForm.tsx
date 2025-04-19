@@ -7,14 +7,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { LogIn } from "lucide-react";
+import { LoadingIndicator } from "../ui/LoadingIndicator";
 
 interface AuthFormProps {
   isLogin: boolean;
   onToggleMode: () => void;
+  initialEmail?: string;
 }
 
-export default function AuthForm({ isLogin, onToggleMode }: AuthFormProps) {
-  const [email, setEmail] = useState("");
+export default function AuthForm({ isLogin, onToggleMode, initialEmail = "" }: AuthFormProps) {
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -53,7 +55,7 @@ export default function AuthForm({ isLogin, onToggleMode }: AuthFormProps) {
           email,
           password,
           options: {
-            emailRedirectTo: 'https://fund-road.com'
+            emailRedirectTo: window.location.origin + '/auth'
           }
         });
         
@@ -68,7 +70,7 @@ export default function AuthForm({ isLogin, onToggleMode }: AuthFormProps) {
             },
             body: JSON.stringify({
               email,
-              confirmation_url: `https://fund-road.com/auth?email=${encodeURIComponent(email)}`
+              confirmation_url: `${window.location.origin}/auth?email=${encodeURIComponent(email)}`
             })
           });
 
@@ -105,10 +107,11 @@ export default function AuthForm({ isLogin, onToggleMode }: AuthFormProps) {
 
   const handleGoogleSignIn = async () => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'https://fund-road.com'
+          redirectTo: `${window.location.origin}`
         }
       });
       
@@ -119,6 +122,8 @@ export default function AuthForm({ isLogin, onToggleMode }: AuthFormProps) {
         description: error.message || "Une erreur est survenue",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -169,9 +174,14 @@ export default function AuthForm({ isLogin, onToggleMode }: AuthFormProps) {
         )}
         
         <Button type="submit" className="w-full bg-gradient-to-r from-primary to-accent" disabled={isLoading}>
-          {isLoading 
-            ? (isLogin ? "Connexion en cours..." : "Inscription en cours...") 
-            : (isLogin ? "Se connecter" : "S'inscrire")}
+          {isLoading ? (
+            <>
+              <LoadingIndicator size="sm" className="mr-2" />
+              {isLogin ? "Connexion en cours..." : "Inscription en cours..."}
+            </>
+          ) : (
+            isLogin ? "Se connecter" : "S'inscrire"
+          )}
         </Button>
 
         <div className="relative my-4">
@@ -188,8 +198,9 @@ export default function AuthForm({ isLogin, onToggleMode }: AuthFormProps) {
           variant="outline" 
           className="w-full"
           onClick={handleGoogleSignIn}
+          disabled={isLoading}
         >
-          <LogIn className="mr-2" />
+          {isLoading ? <LoadingIndicator size="sm" /> : <LogIn className="mr-2" />}
           Continuer avec Google
         </Button>
       </form>
@@ -199,6 +210,7 @@ export default function AuthForm({ isLogin, onToggleMode }: AuthFormProps) {
           type="button"
           onClick={onToggleMode}
           className="text-sm text-white/60 hover:text-primary"
+          disabled={isLoading}
         >
           {isLogin 
             ? "Pas encore de compte ? S'inscrire" 

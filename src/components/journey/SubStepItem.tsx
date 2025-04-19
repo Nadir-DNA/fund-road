@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
+import { buildResourceUrl } from "@/utils/navigationUtils";
 
 interface SubStepItemProps {
   subStep: SubStep;
@@ -21,17 +22,25 @@ export default function SubStepItem({ subStep, stepId, onToggleCompletion, onCli
   const navigate = useNavigate();
   
   const handleResourceClick = (e: React.MouseEvent, resourceComponent: string, resourceTitle: string) => {
+    e.preventDefault();
     e.stopPropagation();
+    
+    if (loadingResource) return; // Prevent multiple clicks
+    
     setLoadingResource(resourceTitle);
     
     try {
-      const url = `/roadmap?step=${stepId}&substep=${encodeURIComponent(subStep.title)}&resource=${encodeURIComponent(resourceComponent)}`;
+      const url = buildResourceUrl(stepId, subStep.title, resourceComponent);
       
-      // Store the current path for potential back navigation
-      localStorage.setItem('lastPath', window.location.pathname + window.location.search);
+      // Use setTimeout to ensure the UI updates before navigation
+      setTimeout(() => {
+        navigate(url);
+        // Reset loading state after a short delay
+        setTimeout(() => {
+          setLoadingResource(null);
+        }, 300);
+      }, 100);
       
-      // Navigate to the resource page
-      navigate(url);
     } catch (error) {
       console.error("Error navigating to resource:", error);
       setLoadingResource(null);
@@ -71,7 +80,10 @@ export default function SubStepItem({ subStep, stepId, onToggleCompletion, onCli
               "font-medium text-sm text-left hover:text-primary transition-colors focus:outline-none w-full flex items-center justify-between",
               subStep.isCompleted && "line-through decoration-primary/70"
             )}
-            onClick={onClick}
+            onClick={(e) => {
+              e.preventDefault();
+              onClick();
+            }}
           >
             <span>{subStep.title}</span>
             <ChevronRight className="h-4 w-4 opacity-70" />
@@ -98,7 +110,7 @@ export default function SubStepItem({ subStep, stepId, onToggleCompletion, onCli
                 size="sm" 
                 className="h-6 px-2 text-xs"
                 onClick={(e) => {
-                  if (resource.componentName) {
+                  if (resource.componentName && resource.status !== 'coming-soon') {
                     handleResourceClick(e, resource.componentName, resource.title);
                   } else {
                     onClick();

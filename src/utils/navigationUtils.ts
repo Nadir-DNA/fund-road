@@ -6,7 +6,11 @@
 // Save the current path to localStorage for later navigation
 export const saveCurrentPath = () => {
   try {
-    localStorage.setItem('lastPath', window.location.pathname + window.location.search);
+    const currentPath = window.location.pathname + window.location.search;
+    // Don't save auth page as a return destination
+    if (!currentPath.startsWith('/auth')) {
+      localStorage.setItem('lastPath', currentPath);
+    }
   } catch (error) {
     console.error('Error saving path to localStorage:', error);
   }
@@ -44,5 +48,24 @@ export const getQueryParams = (url: string) => {
   } catch (error) {
     console.error('Error parsing URL:', error);
     return {};
+  }
+};
+
+// Check if we're running in a browser environment
+export const isBrowser = () => typeof window !== 'undefined';
+
+// Safely handle URL parameter encoding/decoding
+export const safeEncodeURIComponent = (str: string) => {
+  if (!str) return '';
+  return encodeURIComponent(str);
+};
+
+export const safeDecodeURIComponent = (str: string) => {
+  if (!str) return '';
+  try {
+    return decodeURIComponent(str);
+  } catch (e) {
+    console.error('Error decoding URI component:', e);
+    return str;
   }
 };

@@ -1,18 +1,33 @@
 
 import { useState, useEffect } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthForm from "@/components/auth/AuthForm";
 import BetaTag from "@/components/common/BetaTag";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
+import { toast } from "@/components/ui/use-toast";
+import { getLastPath, clearLastPath } from "@/utils/navigationUtils";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const emailParam = searchParams.get('email');
+  
+  // Set login mode based on URL parameter if available
+  useEffect(() => {
+    if (emailParam) {
+      setIsLogin(true);
+      toast({
+        title: "Vérification d'email",
+        description: "Veuillez vous connecter pour compléter la vérification de votre compte.",
+      });
+    }
+  }, [emailParam]);
   
   useEffect(() => {
     const checkAuth = async () => {
@@ -22,15 +37,23 @@ export default function Auth() {
         
         // If authenticated, redirect to the last visited page or home
         if (session) {
-          // Get last visited page from localStorage or default to "/"
-          const lastPath = localStorage.getItem('lastPath') || '/';
+          // Get last visited page or default to "/"
+          const lastPath = getLastPath();
           // Reset for next time
-          localStorage.removeItem('lastPath');
-          // Navigate after a short delay to ensure state is updated
-          setTimeout(() => navigate(lastPath), 100);
+          clearLastPath();
+          
+          // Small delay to ensure state is updated before navigation
+          setTimeout(() => {
+            navigate(lastPath);
+          }, 100);
         }
       } catch (error) {
         console.error("Error checking auth:", error);
+        toast({
+          title: "Erreur d'authentification",
+          description: "Un problème est survenu lors de la vérification de votre authentification",
+          variant: "destructive",
+        });
       } finally {
         setCheckingAuth(false);
       }
@@ -42,8 +65,16 @@ export default function Auth() {
       (event, session) => {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           setIsAuthenticated(true);
+          
+          // Get last visited page or default to "/"
+          const lastPath = getLastPath();
+          // Reset for next time
+          clearLastPath();
+          
           // Navigate after state update
-          setTimeout(() => navigate('/'), 100);
+          setTimeout(() => {
+            navigate(lastPath);
+          }, 100);
         } else if (event === 'SIGNED_OUT') {
           setIsAuthenticated(false);
         }
@@ -79,7 +110,8 @@ export default function Auth() {
       <main className="container mx-auto px-4 pt-32 pb-20 flex items-center justify-center">
         <AuthForm 
           isLogin={isLogin} 
-          onToggleMode={() => setIsLogin(!isLogin)} 
+          onToggleMode={() => setIsLogin(!isLogin)}
+          initialEmail={emailParam || ""}
         />
       </main>
       
