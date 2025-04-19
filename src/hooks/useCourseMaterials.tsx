@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 interface CourseMaterial {
   id: string;
   step_id: number;
-  substep_title: string;
+  substep_title: string | null;
   title: string;
   description: string;
   resource_type: string;
@@ -17,61 +18,72 @@ interface CourseMaterial {
 
 export const useCourseMaterials = (stepId: number, substepTitle: string | null) => {
   const [materials, setMaterials] = useState<CourseMaterial[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const fetchMaterials = async () => {
-    setIsLoading(true);
-    
-    try {
-      const { data: session } = await supabase.auth.getSession();
-      
-      if (!session?.session) {
+  // Utiliser React Query pour obtenir les matériaux de cours
+  const { data: courseMaterials, isLoading, error, refetch } = useQuery({
+    queryKey: ['courseMaterials', stepId, substepTitle],
+    queryFn: async () => {
+      try {
+        console.log(`Fetching course materials for step: ${stepId}, substep: ${substepTitle || 'main step'}`);
+        
+        const { data: session } = await supabase.auth.getSession();
+        
+        if (!session?.session) {
+          console.log("No session found when fetching course materials");
+          toast({
+            title: "Connexion requise",
+            description: "Vous devez être connecté pour accéder aux ressources du cours.",
+            variant: "destructive",
+          });
+          navigate("/auth");
+          return [];
+        }
+        
+        // Construire la requête de base
+        let query = supabase
+          .from('entrepreneur_resources')
+          .select('*')
+          .eq('step_id', stepId);
+          
+        // Filtrer par substep_title si disponible
+        if (substepTitle) {
+          query = query.eq('substep_title', substepTitle);
+        } else {
+          // Si pas de substepTitle, chercher les ressources pour l'étape principale
+          query = query.is('substep_title', null);
+        }
+        
+        // Exécuter la requête
+        const { data, error } = await query;
+          
+        if (error) {
+          console.error("Supabase query error:", error);
+          throw error;
+        }
+        
+        console.log(`Retrieved ${data?.length || 0} course materials`, data);
+        
+        if (data && data.length > 0) {
+          setMaterials(data as CourseMaterial[]);
+          return data as CourseMaterial[];
+        }
+        
+        return [];
+      } catch (error: any) {
+        console.error("Error fetching course materials:", error);
         toast({
-          title: "Connexion requise",
-          description: "Vous devez être connecté pour accéder aux ressources du cours.",
+          title: "Erreur",
+          description: "Impossible de récupérer les ressources du cours.",
           variant: "destructive",
         });
-        navigate("/auth");
         return [];
       }
-      
-      // Query builder
-      let query = supabase
-        .from('entrepreneur_resources')
-        .select('*')
-        .eq('step_id', stepId);
-        
-      // Add substep filter if applicable
-      if (substepTitle) {
-        query = query.eq('substep_title', substepTitle);
-      }
-        
-      const { data, error } = await query;
-        
-      if (error) {
-        throw error;
-      }
-      
-      if (data) {
-        setMaterials(data as CourseMaterial[]);
-        return data as CourseMaterial[];
-      }
-      
-      return [];
-    } catch (error: any) {
-      console.error("Error fetching course materials:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de récupérer les ressources du cours.",
-        variant: "destructive",
-      });
-      return [];
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    retry: 3,
+  });
   
   const getUserProgress = async (userId: string, stepId: number, substepTitle: string | null) => {
     if (!substepTitle) return null;
@@ -156,7 +168,7 @@ export const useCourseMaterials = (stepId: number, substepTitle: string | null) 
       if (error) throw error;
       
       // Refresh materials list after creating/updating
-      fetchMaterials();
+      refetch();
       
       toast({
         title: "Succès",
@@ -178,9 +190,10 @@ export const useCourseMaterials = (stepId: number, substepTitle: string | null) 
   };
   
   return {
-    materials,
+    materials: courseMaterials || materials,
     isLoading,
-    fetchMaterials,
+    error,
+    refetch,
     getUserProgress,
     getUserResource,
     createOrUpdateResourceTemplate

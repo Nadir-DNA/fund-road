@@ -2,6 +2,8 @@
 import { Step, SubStep } from "@/types/journey";
 import CourseContentDisplay from "./CourseContentDisplay";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
+import { BookOpen } from "lucide-react";
 
 interface OverviewTabProps {
   step: Step;
@@ -29,6 +31,16 @@ export default function OverviewTab({ step, selectedSubStep, isLoading, courseCo
         />
       ) : (
         <div className="space-y-6 max-w-full">
+          <Card className="p-6">
+            <div className="flex flex-col items-center justify-center text-center">
+              <BookOpen className="h-12 w-12 text-muted-foreground/50 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Contenu non disponible</h3>
+              <p className="text-muted-foreground max-w-md">
+                Le contenu de ce cours n'est pas encore disponible. Voici les détails de l'étape en attendant :
+              </p>
+            </div>
+          </Card>
+          
           <div>
             <h3 className="text-lg font-semibold mb-2">Description détaillée</h3>
             <p className="text-muted-foreground text-sm sm:text-base">{step.detailedDescription}</p>

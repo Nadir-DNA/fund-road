@@ -6,6 +6,7 @@ import { isBrowser } from "@/utils/navigationUtils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
+import { useCourseMaterials } from "@/hooks/useCourseMaterials";
 
 interface ResourceManagerProps {
   step: any;
@@ -18,65 +19,111 @@ export default function ResourceManager({
   selectedSubstepTitle,
   selectedResourceName
 }: ResourceManagerProps) {
+  // Utiliser notre hook personnalisé pour récupérer les matériaux
+  const { materials, isLoading: isMaterialsLoading } = useCourseMaterials(
+    step.id,
+    selectedSubstepTitle || null
+  );
+  
   // Get the resources to display
   const { data: resources, isLoading } = useQuery({
-    queryKey: ['resources', step.id, selectedSubstepTitle],
+    queryKey: ['resources', step.id, selectedSubstepTitle, materials],
     queryFn: async () => {
-      try {
-        console.log(`Fetching resources for step ID: ${step.id}, substep: ${selectedSubstepTitle || 'main step'}`);
+      console.log(`Loading resources for step ID: ${step.id}, substep: ${selectedSubstepTitle || 'main step'}`);
+      
+      // Si nous avons déjà récupéré les matériaux, filtrer ceux de type "resource"
+      if (materials && materials.length > 0) {
+        console.log("Using materials from useCourseMaterials for resources");
         
+        const filteredResources = materials.filter(item => 
+          item.resource_type === 'resource' || 
+          item.resource_type === 'tool' || 
+          item.resource_type === 'template'
+        ).map(item => ({
+          title: item.title,
+          description: item.description || '',
+          componentName: item.component_name,
+          url: item.file_url,
+          status: 'available'
+        }));
+        
+        console.log(`Found ${filteredResources.length} resources from materials`);
+        
+        if (filteredResources.length > 0) {
+          return filteredResources;
+        }
+      }
+      
+      // Fallback au comportement précédent si nécessaire
+      try {
         const { data: session } = await supabase.auth.getSession();
         
         if (!session?.session) {
           console.log("No authenticated session found when fetching resources");
-          return step.resources || [];
+          return selectedSubstepTitle 
+            ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)?.resources || [] 
+            : step.resources || [];
         }
         
-        // Fetch resources from Supabase
-        const { data, error } = await supabase
+        // Requête à Supabase pour récupérer les ressources
+        let query = supabase
           .from('entrepreneur_resources')
           .select('*')
-          .eq('step_id', step.id)
-          .eq(selectedSubstepTitle ? 'substep_title' : 'resource_type', 
-               selectedSubstepTitle || 'resource');
+          .eq('step_id', step.id);
+          
+        if (selectedSubstepTitle) {
+          query = query.eq('substep_title', selectedSubstepTitle);
+        } else {
+          query = query.is('substep_title', null);
+        }
+        
+        // Filtrer pour les ressources (pas les cours)
+        query = query.neq('resource_type', 'course');
+          
+        const { data, error } = await query;
         
         if (error) {
           console.error("Error fetching resources:", error);
-          return step.resources || [];
+          return selectedSubstepTitle 
+            ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)?.resources || [] 
+            : step.resources || [];
         }
         
         console.log(`Retrieved ${data?.length || 0} resources from Supabase for step ${step.id}`);
         
         if (data && data.length > 0) {
-          // Map Supabase resources to our Resource type
+          // Mappage des ressources Supabase à notre format
           return data.map(item => ({
             title: item.title,
             description: item.description || '',
             componentName: item.component_name,
+            url: item.file_url,
             status: 'available'
           }));
         }
         
-        // If no resources found in Supabase, use the static ones from the step
+        // Fallback aux ressources statiques si rien n'est trouvé dans Supabase
         return selectedSubstepTitle 
           ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)?.resources || [] 
           : step.resources || [];
+          
       } catch (err) {
         console.error("Error in resource query:", err);
-        // Fallback to static resources
+        // Fallback aux ressources statiques
         return selectedSubstepTitle 
           ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)?.resources || [] 
           : step.resources || [];
       }
     },
-    staleTime: 1000 * 60 * 5 // Cache for 5 minutes
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    enabled: !isMaterialsLoading // Attendre que les matériaux soient chargés
   });
   
   // Si une ressource spécifique est sélectionnée
   if (selectedResourceName && selectedSubstepTitle) {
-    // Find the selected resource
+    // Trouver la ressource sélectionnée
     const selectedResource = resources?.find(r => r.componentName === selectedResourceName) || 
-                            step.resources?.find(r => r.componentName === selectedResourceName);
+                             step.resources?.find(r => r.componentName === selectedResourceName);
     
     if (selectedResource) {
       return (
@@ -91,7 +138,7 @@ export default function ResourceManager({
     }
   }
   
-  if (isLoading) {
+  if (isLoading || isMaterialsLoading) {
     return (
       <div className="flex justify-center items-center p-12">
         <LoadingIndicator size="lg" />

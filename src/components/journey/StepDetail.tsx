@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { toast } from "@/components/ui/use-toast";
 import { getResourceReturnPath, clearResourceReturnPath } from "@/utils/navigationUtils";
+import { useCourseMaterials } from "@/hooks/useCourseMaterials";
 
 interface StepDetailProps {
   step: Step;
@@ -22,6 +23,12 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
   const selectedResourceName = searchParams.get('resource');
   const navigate = useNavigate();
   const { activeTab, handleTabChange } = useStepTabs(selectedResourceName);
+  
+  // Utiliser le hook useCourseMaterials pour récupérer les matériaux de cours
+  const { materials, isLoading: isLoadingMaterials } = useCourseMaterials(
+    step.id, 
+    selectedSubStep?.title || null
+  );
 
   // Handle back navigation
   useEffect(() => {
@@ -37,10 +44,49 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
     return () => window.removeEventListener('popstate', handleBackNavigation);
   }, [navigate]);
 
-  // Fetch course content with improved error handling and more detailed query
+  // Fetch course content with improved error handling 
   const { data: courseContent, isLoading: isLoadingContent } = useQuery({
-    queryKey: ['courseContent', step.id, selectedSubStep?.title],
+    queryKey: ['courseContent', step.id, selectedSubStep?.title, materials],
     queryFn: async () => {
+      console.log("Executing courseContent query function");
+      // Si nous avons déjà récupéré les matériaux de cours, les utiliser
+      if (materials && materials.length > 0) {
+        console.log("Using materials from useCourseMaterials:", materials);
+        
+        let content = "";
+        
+        if (selectedSubStep) {
+          // Pour un sous-step spécifique
+          const courseMaterial = materials.find(item => 
+            item.substep_title === selectedSubStep.title && 
+            item.resource_type === 'course'
+          );
+          
+          if (courseMaterial?.course_content) {
+            console.log(`Found course content for substep "${selectedSubStep.title}"`);
+            content = courseMaterial.course_content;
+          } else {
+            console.log(`No specific course content found for substep: "${selectedSubStep.title}"`);
+          }
+        } else {
+          // Pour l'étape principale
+          const courseMaterial = materials.find(item => 
+            (!item.substep_title || item.substep_title === null) && 
+            item.resource_type === 'course'
+          );
+          
+          if (courseMaterial?.course_content) {
+            console.log(`Found course content for main step "${step.title}"`);
+            content = courseMaterial.course_content;
+          } else {
+            console.log(`No specific course content found for main step: "${step.title}"`);
+          }
+        }
+        
+        return content;
+      }
+      
+      // Fallback - Requête directe à Supabase si nécessaire
       try {
         const { data: session } = await supabase.auth.getSession();
         
@@ -49,86 +95,36 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
           return "";
         }
         
-        // Log fetch attempt with clear parameters
-        console.log(`Fetching course content for step ID: ${step.id}, substep: ${selectedSubStep?.title || 'main step'}`);
+        console.log(`Fallback: Fetching course content for step ID: ${step.id}, substep: ${selectedSubStep?.title || 'main step'}`);
         
-        // Simplified query to get all relevant resources for this step
-        const { data, error } = await supabase
+        // Construire la requête
+        let query = supabase
           .from('entrepreneur_resources')
           .select('*')
-          .eq('step_id', step.id);
+          .eq('step_id', step.id)
+          .eq('resource_type', 'course');
+        
+        // Ajouter filtre pour substep si nécessaire
+        if (selectedSubStep) {
+          query = query.eq('substep_title', selectedSubStep.title);
+        } else {
+          query = query.is('substep_title', null);
+        }
+          
+        const { data, error } = await query.maybeSingle();
         
         if (error) {
           console.error("Supabase query error:", error);
           throw error;
         }
         
-        console.log(`Retrieved ${data?.length || 0} resource records from Supabase`);
-        console.log("Resources data:", data);
+        console.log("Retrieved course content:", data);
         
-        let content = "";
-        
-        // Process retrieved data
-        if (data && data.length > 0) {
-          // Find content specifically for a substep if selected
-          if (selectedSubStep) {
-            // Try to find course content for this specific substep
-            // First look for resources marked as 'course' type
-            const substepCourse = data.find(item => 
-              item.substep_title === selectedSubStep.title && 
-              item.resource_type === 'course'
-            );
-            
-            // If found with 'course' type, use it
-            if (substepCourse?.course_content) {
-              console.log(`Found course content for substep "${selectedSubStep.title}" with resource_type "course"`);
-              content = substepCourse.course_content;
-            } else {
-              // Otherwise try to find any content for this substep
-              const anySubstepContent = data.find(item => 
-                item.substep_title === selectedSubStep.title && 
-                item.course_content
-              );
-              
-              if (anySubstepContent?.course_content) {
-                console.log(`Found content for substep "${selectedSubStep.title}" with alternative resource_type`);
-                content = anySubstepContent.course_content;
-              } else {
-                console.log(`No specific course content found for substep: "${selectedSubStep.title}"`);
-              }
-            }
-          } else {
-            // Try to find content for the main step
-            // First look for resources marked as 'course' type with no substep
-            const mainStepCourse = data.find(item => 
-              (!item.substep_title || item.substep_title === step.title) && 
-              item.resource_type === 'course'
-            );
-            
-            // If found with 'course' type, use it
-            if (mainStepCourse?.course_content) {
-              console.log(`Found course content for main step "${step.title}" with resource_type "course"`);
-              content = mainStepCourse.course_content;
-            } else {
-              // Otherwise try to find any content for the main step
-              const anyMainContent = data.find(item => 
-                (!item.substep_title || item.substep_title === step.title) && 
-                item.course_content
-              );
-              
-              if (anyMainContent?.course_content) {
-                console.log(`Found content for main step "${step.title}" with alternative resource_type`);
-                content = anyMainContent.course_content;
-              } else {
-                console.log(`No specific course content found for main step: "${step.title}"`);
-              }
-            }
-          }
-        } else {
-          console.log(`No resources found for step ID: ${step.id}`);
+        if (data?.course_content) {
+          return data.course_content;
         }
         
-        return content;
+        return "";
       } catch (err) {
         console.error("Error fetching course content:", err);
         toast({
@@ -140,12 +136,15 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
       }
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    retry: 3 // Increase retry attempts
+    retry: 3,
+    enabled: !isLoadingMaterials // Attendre que les matériaux soient chargés
   });
 
   const handleDialogClose = () => {
     navigate('/roadmap', { replace: true });
   };
+
+  const isLoading = isLoadingMaterials || isLoadingContent;
 
   return (
     <div className="px-2 w-full">
@@ -162,24 +161,17 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
         </TabsList>
         
         <TabsContent value="overview">
-          {isLoadingContent ? (
+          {isLoading ? (
             <div className="flex flex-col items-center justify-center py-16">
               <LoadingIndicator size="lg" className="mb-4" />
               <p className="text-muted-foreground">Chargement du contenu...</p>
             </div>
-          ) : courseContent ? (
-            <OverviewTab 
-              step={step} 
-              selectedSubStep={selectedSubStep} 
-              isLoading={false}
-              courseContent={courseContent}
-            />
           ) : (
             <OverviewTab 
               step={step} 
               selectedSubStep={selectedSubStep} 
               isLoading={false}
-              courseContent=""
+              courseContent={courseContent || ""}
             />
           )}
         </TabsContent>
