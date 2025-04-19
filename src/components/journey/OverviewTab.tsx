@@ -13,7 +13,8 @@ interface OverviewTabProps {
 }
 
 export default function OverviewTab({ step, selectedSubStep, isLoading, courseContent }: OverviewTabProps) {
-  console.log("OverviewTab received courseContent:", courseContent ? "Yes (length: " + courseContent.length + ")" : "No");
+  console.log("OverviewTab received courseContent:", courseContent ? `Yes (length: ${courseContent.length})` : "No");
+  console.log("Is content empty after trim?", !courseContent?.trim());
   
   return (
     <div className="py-4 w-full">

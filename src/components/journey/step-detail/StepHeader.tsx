@@ -1,5 +1,5 @@
 
-import { DialogClose, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { Step, SubStep } from "@/types/journey";
@@ -15,7 +15,16 @@ export default function StepHeader({ step, selectedSubStep, onClose }: StepHeade
     <DialogHeader className="mb-4 sm:mb-6">
       <div className="flex items-center justify-between">
         <DialogTitle className="text-xl sm:text-2xl">{step.title}</DialogTitle>
-        <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={onClose}>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="rounded-full h-8 w-8" 
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onClose();
+          }}
+        >
           <X className="h-4 w-4" />
         </Button>
       </div>

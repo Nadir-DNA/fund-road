@@ -26,15 +26,23 @@ export default function StepDetailDialog({
   console.log("StepDetailDialog received courseContent:", courseContent ? `${courseContent.substring(0, 50)}...` : "Empty");
   
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      // Si la boîte de dialogue est fermée, appeler onClose
-      if (!open) onClose();
-    }}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        if (!open) {
+          console.log("Dialog closing, calling onClose");
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto glass-card p-6">
         <StepHeader 
           step={step} 
           selectedSubStep={selectedSubStep} 
-          onClose={onClose}
+          onClose={() => {
+            console.log("Close button clicked");
+            onClose();
+          }}
         />
         {isLoading ? (
           <StepDetailSkeleton />
