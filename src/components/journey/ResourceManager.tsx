@@ -42,7 +42,7 @@ export default function ResourceManager({
         ).map(item => ({
           title: item.title,
           description: item.description || '',
-          componentName: item.component_name,
+          componentName: item.component_name || '', // Use empty string as fallback
           url: item.file_url,
           status: 'available'
         }));

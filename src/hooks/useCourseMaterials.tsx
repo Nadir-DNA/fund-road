@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -14,6 +15,7 @@ interface CourseMaterial {
   file_url: string | null;
   is_mandatory: boolean;
   course_content: string | null;
+  component_name: string | null;
 }
 
 export const useCourseMaterials = (stepId: number, substepTitle: string | null) => {
