@@ -1,4 +1,3 @@
-
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import ResourceList from "./resource-manager/ResourceList";
 import { renderResourceComponent } from "./utils/resourceRenderer";
@@ -6,7 +5,7 @@ import { isBrowser } from "@/utils/navigationUtils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import { useCourseMaterials } from "@/hooks/useCourseMaterials";
+import { useCourseMaterials } from "@/hooks/course/useCourseMaterials";
 
 interface ResourceManagerProps {
   step: any;
