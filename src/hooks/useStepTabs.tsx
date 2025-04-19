@@ -1,9 +1,8 @@
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
 
 export const useStepTabs = (selectedResourceName: string | null) => {
-  const [activeTab, setActiveTab] = useState<string>(selectedResourceName ? "resources" : "overview");
+  const [activeTab, setActiveTab] = useState<string>("overview");
   
   useEffect(() => {
     if (selectedResourceName) {

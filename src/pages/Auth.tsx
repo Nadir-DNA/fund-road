@@ -29,59 +29,72 @@ export default function Auth() {
     }
   }, [emailParam]);
   
+  // Setup authentication state listener first, then check for existing session
   useEffect(() => {
-    const checkAuth = async () => {
+    let mounted = true;
+    
+    async function checkAuth() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setIsAuthenticated(!!session);
-        
-        // If authenticated, redirect to the last visited page or home
-        if (session) {
-          // Get last visited page or default to "/"
-          const lastPath = getLastPath();
-          // Reset for next time
-          clearLastPath();
+        // First, set up auth state listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (!mounted) return;
           
-          // Small delay to ensure state is updated before navigation
-          setTimeout(() => {
-            navigate(lastPath);
-          }, 100);
-        }
-      } catch (error) {
-        console.error("Error checking auth:", error);
-        toast({
-          title: "Erreur d'authentification",
-          description: "Un problème est survenu lors de la vérification de votre authentification",
-          variant: "destructive",
+          setIsAuthenticated(!!session);
+          setCheckingAuth(false);
+          
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            // Get last visited page or default to "/"
+            const lastPath = getLastPath();
+            clearLastPath();
+            
+            // Use setTimeout to ensure state updates before navigation
+            setTimeout(() => {
+              if (mounted) navigate(lastPath);
+            }, 100);
+          }
         });
-      } finally {
-        setCheckingAuth(false);
-      }
-    };
-    
-    checkAuth();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        
+        // Then check for existing session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        if (session) {
           setIsAuthenticated(true);
           
           // Get last visited page or default to "/"
           const lastPath = getLastPath();
-          // Reset for next time
           clearLastPath();
           
-          // Navigate after state update
+          // Use setTimeout to ensure state updates before navigation
           setTimeout(() => {
-            navigate(lastPath);
+            if (mounted) navigate(lastPath);
           }, 100);
-        } else if (event === 'SIGNED_OUT') {
-          setIsAuthenticated(false);
+        }
+        
+        setCheckingAuth(false);
+        
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error("Error checking auth:", error);
+        if (mounted) {
+          setCheckingAuth(false);
+          toast({
+            title: "Erreur d'authentification",
+            description: "Un problème est survenu lors de la vérification de votre authentification",
+            variant: "destructive",
+          });
         }
       }
-    );
+    }
     
-    return () => subscription.unsubscribe();
+    checkAuth();
+    
+    return () => {
+      mounted = false;
+    };
   }, [navigate]);
   
   if (checkingAuth) {

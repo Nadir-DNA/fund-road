@@ -19,7 +19,7 @@ interface StepDetailProps {
 }
 
 export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const selectedResourceName = searchParams.get('resource');
   const navigate = useNavigate();
   const { activeTab, handleTabChange } = useStepTabs(selectedResourceName);
@@ -38,7 +38,7 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
     return () => window.removeEventListener('popstate', handleBackNavigation);
   }, [navigate]);
 
-  // Fetch course content
+  // Fetch course content with improved error handling
   const { data: courseContent, isLoading: isLoadingContent } = useQuery({
     queryKey: ['courseContent', step.id, selectedSubStep?.title],
     queryFn: async () => {
