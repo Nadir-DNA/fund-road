@@ -33,20 +33,25 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
     return () => window.removeEventListener('popstate', handleBackNavigation);
   }, [navigate]);
 
+  // Debugging pour mieux comprendre le problème
+  console.log("Materials récupérés:", materials);
+  console.log("Étape sélectionnée:", step.id, step.title);
+  console.log("Sous-étape sélectionnée:", selectedSubStep?.title || "étape principale");
+
   // Get course content from materials
-  const courseContent = materials?.find(material => 
+  const courseMaterial = materials?.find(material => 
     material.resource_type === 'course' && 
     (selectedSubStep?.title 
       ? material.substep_title === selectedSubStep.title 
       : material.substep_title === null)
-  )?.course_content || "";
+  );
 
-  console.log("Step materials count:", materials?.length || 0);
-  console.log("Selected substep:", selectedSubStep?.title || "main step");
-  console.log("Course content found:", courseContent ? `Yes (length: ${courseContent.length})` : "No");
-  console.log("First 100 chars of content:", courseContent.substring(0, 100));
+  console.log("Matériel de cours trouvé:", courseMaterial);
+  const courseContent = courseMaterial?.course_content || "";
+  console.log("Contenu du cours:", courseContent ? `Disponible (longueur: ${courseContent.length})` : "Non disponible");
 
   const handleDialogClose = () => {
+    console.log("Dialog close handler called in StepDetail");
     navigate('/roadmap', { replace: true });
   };
 

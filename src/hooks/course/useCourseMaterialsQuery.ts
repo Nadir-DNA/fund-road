@@ -15,12 +15,12 @@ export const useCourseMaterialsQuery = (stepId: number, substepTitle: string | n
     queryKey: ['courseMaterials', stepId, substepTitle],
     queryFn: async () => {
       try {
-        console.log(`Fetching course materials for step: ${stepId}, substep: ${substepTitle || 'main step'}`);
+        console.log(`Récupération des matériaux pour l'étape: ${stepId}, sous-étape: ${substepTitle || 'étape principale'}`);
         
         const { data: session } = await supabase.auth.getSession();
         
         if (!session?.session) {
-          console.log("No session found when fetching course materials");
+          console.log("Aucune session trouvée lors de la récupération des matériaux");
           toast({
             title: "Connexion requise",
             description: "Vous devez être connecté pour accéder aux ressources du cours.",
@@ -30,6 +30,7 @@ export const useCourseMaterialsQuery = (stepId: number, substepTitle: string | n
           return [];
         }
         
+        console.log("Construction de la requête Supabase");
         let query = supabase
           .from('entrepreneur_resources')
           .select('*')
@@ -37,27 +38,42 @@ export const useCourseMaterialsQuery = (stepId: number, substepTitle: string | n
           
         if (substepTitle) {
           query = query.eq('substep_title', substepTitle);
+          console.log(`Filtrage par sous-étape: "${substepTitle}"`);
         } else {
           query = query.is('substep_title', null);
+          console.log("Filtrage pour l'étape principale (substep_title IS NULL)");
         }
         
+        console.log("Exécution de la requête Supabase");
         const { data, error } = await query;
           
         if (error) {
-          console.error("Supabase query error:", error);
+          console.error("Erreur de requête Supabase:", error);
           throw error;
         }
         
-        console.log(`Retrieved ${data?.length || 0} course materials`, data);
+        console.log(`Récupéré ${data?.length || 0} matériaux de cours:`, data);
         
         if (data && data.length > 0) {
+          data.forEach((item, index) => {
+            console.log(`Matériau ${index + 1}:`, {
+              id: item.id,
+              step_id: item.step_id,
+              substep_title: item.substep_title,
+              title: item.title,
+              resource_type: item.resource_type,
+              course_content: item.course_content ? `[Contenu disponible, ${item.course_content.length} caractères]` : 'Non disponible'
+            });
+          });
+          
           setMaterials(data as CourseMaterial[]);
           return data as CourseMaterial[];
+        } else {
+          console.log("Aucun matériau trouvé pour cette étape/sous-étape");
+          return [];
         }
-        
-        return [];
       } catch (error: any) {
-        console.error("Error fetching course materials:", error);
+        console.error("Erreur lors de la récupération des matériaux du cours:", error);
         toast({
           title: "Erreur",
           description: "Impossible de récupérer les ressources du cours.",

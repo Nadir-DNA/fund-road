@@ -19,11 +19,11 @@ export default function StepHeader({ step, selectedSubStep, onClose }: StepHeade
           variant="ghost" 
           size="icon" 
           className="rounded-full h-8 w-8" 
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
+          onClick={() => {
+            console.log("Close button clicked in StepHeader");
             onClose();
           }}
+          type="button"
         >
           <X className="h-4 w-4" />
         </Button>

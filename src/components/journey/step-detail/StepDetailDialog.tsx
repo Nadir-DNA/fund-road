@@ -22,7 +22,6 @@ export default function StepDetailDialog({
   courseContent,
   isLoading
 }: StepDetailDialogProps) {
-  // Log pour voir si le contenu du cours est bien reçu
   console.log("StepDetailDialog received courseContent:", courseContent ? `${courseContent.substring(0, 50)}...` : "Empty");
   
   return (
@@ -30,7 +29,7 @@ export default function StepDetailDialog({
       open={isOpen} 
       onOpenChange={(open) => {
         if (!open) {
-          console.log("Dialog closing, calling onClose");
+          console.log("Dialog closing from onOpenChange");
           onClose();
         }
       }}
@@ -40,7 +39,7 @@ export default function StepDetailDialog({
           step={step} 
           selectedSubStep={selectedSubStep} 
           onClose={() => {
-            console.log("Close button clicked");
+            console.log("Close button clicked in StepDetailDialog");
             onClose();
           }}
         />

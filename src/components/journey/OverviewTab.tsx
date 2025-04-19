@@ -13,8 +13,8 @@ interface OverviewTabProps {
 }
 
 export default function OverviewTab({ step, selectedSubStep, isLoading, courseContent }: OverviewTabProps) {
-  console.log("OverviewTab received courseContent:", courseContent ? `Yes (length: ${courseContent.length})` : "No");
-  console.log("Is content empty after trim?", !courseContent?.trim());
+  console.log("OverviewTab - Contenu du cours:", courseContent ? `Disponible (longueur: ${courseContent.length})` : "Non disponible");
+  console.log("Est-ce que le contenu est vide après trim?", !courseContent?.trim());
   
   return (
     <div className="py-4 w-full">
@@ -26,12 +26,15 @@ export default function OverviewTab({ step, selectedSubStep, isLoading, courseCo
           <Skeleton className="h-4 w-5/6" />
         </div>
       ) : courseContent && courseContent.trim().length > 0 ? (
-        <CourseContentDisplay 
-          stepId={step.id} 
-          substepTitle={selectedSubStep?.title || null} 
-          stepTitle={step.title}
-          courseContent={courseContent}
-        />
+        <>
+          <h3 className="text-lg font-semibold mb-4">Contenu du cours</h3>
+          <CourseContentDisplay 
+            stepId={step.id} 
+            substepTitle={selectedSubStep?.title || null} 
+            stepTitle={step.title}
+            courseContent={courseContent}
+          />
+        </>
       ) : (
         <div className="space-y-6 max-w-full">
           <Card className="p-6">
