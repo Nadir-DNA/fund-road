@@ -1,6 +1,4 @@
 
-// We update StepDetail to support the subsubstep param and pass it down for course content fetching
-
 import { useEffect } from "react";
 import { Step, SubStep } from "@/types/journey";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -56,6 +54,7 @@ export default function StepDetail({ step, selectedSubStep, selectedSubSubStepTi
       <StepDetailDialog
         step={step}
         selectedSubStep={selectedSubStep}
+        selectedSubSubStepTitle={selectedSubSubStepTitle}
         isOpen={true}
         onClose={handleDialogClose}
         courseContent={courseContent}
