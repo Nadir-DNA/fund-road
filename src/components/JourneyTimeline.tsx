@@ -16,6 +16,7 @@ export default function JourneyTimeline() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStep, setSelectedStep] = useState<Step | null>(null);
   const [selectedSubStep, setSelectedSubStep] = useState<SubStep | null>(null);
+  const [selectedSubSubStepTitle, setSelectedSubSubStepTitle] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
@@ -30,6 +31,7 @@ export default function JourneyTimeline() {
   useEffect(() => {
     const stepIdParam = searchParams.get('step');
     const substepTitleParam = searchParams.get('substep');
+    const subsubstepTitleParam = searchParams.get('subsubstep');
     
     if (stepIdParam && !isLoading) {
       const stepId = parseInt(stepIdParam);
@@ -43,7 +45,17 @@ export default function JourneyTimeline() {
           const subStep = step.subSteps.find(ss => ss.title === decodedTitle);
           if (subStep) {
             setSelectedSubStep(subStep);
+            
+            // Handle subsubstep if provided
+            if (subsubstepTitleParam) {
+              setSelectedSubSubStepTitle(safeDecodeURIComponent(subsubstepTitleParam));
+            } else {
+              setSelectedSubSubStepTitle(null);
+            }
           }
+        } else {
+          setSelectedSubStep(null);
+          setSelectedSubSubStepTitle(null);
         }
         
         setDialogOpen(true);
@@ -82,6 +94,7 @@ export default function JourneyTimeline() {
   const handleStepClick = (step: Step) => {
     setSelectedStep(step);
     setSelectedSubStep(null);
+    setSelectedSubSubStepTitle(null);
     setDialogOpen(true);
     
     // Update URL with step parameter
@@ -91,6 +104,7 @@ export default function JourneyTimeline() {
   const handleSubStepClick = (step: Step, subStep: SubStep) => {
     setSelectedStep(step);
     setSelectedSubStep(subStep);
+    setSelectedSubSubStepTitle(null);
     setDialogOpen(true);
     
     // Update URL with step and substep parameters
@@ -142,7 +156,11 @@ export default function JourneyTimeline() {
       <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
         <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto glass-card p-6">
           {selectedStep && (
-            <StepDetail step={selectedStep} selectedSubStep={selectedSubStep} />
+            <StepDetail 
+              step={selectedStep} 
+              selectedSubStep={selectedSubStep}
+              selectedSubSubStepTitle={selectedSubSubStepTitle}
+            />
           )}
         </DialogContent>
       </Dialog>

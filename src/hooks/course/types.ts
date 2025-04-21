@@ -5,6 +5,7 @@ export interface CourseMaterial {
   id: string;
   step_id: number;
   substep_title: string | null;
+  subsubstep_title: string | null;
   title: string;
   description: string;
   resource_type: string;

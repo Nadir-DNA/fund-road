@@ -14,9 +14,10 @@ interface ResourceCardProps {
   resource: Resource;
   stepId: number;
   substepTitle: string;
+  subsubstepTitle?: string | null;
 }
 
-export default function ResourceCard({ resource, stepId, substepTitle }: ResourceCardProps) {
+export default function ResourceCard({ resource, stepId, substepTitle, subsubstepTitle }: ResourceCardProps) {
   const [loadingResource, setLoadingResource] = useState<boolean>(false);
   const navigate = useNavigate();
 
@@ -34,7 +35,12 @@ export default function ResourceCard({ resource, stepId, substepTitle }: Resourc
 
       if (resource.componentName) {
         saveResourceReturnPath(window.location.pathname + window.location.search);
-        const resourceUrl = buildResourceUrl(stepId, substepTitle, resource.componentName);
+        let resourceUrl = buildResourceUrl(stepId, substepTitle, resource.componentName);
+        
+        // Add subsubstep to URL if present
+        if (subsubstepTitle) {
+          resourceUrl += `&subsubstep=${encodeURIComponent(subsubstepTitle)}`;
+        }
         
         setTimeout(() => {
           navigate(resourceUrl);

@@ -19,7 +19,8 @@ export default function StepDetail({ step, selectedSubStep, selectedSubSubStepTi
 
   const { materials, isLoading: isLoadingMaterials } = useCourseMaterials(
     step.id,
-    selectedSubStep?.title || null
+    selectedSubStep?.title || null,
+    selectedSubSubStepTitle
   );
 
   useEffect(() => {
@@ -63,4 +64,3 @@ export default function StepDetail({ step, selectedSubStep, selectedSubSubStepTi
     </div>
   );
 }
-

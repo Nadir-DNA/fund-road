@@ -64,8 +64,14 @@ export const clearResourceReturnPath = () => {
 };
 
 // Build a resource URL for navigation
-export const buildResourceUrl = (stepId: number, substepTitle: string, resourceName: string) => {
-  return `/roadmap?step=${stepId}&substep=${encodeURIComponent(substepTitle)}&resource=${encodeURIComponent(resourceName)}`;
+export const buildResourceUrl = (stepId: number, substepTitle: string, resourceName: string, subsubstepTitle?: string) => {
+  let url = `/roadmap?step=${stepId}&substep=${encodeURIComponent(substepTitle)}&resource=${encodeURIComponent(resourceName)}`;
+  
+  if (subsubstepTitle) {
+    url += `&subsubstep=${encodeURIComponent(subsubstepTitle)}`;
+  }
+  
+  return url;
 };
 
 // Extract query parameters from URL string

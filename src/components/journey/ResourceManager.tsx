@@ -24,7 +24,8 @@ export default function ResourceManager({
   // Use customized hook to get materials for step, substep, and now subsubstep
   const { materials, isLoading: isMaterialsLoading } = useCourseMaterials(
     step.id,
-    selectedSubstepTitle || null
+    selectedSubstepTitle || null,
+    selectedSubSubstepTitle
   );
 
   // Get the resources to display
@@ -185,4 +186,3 @@ export default function ResourceManager({
     </div>
   );
 }
-

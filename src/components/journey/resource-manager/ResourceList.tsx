@@ -8,10 +8,11 @@ interface ResourceListProps {
   resources: Resource[];
   stepId: number;
   substepTitle: string;
+  subsubstepTitle?: string | null;
   selectedResourceName?: string | null;
 }
 
-export default function ResourceList({ resources, stepId, substepTitle }: ResourceListProps) {
+export default function ResourceList({ resources, stepId, substepTitle, subsubstepTitle, selectedResourceName }: ResourceListProps) {
   if (!resources || resources.length === 0) {
     return (
       <Card>
@@ -35,6 +36,7 @@ export default function ResourceList({ resources, stepId, substepTitle }: Resour
           resource={resource}
           stepId={stepId}
           substepTitle={substepTitle}
+          subsubstepTitle={subsubstepTitle}
         />
       ))}
     </div>

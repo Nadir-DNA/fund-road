@@ -4,6 +4,14 @@ export type SubStep = {
   description: string; 
   isCompleted?: boolean;
   resources?: Resource[];
+  subSubSteps?: SubSubStep[];
+};
+
+export type SubSubStep = {
+  title: string;
+  description: string;
+  isCompleted?: boolean;
+  resources?: Resource[];
 };
 
 export type Resource = {
@@ -50,3 +58,4 @@ export type UserSubstepProgress = {
   is_completed: boolean;
   updated_at?: string;
 };
+

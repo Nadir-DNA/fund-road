@@ -9,13 +9,15 @@ import { useSearchParams } from "react-router-dom";
 interface StepDetailContentProps {
   step: Step;
   selectedSubStep: SubStep | null;
+  selectedSubSubStepTitle?: string | null;
   courseContent: string;
   isLoading: boolean;
 }
 
 export default function StepDetailContent({ 
   step, 
-  selectedSubStep, 
+  selectedSubStep,
+  selectedSubSubStepTitle,
   courseContent,
   isLoading 
 }: StepDetailContentProps) {
@@ -43,6 +45,7 @@ export default function StepDetailContent({
         <ResourceManager 
           step={step} 
           selectedSubstepTitle={selectedSubStep?.title}
+          selectedSubSubstepTitle={selectedSubSubStepTitle}
           selectedResourceName={selectedResourceName}
         />
       </TabsContent>
