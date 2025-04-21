@@ -31,8 +31,9 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
   }, [formData]);
   
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContent(e.target.value);
-    handleFormChange('content', e.target.value);
+    const newContent = e.target.value;
+    setContent(newContent);
+    handleFormChange('content', newContent);
   };
   
   const downloadAsText = () => {
@@ -86,6 +87,7 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
         onChange={handleContentChange}
         placeholder="Saisissez votre texte ici..."
         className="min-h-[450px] font-mono"
+        // Removed any custom keyDown handlers that might interfere
       />
       
       <div className="text-xs text-muted-foreground">
