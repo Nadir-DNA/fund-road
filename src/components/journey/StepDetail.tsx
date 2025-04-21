@@ -1,7 +1,9 @@
 
+// We update StepDetail to support the subsubstep param and pass it down for course content fetching
+
 import { useEffect } from "react";
 import { Step, SubStep } from "@/types/journey";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useCourseMaterials } from "@/hooks/course/useCourseMaterials";
 import { getResourceReturnPath, clearResourceReturnPath } from "@/utils/navigationUtils";
 import StepDetailDialog from "./step-detail/StepDetailDialog";
@@ -9,17 +11,17 @@ import StepDetailDialog from "./step-detail/StepDetailDialog";
 interface StepDetailProps {
   step: Step;
   selectedSubStep: SubStep | null;
+  selectedSubSubStepTitle?: string | null;
 }
 
-export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
+export default function StepDetail({ step, selectedSubStep, selectedSubSubStepTitle }: StepDetailProps) {
   const navigate = useNavigate();
-  
+
   const { materials, isLoading: isLoadingMaterials } = useCourseMaterials(
-    step.id, 
+    step.id,
     selectedSubStep?.title || null
   );
 
-  // Handle back navigation
   useEffect(() => {
     const handleBackNavigation = () => {
       const returnPath = getResourceReturnPath();
@@ -28,20 +30,21 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
         navigate(returnPath);
       }
     };
-    
+
     window.addEventListener('popstate', handleBackNavigation);
     return () => window.removeEventListener('popstate', handleBackNavigation);
   }, [navigate]);
 
-  // Get course content from materials
-  const courseContent = materials?.find(material => 
-    material.resource_type === 'course' && 
-    (selectedSubStep?.title ? material.substep_title === selectedSubStep?.title : material.substep_title === null)
-  )?.course_content || "";
+  // Obtain course content filtered by subsubstep_title if given
+  const courseMaterial = materials?.find(material =>
+    material.resource_type === 'course' &&
+    (selectedSubStep?.title
+      ? material.substep_title === selectedSubStep.title &&
+        (selectedSubSubStepTitle ? material.subsubstep_title === selectedSubSubStepTitle : !material.subsubstep_title)
+      : material.substep_title === null)
+  );
 
-  console.log("Step materials:", materials);
-  console.log("Selected substep:", selectedSubStep?.title);
-  console.log("Found course content:", courseContent ? "Yes (length: " + courseContent.length + ")" : "No");
+  const courseContent = courseMaterial?.course_content || "";
 
   const handleDialogClose = () => {
     navigate('/roadmap', { replace: true });
@@ -60,3 +63,4 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
     </div>
   );
 }
+

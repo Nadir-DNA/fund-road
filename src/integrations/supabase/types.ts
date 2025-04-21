@@ -41,6 +41,7 @@ export type Database = {
           step_id: number
           substep_index: string
           substep_title: string
+          subsubstep_title: string | null
           title: string
           updated_at: string | null
         }
@@ -57,6 +58,7 @@ export type Database = {
           step_id: number
           substep_index: string
           substep_title: string
+          subsubstep_title?: string | null
           title: string
           updated_at?: string | null
         }
@@ -73,6 +75,7 @@ export type Database = {
           step_id?: number
           substep_index?: string
           substep_title?: string
+          subsubstep_title?: string | null
           title?: string
           updated_at?: string | null
         }
