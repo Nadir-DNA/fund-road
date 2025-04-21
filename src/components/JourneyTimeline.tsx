@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Step, SubStep } from "@/types/journey";
@@ -88,7 +89,19 @@ export default function JourneyTimeline() {
       console.log("Dialog closed from JourneyTimeline - removing URL parameters");
       // Remove the URL parameters when dialog is closed
       navigate('/roadmap', { replace: true });
+      
+      // Also reset state to ensure a clean slate
+      setSelectedStep(null);
+      setSelectedSubStep(null);
+      setSelectedSubSubStepTitle(null);
     }
+  };
+
+  // Handle closing from StepDetail component
+  const handleStepDetailClose = () => {
+    console.log("handleStepDetailClose called in JourneyTimeline");
+    setDialogOpen(false);
+    navigate('/roadmap', { replace: true });
   };
 
   const handleStepClick = (step: Step) => {
@@ -160,6 +173,7 @@ export default function JourneyTimeline() {
               step={selectedStep} 
               selectedSubStep={selectedSubStep}
               selectedSubSubStepTitle={selectedSubSubStepTitle}
+              onClose={handleStepDetailClose}
             />
           )}
         </DialogContent>

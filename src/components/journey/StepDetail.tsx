@@ -1,7 +1,7 @@
 
 import { useEffect } from "react";
 import { Step, SubStep } from "@/types/journey";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useCourseMaterials } from "@/hooks/course/useCourseMaterials";
 import { getResourceReturnPath, clearResourceReturnPath } from "@/utils/navigationUtils";
 import StepDetailDialog from "./step-detail/StepDetailDialog";
@@ -10,9 +10,10 @@ interface StepDetailProps {
   step: Step;
   selectedSubStep: SubStep | null;
   selectedSubSubStepTitle?: string | null;
+  onClose: () => void;
 }
 
-export default function StepDetail({ step, selectedSubStep, selectedSubSubStepTitle }: StepDetailProps) {
+export default function StepDetail({ step, selectedSubStep, selectedSubSubStepTitle, onClose }: StepDetailProps) {
   const navigate = useNavigate();
 
   const { materials, isLoading: isLoadingMaterials } = useCourseMaterials(
@@ -47,7 +48,7 @@ export default function StepDetail({ step, selectedSubStep, selectedSubSubStepTi
 
   const handleDialogClose = () => {
     console.log("Dialog close handler called in StepDetail - fermeture de la popup");
-    navigate('/roadmap', { replace: true });
+    onClose(); // Use the provided onClose function from parent
   };
 
   return (
