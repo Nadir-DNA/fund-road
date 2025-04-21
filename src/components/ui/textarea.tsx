@@ -7,23 +7,10 @@ export interface TextareaProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, onKeyDown, ...props }, ref) => {
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      // Ensure default behavior for Delete and Backspace keys
-      if (e.key === "Delete" || e.key === "Backspace") {
-        // Don't stop propagation, let the default behavior work
-        if (onKeyDown) {
-          onKeyDown(e);
-        }
-        return;
-      }
-      
-      // Call the original onKeyDown handler if provided
-      if (onKeyDown) {
-        onKeyDown(e);
-      }
-    };
-
+  ({ className, ...props }, ref) => {
+    // Remove the custom keyDown handler entirely - let the native textarea 
+    // behavior handle all keyboard interactions as intended
+    
     return (
       <textarea
         className={cn(
@@ -31,7 +18,6 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           className
         )}
         ref={ref}
-        onKeyDown={handleKeyDown}
         {...props}
       />
     )

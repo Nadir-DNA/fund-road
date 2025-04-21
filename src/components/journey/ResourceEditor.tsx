@@ -87,7 +87,6 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
         onChange={handleContentChange}
         placeholder="Saisissez votre texte ici..."
         className="min-h-[450px] font-mono"
-        // Removed any custom keyDown handlers that might interfere
       />
       
       <div className="text-xs text-muted-foreground">
