@@ -7,6 +7,7 @@ import StepDetailSkeleton from "./StepDetailSkeleton";
 interface StepDetailDialogProps {
   step: Step;
   selectedSubStep: SubStep | null;
+  selectedSubSubStepTitle?: string | null;
   isOpen: boolean;
   onClose: () => void;
   courseContent: string;
@@ -16,6 +17,7 @@ interface StepDetailDialogProps {
 export default function StepDetailDialog({
   step,
   selectedSubStep,
+  selectedSubSubStepTitle,
   isOpen,
   onClose,
   courseContent,
@@ -45,6 +47,7 @@ export default function StepDetailDialog({
           <StepDetailContent
             step={step}
             selectedSubStep={selectedSubStep}
+            selectedSubSubStepTitle={selectedSubSubStepTitle}
             courseContent={courseContent}
             isLoading={isLoading}
           />

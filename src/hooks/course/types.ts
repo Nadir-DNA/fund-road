@@ -31,4 +31,3 @@ export type UserResource = {
   resource_type: string;
   content: any;
 };
-
