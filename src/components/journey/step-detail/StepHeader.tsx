@@ -20,10 +20,11 @@ export default function StepHeader({ step, selectedSubStep, onClose }: StepHeade
           size="icon" 
           className="rounded-full h-8 w-8" 
           onClick={() => {
-            console.log("Close button clicked in StepHeader");
+            console.log("StepHeader - X button clicked");
             onClose();
           }}
           type="button"
+          aria-label="Fermer"
         >
           <X className="h-4 w-4" />
         </Button>
