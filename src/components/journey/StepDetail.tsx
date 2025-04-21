@@ -46,6 +46,7 @@ export default function StepDetail({ step, selectedSubStep, selectedSubSubStepTi
   const courseContent = courseMaterial?.course_content || "";
 
   const handleDialogClose = () => {
+    console.log("Dialog close handler called in StepDetail - fermeture de la popup");
     navigate('/roadmap', { replace: true });
   };
 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Step, SubStep } from "@/types/journey";
@@ -86,6 +85,7 @@ export default function JourneyTimeline() {
   const handleDialogChange = (open: boolean) => {
     setDialogOpen(open);
     if (!open) {
+      console.log("Dialog closed from JourneyTimeline - removing URL parameters");
       // Remove the URL parameters when dialog is closed
       navigate('/roadmap', { replace: true });
     }
