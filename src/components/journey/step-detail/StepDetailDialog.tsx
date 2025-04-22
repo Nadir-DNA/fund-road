@@ -39,7 +39,16 @@ export default function StepDetailDialog({
         }
       }}
     >
-      <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto glass-card p-6">
+      <DialogContent 
+        className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto glass-card p-6" 
+        onPointerDownCapture={(e) => {
+          // Empêche la propagation uniquement sur l'élément DialogContent lui-même
+          // mais pas sur ses enfants comme les textareas
+          if (e.target === e.currentTarget) {
+            e.stopPropagation();
+          }
+        }}
+      >
         <DialogHeader className="mb-4 sm:mb-6">
           <div>
             <DialogTitle className="text-xl sm:text-2xl">{step.title}</DialogTitle>
