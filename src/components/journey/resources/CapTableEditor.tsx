@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import ResourceForm from "../ResourceForm";
 import { Input } from "@/components/ui/input";
@@ -45,7 +46,7 @@ export default function CapTableEditor({ stepId, substepTitle }: CapTableEditorP
       resourceType="cap_table_editor"
       title="Table de capitalisation"
       description="Saisissez les actionnaires actuels, leur part au capital, leur rôle et leurs apports."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-4">

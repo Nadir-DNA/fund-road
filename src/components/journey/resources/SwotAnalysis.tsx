@@ -31,7 +31,7 @@ export default function SwotAnalysis({ stepId, substepTitle }: SwotAnalysisProps
       resourceType="swot_analysis"
       title="Analyse SWOT"
       description="Identifiez vos forces, faiblesses, opportunités et menaces."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
       exportPanel={
         <ExportPanel 

@@ -40,7 +40,7 @@ export default function DilutionSimulator({ stepId, substepTitle }: DilutionSimu
       resourceType="dilution_simulator"
       title="Simulateur de dilution"
       description="Estimez la part du capital que prendrait un investisseur après votre levée."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
       exportPanel={
         <ExportPanel 

@@ -30,7 +30,7 @@ export default function CofounderAlignment({ stepId, substepTitle }: CofounderAl
       resourceType="cofounder_alignment"
       title="Matrice alignement cofondateurs"
       description="Cernez les points d'alignement ou de tension potentiels entre associés."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

@@ -5,7 +5,7 @@ interface FormContentProps {
   children: React.ReactNode;
   formData: any;
   handleFormChange: (field: string, value: any) => void;
-  setFormData: React.Dispatch<React.SetStateAction<any>>;
+  setFormData?: React.Dispatch<React.SetStateAction<any>>;
 }
 
 export default function FormContent({ 

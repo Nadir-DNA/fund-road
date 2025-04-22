@@ -11,20 +11,6 @@ interface EmpathyMapProps {
   substepTitle: string;
 }
 
-const initialFormData = {
-  persona_name: "",
-  persona_role: "",
-  persona_age: "",
-  thinks_says: "",
-  does: "",
-  feels: "",
-  hears: "",
-  sees: "",
-  pains: "",
-  gains: "",
-  goals: ""
-};
-
 export default function EmpathyMap({ stepId, substepTitle }: EmpathyMapProps) {
   const [formData, setFormData] = useState({
     persona_name: "",
@@ -40,21 +26,6 @@ export default function EmpathyMap({ stepId, substepTitle }: EmpathyMapProps) {
     goals: ""
   });
 
-  // Les defaultValues ne changeront jamais une fois le composant monté
-  const defaultValues = useMemo(() => ({
-    persona_name: "",
-    persona_role: "",
-    persona_age: "",
-    thinks_says: "",
-    does: "",
-    feels: "",
-    hears: "",
-    sees: "",
-    pains: "",
-    gains: "",
-    goals: ""
-  }), []); // Dépendances vides = calcul unique au montage
-
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -69,7 +40,6 @@ export default function EmpathyMap({ stepId, substepTitle }: EmpathyMapProps) {
       resourceType="empathy_map"
       title="Carte d'Empathie Utilisateur"
       description="Développez une compréhension profonde des utilisateurs de votre solution"
-      defaultValues={defaultValues}
       formData={formData}
       onDataSaved={setFormData}
     >
