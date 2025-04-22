@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,20 @@ interface EmpathyMapProps {
   stepId: number;
   substepTitle: string;
 }
+
+const initialFormData = {
+  persona_name: "",
+  persona_role: "",
+  persona_age: "",
+  thinks_says: "",
+  does: "",
+  feels: "",
+  hears: "",
+  sees: "",
+  pains: "",
+  gains: "",
+  goals: ""
+};
 
 export default function EmpathyMap({ stepId, substepTitle }: EmpathyMapProps) {
   const [formData, setFormData] = useState({
@@ -26,6 +40,21 @@ export default function EmpathyMap({ stepId, substepTitle }: EmpathyMapProps) {
     goals: ""
   });
 
+  // Les defaultValues ne changeront jamais une fois le composant monté
+  const defaultValues = useMemo(() => ({
+    persona_name: "",
+    persona_role: "",
+    persona_age: "",
+    thinks_says: "",
+    does: "",
+    feels: "",
+    hears: "",
+    sees: "",
+    pains: "",
+    gains: "",
+    goals: ""
+  }), []); // Dépendances vides = calcul unique au montage
+
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -40,8 +69,9 @@ export default function EmpathyMap({ stepId, substepTitle }: EmpathyMapProps) {
       resourceType="empathy_map"
       title="Carte d'Empathie Utilisateur"
       description="Développez une compréhension profonde des utilisateurs de votre solution"
-      defaultValues={formData}
-      onDataSaved={data => setFormData(data)}
+      defaultValues={defaultValues}
+      formData={formData}
+      onDataSaved={setFormData}
     >
       <div className="space-y-8">
         <Card className="p-5 border rounded-md mb-6">

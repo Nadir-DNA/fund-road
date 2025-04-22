@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -17,13 +16,22 @@ interface UserResource {
 }
 
 export const useResourceData = (
-  stepId: number,
+  stepId: number, 
   substepTitle: string,
   resourceType: string,
-  defaultValues: any = {},
+  defaultValues?: any,
   onDataSaved?: (data: any) => void
 ) => {
-  const [formData, setFormData] = useState<any>(defaultValues);
+  const [formData, setFormData] = useState(defaultValues);
+  const defaultValuesMemo = useMemo(() => defaultValues, []);  // Mémorise les valeurs initiales
+  
+  // Initialise une seule fois au montage avec les defaultValues
+  useEffect(() => {
+    if (defaultValuesMemo && onDataSaved) {
+      onDataSaved(defaultValuesMemo);
+    }
+  }, [defaultValuesMemo, onDataSaved]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [resourceId, setResourceId] = useState<string | null>(null);
@@ -172,7 +180,6 @@ export const useResourceData = (
     isSaving,
     handleFormChange,
     handleSave,
-    setFormData,
-    resourceId
+    setFormData
   };
 };

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Save } from "lucide-react";
@@ -14,10 +14,10 @@ interface ResourceFormProps {
   resourceType: string;
   title: string;
   description: string;
-  children: React.ReactNode;
+  children: ReactNode;
   onDataSaved?: (data: any) => void;
-  defaultValues?: any;
-  exportPanel?: React.ReactNode; // Add this prop to the interface
+  formData: any;
+  exportPanel?: React.ReactNode;
 }
 
 export default function ResourceForm({
@@ -28,18 +28,16 @@ export default function ResourceForm({
   description,
   children,
   onDataSaved,
-  defaultValues = {},
-  exportPanel  // Include the prop in the function parameters
+  formData,
+  exportPanel
 }: ResourceFormProps) {
   
   const {
-    formData,
     isLoading,
     isSaving,
     handleFormChange,
     handleSave,
-    setFormData
-  } = useResourceData(stepId, substepTitle, resourceType, defaultValues, onDataSaved);
+  } = useResourceData(stepId, substepTitle, resourceType, undefined, onDataSaved);
 
   if (isLoading) {
     return <FormSkeleton />;
@@ -57,13 +55,11 @@ export default function ResourceForm({
           children={children}
           formData={formData}
           handleFormChange={handleFormChange}
-          setFormData={setFormData}
         />
       </CardContent>
       
       <CardFooter className="flex flex-col sm:flex-row justify-between border-t p-4 pt-4 mt-2 gap-4">
         <SaveButton isSaving={isSaving} handleSave={handleSave} />
-        
         {exportPanel}
       </CardFooter>
     </Card>
