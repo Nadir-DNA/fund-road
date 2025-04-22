@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,7 +34,8 @@ export default function PitchStoryTeller({ stepId, substepTitle }: PitchStoryTel
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">
-        <Card className="p-5"><Label>Accroche d’ouverture (hook)</Label>
+        <Card className="p-5">
+          <Label>Accroche d'ouverture (hook)</Label>
           <Textarea
             placeholder="Stat, anecdote, punchline pour captiver dès la 1ère slide"
             value={formData.story_hook}
@@ -41,7 +43,8 @@ export default function PitchStoryTeller({ stepId, substepTitle }: PitchStoryTel
           />
         </Card>
 
-        <Card className="p-5"><Label>Angle émotionnel</Label>
+        <Card className="p-5">
+          <Label>Angle émotionnel</Label>
           <Textarea
             placeholder="Quel sentiment ou frustration vous cherchez à activer chez votre audience ?"
             value={formData.emotional_angle}
@@ -49,7 +52,8 @@ export default function PitchStoryTeller({ stepId, substepTitle }: PitchStoryTel
           />
         </Card>
 
-        <Card className="p-5"><Label>Enchaînement logique</Label>
+        <Card className="p-5">
+          <Label>Enchaînement logique</Label>
           <Textarea
             placeholder="Comment votre pitch avance logiquement de slide en slide ?"
             value={formData.logical_sequence}
@@ -57,7 +61,8 @@ export default function PitchStoryTeller({ stepId, substepTitle }: PitchStoryTel
           />
         </Card>
 
-        <Card className="p-5"><Label>Moment fort (wow factor)</Label>
+        <Card className="p-5">
+          <Label>Moment fort (wow factor)</Label>
           <Textarea
             placeholder="Ex : démo, traction inattendue, brevet, prix remporté..."
             value={formData.wow_moment}
@@ -65,9 +70,10 @@ export default function PitchStoryTeller({ stepId, substepTitle }: PitchStoryTel
           />
         </Card>
 
-        <Card className="p-5"><Label>Conclusion et call-to-action</Label>
+        <Card className="p-5">
+          <Label>Conclusion et call-to-action</Label>
           <Textarea
-            placeholder="Quel message fort ou appel à l’action à la fin ?"
+            placeholder="Quel message fort ou appel à l'action à la fin ?"
             value={formData.call_to_action}
             onChange={(e) => handleChange("call_to_action", e.target.value)}
           />

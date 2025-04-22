@@ -8,9 +8,6 @@ export interface TextareaProps
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, ...props }, ref) => {
-    // Remove the custom keyDown handler entirely - let the native textarea 
-    // behavior handle all keyboard interactions as intended
-    
     return (
       <textarea
         className={cn(
