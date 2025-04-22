@@ -40,7 +40,7 @@ export default function ProblemSolutionMatrix({ stepId, substepTitle }: ProblemS
       resourceType="problem_solution_matrix"
       title="Matrice Problème-Solution"
       description="Identifiez les principaux problèmes de vos utilisateurs et les solutions que vous apportez"
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

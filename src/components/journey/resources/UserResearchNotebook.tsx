@@ -32,7 +32,7 @@ export default function UserResearchNotebook({ stepId, substepTitle }: UserResea
       resourceType="user_research_notebook"
       title="Journal d'observation utilisateur"
       description="Notez ici vos observations terrain, frustrations repérées, verbatims, et votre premier insight sur le besoin utilisateur."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

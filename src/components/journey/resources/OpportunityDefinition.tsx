@@ -31,12 +31,11 @@ export default function OpportunityDefinition({ stepId, substepTitle }: Opportun
       substepTitle={substepTitle}
       resourceType="opportunity_definition"
       title="Définition de l'opportunité"
-      description="Formalisez les tendances, signaux faibles et analyses préliminaires qui montrent qu’il y a une vraie opportunité à explorer."
-      defaultValues={formData}
+      description="Formalisez les tendances, signaux faibles et analyses préliminaires qui montrent qu'il y a une vraie opportunité à explorer."
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">
-
         <Card className="p-5 bg-indigo-50/10 border-indigo-200/20">
           <Label className="font-medium text-base mb-3 block">Tendances observées</Label>
           <Textarea
@@ -86,7 +85,6 @@ export default function OpportunityDefinition({ stepId, substepTitle }: Opportun
             onChange={(e) => handleChange('opportunity_statement', e.target.value)}
           />
         </Card>
-
       </div>
     </ResourceForm>
   );

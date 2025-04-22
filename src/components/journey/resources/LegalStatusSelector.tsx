@@ -1,5 +1,7 @@
+
 import { useState } from "react";
 import ResourceForm from "../ResourceForm";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -35,7 +37,7 @@ export default function LegalStatusSelector({ stepId, substepTitle }: LegalStatu
     >
       <div className="space-y-6">
         <Card className="p-5">
-          <Label>Nombre d’associés prévu</Label>
+          <Label>Nombre d'associés prévu</Label>
           <Input
             placeholder="Ex : 1, 2, 3..."
             value={formData.nb_associates}

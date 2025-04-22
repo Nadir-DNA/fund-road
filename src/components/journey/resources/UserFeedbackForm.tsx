@@ -31,8 +31,8 @@ export default function UserFeedbackForm({ stepId, substepTitle }: UserFeedbackF
       substepTitle={substepTitle}
       resourceType="user_feedback_form"
       title="Retour utilisateur – test terrain"
-      description="Notez ici le retour d’un utilisateur après avoir testé votre solution ou MVP. Objectif : extraire des insights et décider des suites."
-      defaultValues={formData}
+      description="Notez ici le retour d'un utilisateur après avoir testé votre solution ou MVP. Objectif : extraire des insights et décider des suites."
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

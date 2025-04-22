@@ -31,7 +31,7 @@ export default function PaidOfferFeedback({ stepId, substepTitle }: PaidOfferFee
       resourceType="paid_offer_feedback"
       title="Retours sur offre payante"
       description="Collectez les retours des premiers clients payants pour améliorer votre offre."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

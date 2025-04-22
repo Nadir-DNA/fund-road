@@ -34,7 +34,7 @@ export default function PersonaBuilder({ stepId, substepTitle }: PersonaBuilderP
       resourceType="persona_builder"
       title="Fiche Persona Utilisateur"
       description="Décrivez un utilisateur type que vous ciblez : ses besoins, son profil, ses frustrations et son comportement."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">
