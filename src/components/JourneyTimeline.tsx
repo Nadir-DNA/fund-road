@@ -13,6 +13,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { safeDecodeURIComponent } from "@/utils/navigationUtils";
 
 export default function JourneyTimeline() {
+  // Nous utilisons une clé stable pour le Dialog afin d'éviter les re-rendus inutiles
+  const dialogKey = "step-detail-dialog";
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStep, setSelectedStep] = useState<Step | null>(null);
   const [selectedSubStep, setSelectedSubStep] = useState<SubStep | null>(null);
@@ -165,8 +167,8 @@ export default function JourneyTimeline() {
         ))}
       </div>
 
-      {/* Detailed Information Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
+      {/* Detailed Information Dialog - utiliser une clé fixe pour éviter les re-rendus */}
+      <Dialog key={dialogKey} open={dialogOpen} onOpenChange={handleDialogChange}>
         <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto glass-card p-6">
           {selectedStep && (
             <StepDetail 

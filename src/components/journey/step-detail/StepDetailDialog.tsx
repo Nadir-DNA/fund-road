@@ -41,13 +41,8 @@ export default function StepDetailDialog({
     >
       <DialogContent 
         className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto glass-card p-6" 
-        onPointerDownCapture={(e) => {
-          // Empêche la propagation uniquement sur l'élément DialogContent lui-même
-          // mais pas sur ses enfants comme les textareas
-          if (e.target === e.currentTarget) {
-            e.stopPropagation();
-          }
-        }}
+        // Nous utilisons une ref fixe plutôt qu'une valeur qui change pour éviter les re-renders
+        // Et nous supprimons l'événement onPointerDownCapture qui peut interférer avec la sélection
       >
         <DialogHeader className="mb-4 sm:mb-6">
           <div>
