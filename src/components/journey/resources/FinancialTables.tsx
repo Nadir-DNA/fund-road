@@ -31,7 +31,7 @@ export default function FinancialTables({ stepId, substepTitle }: FinancialTable
       resourceType="financial_tables"
       title="Prévisions financières"
       description="Entrez vos projections sur 3 ans : revenus, coûts, besoins de financement."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,7 +29,7 @@ export default function PitchStoryTeller({ stepId, substepTitle }: PitchStoryTel
       resourceType="pitch_storyteller"
       title="Narration & storytelling du pitch"
       description="Structurez un récit convaincant pour captiver vos interlocuteurs dès la première slide."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

@@ -47,7 +47,7 @@ export default function ProductRoadmapEditor({ stepId, substepTitle }: ProductRo
       resourceType="product_roadmap"
       title="Feuille de route produit"
       description="Planifiez le développement de votre produit sur 6 à 12 mois : objectifs, fonctionnalités, KPIs par phase."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-4">

@@ -27,9 +27,9 @@ export default function StartupToolPicker({ stepId, substepTitle }: StartupToolP
       stepId={stepId}
       substepTitle={substepTitle}
       resourceType="startup_tool_picker"
-      title="Sélecteur d’outils startup"
+      title="Sélecteur d'outils startup"
       description="Identifiez les outils les plus utiles pour votre projet à chaque étape : design, gestion, communication, IA, no-code…"
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

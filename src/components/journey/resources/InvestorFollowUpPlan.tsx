@@ -39,7 +39,7 @@ export default function InvestorFollowUpPlan({ stepId, substepTitle }: InvestorF
       resourceType="investor_followup_plan"
       title="Suivi des contacts investisseurs"
       description="Suivez vos échanges et vos prochaines relances avec les investisseurs."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-4">

@@ -1,27 +1,28 @@
 import { useState } from "react";
 import ResourceForm from "../ResourceForm";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
+
+interface Session {
+  date: string;
+  mentor_name: string;
+  focus: string;
+  key_advice: string;
+  action_items: string;
+}
 
 interface MentorTrackingSheetProps {
   stepId: number;
   substepTitle: string;
 }
 
-interface Session {
-  mentor_name: string;
-  role: string;
-  session_date: string;
-  feedback: string;
-  next_action: string;
-}
-
 export default function MentorTrackingSheet({ stepId, substepTitle }: MentorTrackingSheetProps) {
   const [formData, setFormData] = useState<Session[]>([
-    { mentor_name: "", role: "", session_date: "", feedback: "", next_action: "" }
+    { date: "", mentor_name: "", focus: "", key_advice: "", action_items: "" }
   ]);
 
   const handleChange = (index: number, field: keyof Session, value: string) => {
@@ -31,7 +32,15 @@ export default function MentorTrackingSheet({ stepId, substepTitle }: MentorTrac
   };
 
   const addSession = () => {
-    setFormData(prev => [...prev, { mentor_name: "", role: "", session_date: "", feedback: "", next_action: "" }]);
+    setFormData(prev => [...prev, { date: "", mentor_name: "", focus: "", key_advice: "", action_items: "" }]);
+  };
+
+  const removeSession = (index: number) => {
+    if (formData.length > 1) {
+      const updated = [...formData];
+      updated.splice(index, 1);
+      setFormData(updated);
+    }
   };
 
   return (
@@ -39,14 +48,22 @@ export default function MentorTrackingSheet({ stepId, substepTitle }: MentorTrac
       stepId={stepId}
       substepTitle={substepTitle}
       resourceType="mentor_tracking_sheet"
-      title="Suivi accompagnement & mentorat"
-      description="Centralisez vos interactions avec coachs, mentors ou structures d’accompagnement."
-      defaultValues={formData}
+      title="Suivi des sessions mentor"
+      description="Gardez trace des conseils clés et actions à mettre en œuvre suite aux échanges avec vos mentors."
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-4">
         {formData.map((entry, index) => (
           <Card key={index} className="p-4 space-y-2">
+            <div>
+              <Label>Date de la session</Label>
+              <Input
+                placeholder="JJ/MM/AAAA"
+                value={entry.date}
+                onChange={(e) => handleChange(index, "date", e.target.value)}
+              />
+            </div>
             <div>
               <Label>Nom du mentor ou coach</Label>
               <Input
@@ -56,37 +73,32 @@ export default function MentorTrackingSheet({ stepId, substepTitle }: MentorTrac
               />
             </div>
             <div>
-              <Label>Rôle / expertise</Label>
+              <Label>Focus de la session</Label>
               <Input
-                placeholder="Ex : Produit, levée de fonds, juridique..."
-                value={entry.role}
-                onChange={(e) => handleChange(index, "role", e.target.value)}
+                placeholder="Ex : Projet, levée de fonds, juridique..."
+                value={entry.focus}
+                onChange={(e) => handleChange(index, "focus", e.target.value)}
               />
             </div>
             <div>
-              <Label>Date de la session</Label>
-              <Input
-                placeholder="JJ/MM/AAAA"
-                value={entry.session_date}
-                onChange={(e) => handleChange(index, "session_date", e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Feedback reçu</Label>
+              <Label>Conseils clés</Label>
               <Textarea
                 placeholder="Conseils, alertes, recommandations, next steps..."
-                value={entry.feedback}
-                onChange={(e) => handleChange(index, "feedback", e.target.value)}
+                value={entry.key_advice}
+                onChange={(e) => handleChange(index, "key_advice", e.target.value)}
               />
             </div>
             <div>
-              <Label>Action à suivre</Label>
+              <Label>Actions à suivre</Label>
               <Input
                 placeholder="Ex : envoyer le pitch, tester l’offre, creuser une hypothèse..."
-                value={entry.next_action}
-                onChange={(e) => handleChange(index, "next_action", e.target.value)}
+                value={entry.action_items}
+                onChange={(e) => handleChange(index, "action_items", e.target.value)}
               />
             </div>
+            <Button onClick={() => removeSession(index)} className="mt-2">
+              <Trash2 />
+            </Button>
           </Card>
         ))}
         <Button onClick={addSession} className="mt-2">➕ Ajouter une session</Button>

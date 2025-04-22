@@ -44,7 +44,7 @@ export default function FeaturePrioritizationMatrix({ stepId, substepTitle }: Fe
       resourceType="feature_prioritization_matrix"
       title="Matrice Impact / Effort"
       description="Priorisez vos fonctionnalités MVP selon leur impact utilisateur et leur complexité de réalisation."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-4">

@@ -33,7 +33,7 @@ export default function StartupKpiDashboard({ stepId, substepTitle }: StartupKpi
       resourceType="startup_kpi_dashboard"
       title="Dashboard KPI startup"
       description="Sélectionnez et suivez vos indicateurs clés de performance selon votre phase de développement."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

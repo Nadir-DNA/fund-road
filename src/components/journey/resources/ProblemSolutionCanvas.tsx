@@ -32,7 +32,7 @@ export default function ProblemSolutionCanvas({ stepId, substepTitle }: ProblemS
       resourceType="problem_solution_canvas"
       title="Canvas Problème / Solution"
       description="Formulez clairement le problème principal rencontré par votre cible, et la solution que vous proposez."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

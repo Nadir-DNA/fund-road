@@ -1,9 +1,8 @@
 import { useState } from "react";
 import ResourceForm from "../ResourceForm";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 
 interface LegalStatusSelectorProps {
   stepId: number;
@@ -29,9 +28,9 @@ export default function LegalStatusSelector({ stepId, substepTitle }: LegalStatu
       stepId={stepId}
       substepTitle={substepTitle}
       resourceType="legal_status_selector"
-      title="Assistant de choix de statut juridique"
-      description="Répondez à ces quelques questions pour identifier le statut juridique adapté à votre projet."
-      defaultValues={formData}
+      title="Sélecteur de statut juridique"
+      description="Évaluez les statuts juridiques les plus adaptés à votre projet avec cette aide à la décision."
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

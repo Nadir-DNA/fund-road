@@ -29,7 +29,7 @@ export default function InvestorObjectionPrep({ stepId, substepTitle }: Investor
       resourceType="investor_objection_prep"
       title="Préparation aux objections"
       description="Préparez vos réponses aux objections les plus fréquentes des investisseurs."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

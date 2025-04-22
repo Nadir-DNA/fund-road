@@ -30,7 +30,7 @@ export default function IPStrategyCanvas({ stepId, substepTitle }: IPStrategyCan
       resourceType="ip_strategy_canvas"
       title="Canvas de stratégie PI"
       description="Identifiez la meilleure approche de protection intellectuelle pour votre innovation en phase startup."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

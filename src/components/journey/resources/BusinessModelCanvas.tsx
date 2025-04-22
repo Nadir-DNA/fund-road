@@ -37,7 +37,7 @@ export default function BusinessModelCanvas({ stepId, substepTitle }: BusinessMo
       resourceType="business_model_canvas"
       title="Business Model Canvas"
       description="Créez votre Business Model Canvas pour visualiser et structurer votre modèle d'affaires"
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

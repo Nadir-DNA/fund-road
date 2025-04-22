@@ -29,7 +29,7 @@ export default function IPProceduresChecklist({ stepId, substepTitle }: IPProced
       resourceType="ip_procedures_checklist"
       title="Checklist de dépôt PI – INPI, OAPI, ARIPO"
       description="Comparez les démarches de dépôt de brevet ou marque en Europe et en Afrique pour choisir votre stratégie."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

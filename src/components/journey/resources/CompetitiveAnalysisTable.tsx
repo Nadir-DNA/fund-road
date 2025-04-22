@@ -47,7 +47,7 @@ export default function CompetitiveAnalysisTable({ stepId, substepTitle }: Compe
       resourceType="competitive_analysis"
       title="Analyse concurrentielle"
       description="Comparez les principaux acteurs du marché pour faire émerger votre différenciation."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-4">

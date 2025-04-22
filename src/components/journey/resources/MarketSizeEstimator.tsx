@@ -32,9 +32,9 @@ export default function MarketSizeEstimator({ stepId, substepTitle }: MarketSize
       stepId={stepId}
       substepTitle={substepTitle}
       resourceType="market_size_estimator"
-      title="Estimation du marché (TAM / SAM / SOM)"
-      description="Estimez le marché global, le marché accessible, et votre part atteignable. Ces données sont clés pour valider une opportunité."
-      defaultValues={formData}
+      title="Estimateur de taille de marché (TAM/SAM/SOM)"
+      description="Calculez la taille de votre marché total, serviceable et votre part atteignable."
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

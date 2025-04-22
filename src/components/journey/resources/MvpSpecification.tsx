@@ -27,9 +27,9 @@ export default function MvpSpecification({ stepId, substepTitle }: MvpSpecificat
       stepId={stepId}
       substepTitle={substepTitle}
       resourceType="mvp_specification"
-      title="Cahier des charges du MVP"
-      description="Décrivez les objectifs, le périmètre et les contraintes de votre MVP."
-      defaultValues={formData}
+      title="Cahier des charges MVP"
+      description="Spécifiez précisément ce que contiendra votre produit minimum viable et comment il sera construit."
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

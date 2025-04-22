@@ -48,7 +48,7 @@ export default function RecruitmentPlan({ stepId, substepTitle }: RecruitmentPla
       resourceType="recruitment_plan"
       title="Plan de recrutement"
       description="Anticipez vos besoins humains en définissant les futurs recrutements clés, leurs missions et leur priorité."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-4">

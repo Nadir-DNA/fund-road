@@ -28,8 +28,8 @@ export default function TermSheetBuilder({ stepId, substepTitle }: TermSheetBuil
       substepTitle={substepTitle}
       resourceType="term_sheet_builder"
       title="Term Sheet simplifiée"
-      description="Posez les bases des conditions d’investissement envisagées (non contractuelles)."
-      defaultValues={formData}
+      description="Posez les bases des conditions d'investissement envisagées (non contractuelles)."
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">
@@ -47,7 +47,7 @@ export default function TermSheetBuilder({ stepId, substepTitle }: TermSheetBuil
             onChange={(e) => handleChange("valuation", e.target.value)}
           />
         </Card>
-        <Card className="p-5"><Label>Type d’investisseurs recherchés</Label>
+        <Card className="p-5"><Label>Type d'investisseurs recherchés</Label>
           <Textarea
             placeholder="Ex : business angels, VC early stage, family office..."
             value={formData.investor_type}

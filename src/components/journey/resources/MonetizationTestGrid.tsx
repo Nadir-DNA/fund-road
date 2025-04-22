@@ -1,24 +1,28 @@
 import { useState } from "react";
 import ResourceForm from "../ResourceForm";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
+
+interface TestEntry {
+  price_point: string;
+  model_tested: string;
+  conversion_rate: string;
+  customer_feedback: string;
+  next_test: string;
+}
 
 interface MonetizationTestGridProps {
   stepId: number;
   substepTitle: string;
 }
 
-interface TestEntry {
-  hypothesis: string;
-  method: string;
-  result: string;
-}
-
 export default function MonetizationTestGrid({ stepId, substepTitle }: MonetizationTestGridProps) {
   const [formData, setFormData] = useState<TestEntry[]>([
-    { hypothesis: "", method: "", result: "" }
+    { price_point: "", model_tested: "", conversion_rate: "", customer_feedback: "", next_test: "" }
   ]);
 
   const handleChange = (index: number, field: keyof TestEntry, value: string) => {
@@ -28,13 +32,15 @@ export default function MonetizationTestGrid({ stepId, substepTitle }: Monetizat
   };
 
   const addTest = () => {
-    setFormData(prev => [...prev, { hypothesis: "", method: "", result: "" }]);
+    setFormData(prev => [...prev, { price_point: "", model_tested: "", conversion_rate: "", customer_feedback: "", next_test: "" }]);
   };
 
   const removeTest = (index: number) => {
-    const updated = [...formData];
-    updated.splice(index, 1);
-    setFormData(updated);
+    if (formData.length > 1) {
+      const updated = [...formData];
+      updated.splice(index, 1);
+      setFormData(updated);
+    }
   };
 
   return (
@@ -42,44 +48,68 @@ export default function MonetizationTestGrid({ stepId, substepTitle }: Monetizat
       stepId={stepId}
       substepTitle={substepTitle}
       resourceType="monetization_test_grid"
-      title="Grille de tests de monétisation"
-      description="Notez vos hypothèses de monétisation testées (ex : landing page payante, email de précommande, offre test...)"
-      defaultValues={formData}
+      title="Grille de test de monétisation"
+      description="Suivez les différents modèles et prix testés pour identifier la formule optimale."
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-4">
         {formData.map((test, index) => (
           <Card key={index} className="p-4 space-y-3">
             <div>
-              <Label>Hypothèse testée</Label>
+              <Label>Prix testé</Label>
               <Input
-                placeholder="Ex : Les gens sont prêts à payer 15€/mois"
-                value={test.hypothesis}
-                onChange={(e) => handleChange(index, "hypothesis", e.target.value)}
+                placeholder="Ex : 9,99€ / mois"
+                value={test.price_point}
+                onChange={(e) => handleChange(index, "price_point", e.target.value)}
               />
             </div>
             <div>
-              <Label>Méthode utilisée</Label>
+              <Label>Modèle testé</Label>
               <Textarea
-                placeholder="Landing page, email, appel, Stripe test, etc."
-                value={test.method}
-                onChange={(e) => handleChange(index, "method", e.target.value)}
+                placeholder="Ex : Abonnement, freemium, licence..."
+                value={test.model_tested}
+                onChange={(e) => handleChange(index, "model_tested", e.target.value)}
               />
             </div>
             <div>
-              <Label>Résultat / retour</Label>
-              <Textarea
-                placeholder="Nombre de clics, réponses, achats, etc."
-                value={test.result}
-                onChange={(e) => handleChange(index, "result", e.target.value)}
+              <Label>Taux de conversion</Label>
+              <Input
+                placeholder="Nombre d'achats / inscriptions"
+                value={test.conversion_rate}
+                onChange={(e) => handleChange(index, "conversion_rate", e.target.value)}
               />
             </div>
+            <div>
+              <Label>Feedback client</Label>
+              <Textarea
+                placeholder="Verbatims, avis, notes..."
+                value={test.customer_feedback}
+                onChange={(e) => handleChange(index, "customer_feedback", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Prochain test</Label>
+              <Input
+                placeholder="Nouvelle hypothèse à tester"
+                value={test.next_test}
+                onChange={(e) => handleChange(index, "next_test", e.target.value)}
+              />
+            </div>
+            {formData.length > 1 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-3 right-3 text-red-500"
+                onClick={() => removeTest(index)}
+              >
+                <Trash2 size={18} />
+              </Button>
+            )}
           </Card>
         ))}
 
-        <button onClick={addTest} className="text-sm mt-4 text-blue-600 hover:underline">
-          ➕ Ajouter un test
-        </button>
+        <Button onClick={addTest} className="mt-2">➕ Ajouter un test</Button>
       </div>
     </ResourceForm>
   );

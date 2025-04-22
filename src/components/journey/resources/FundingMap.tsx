@@ -31,7 +31,7 @@ export default function FundingMap({ stepId, substepTitle }: FundingMapProps) {
       resourceType="funding_map"
       title="Cartographie des financements possibles"
       description="Identifiez les sources de financement pertinentes pour votre startup."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

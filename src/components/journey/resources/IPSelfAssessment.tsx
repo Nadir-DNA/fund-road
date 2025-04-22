@@ -29,14 +29,14 @@ export default function IPSelfAssessment({ stepId, substepTitle }: IPSelfAssessm
       resourceType="ip_self_assessment"
       title="Auto-diagnostic stratégique de la PI"
       description="Évaluez la pertinence stratégique de protéger vos actifs immatériels (code, méthode, nom, design…)."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">
 
         <Card className="p-5"><Label>Quel rôle joue votre innovation dans la stratégie de votre projet ?</Label>
           <Textarea
-            placeholder="Ex : cœur de l’avantage concurrentiel, élément de réassurance, barrière à l’entrée..."
+            placeholder="Ex : cœur de l’avantage concurrentiel, élément de réassurance, barrière à l’entrée... "
             value={formData.strategic_value}
             onChange={(e) => handleChange("strategic_value", e.target.value)}
           />

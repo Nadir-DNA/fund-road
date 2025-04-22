@@ -34,7 +34,7 @@ export default function BusinessPlanEditor({ stepId, substepTitle }: BusinessPla
       resourceType="business_plan_editor"
       title="Éditeur guidé du Business Plan"
       description="Complétez les sections clés de votre BP avec des exemples concrets pour chaque partie."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

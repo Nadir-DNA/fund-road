@@ -27,9 +27,9 @@ export default function MarketAnalysisGrid({ stepId, substepTitle }: MarketAnaly
       stepId={stepId}
       substepTitle={substepTitle}
       resourceType="market_analysis_grid"
-      title="Grille d’analyse sectorielle"
-      description="Analysez les tendances et caractéristiques clés de votre secteur."
-      defaultValues={formData}
+      title="Grille d'analyse de marché"
+      description="Structurez votre compréhension des forces, tendances et contraintes de votre marché cible."
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

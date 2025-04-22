@@ -36,7 +36,7 @@ export default function PitchDeckBuilder({ stepId, substepTitle }: PitchDeckBuil
       resourceType="pitch_deck_builder"
       title="Éditeur du pitch investisseur"
       description="Complétez chaque slide de votre pitch deck en suivant une structure standard."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">
