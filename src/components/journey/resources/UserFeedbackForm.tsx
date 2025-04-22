@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,9 +48,9 @@ export default function UserFeedbackForm({ stepId, substepTitle }: UserFeedbackF
         </Card>
 
         <Card className="p-5">
-          <Label>Réaction de l’utilisateur</Label>
+          <Label>Réaction de l'utilisateur</Label>
           <Textarea
-            placeholder="Qu’a-t-il/elle dit, fait, exprimé ?"
+            placeholder="Qu'a-t-il/elle dit, fait, exprimé ?"
             className="min-h-[100px]"
             value={formData.user_reaction}
             onChange={(e) => handleChange("user_reaction", e.target.value)}
