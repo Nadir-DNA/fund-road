@@ -31,7 +31,7 @@ export default function GrowthProjection({ stepId, substepTitle }: GrowthProject
       resourceType="growth_projection"
       title="Projection de croissance"
       description="Indiquez vos étapes clés, ambitions de croissance et structuration à venir."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
       exportPanel={
         <ExportPanel 

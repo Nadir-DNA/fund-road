@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import ResourceForm from "../ResourceForm";
 import { Input } from "@/components/ui/input";
@@ -40,7 +41,7 @@ export default function CofounderProfile({ stepId, substepTitle }: CofounderProf
       resourceType="cofounder_profile"
       title="Fiche cofondateur"
       description="Renseignez le profil et les apports de chaque cofondateur pour cadrer votre équipe de départ."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-4">
@@ -81,7 +82,7 @@ export default function CofounderProfile({ stepId, substepTitle }: CofounderProf
             <div>
               <Label>Attentes ou besoins</Label>
               <Textarea
-                placeholder="Ce qu’il ou elle attend du projet (perspectives, salaire, liberté...)"
+                placeholder="Ce qu'il ou elle attend du projet (perspectives, salaire, liberté...)"
                 value={cofounder.expectations}
                 onChange={(e) => handleChange(index, "expectations", e.target.value)}
               />

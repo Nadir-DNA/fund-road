@@ -31,7 +31,7 @@ export default function LegalStatusComparison({ stepId, substepTitle }: LegalSta
       resourceType="legal_status_comparison"
       title="Comparateur de statuts juridiques"
       description="Comparez les avantages et inconvénients des principaux statuts en fonction de votre situation."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
       exportPanel={
         <ExportPanel 

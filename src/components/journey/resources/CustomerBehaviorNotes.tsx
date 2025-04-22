@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,8 +29,8 @@ export default function CustomerBehaviorNotes({ stepId, substepTitle }: Customer
       substepTitle={substepTitle}
       resourceType="customer_behavior_notes"
       title="Analyse comportementale client"
-      description="Comprenez comment vos clients cibles se comportent aujourd’hui face à leur problème ou besoin."
-      defaultValues={formData}
+      description="Comprenez comment vos clients cibles se comportent aujourd'hui face à leur problème ou besoin."
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">
@@ -41,7 +42,7 @@ export default function CustomerBehaviorNotes({ stepId, substepTitle }: Customer
             onChange={(e) => handleChange("typical_behavior", e.target.value)}
           />
         </Card>
-        <Card className="p-5"><Label>Canaux qu’ils utilisent</Label>
+        <Card className="p-5"><Label>Canaux qu'ils utilisent</Label>
           <Textarea
             placeholder="Sites web, forums, réseaux sociaux, bouche à oreille, etc."
             className="min-h-[100px]"
@@ -59,7 +60,7 @@ export default function CustomerBehaviorNotes({ stepId, substepTitle }: Customer
         </Card>
         <Card className="p-5"><Label>Facteurs de fidélité</Label>
           <Textarea
-            placeholder="Qu’est-ce qui les ferait rester sur une solution ?"
+            placeholder="Qu'est-ce qui les ferait rester sur une solution ?"
             className="min-h-[100px]"
             value={formData.loyalty_drivers}
             onChange={(e) => handleChange("loyalty_drivers", e.target.value)}

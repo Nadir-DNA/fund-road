@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,7 +33,7 @@ export default function ExperimentSummary({ stepId, substepTitle }: ExperimentSu
       resourceType="experiment_summary"
       title="Synthèse des tests utilisateurs"
       description="Résumez les retours obtenus sur votre solution ou prototype. Objectif : valider ou non une hypothèse de départ."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">

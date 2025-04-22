@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,9 +28,9 @@ export default function BusinessPlanIntent({ stepId, substepTitle }: BusinessPla
       stepId={stepId}
       substepTitle={substepTitle}
       resourceType="business_plan_intent"
-      title="Fiche d’intention stratégique du Business Plan"
+      title="Fiche d'intention stratégique du Business Plan"
       description="Précisez pourquoi vous rédigez un BP, à qui il est destiné et ce que vous voulez démontrer."
-      defaultValues={formData}
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">
@@ -55,7 +56,7 @@ export default function BusinessPlanIntent({ stepId, substepTitle }: BusinessPla
         </Card>
 
         <Card className="p-5">
-          <Label>Qu’attendez-vous comme résultat ?</Label>
+          <Label>Qu'attendez-vous comme résultat ?</Label>
           <Textarea
             placeholder="Ex : obtenir un financement, convaincre un partenaire stratégique, recruter une équipe..."
             className="min-h-[100px]"

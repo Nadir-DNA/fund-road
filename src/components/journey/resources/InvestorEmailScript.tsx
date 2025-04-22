@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,13 +28,13 @@ export default function InvestorEmailScript({ stepId, substepTitle }: InvestorEm
       stepId={stepId}
       substepTitle={substepTitle}
       resourceType="investor_email_script"
-      title="Script d’email investisseurs"
-      description="Préparez votre message d’accroche pour contacter un investisseur de manière claire et efficace."
-      defaultValues={formData}
+      title="Script d'email investisseurs"
+      description="Préparez votre message d'accroche pour contacter un investisseur de manière claire et efficace."
+      formData={formData}
       onDataSaved={data => setFormData(data)}
     >
       <div className="space-y-6">
-        <Card className="p-5"><Label>Objet de l’email</Label>
+        <Card className="p-5"><Label>Objet de l'email</Label>
           <Textarea
             placeholder="Ex : [Nom startup] – Levée en cours, traction forte"
             value={formData.subject}
@@ -42,7 +43,7 @@ export default function InvestorEmailScript({ stepId, substepTitle }: InvestorEm
         </Card>
         <Card className="p-5"><Label>Introduction personnalisée</Label>
           <Textarea
-            placeholder="Lien avec l’investisseur ou contexte de contact"
+            placeholder="Lien avec l'investisseur ou contexte de contact"
             value={formData.intro}
             onChange={(e) => handleChange("intro", e.target.value)}
           />
