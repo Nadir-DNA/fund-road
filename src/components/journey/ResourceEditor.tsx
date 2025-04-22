@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, Download, FileText } from 'lucide-react';
@@ -30,13 +30,13 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
     }
   }, [formData]);
   
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
     setContent(newContent);
     handleFormChange('content', newContent);
-  };
+  }, [handleFormChange]);
   
-  const downloadAsText = () => {
+  const downloadAsText = useCallback(() => {
     const element = document.createElement('a');
     const file = new Blob([content], {type: 'text/plain'});
     element.href = URL.createObjectURL(file);
@@ -44,7 +44,7 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
-  };
+  }, [content, title]);
   
   if (isLoading) {
     return (
@@ -64,6 +64,7 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
             size="sm"
             onClick={downloadAsText}
             disabled={!content}
+            type="button"
           >
             <Download className="h-4 w-4 mr-1" /> Exporter
           </Button>
@@ -71,6 +72,7 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
             onClick={handleSave}
             disabled={isSaving}
             size="sm"
+            type="button"
           >
             {isSaving ? (
               <Loader2 className="h-4 w-4 mr-1 animate-spin" />

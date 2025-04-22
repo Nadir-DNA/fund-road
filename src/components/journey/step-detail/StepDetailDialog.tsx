@@ -40,9 +40,7 @@ export default function StepDetailDialog({
       }}
     >
       <DialogContent 
-        className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto glass-card p-6" 
-        // Nous utilisons une ref fixe plutôt qu'une valeur qui change pour éviter les re-renders
-        // Et nous supprimons l'événement onPointerDownCapture qui peut interférer avec la sélection
+        className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto glass-card p-6"
       >
         <DialogHeader className="mb-4 sm:mb-6">
           <div>

@@ -1,6 +1,5 @@
 
 import * as React from "react"
-
 import { cn } from "@/lib/utils"
 
 export interface TextareaProps
@@ -15,7 +14,6 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           className
         )}
         ref={ref}
-        // Nous n'ajoutons aucun gestionnaire d'événement personnalisé qui pourrait interférer avec le comportement standard
         {...props}
       />
     )
