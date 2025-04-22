@@ -16,7 +16,7 @@ interface ResourceFormProps {
   description: string;
   children: ReactNode;
   onDataSaved?: (data: any) => void;
-  formData: any;
+  formData: any; // Données contrôlées par le parent
   exportPanel?: React.ReactNode;
 }
 
@@ -35,9 +35,8 @@ export default function ResourceForm({
   const {
     isLoading,
     isSaving,
-    handleFormChange,
     handleSave,
-  } = useResourceData(stepId, substepTitle, resourceType, undefined, onDataSaved);
+  } = useResourceData(stepId, substepTitle, resourceType, formData, onDataSaved);
 
   if (isLoading) {
     return <FormSkeleton />;
@@ -51,15 +50,11 @@ export default function ResourceForm({
       </CardHeader>
       
       <CardContent className="pt-4 pb-6">
-        <FormContent 
-          children={children}
-          formData={formData}
-          handleFormChange={handleFormChange}
-        />
+        {children}
       </CardContent>
       
       <CardFooter className="flex flex-col sm:flex-row justify-between border-t p-4 pt-4 mt-2 gap-4">
-        <SaveButton isSaving={isSaving} handleSave={handleSave} />
+        <SaveButton isSaving={isSaving} handleSave={() => handleSave(formData)} />
         {exportPanel}
       </CardFooter>
     </Card>
