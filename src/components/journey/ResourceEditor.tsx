@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, Download, FileText } from 'lucide-react';
@@ -15,6 +15,8 @@ interface ResourceEditorProps {
 
 export default function ResourceEditor({ stepId, substepTitle, resourceType, title }: ResourceEditorProps) {
   const [content, setContent] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const cursorPositionRef = useRef<number | null>(null);
   
   const {
     formData,
@@ -31,9 +33,24 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
   }, [formData]);
   
   const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = e.target.value;
+    const textarea = e.target;
+    const newContent = textarea.value;
+    
+    // Store current cursor position
+    cursorPositionRef.current = textarea.selectionStart;
+    
     setContent(newContent);
     handleFormChange('content', newContent);
+    
+    // Restore cursor position after React update
+    requestAnimationFrame(() => {
+      if (textareaRef.current && cursorPositionRef.current !== null) {
+        textareaRef.current.setSelectionRange(
+          cursorPositionRef.current,
+          cursorPositionRef.current
+        );
+      }
+    });
   }, [handleFormChange]);
   
   const downloadAsText = useCallback(() => {
@@ -85,6 +102,7 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
       </div>
       
       <Textarea 
+        ref={textareaRef}
         value={content}
         onChange={handleContentChange}
         placeholder="Saisissez votre texte ici..."
