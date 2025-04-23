@@ -35,10 +35,11 @@ export default function Auth() {
     
     async function checkAuth() {
       try {
-        // First, set up auth state listener
+        // Set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
           if (!mounted) return;
           
+          console.log("Auth state change in Auth page:", event);
           setIsAuthenticated(!!session);
           setCheckingAuth(false);
           
@@ -60,6 +61,7 @@ export default function Auth() {
         if (!mounted) return;
         
         if (session) {
+          console.log("Existing session found in Auth page");
           setIsAuthenticated(true);
           
           // Get last visited page or default to "/"
@@ -70,9 +72,10 @@ export default function Auth() {
           setTimeout(() => {
             if (mounted) navigate(lastPath);
           }, 100);
+        } else {
+          console.log("No session found in Auth page");
+          setCheckingAuth(false);
         }
-        
-        setCheckingAuth(false);
         
         return () => {
           subscription.unsubscribe();

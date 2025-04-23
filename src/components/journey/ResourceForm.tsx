@@ -44,12 +44,17 @@ export default function ResourceForm({
   useEffect(() => {
     return () => {
       console.log("ResourceForm unmounting - triggering final save");
-      handleSave(session);
+      if (session) {
+        handleSave(session);
+      } else {
+        console.log("No session available for final save");
+      }
     };
   }, [handleSave, session]);
 
   // Handle manual save button click
   const onSaveClick = () => {
+    console.log("Save button clicked, session:", session ? "available" : "not available");
     handleSave(session);
   };
 

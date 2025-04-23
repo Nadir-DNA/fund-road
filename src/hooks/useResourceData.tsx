@@ -2,6 +2,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useResourceSave } from "./resource/useResourceSave";
+import { useResourceSession } from "./resource/useResourceSession";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -28,12 +29,12 @@ export const useResourceData = (
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [resourceId, setResourceId] = useState<string | null>(null);
-  const [session, setSession] = useState<any>(null);
+  const { session, fetchSession } = useResourceSession();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   // Initial values effect ONLY once
-  useMemo(() => {
+  useEffect(() => {
     if (initialValues && Object.keys(initialValues).length > 0 && onDataSaved) {
       onDataSaved(initialValues);
     }
@@ -44,23 +45,22 @@ export const useResourceData = (
     const fetchSessionAndData = async () => {
       setIsLoading(true);
       try {
-        // Get current session
-        const { data } = await supabase.auth.getSession();
-        setSession(data?.session);
+        console.log(`Fetching data for: stepId=${stepId}, substep=${substepTitle}, type=${resourceType}`);
         
-        if (!data?.session) {
+        // Get current session
+        const currentSession = session || await fetchSession();
+        
+        if (!currentSession) {
           console.log("No authenticated session found");
           setIsLoading(false);
           return;
         }
         
-        console.log(`Fetching data for: stepId=${stepId}, substep=${substepTitle}, type=${resourceType}`);
-        
         // Try to fetch user resource
         const { data: userResource, error: userResourceError } = await supabase
           .from('user_resources')
           .select('*')
-          .eq('user_id', data.session.user.id)
+          .eq('user_id', currentSession.user.id)
           .eq('step_id', stepId)
           .eq('substep_title', substepTitle)
           .eq('resource_type', resourceType)
@@ -139,7 +139,7 @@ export const useResourceData = (
     };
 
     fetchSessionAndData();
-  }, [stepId, substepTitle, resourceType, toast, onDataSaved]);
+  }, [stepId, substepTitle, resourceType, toast, onDataSaved, session, fetchSession]);
 
   const handleFormChange = useCallback((field: string, value: any) => {
     setFormData(prev => {
@@ -165,10 +165,29 @@ export const useResourceData = (
   });
   
   // Wrapper function for handleSave to include session
-  const handleSave = useCallback((currentSession?: any) => {
+  const handleSave = useCallback(async (currentSession?: any) => {
     console.log("Manual save triggered with data:", formData);
-    return saveResource(currentSession || session);
-  }, [formData, saveResource, session]);
+    try {
+      // If no session provided, try to get the current one or fetch a new one
+      const sessionToUse = currentSession || session || await fetchSession();
+      
+      if (!sessionToUse) {
+        console.error("No valid session available for saving");
+        toast({
+          title: "Erreur d'authentification",
+          description: "Vous devez être connecté pour sauvegarder vos ressources.",
+          variant: "destructive"
+        });
+        navigate("/auth");
+        return false;
+      }
+      
+      return await saveResource(sessionToUse);
+    } catch (err) {
+      console.error("Error during save operation:", err);
+      return false;
+    }
+  }, [formData, saveResource, session, fetchSession, toast, navigate]);
 
   return {
     formData,

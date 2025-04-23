@@ -27,14 +27,9 @@ export function useResourceSave({
   const navigate = useNavigate();
 
   const handleSave = useCallback(async (session?: any) => {
+    console.log("handleSave called with session:", session ? "present" : "not present");
     try {
       setIsSaving(true);
-      
-      if (!session) {
-        // Get current session
-        const { data: sessionData } = await supabase.auth.getSession();
-        session = sessionData?.session;
-      }
       
       if (!session || !session.user) {
         console.error("No valid session available");
@@ -44,7 +39,7 @@ export function useResourceSave({
           variant: "destructive"
         });
         navigate("/auth");
-        return;
+        return false;
       }
       
       try {
@@ -111,6 +106,8 @@ export function useResourceSave({
             title: "Ressource sauvegardée",
             description: "Vos données ont été enregistrées avec succès."
           });
+          
+          return true;
         } else {
           console.error("No data returned from save operation");
           throw new Error("Aucune donnée retournée lors de la sauvegarde");
@@ -122,10 +119,11 @@ export function useResourceSave({
           description: error.message || "Une erreur est survenue lors de la sauvegarde.",
           variant: "destructive"
         });
+        return false;
       }
     } catch (error) {
-      // This will happen if requireAuth fails - user will be redirected to auth
       console.error("Error during save:", error);
+      return false;
     } finally {
       setIsSaving(false);
     }
