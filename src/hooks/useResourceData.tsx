@@ -136,7 +136,7 @@ export const useResourceData = (
     try {
       const currentFormData = formData;
       
-      const resourceData: UserResource = {
+      const resourceData: Partial<UserResource> = {
         user_id: session.session.user.id,
         step_id: stepId,
         substep_title: substepTitle,
@@ -144,15 +144,28 @@ export const useResourceData = (
         content: currentFormData,
       };
       
+      // Solution: Utiliser des méthodes différentes selon qu'il s'agit d'une insertion ou d'une mise à jour
+      let result;
+      
       if (resourceId) {
-        resourceData.id = resourceId;
+        // Mise à jour d'une ressource existante
+        result = await supabase
+          .from('user_resources')
+          .update({
+            content: currentFormData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', resourceId)
+          .select();
+      } else {
+        // Insertion d'une nouvelle ressource
+        result = await supabase
+          .from('user_resources')
+          .insert(resourceData)
+          .select();
       }
       
-      const { error, data } = await supabase
-        .from('user_resources')
-        .upsert(resourceData, { 
-          onConflict: 'user_id,step_id,substep_title,resource_type'
-        }).select();
+      const { error, data } = result;
         
       if (error) throw error;
       
