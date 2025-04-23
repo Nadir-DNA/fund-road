@@ -136,20 +136,10 @@ export const useResourceData = (
     try {
       const currentFormData = formData;
       
-      const resourceData: Partial<UserResource> = {
-        user_id: session.session.user.id,
-        step_id: stepId,
-        substep_title: substepTitle,
-        resource_type: resourceType,
-        content: currentFormData,
-      };
-      
-      // Solution: Utiliser des méthodes différentes selon qu'il s'agit d'une insertion ou d'une mise à jour
-      let result;
-      
+      // Solution: Pour l'insertion, on assure que tous les champs requis sont présents
       if (resourceId) {
         // Mise à jour d'une ressource existante
-        result = await supabase
+        const result = await supabase
           .from('user_resources')
           .update({
             content: currentFormData,
@@ -157,20 +147,36 @@ export const useResourceData = (
           })
           .eq('id', resourceId)
           .select();
+          
+        const { error, data } = result;
+        
+        if (error) throw error;
+        
+        if (data && data[0]) {
+          setResourceId(data[0].id);
+        }
       } else {
-        // Insertion d'une nouvelle ressource
-        result = await supabase
+        // Insertion d'une nouvelle ressource - tous les champs requis sont spécifiés explicitement
+        const resourceData = {
+          user_id: session.session.user.id,
+          step_id: stepId,
+          substep_title: substepTitle,
+          resource_type: resourceType,
+          content: currentFormData
+        };
+        
+        const result = await supabase
           .from('user_resources')
           .insert(resourceData)
           .select();
-      }
-      
-      const { error, data } = result;
+          
+        const { error, data } = result;
         
-      if (error) throw error;
-      
-      if (data && data[0]) {
-        setResourceId(data[0].id);
+        if (error) throw error;
+        
+        if (data && data[0]) {
+          setResourceId(data[0].id);
+        }
       }
       
       toast({
