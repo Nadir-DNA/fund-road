@@ -22,7 +22,7 @@ export const useResourceData = (
   defaultValues?: any,
   onDataSaved?: (data: any) => void
 ) => {
-  const initialValues = useMemo(() => defaultValues || {}, []);
+  const initialValues = useMemo(() => defaultValues || {}, [defaultValues]);
   const [formData, setFormData] = useState(initialValues);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -33,7 +33,7 @@ export const useResourceData = (
     if (initialValues && Object.keys(initialValues).length > 0 && onDataSaved) {
       onDataSaved(initialValues);
     }
-  }, []);
+  }, [initialValues, onDataSaved]);
 
   useResourceDataFetch({
     stepId,
