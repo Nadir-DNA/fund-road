@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -23,15 +23,16 @@ export const useResourceData = (
   defaultValues?: any,
   onDataSaved?: (data: any) => void
 ) => {
-  const [formData, setFormData] = useState(defaultValues);
-  const defaultValuesMemo = useMemo(() => defaultValues, []);  // Mémorise les valeurs initiales
+  // Stocke les valeurs initiales de manière stable
+  const initialValues = useMemo(() => defaultValues || {}, []);
+  const [formData, setFormData] = useState(initialValues);
   
-  // Initialise une seule fois au montage avec les defaultValues
+  // Initialise une seule fois au montage avec les valeurs initiales
   useEffect(() => {
-    if (defaultValuesMemo && onDataSaved) {
-      onDataSaved(defaultValuesMemo);
+    if (initialValues && Object.keys(initialValues).length > 0 && onDataSaved) {
+      onDataSaved(initialValues);
     }
-  }, [defaultValuesMemo, onDataSaved]);
+  }, []);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -63,9 +64,10 @@ export const useResourceData = (
           .maybeSingle();
           
         if (userResource) {
-          setFormData(userResource.content || {});
+          const content = userResource.content || {};
+          setFormData(content);
           setResourceId(userResource.id);
-          if (onDataSaved) onDataSaved(userResource.content || {});
+          if (onDataSaved) onDataSaved(content);
           setIsLoading(false);
           return;
         }
@@ -91,8 +93,9 @@ export const useResourceData = (
           } catch (e) {
             console.error("Erreur lors du parsing du contenu de la ressource:", e);
             // Si ce n'est pas du JSON valide, utiliser comme texte brut
-            setFormData({ content: templateResource.course_content });
-            if (onDataSaved) onDataSaved({ content: templateResource.course_content });
+            const content = { content: templateResource.course_content };
+            setFormData(content);
+            if (onDataSaved) onDataSaved(content);
           }
         }
       } catch (error) {
@@ -103,18 +106,19 @@ export const useResourceData = (
     };
     
     fetchSavedData();
-  }, [stepId, substepTitle, resourceType, onDataSaved]);
+  }, [stepId, substepTitle, resourceType]);
 
   // Handle form field changes
-  const handleFormChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
+  const handleFormChange = useCallback((field: string, value: any) => {
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      if (onDataSaved) onDataSaved(updated);
+      return updated;
+    });
+  }, [onDataSaved]);
 
   // Save form data to database
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     const { data: session } = await supabase.auth.getSession();
     
     if (!session?.session) {
@@ -130,14 +134,14 @@ export const useResourceData = (
     setIsSaving(true);
     
     try {
-      const safeFormData = defaultValues || formData || {};
+      const currentFormData = formData;
       
       const resourceData: UserResource = {
         user_id: session.session.user.id,
         step_id: stepId,
         substep_title: substepTitle,
         resource_type: resourceType,
-        content: safeFormData,
+        content: currentFormData,
       };
       
       if (resourceId) {
@@ -161,8 +165,6 @@ export const useResourceData = (
         description: "Vos données ont été enregistrées avec succès."
       });
       
-      if (onDataSaved) onDataSaved(safeFormData);
-      
     } catch (error: any) {
       console.error("Erreur lors de la sauvegarde de la ressource:", error);
       toast({
@@ -173,7 +175,7 @@ export const useResourceData = (
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [formData, stepId, substepTitle, resourceType, resourceId, navigate]);
 
   return {
     formData,
