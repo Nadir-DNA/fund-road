@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -129,7 +130,7 @@ export const useResourceData = (
     setIsSaving(true);
     
     try {
-      const safeFormData = formData || {};
+      const safeFormData = defaultValues || formData || {};
       
       const resourceData: UserResource = {
         user_id: session.session.user.id,

@@ -54,7 +54,7 @@ export default function ResourceForm({
       </CardContent>
       
       <CardFooter className="flex flex-col sm:flex-row justify-between border-t p-4 pt-4 mt-2 gap-4">
-        <SaveButton isSaving={isSaving} handleSave={() => handleSave(formData)} />
+        <SaveButton isSaving={isSaving} handleSave={() => handleSave()} />
         {exportPanel}
       </CardFooter>
     </Card>
