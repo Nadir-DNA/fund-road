@@ -35,13 +35,31 @@ export function useResourceSave({
       // Will throw if not authenticated, redirecting to auth page
       const session = await requireAuth();
       
+      if (!session || !session.user) {
+        console.error("No valid session available");
+        toast({
+          title: "Erreur d'authentification",
+          description: "Vous devez être connecté pour sauvegarder vos ressources.",
+          variant: "destructive"
+        });
+        navigate("/auth");
+        return;
+      }
+      
       try {
         console.log(`Saving resource: stepId=${stepId}, substep=${substepTitle}, type=${resourceType}, resourceId=${resourceId}`);
         console.log("Form data:", formData);
         
+        // Ensure we have valid content to save
+        if (!formData || typeof formData !== 'object') {
+          throw new Error("Invalid form data for saving");
+        }
+        
         let result;
+        
         if (resourceId) {
           // Update existing
+          console.log(`Updating resource with ID: ${resourceId}`);
           result = await supabase
             .from('user_resources')
             .update({
@@ -53,14 +71,20 @@ export function useResourceSave({
             
           console.log("Update result:", result);
         } else {
-          // Insert new with all required fields
+          // Create new resource
+          console.log("Creating new resource");
+          // Ensure all required fields are present
           const resourceData = {
             user_id: session.user.id,
             step_id: stepId,
             substep_title: substepTitle,
             resource_type: resourceType,
-            content: formData
+            content: formData,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           };
+          
+          console.log("Resource data to insert:", resourceData);
           
           result = await supabase
             .from('user_resources')
@@ -71,16 +95,25 @@ export function useResourceSave({
         }
         
         const { error, data } = result;
-        if (error) throw error;
-        
-        if (data && data[0] && onSaved) {
-          onSaved(data[0].id);
+        if (error) {
+          console.error("Supabase error during save:", error);
+          throw error;
         }
+        
+        if (data && data[0]) {
+          console.log("Successfully saved resource with ID:", data[0].id);
+          if (onSaved) {
+            onSaved(data[0].id);
+          }
 
-        toast({
-          title: "Ressource sauvegardée",
-          description: "Vos données ont été enregistrées avec succès."
-        });
+          toast({
+            title: "Ressource sauvegardée",
+            description: "Vos données ont été enregistrées avec succès."
+          });
+        } else {
+          console.error("No data returned from save operation");
+          throw new Error("Aucune donnée retournée lors de la sauvegarde");
+        }
       } catch (error: any) {
         console.error("Erreur lors de la sauvegarde de la ressource:", error);
         toast({
@@ -91,7 +124,7 @@ export function useResourceSave({
       }
     } catch (error) {
       // This will happen if requireAuth fails - user will be redirected to auth
-      console.error("Auth error:", error);
+      console.error("Auth error during save:", error);
     } finally {
       setIsSaving(false);
     }

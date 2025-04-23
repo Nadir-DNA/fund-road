@@ -38,6 +38,14 @@ export default function ResourceForm({
     handleSave,
   } = useResourceData(stepId, substepTitle, resourceType, formData, onDataSaved);
 
+  // Force save on unmount to ensure data persistence
+  useEffect(() => {
+    return () => {
+      console.log("ResourceForm unmounting - triggering final save");
+      handleSave();
+    };
+  }, [handleSave]);
+
   if (isLoading) {
     return <FormSkeleton />;
   }

@@ -29,25 +29,31 @@ export function useResourceDataFetch({
       setIsLoading(true);
       console.log(`Fetching data for: stepId=${stepId}, substep=${substepTitle}, type=${resourceType}`);
       
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session) {
-        console.log("No auth session found, skipping data fetch");
-        setIsLoading(false);
-        return;
-      }
-
       try {
-        // User resource
+        // Check for session
+        const { data: sessionData } = await supabase.auth.getSession();
+        const session = sessionData?.session;
+
+        if (!session) {
+          console.log("No auth session found, skipping data fetch");
+          setIsLoading(false);
+          return;
+        }
+
+        console.log("Session found:", session.user.id);
+
+        // Try to fetch user resource
         const { data: userResource, error: userResourceError } = await supabase
           .from('user_resources')
           .select('*')
-          .eq('user_id', session.session.user.id)
+          .eq('user_id', session.user.id)
           .eq('step_id', stepId)
           .eq('substep_title', substepTitle)
           .eq('resource_type', resourceType)
           .maybeSingle();
           
         if (userResourceError) {
+          console.error("Error fetching user resource:", userResourceError);
           throw userResourceError;
         }
 
@@ -61,10 +67,11 @@ export function useResourceDataFetch({
           onData && onData(content);
           setIsLoading(false);
           return;
+        } else {
+          console.log("No user resource found, checking for template");
         }
 
         // Fallback: template resource
-        console.log("No user resource found, checking for template");
         const { data: templateResource, error: templateError } = await supabase
           .from('entrepreneur_resources')
           .select('*')
@@ -74,6 +81,7 @@ export function useResourceDataFetch({
           .maybeSingle();
           
         if (templateError) {
+          console.error("Error fetching template resource:", templateError);
           throw templateError;
         }
 
