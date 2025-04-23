@@ -55,7 +55,7 @@ export function useResourceSession() {
         variant: "destructive"
       });
       navigate("/auth");
-      throw new Error("Auth required");
+      return null;
     }
     
     return freshSession;

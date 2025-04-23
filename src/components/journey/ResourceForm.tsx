@@ -7,6 +7,7 @@ import { useResourceData } from "@/hooks/useResourceData";
 import FormSkeleton from "./resource-form/FormSkeleton";
 import FormContent from "./resource-form/FormContent";
 import SaveButton from "./resource-form/SaveButton";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ResourceFormProps {
   stepId: number;
@@ -36,15 +37,21 @@ export default function ResourceForm({
     isLoading,
     isSaving,
     handleSave,
+    session
   } = useResourceData(stepId, substepTitle, resourceType, formData, onDataSaved);
 
   // Force save on unmount to ensure data persistence
   useEffect(() => {
     return () => {
       console.log("ResourceForm unmounting - triggering final save");
-      handleSave();
+      handleSave(session);
     };
-  }, [handleSave]);
+  }, [handleSave, session]);
+
+  // Handle manual save button click
+  const onSaveClick = () => {
+    handleSave(session);
+  };
 
   if (isLoading) {
     return <FormSkeleton />;
@@ -62,7 +69,7 @@ export default function ResourceForm({
       </CardContent>
       
       <CardFooter className="flex flex-col sm:flex-row justify-between border-t p-4 pt-4 mt-2 gap-4">
-        <SaveButton isSaving={isSaving} handleSave={handleSave} />
+        <SaveButton isSaving={isSaving} handleSave={onSaveClick} />
         {exportPanel}
       </CardFooter>
     </Card>

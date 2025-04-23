@@ -3,7 +3,6 @@ import { useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
-import { useResourceSession } from "./useResourceSession";
 
 interface SaveOptions {
   formData: any;
@@ -26,14 +25,16 @@ export function useResourceSave({
 }: SaveOptions) {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { requireAuth } = useResourceSession();
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async (session?: any) => {
     try {
       setIsSaving(true);
       
-      // Will throw if not authenticated, redirecting to auth page
-      const session = await requireAuth();
+      if (!session) {
+        // Get current session
+        const { data: sessionData } = await supabase.auth.getSession();
+        session = sessionData?.session;
+      }
       
       if (!session || !session.user) {
         console.error("No valid session available");
@@ -124,11 +125,11 @@ export function useResourceSave({
       }
     } catch (error) {
       // This will happen if requireAuth fails - user will be redirected to auth
-      console.error("Auth error during save:", error);
+      console.error("Error during save:", error);
     } finally {
       setIsSaving(false);
     }
-  }, [formData, stepId, substepTitle, resourceType, resourceId, navigate, onSaved, setIsSaving, toast, requireAuth]);
+  }, [formData, stepId, substepTitle, resourceType, resourceId, navigate, onSaved, setIsSaving, toast]);
 
   return { handleSave };
 }
