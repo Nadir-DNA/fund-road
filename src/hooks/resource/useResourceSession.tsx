@@ -12,10 +12,32 @@ export function useResourceSession() {
 
   // Initialize session on mount
   useEffect(() => {
+    let mounted = true;
+    
     const initSession = async () => {
       try {
         setIsLoading(true);
+        
+        // Set up auth state change listener first
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (event, currentSession) => {
+            if (!mounted) return;
+            
+            console.log(`Auth state changed: ${event}`);
+            if (currentSession) {
+              console.log("Session updated from auth state change");
+              setSession(currentSession);
+            } else if (event === 'SIGNED_OUT') {
+              console.log("User signed out, clearing session");
+              setSession(null);
+            }
+          }
+        );
+        
+        // Then check for existing session
         const { data, error } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
         
         if (error) {
           console.error("Session fetch error:", error);
@@ -25,24 +47,24 @@ export function useResourceSession() {
         
         console.log("Initial session check:", data?.session ? "Found" : "Not found");
         setSession(data?.session || null);
-      } catch (err) {
-        console.error("Error in session initialization:", err);
-      } finally {
         setIsLoading(false);
+        
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (err) {
+        if (mounted) {
+          console.error("Error in session initialization:", err);
+          setIsLoading(false);
+        }
       }
     };
     
     initSession();
     
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        console.log(`Auth state changed: ${event}`);
-        setSession(currentSession);
-      }
-    );
-    
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const fetchSession = useCallback(async () => {
@@ -67,27 +89,32 @@ export function useResourceSession() {
   }, []);
 
   const requireAuth = useCallback(async () => {
-    // First check if we already have a session
-    if (session) {
-      console.log("Using existing session");
-      return session;
-    }
-    
-    // If not, fetch fresh session
-    const freshSession = await fetchSession();
-    
-    if (!freshSession) {
-      console.log("No session found, redirecting to auth page");
-      toast({
-        title: "Authentification requise",
-        description: "Veuillez vous connecter pour sauvegarder vos ressources.",
-        variant: "destructive"
-      });
-      navigate("/auth");
+    try {
+      // First check if we already have a session
+      if (session) {
+        console.log("Using existing session");
+        return session;
+      }
+      
+      // If not, fetch fresh session
+      const freshSession = await fetchSession();
+      
+      if (!freshSession) {
+        console.log("No session found, redirecting to auth page");
+        toast({
+          title: "Authentification requise",
+          description: "Veuillez vous connecter pour sauvegarder vos ressources.",
+          variant: "destructive"
+        });
+        navigate("/auth");
+        return null;
+      }
+      
+      return freshSession;
+    } catch (err) {
+      console.error("Error in requireAuth:", err);
       return null;
     }
-    
-    return freshSession;
   }, [fetchSession, navigate, toast, session]);
 
   return { session, isLoading, fetchSession, requireAuth };

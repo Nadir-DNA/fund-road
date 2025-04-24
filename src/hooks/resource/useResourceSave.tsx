@@ -28,101 +28,97 @@ export function useResourceSave({
 
   const handleSave = useCallback(async (session?: any) => {
     console.log("handleSave called with session:", session ? "present" : "not present");
+    
+    if (!session || !session.user) {
+      console.error("No valid session available");
+      toast({
+        title: "Erreur d'authentification",
+        description: "Vous devez être connecté pour sauvegarder vos ressources.",
+        variant: "destructive"
+      });
+      navigate("/auth");
+      return false;
+    }
+    
+    setIsSaving(true);
+    
     try {
-      setIsSaving(true);
+      console.log(`Saving resource: stepId=${stepId}, substep=${substepTitle}, type=${resourceType}, resourceId=${resourceId}`);
+      console.log("Form data:", formData);
       
-      if (!session || !session.user) {
-        console.error("No valid session available");
-        toast({
-          title: "Erreur d'authentification",
-          description: "Vous devez être connecté pour sauvegarder vos ressources.",
-          variant: "destructive"
-        });
-        navigate("/auth");
-        return false;
+      // Ensure we have valid content to save
+      if (!formData || typeof formData !== 'object') {
+        throw new Error("Invalid form data for saving");
       }
       
-      try {
-        console.log(`Saving resource: stepId=${stepId}, substep=${substepTitle}, type=${resourceType}, resourceId=${resourceId}`);
-        console.log("Form data:", formData);
-        
-        // Ensure we have valid content to save
-        if (!formData || typeof formData !== 'object') {
-          throw new Error("Invalid form data for saving");
-        }
-        
-        let result;
-        
-        if (resourceId) {
-          // Update existing
-          console.log(`Updating resource with ID: ${resourceId}`);
-          result = await supabase
-            .from('user_resources')
-            .update({
-              content: formData,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', resourceId)
-            .select();
-            
-          console.log("Update result:", result);
-        } else {
-          // Create new resource
-          console.log("Creating new resource");
-          // Ensure all required fields are present
-          const resourceData = {
-            user_id: session.user.id,
-            step_id: stepId,
-            substep_title: substepTitle,
-            resource_type: resourceType,
+      let result;
+      
+      if (resourceId) {
+        // Update existing
+        console.log(`Updating resource with ID: ${resourceId}`);
+        result = await supabase
+          .from('user_resources')
+          .update({
             content: formData,
-            created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          };
+          })
+          .eq('id', resourceId)
+          .select();
           
-          console.log("Resource data to insert:", resourceData);
-          
-          result = await supabase
-            .from('user_resources')
-            .insert(resourceData)
-            .select();
-            
-          console.log("Insert result:", result);
-        }
+        console.log("Update result:", result);
+      } else {
+        // Create new resource
+        console.log("Creating new resource");
+        // Ensure all required fields are present
+        const resourceData = {
+          user_id: session.user.id,
+          step_id: stepId,
+          substep_title: substepTitle,
+          resource_type: resourceType,
+          content: formData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
         
-        const { error, data } = result;
-        if (error) {
-          console.error("Supabase error during save:", error);
-          throw error;
-        }
+        console.log("Resource data to insert:", resourceData);
         
-        if (data && data[0]) {
-          console.log("Successfully saved resource with ID:", data[0].id);
-          if (onSaved) {
-            onSaved(data[0].id);
-          }
-
-          toast({
-            title: "Ressource sauvegardée",
-            description: "Vos données ont été enregistrées avec succès."
-          });
+        result = await supabase
+          .from('user_resources')
+          .insert(resourceData)
+          .select();
           
-          return true;
-        } else {
-          console.error("No data returned from save operation");
-          throw new Error("Aucune donnée retournée lors de la sauvegarde");
-        }
-      } catch (error: any) {
-        console.error("Erreur lors de la sauvegarde de la ressource:", error);
-        toast({
-          title: "Erreur de sauvegarde",
-          description: error.message || "Une erreur est survenue lors de la sauvegarde.",
-          variant: "destructive"
-        });
-        return false;
+        console.log("Insert result:", result);
       }
-    } catch (error) {
-      console.error("Error during save:", error);
+      
+      const { error, data } = result;
+      if (error) {
+        console.error("Supabase error during save:", error);
+        throw error;
+      }
+      
+      if (data && data[0]) {
+        console.log("Successfully saved resource with ID:", data[0].id);
+        if (onSaved) {
+          onSaved(data[0].id);
+        }
+
+        toast({
+          title: "Ressource sauvegardée",
+          description: "Vos données ont été enregistrées avec succès."
+        });
+        
+        return true;
+      } else {
+        console.error("No data returned from save operation");
+        throw new Error("Aucune donnée retournée lors de la sauvegarde");
+      }
+    } catch (error: any) {
+      console.error("Erreur lors de la sauvegarde de la ressource:", error);
+      toast({
+        title: "Erreur de sauvegarde",
+        description: error.message || "Une erreur est survenue lors de la sauvegarde.",
+        variant: "destructive"
+      });
       return false;
     } finally {
       setIsSaving(false);

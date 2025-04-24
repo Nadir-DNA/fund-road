@@ -2,12 +2,10 @@
 import { ReactNode, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Save } from "lucide-react";
 import { useResourceData } from "@/hooks/useResourceData";
 import FormSkeleton from "./resource-form/FormSkeleton";
 import FormContent from "./resource-form/FormContent";
 import SaveButton from "./resource-form/SaveButton";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ResourceFormProps {
   stepId: number;
@@ -55,7 +53,11 @@ export default function ResourceForm({
   // Handle manual save button click
   const onSaveClick = () => {
     console.log("Save button clicked, session:", session ? "available" : "not available");
-    handleSave(session);
+    if (session) {
+      handleSave(session);
+    } else {
+      console.log("No session available for manual save");
+    }
   };
 
   if (isLoading) {

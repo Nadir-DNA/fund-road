@@ -7,7 +7,7 @@ import Footer from "@/components/Footer";
 import AuthForm from "@/components/auth/AuthForm";
 import BetaTag from "@/components/common/BetaTag";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { getLastPath, clearLastPath } from "@/utils/navigationUtils";
 
 export default function Auth() {
@@ -17,6 +17,7 @@ export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const emailParam = searchParams.get('email');
+  const { toast } = useToast();
   
   // Set login mode based on URL parameter if available
   useEffect(() => {
@@ -27,13 +28,13 @@ export default function Auth() {
         description: "Veuillez vous connecter pour compléter la vérification de votre compte.",
       });
     }
-  }, [emailParam]);
+  }, [emailParam, toast]);
   
-  // Setup authentication state listener first, then check for existing session
   useEffect(() => {
     let mounted = true;
     
-    async function checkAuth() {
+    // Setup authentication state listener first, then check for existing session
+    const checkAuth = async () => {
       try {
         // Set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -41,17 +42,23 @@ export default function Auth() {
           
           console.log("Auth state change in Auth page:", event);
           setIsAuthenticated(!!session);
-          setCheckingAuth(false);
           
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-            // Get last visited page or default to "/"
-            const lastPath = getLastPath();
-            clearLastPath();
-            
-            // Use setTimeout to ensure state updates before navigation
-            setTimeout(() => {
-              if (mounted) navigate(lastPath);
-            }, 100);
+            if (session) {
+              console.log("Sign in detected, session found:", session.user.id);
+              // Get last visited page or default to "/"
+              const lastPath = getLastPath() || "/";
+              clearLastPath();
+              
+              setCheckingAuth(false);
+              
+              // Use setTimeout to ensure state updates before navigation
+              setTimeout(() => {
+                if (mounted) navigate(lastPath);
+              }, 100);
+            }
+          } else {
+            setCheckingAuth(false);
           }
         });
         
@@ -61,11 +68,11 @@ export default function Auth() {
         if (!mounted) return;
         
         if (session) {
-          console.log("Existing session found in Auth page");
+          console.log("Existing session found in Auth page:", session.user.id);
           setIsAuthenticated(true);
           
           // Get last visited page or default to "/"
-          const lastPath = getLastPath();
+          const lastPath = getLastPath() || "/";
           clearLastPath();
           
           // Use setTimeout to ensure state updates before navigation
@@ -91,14 +98,14 @@ export default function Auth() {
           });
         }
       }
-    }
+    };
     
     checkAuth();
     
     return () => {
       mounted = false;
     };
-  }, [navigate]);
+  }, [navigate, toast]);
   
   if (checkingAuth) {
     return (
