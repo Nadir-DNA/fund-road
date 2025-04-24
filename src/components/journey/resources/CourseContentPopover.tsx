@@ -23,12 +23,12 @@ export default function CourseContentPopover({
 }: CourseContentPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Ferme la popover lors d'un clic à l'extérieur
+  // Close the popover when clicking outside
   const handleOpenChange = useCallback((open: boolean) => {
     setIsOpen(open);
   }, []);
 
-  // Récupère le contenu du cours depuis Supabase
+  // Get course content from Supabase
   const { data: courseContent, isLoading } = useQuery({
     queryKey: ['courseContent', stepId, substepTitle],
     queryFn: async () => {
@@ -54,7 +54,8 @@ export default function CourseContentPopover({
           size="sm" 
           className={`gap-2 ${className}`}
           onClick={(e) => {
-            e.preventDefault(); // Empêche la propagation qui peut affecter les formulaires
+            e.preventDefault(); // Prevent propagation that might affect forms
+            e.stopPropagation(); // Stop propagation to parent elements
           }}
         >
           <BookOpen className="h-4 w-4" />
@@ -62,10 +63,10 @@ export default function CourseContentPopover({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-[340px] sm:w-[400px] max-h-[500px] overflow-y-auto p-0" 
+        className="w-[340px] sm:w-[400px] max-h-[500px] overflow-y-auto p-0 z-[100]" 
         side="top" 
         align="start"
-        onClick={(e) => e.stopPropagation()} // Empêche la propagation
+        onClick={(e) => e.stopPropagation()} // Prevent propagation
       >
         <Card className="border-0 rounded-none">
           <div className="flex justify-between items-center p-3 border-b">
@@ -74,7 +75,10 @@ export default function CourseContentPopover({
               variant="ghost" 
               size="icon" 
               className="h-6 w-6" 
-              onClick={() => setIsOpen(false)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsOpen(false);
+              }}
             >
               <X className="h-3 w-3" />
               <span className="sr-only">Fermer</span>

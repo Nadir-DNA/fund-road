@@ -52,7 +52,7 @@ export default function StepDetail({ step, selectedSubStep, selectedSubSubStepTi
   };
 
   return (
-    <div className="px-2 w-full">
+    <div className="w-full">
       <StepDetailDialog
         step={step}
         selectedSubStep={selectedSubStep}

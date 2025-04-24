@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Step, SubStep } from "@/types/journey";
 import TimelineStep from "./journey/TimelineStep";
 import StepDetail from "./journey/StepDetail";
@@ -14,7 +14,6 @@ import { safeDecodeURIComponent } from "@/utils/navigationUtils";
 
 export default function JourneyTimeline() {
   // Nous utilisons une clé stable pour le Dialog afin d'éviter les re-rendus inutiles
-  const dialogKey = "step-detail-dialog";
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStep, setSelectedStep] = useState<Step | null>(null);
   const [selectedSubStep, setSelectedSubStep] = useState<SubStep | null>(null);
@@ -86,13 +85,13 @@ export default function JourneyTimeline() {
 
   // Update URL when dialog closes
   const handleDialogChange = (open: boolean) => {
+    console.log("Dialog state changed to:", open);
     setDialogOpen(open);
     if (!open) {
-      console.log("Dialog closed from JourneyTimeline - removing URL parameters");
       // Remove the URL parameters when dialog is closed
       navigate('/roadmap', { replace: true });
       
-      // Also reset state to ensure a clean slate
+      // Reset state to ensure a clean slate
       setSelectedStep(null);
       setSelectedSubStep(null);
       setSelectedSubSubStepTitle(null);
@@ -167,19 +166,14 @@ export default function JourneyTimeline() {
         ))}
       </div>
 
-      {/* Detailed Information Dialog - utiliser une clé fixe pour éviter les re-rendus */}
-      <Dialog key={dialogKey} open={dialogOpen} onOpenChange={handleDialogChange}>
-        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto glass-card p-6">
-          {selectedStep && (
-            <StepDetail 
-              step={selectedStep} 
-              selectedSubStep={selectedSubStep}
-              selectedSubSubStepTitle={selectedSubSubStepTitle}
-              onClose={handleStepDetailClose}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {dialogOpen && selectedStep && (
+        <StepDetail 
+          step={selectedStep} 
+          selectedSubStep={selectedSubStep}
+          selectedSubSubStepTitle={selectedSubSubStepTitle}
+          onClose={handleStepDetailClose}
+        />
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { Step, SubStep } from "@/types/journey";
 import StepDetailContent from "./StepDetailContent";
 import StepDetailSkeleton from "./StepDetailSkeleton";
 import { X } from "lucide-react";
+import { useEffect } from "react";
 
 interface StepDetailDialogProps {
   step: Step;
@@ -29,18 +30,26 @@ export default function StepDetailDialog({
     onClose();
   };
 
+  // Ensure dialog closes properly when isOpen changes to false
+  useEffect(() => {
+    if (!isOpen) {
+      console.log("Dialog detected isOpen=false, ensuring cleanup");
+      onClose();
+    }
+  }, [isOpen, onClose]);
+
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
+        console.log("Dialog onOpenChange triggered with open=", open);
         if (!open) {
-          console.log("Dialog onOpenChange triggered with open=false");
-          onClose();
+          handleClose();
         }
       }}
     >
       <DialogContent 
-        className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto glass-card p-6"
+        className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto glass-card p-6 z-50"
       >
         <DialogHeader className="mb-4 sm:mb-6">
           <div>
