@@ -1,5 +1,4 @@
-
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -26,12 +25,24 @@ export default function EmpathyMap({ stepId, substepTitle }: EmpathyMapProps) {
     goals: ""
   });
 
-  const handleChange = (field: string, value: string) => {
+  // Stabilize data handler to prevent loops
+  const handleDataSaved = useCallback((data: any) => {
+    // Check if we have real changes to prevent unnecessary updates
+    if (JSON.stringify(data) !== JSON.stringify(formData)) {
+      console.log("EmpathyMap - onDataSaved with changes");
+      setFormData(data);
+    } else {
+      console.log("EmpathyMap - onDataSaved with no changes, ignoring");
+    }
+  }, [formData]);
+
+  // Stable field change handler
+  const handleChange = useCallback((field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-  };
+  }, []);
 
   return (
     <ResourceForm
@@ -40,8 +51,8 @@ export default function EmpathyMap({ stepId, substepTitle }: EmpathyMapProps) {
       resourceType="empathy_map"
       title="Carte d'Empathie Utilisateur"
       description="Développez une compréhension profonde des utilisateurs de votre solution"
-      formData={formData}
-      onDataSaved={setFormData}
+      formData={formData} // Pass as current data for controlled behavior
+      onDataSaved={handleDataSaved}
     >
       <div className="space-y-8">
         <Card className="p-5 border rounded-md mb-6">

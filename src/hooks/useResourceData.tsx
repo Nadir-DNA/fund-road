@@ -11,23 +11,30 @@ export const useResourceData = (
   defaultValues?: any,
   onDataSaved?: (data: any) => void
 ) => {
-  // Protection contre les appels multiples à onDataSaved
+  // Protection against multiple calls to onDataSaved
   const hasCalledInitialDataSavedRef = useRef(false);
   const isInitializingRef = useRef(true);
+  const firstLoadCompletedRef = useRef(false);
+  const previousDataStringRef = useRef("");
   
-  // Initialize default values with memoization pour éviter les boucles
-  const initialValues = useMemo(() => defaultValues || {}, [defaultValues]);
+  // Initialize default values with memoization to prevent loops
+  const initialValues = useMemo(() => defaultValues || {}, []);
   
-  // Use the form state management hook with protection contre les boucles
+  // Use the form state management hook with protection against loops
   const {
     formData,
     setFormData,
     handleFormChange
   } = useResourceFormState(initialValues, (data) => {
-    // Éviter les déclenchements pendant l'initialisation ou les boucles
-    if (!isInitializingRef.current && hasCalledInitialDataSavedRef.current && onDataSaved) {
-      console.log("Data changed after initialization, safe to call onDataSaved");
-      onDataSaved(data);
+    // Skip callbacks during initialization or loops
+    if (!isInitializingRef.current && onDataSaved) {
+      // Compare with previous data to avoid unnecessary callbacks
+      const currentDataString = JSON.stringify(data);
+      if (currentDataString !== previousDataStringRef.current) {
+        console.log("Data changed after initialization, calling onDataSaved");
+        previousDataStringRef.current = currentDataString;
+        onDataSaved(data);
+      }
     }
   });
 
@@ -38,21 +45,27 @@ export const useResourceData = (
     session,
     fetchSession
   } = useResourceDataLoader(stepId, substepTitle, resourceType, (loadedData) => {
-    // Éviter les déclenchements en cascade lors du chargement initial
+    // Avoid cascade triggers during initial loading
     isInitializingRef.current = true;
     console.log("Data loaded from resourceDataLoader:", loadedData);
-    setFormData(loadedData);
     
-    // Différer la fin de l'initialisation pour éviter les boucles
+    // Check if we really need to update (avoid unnecessary renders)
+    if (JSON.stringify(loadedData) !== JSON.stringify(formData)) {
+      setFormData(loadedData);
+    }
+    
+    // Delay the end of initialization to avoid loops
     setTimeout(() => {
       isInitializingRef.current = false;
+      firstLoadCompletedRef.current = true;
     }, 500);
   });
 
   // Use the resource actions hook
   const {
     isSaving,
-    handleSave
+    handleSave,
+    handleManualSave
   } = useResourceActions(
     formData,
     stepId, 
@@ -61,29 +74,35 @@ export const useResourceData = (
     resourceId
   );
 
-  // Initial values effect - exécuté UNE SEULE FOIS de façon contrôlée
+  // Initial values effect - run ONCE in a controlled way
   useEffect(() => {
+    // Only process if we have meaningful initial values and haven't called onDataSaved yet
     if (
       initialValues && 
       Object.keys(initialValues).length > 0 && 
       onDataSaved && 
       !hasCalledInitialDataSavedRef.current &&
-      !isInitializingRef.current
+      !isInitializingRef.current &&
+      firstLoadCompletedRef.current
     ) {
-      console.log("Setting initial values, calling onDataSaved once with delay");
+      console.log("Initial values setup complete, safe to call onDataSaved once with delay");
       
-      // Délai pour éviter les cascades d'initialisation
+      // Delay to avoid initialization cascades
       setTimeout(() => {
         if (!hasCalledInitialDataSavedRef.current) {
           hasCalledInitialDataSavedRef.current = true;
-          if (onDataSaved) {
+          
+          // Compare with current form data to avoid unnecessary updates
+          const initialDataString = JSON.stringify(initialValues);
+          if (initialDataString !== previousDataStringRef.current) {
+            previousDataStringRef.current = initialDataString;
             console.log("First and only initial onDataSaved call");
             onDataSaved(initialValues);
           }
         }
       }, 800);
     }
-  }, [initialValues, onDataSaved, isInitializingRef.current]);
+  }, [initialValues, onDataSaved, firstLoadCompletedRef.current]);
 
   return {
     formData,
@@ -91,6 +110,7 @@ export const useResourceData = (
     isSaving,
     handleFormChange,
     handleSave,
+    handleManualSave,
     setFormData,
     session
   };

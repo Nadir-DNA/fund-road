@@ -11,9 +11,10 @@ export const useResourceFormState = (
   const [formData, setFormData] = useState<any>(initialValues);
   const isInitialRenderRef = useRef(true);
   const debounceTimerRef = useRef<any>(null);
-  const previousDataRef = useRef<string>("");
+  const previousDataRef = useRef<string>(JSON.stringify(initialValues || {}));
+  const updatesCountRef = useRef(0);
   
-  // Seule mise à jour sûre initiale
+  // Safe initial update
   useEffect(() => {
     if (isInitialRenderRef.current && initialValues && Object.keys(initialValues).length > 0) {
       console.log("Initial form data set:", initialValues);
@@ -21,7 +22,7 @@ export const useResourceFormState = (
       previousDataRef.current = JSON.stringify(initialValues);
       isInitialRenderRef.current = false;
     }
-  }, [initialValues]);
+  }, []);  // Empty dependency array to run only once
 
   // Handle form field changes with debounce
   const handleFormChange = useCallback((field: string, value: any) => {
@@ -29,7 +30,7 @@ export const useResourceFormState = (
       const updated = { ...prev, [field]: value };
       console.log(`Form field "${field}" updated:`, value);
       
-      // Vérifier si les données ont réellement changé
+      // Check if data has actually changed
       const updatedString = JSON.stringify(updated);
       if (updatedString === previousDataRef.current) {
         console.log("No actual data change detected, skipping callback");
@@ -38,7 +39,15 @@ export const useResourceFormState = (
       
       previousDataRef.current = updatedString;
       
-      // Debounce the onDataChanged callback to avoid rapid updates
+      // Limit update frequency
+      updatesCountRef.current += 1;
+      if (updatesCountRef.current > 10) {
+        setTimeout(() => { updatesCountRef.current = 0; }, 2000);
+        console.log("Too many updates in short period, throttling callbacks");
+        return updated;
+      }
+      
+      // Debounce the onDataChanged callback
       if (onDataChanged) {
         if (debounceTimerRef.current) {
           clearTimeout(debounceTimerRef.current);
@@ -47,7 +56,7 @@ export const useResourceFormState = (
         debounceTimerRef.current = setTimeout(() => {
           console.log("Calling onDataChanged after debounce");
           onDataChanged(updated);
-        }, 500); // Increased to reduce frequency
+        }, 800);  // Increased debounce time
       }
       
       return updated;
@@ -56,12 +65,26 @@ export const useResourceFormState = (
 
   // Update all form data at once with protection
   const updateFormData = useCallback((data: any) => {
+    // Skip if data is null or undefined
+    if (!data) {
+      console.log("Skipping update with null/undefined data");
+      return;
+    }
+    
     // Convert to string for proper comparison
     const dataString = JSON.stringify(data);
     
     // Prevent unnecessary updates and loops
     if (dataString === previousDataRef.current) {
       console.log("Skipping identical form data update");
+      return;
+    }
+    
+    // Throttle updates
+    updatesCountRef.current += 1;
+    if (updatesCountRef.current > 5) {
+      setTimeout(() => { updatesCountRef.current = 0; }, 2000);
+      console.log("Too many bulk updates, throttling");
       return;
     }
     
@@ -78,7 +101,7 @@ export const useResourceFormState = (
       debounceTimerRef.current = setTimeout(() => {
         console.log("Calling onDataChanged after bulk update debounce");
         onDataChanged(data);
-      }, 600);
+      }, 1000);
     }
   }, [onDataChanged]);
   

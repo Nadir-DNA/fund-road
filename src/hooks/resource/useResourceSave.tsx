@@ -31,18 +31,25 @@ export function useResourceSave({
   const initialSaveCompletedRef = useRef(false);
   const manualSaveRef = useRef(false);
   const savesAttemptedRef = useRef(0);
+  const firstRenderRef = useRef(true);
+  
+  // Skip the very first save attempt to avoid initialization loops
+  if (firstRenderRef.current) {
+    console.log("Skipping first save attempt due to initialization");
+    lastSavedContentRef.current = JSON.stringify(formData || {});
+    firstRenderRef.current = false;
+  }
   
   const handleSave = useCallback(async (session?: any) => {
     console.log("handleSave called with session:", session ? "present" : "not present");
     
-    // Incrémenter le compteur de tentatives pour détecter les boucles
+    // Increment attempt counter to detect loops
     savesAttemptedRef.current += 1;
     
-    // Protéger contre les boucles de sauvegarde rapprochées
-    const now = Date.now();
-    if (savesAttemptedRef.current > 5 && !manualSaveRef.current) {
+    // Protect against rapid save loops
+    if (savesAttemptedRef.current > 3 && !manualSaveRef.current) {
       console.warn("Too many save attempts detected, throttling to prevent loops");
-      savesAttemptedRef.current = 0;
+      setTimeout(() => { savesAttemptedRef.current = 0; }, 5000);
       return false;
     }
     
@@ -57,7 +64,7 @@ export function useResourceSave({
       return false;
     }
     
-    // Ne pas sauvegarder pendant l'initialisation 
+    // Don't save during initialization 
     if (!initialSaveCompletedRef.current) {
       console.log("Initial save protection activated, marking as completed");
       initialSaveCompletedRef.current = true;
@@ -68,6 +75,12 @@ export function useResourceSave({
     const contentSignature = JSON.stringify(formData);
     if (contentSignature === lastSavedContentRef.current) {
       console.log("Content unchanged, skipping save");
+      return true;
+    }
+    
+    // Skip saves with very small content
+    if (contentSignature.length < 10 && !manualSaveRef.current) {
+      console.log("Content too minimal, skipping automatic save");
       return true;
     }
     
@@ -131,7 +144,7 @@ export function useResourceSave({
         // Update the last saved content signature
         lastSavedContentRef.current = contentSignature;
         
-        // Only show toast for manual saves or significant content changes, and limit frequency
+        // Only show toast for manual saves or first successful save, and limit frequency
         if ((manualSaveRef.current || !toastShownRef.current) && contentSignature.length > 20) {
           toast({
             title: "Ressource sauvegardée",
@@ -149,7 +162,7 @@ export function useResourceSave({
           
           saveTimeoutRef.current = setTimeout(() => {
             toastShownRef.current = false;
-          }, 15000); // 15 secondes pour vraiment réduire la fréquence
+          }, 30000); // 30 seconds to really reduce frequency
         }
         
         // Reset save attempts counter after successful save
@@ -172,9 +185,11 @@ export function useResourceSave({
     }
   }, [formData, stepId, substepTitle, resourceType, resourceId, navigate, onSaved, setIsSaving, toast]);
 
-  // Marquer une sauvegarde comme "manuelle" (déclenchée par l'utilisateur)
+  // Mark a save as "manual" (triggered by the user)
   const handleManualSave = useCallback(async (session?: any) => {
     manualSaveRef.current = true;
+    // Reset attempt counter for manual saves
+    savesAttemptedRef.current = 0;
     return handleSave(session);
   }, [handleSave]);
 
