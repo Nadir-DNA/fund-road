@@ -45,7 +45,7 @@ export function ResourceFilters({
           description: item.description || '',
           componentName: item.component_name || '',
           url: item.file_url,
-          status: 'available'
+          status: 'available' as const // Use const assertion to match the literal type
         }));
 
         console.log(`Found ${filteredResources.length} resources from materials`);
@@ -111,7 +111,7 @@ export function ResourceFilters({
             description: item.description || '',
             componentName: item.component_name,
             url: item.file_url,
-            status: 'available'
+            status: 'available' as const // Use const assertion to match the literal type
           }));
           onResourcesFound(mappedResources);
           return mappedResources;
@@ -137,8 +137,13 @@ export function ResourceFilters({
 }
 
 // Helper function to get resources from step data
-function getStepResources(step: any, selectedSubstepTitle: string | undefined) {
-  return selectedSubstepTitle
+function getStepResources(step: any, selectedSubstepTitle: string | undefined): Resource[] {
+  // Get resources from subStep or step directly
+  const resources = selectedSubstepTitle
     ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)?.resources || []
     : step.resources || [];
+  
+  // The resources from step data should already have the correct status type,
+  // but we'll ensure type safety by returning them as is
+  return resources;
 }
