@@ -42,76 +42,84 @@ export default function CourseContentPopover({
     enabled: isOpen, // Only fetch when popover is open
   });
 
-  // Simple handler for the open state
-  const handleOpenChange = (open: boolean) => {
-    console.log("Popover state changing to:", open);
-    setIsOpen(open);
-  };
-
-  // Close button handler
-  const handleCloseClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsOpen(false);
-  };
-
   return (
-    <Popover 
-      open={isOpen} 
-      onOpenChange={handleOpenChange}
-      modal={true}
+    <Popover
+      open={isOpen}
+      onOpenChange={(open) => {
+        // Ensure we log the state change
+        console.log("Popover state changing to:", open);
+        setIsOpen(open);
+      }}
     >
       <PopoverTrigger asChild>
         <Button 
           variant="outline" 
           size="sm" 
           className={`gap-2 ${className}`}
-          // No custom onClick handler here - let Radix handle it
         >
           <BookOpen className="h-4 w-4" />
           {triggerText}
         </Button>
       </PopoverTrigger>
-      <PopoverContent 
-        className="w-[340px] sm:w-[400px] max-h-[500px] overflow-y-auto p-0 z-[9999]" 
-        side="top" 
-        align="start"
-        sideOffset={5}
-        avoidCollisions={true}
-        // No custom click handler here
-      >
-        <Card className="border-0 rounded-none">
-          <div className="flex justify-between items-center p-3 border-b bg-muted/30 sticky top-0 z-10">
-            <h3 className="font-medium text-sm">Contenu du cours</h3>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-6 w-6" 
-              onClick={handleCloseClick}
-            >
-              <X className="h-3 w-3" />
-              <span className="sr-only">Fermer</span>
-            </Button>
-          </div>
-          
-          <div className="p-4">
-            {isLoading ? (
-              <div className="flex justify-center p-4">
-                <LoadingIndicator size="sm" />
-              </div>
-            ) : courseContent ? (
-              <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
-                <div dangerouslySetInnerHTML={{ __html: courseContent as string }} />
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <AlertCircle className="h-4 w-4" />
-                <span>Aucun contenu de cours disponible pour cette section.</span>
-              </div>
-            )}
-          </div>
-        </Card>
-      </PopoverContent>
+      {isOpen && (
+        <PopoverContent 
+          className="w-[340px] sm:w-[400px] max-h-[500px] overflow-y-auto p-0"
+          side="top" 
+          align="start"
+          sideOffset={5}
+          avoidCollisions={true}
+          forceMount // Force the content to stay mounted
+          onEscapeKeyDown={(e) => {
+            // Prevent default behavior and handle manually
+            e.preventDefault();
+            setIsOpen(false);
+          }}
+          onPointerDownOutside={(e) => {
+            // Prevent default behavior and handle manually 
+            e.preventDefault();
+          }}
+          onInteractOutside={(e) => {
+            // Prevent default behavior and handle manually
+            e.preventDefault();
+          }}
+        >
+          <Card className="border-0 rounded-none">
+            <div className="flex justify-between items-center p-3 border-b bg-muted/30 sticky top-0 z-10">
+              <h3 className="font-medium text-sm">Contenu du cours</h3>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsOpen(false);
+                }}
+              >
+                <X className="h-3 w-3" />
+                <span className="sr-only">Fermer</span>
+              </Button>
+            </div>
+            
+            <div className="p-4">
+              {isLoading ? (
+                <div className="flex justify-center p-4">
+                  <LoadingIndicator size="sm" />
+                </div>
+              ) : courseContent ? (
+                <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
+                  <div dangerouslySetInnerHTML={{ __html: courseContent as string }} />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>Aucun contenu de cours disponible pour cette section.</span>
+                </div>
+              )}
+            </div>
+          </Card>
+        </PopoverContent>
+      )}
     </Popover>
   );
 }
