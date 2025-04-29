@@ -7,6 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { useCourseMaterials } from "@/hooks/course/useCourseMaterials";
+import { useEffect, useState } from "react";
+import { toast } from "@/components/ui/use-toast";
 
 interface ResourceManagerProps {
   step: any;
@@ -21,6 +23,23 @@ export default function ResourceManager({
   selectedSubSubstepTitle,
   selectedResourceName
 }: ResourceManagerProps) {
+  const [hasSession, setHasSession] = useState<boolean | null>(null);
+  
+  // Check for session on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        setHasSession(!!data.session);
+      } catch (err) {
+        console.error("Error checking session:", err);
+        setHasSession(false);
+      }
+    };
+    
+    checkSession();
+  }, []);
+
   // Use customized hook to get materials for step, substep, and now subsubstep
   const { materials, isLoading: isMaterialsLoading } = useCourseMaterials(
     step.id,
@@ -64,6 +83,14 @@ export default function ResourceManager({
       }
 
       try {
+        // Check if we already determined there's no session
+        if (hasSession === false) {
+          console.log("No authenticated session found when fetching resources (cached)");
+          return selectedSubstepTitle
+            ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)?.resources || []
+            : step.resources || [];
+        }
+
         const { data: session } = await supabase.auth.getSession();
 
         if (!session?.session) {
@@ -73,6 +100,7 @@ export default function ResourceManager({
             : step.resources || [];
         }
 
+        console.log("Building Supabase query for resources");
         let query = supabase
           .from('entrepreneur_resources')
           .select('*')
@@ -91,10 +119,16 @@ export default function ResourceManager({
 
         query = query.neq('resource_type', 'course');
 
+        console.log("Executing Supabase query for resources");
         const { data, error } = await query;
 
         if (error) {
           console.error("Error fetching resources:", error);
+          toast({
+            title: "Erreur de chargement",
+            description: "Impossible de charger les ressources",
+            variant: "destructive"
+          });
           return selectedSubstepTitle
             ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)?.resources || []
             : step.resources || [];
@@ -123,8 +157,9 @@ export default function ResourceManager({
           : step.resources || [];
       }
     },
-    staleTime: 1000 * 60 * 5,
-    enabled: !isMaterialsLoading
+    staleTime: 1000 * 60 * 2, // Cache for 2 minutes
+    enabled: hasSession !== null && !isMaterialsLoading,
+    retry: 1
   });
 
   if (selectedResourceName && selectedSubstepTitle) {
@@ -144,7 +179,7 @@ export default function ResourceManager({
     }
   }
 
-  if (isLoading || isMaterialsLoading) {
+  if (hasSession === null || isLoading || isMaterialsLoading) {
     return (
       <div className="flex justify-center items-center p-12">
         <LoadingIndicator size="lg" />

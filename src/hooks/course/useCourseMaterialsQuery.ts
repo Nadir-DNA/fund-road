@@ -21,33 +21,46 @@ export const useCourseMaterialsQuery = (stepId: number, substepTitle: string | n
         
         if (!session?.session) {
           console.log("Aucune session trouvée lors de la récupération des matériaux");
-          toast({
-            title: "Connexion requise",
-            description: "Vous devez être connecté pour accéder aux ressources du cours.",
-            variant: "destructive",
-          });
-          navigate("/auth");
           return [];
         }
         
         console.log("Construction de la requête Supabase");
         let query = supabase
           .from('entrepreneur_resources')
-          .select('*')
-          .eq('step_id', stepId);
+          .select('*');
           
+        // Add filter conditions
+        const filters = [];
+        
+        // Always filter by step_id
+        filters.push(`step_id.eq.${stepId}`);
+        
+        // Filter by substep_title
         if (substepTitle) {
-          query = query.eq('substep_title', substepTitle);
+          filters.push(`substep_title.eq.${substepTitle}`);
           console.log(`Filtrage par sous-étape: "${substepTitle}"`);
         } else {
-          query = query.is('substep_title', null);
+          filters.push(`substep_title.is.null`);
           console.log("Filtrage pour l'étape principale (substep_title IS NULL)");
         }
         
-        // Add filter for subsubstep_title if provided
+        // Filter by subsubstep_title if provided
+        if (subsubstepTitle) {
+          filters.push(`subsubstep_title.eq.${subsubstepTitle}`);
+          console.log(`Filtrage par sous-sous-étape: "${subsubstepTitle}"`);
+        }
+        
+        // Apply all filters with or logic
+        query = query.eq('step_id', stepId);
+        
+        if (substepTitle) {
+          query = query.eq('substep_title', substepTitle);
+        } else {
+          query = query.is('substep_title', null);
+        }
+        
         if (subsubstepTitle) {
           query = query.eq('subsubstep_title', subsubstepTitle);
-          console.log(`Filtrage par sous-sous-étape: "${subsubstepTitle}"`);
         }
         
         console.log("Exécution de la requête Supabase");
@@ -61,18 +74,7 @@ export const useCourseMaterialsQuery = (stepId: number, substepTitle: string | n
         console.log(`Récupéré ${data?.length || 0} matériaux de cours:`, data);
         
         if (data && data.length > 0) {
-          data.forEach((item, index) => {
-            console.log(`Matériau ${index + 1}:`, {
-              id: item.id,
-              step_id: item.step_id,
-              substep_title: item.substep_title,
-              subsubstep_title: item.subsubstep_title,
-              title: item.title,
-              resource_type: item.resource_type,
-              course_content: item.course_content ? `[Contenu disponible, ${item.course_content.length} caractères]` : 'Non disponible'
-            });
-          });
-          
+          console.log("Traitement des matériaux récupérés...");
           setMaterials(data as CourseMaterial[]);
           return data as CourseMaterial[];
         } else {
@@ -81,16 +83,12 @@ export const useCourseMaterialsQuery = (stepId: number, substepTitle: string | n
         }
       } catch (error: any) {
         console.error("Erreur lors de la récupération des matériaux du cours:", error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de récupérer les ressources du cours.",
-          variant: "destructive",
-        });
         return [];
       }
     },
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    retry: 3,
+    staleTime: 1000 * 60 * 2, // Cache for 2 minutes
+    retry: 1,
+    refetchOnWindowFocus: false
   });
   
   return {
