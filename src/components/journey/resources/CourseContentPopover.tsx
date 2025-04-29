@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, BookOpen, X } from "lucide-react";
@@ -22,9 +22,11 @@ export default function CourseContentPopover({
   className
 }: CourseContentPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
-
+  const popoverRef = useRef<HTMLDivElement>(null);
+  
   // Close the popover when clicking outside
   const handleOpenChange = useCallback((open: boolean) => {
+    console.log("Popover state changing to:", open);
     setIsOpen(open);
   }, []);
 
@@ -46,33 +48,65 @@ export default function CourseContentPopover({
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
+  // Click handler for the trigger button
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Trigger button clicked, toggling popover");
+    setIsOpen(prev => !prev);
+  };
+
+  // Close button handler
+  const handleCloseClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Close button clicked");
+    setIsOpen(false);
+  };
+
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target as Node) && isOpen) {
+        console.log("Click outside detected, closing popover");
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
   return (
-    <Popover open={isOpen} onOpenChange={handleOpenChange} modal={true}>
+    <Popover 
+      open={isOpen} 
+      onOpenChange={handleOpenChange}
+      modal={true}
+    >
       <PopoverTrigger asChild>
         <Button 
           variant="outline" 
           size="sm" 
           className={`gap-2 ${className}`}
-          onClick={(e) => {
-            e.preventDefault(); // Prevent propagation that might affect forms
-            e.stopPropagation(); // Stop propagation to parent elements
-          }}
+          onClick={handleTriggerClick}
         >
           <BookOpen className="h-4 w-4" />
           {triggerText}
         </Button>
       </PopoverTrigger>
       <PopoverContent 
+        ref={popoverRef}
         className="w-[340px] sm:w-[400px] max-h-[500px] overflow-y-auto p-0 z-[9999]" 
         side="top" 
         align="start"
         sideOffset={5}
         avoidCollisions={true}
-        onClick={(e) => e.stopPropagation()} // Prevent propagation
-        onInteractOutside={(e) => {
-          e.preventDefault();
-          setIsOpen(false);
-        }}
+        onClick={(e) => e.stopPropagation()}
       >
         <Card className="border-0 rounded-none">
           <div className="flex justify-between items-center p-3 border-b bg-muted/30 sticky top-0 z-10">
@@ -81,10 +115,7 @@ export default function CourseContentPopover({
               variant="ghost" 
               size="icon" 
               className="h-6 w-6" 
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsOpen(false);
-              }}
+              onClick={handleCloseClick}
             >
               <X className="h-3 w-3" />
               <span className="sr-only">Fermer</span>

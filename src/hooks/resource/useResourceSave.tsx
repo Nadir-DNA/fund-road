@@ -25,6 +25,13 @@ export function useResourceSave({
 }: SaveOptions) {
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Track last saved content to prevent duplicate toasts
+  const lastSavedContentRef = useCallback((data: any) => {
+    return JSON.stringify(data);
+  }, []);
+  
+  let lastSavedSignature = '';
 
   const handleSave = useCallback(async (session?: any) => {
     console.log("handleSave called with session:", session ? "present" : "not present");
@@ -38,6 +45,13 @@ export function useResourceSave({
       });
       navigate("/auth");
       return false;
+    }
+    
+    // Check if content has changed to prevent unnecessary saves
+    const contentSignature = lastSavedContentRef(formData);
+    if (contentSignature === lastSavedSignature) {
+      console.log("Content unchanged, skipping save");
+      return true;
     }
     
     setIsSaving(true);
@@ -102,6 +116,10 @@ export function useResourceSave({
           onSaved(data[0].id);
         }
 
+        // Update the last saved content signature
+        lastSavedSignature = contentSignature;
+        
+        // Only show toast for manual saves, not automatic ones
         toast({
           title: "Ressource sauvegardée",
           description: "Vos données ont été enregistrées avec succès."
@@ -123,7 +141,7 @@ export function useResourceSave({
     } finally {
       setIsSaving(false);
     }
-  }, [formData, stepId, substepTitle, resourceType, resourceId, navigate, onSaved, setIsSaving, toast]);
+  }, [formData, stepId, substepTitle, resourceType, resourceId, navigate, onSaved, setIsSaving, toast, lastSavedContentRef]);
 
   return { handleSave };
 }

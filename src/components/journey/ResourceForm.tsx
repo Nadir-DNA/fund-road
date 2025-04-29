@@ -1,5 +1,5 @@
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useResourceData } from "@/hooks/useResourceData";
@@ -37,24 +37,50 @@ export default function ResourceForm({
     handleSave,
     session
   } = useResourceData(stepId, substepTitle, resourceType, formData, onDataSaved);
+  
+  // Use ref to track unmounting
+  const isUnmountingRef = useRef(false);
+  const wasManualSaveRef = useRef(false);
+  const lastSavedDataRef = useRef<string>("");
 
-  // Force save on unmount to ensure data persistence
+  // Convert current formData to string for comparison
+  const currentFormDataString = JSON.stringify(formData);
+
+  // Force save on unmount to ensure data persistence, but only if data changed
   useEffect(() => {
+    // Store the initial form data for comparison
+    if (!lastSavedDataRef.current) {
+      lastSavedDataRef.current = currentFormDataString;
+    }
+
     return () => {
-      console.log("ResourceForm unmounting - triggering final save");
-      if (session) {
-        handleSave(session);
+      console.log("ResourceForm unmounting - checking if save needed");
+      if (session && !isUnmountingRef.current) {
+        isUnmountingRef.current = true;
+        
+        // Only save if data actually changed
+        if (currentFormDataString !== lastSavedDataRef.current) {
+          console.log("Data changed, triggering final save");
+          handleSave(session);
+          lastSavedDataRef.current = currentFormDataString;
+        } else {
+          console.log("No data changes detected, skipping final save");
+        }
       } else {
-        console.log("No session available for final save");
+        console.log("No session available for final save or save already triggered");
       }
     };
-  }, [handleSave, session]);
+  }, [handleSave, session, currentFormDataString]);
 
   // Handle manual save button click
   const onSaveClick = () => {
-    console.log("Save button clicked, session:", session ? "available" : "not available");
+    console.log("Manual save button clicked");
+    wasManualSaveRef.current = true;
     if (session) {
-      handleSave(session);
+      const saveResult = handleSave(session);
+      if (saveResult) {
+        lastSavedDataRef.current = currentFormDataString;
+      }
     } else {
       console.log("No session available for manual save");
     }

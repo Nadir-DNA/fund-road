@@ -17,6 +17,8 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
   const [content, setContent] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const cursorPositionRef = useRef<number | null>(null);
+  const lastSavedContentRef = useRef<string>('');
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const {
     formData,
@@ -29,6 +31,10 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
   useEffect(() => {
     if (formData?.content) {
       setContent(formData.content);
+      // Store initial content to prevent unnecessary saves
+      if (!lastSavedContentRef.current) {
+        lastSavedContentRef.current = formData.content;
+      }
     }
   }, [formData]);
   
@@ -40,7 +46,15 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
     cursorPositionRef.current = textarea.selectionStart;
     
     setContent(newContent);
-    handleFormChange('content', newContent);
+    
+    // Add debouncing for form changes to reduce unnecessary state updates
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    debounceTimerRef.current = setTimeout(() => {
+      handleFormChange('content', newContent);
+    }, 300);
     
     // Restore cursor position after React update
     requestAnimationFrame(() => {
@@ -53,6 +67,19 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
     });
   }, [handleFormChange]);
   
+  const handleSaveClick = useCallback(() => {
+    // Only save if content has actually changed
+    if (content !== lastSavedContentRef.current) {
+      console.log("Content changed, saving...");
+      const saveResult = handleSave();
+      if (saveResult) {
+        lastSavedContentRef.current = content;
+      }
+    } else {
+      console.log("Content unchanged, skipping save");
+    }
+  }, [content, handleSave]);
+  
   const downloadAsText = useCallback(() => {
     const element = document.createElement('a');
     const file = new Blob([content], {type: 'text/plain'});
@@ -61,7 +88,21 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
-  }, [content, title]);
+    
+    // Update last saved content after download
+    if (content !== lastSavedContentRef.current) {
+      handleSaveClick();
+    }
+  }, [content, title, handleSaveClick]);
+  
+  // Cleanup debounce timer
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
   
   if (isLoading) {
     return (
@@ -86,8 +127,8 @@ export default function ResourceEditor({ stepId, substepTitle, resourceType, tit
             <Download className="h-4 w-4 mr-1" /> Exporter
           </Button>
           <Button 
-            onClick={handleSave}
-            disabled={isSaving}
+            onClick={handleSaveClick}
+            disabled={isSaving || content === lastSavedContentRef.current}
             size="sm"
             type="button"
           >
