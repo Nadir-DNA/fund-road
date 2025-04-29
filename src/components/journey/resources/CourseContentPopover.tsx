@@ -21,11 +21,11 @@ export default function CourseContentPopover({
   triggerText,
   className
 }: CourseContentPopoverProps) {
-  // Utiliser useRef pour le suivi des clics et éviter les fermetures indésirables
   const popoverRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const initialRenderRef = useRef(true);
   
-  // Get course content from Supabase
+  // Get course content from Supabase only when needed
   const { data: courseContent, isLoading } = useQuery({
     queryKey: ['courseContent', stepId, substepTitle],
     queryFn: async () => {
@@ -52,35 +52,22 @@ export default function CourseContentPopover({
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
-  // Gestionnaire centralisé de changement d'état du popover
+  // Gérer explicitement l'ouverture/fermeture du popover avec une protection contre les boucles
   const handleOpenChange = (open: boolean) => {
-    console.log("Popover state changing to:", open);
-    setIsOpen(open);
-  };
-  
-  // Empêcher la fermeture lors de clics à l'intérieur du popover
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      // Ne pas fermer si on clique sur l'élément de référence ou ses enfants
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        return;
-      }
-      
-      // Empêcher la propagation des clics à l'intérieur du popover
-      e.stopPropagation();
-    };
+    console.log("Popover state requested to change to:", open);
     
-    // Seulement ajouter l'écouteur si le popover est ouvert
-    if (isOpen) {
-      document.addEventListener('mousedown', handleOutsideClick, true);
+    // Évite de déclencher des ouvertures/fermetures en boucle
+    if (initialRenderRef.current && open) {
+      initialRenderRef.current = false;
     }
     
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick, true);
-    };
-  }, [isOpen]);
+    // Ne mettre à jour l'état que si nécessaire
+    if (isOpen !== open) {
+      setIsOpen(open);
+    }
+  };
   
-  // Gestionnaire pour la fermeture manuelle
+  // Gestionnaire pour la fermeture manuelle avec arrêt de propagation
   const handleClose = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -89,16 +76,19 @@ export default function CourseContentPopover({
 
   return (
     <div ref={popoverRef}>
-      <Popover 
-        open={isOpen} 
-        onOpenChange={handleOpenChange}
-        modal={true} // Force le popover en mode modal
-      >
+      <Popover open={isOpen} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <Button 
             variant="outline" 
             size="sm" 
             className={`gap-2 ${className}`}
+            onClick={(e) => {
+              // Empêcher la propagation du clic pour éviter les fermetures intempestives
+              e.stopPropagation();
+              if (!isOpen) {
+                setIsOpen(true);
+              }
+            }}
           >
             <BookOpen className="h-4 w-4" />
             {triggerText}
@@ -111,20 +101,13 @@ export default function CourseContentPopover({
             side="top" 
             align="start"
             sideOffset={5}
-            avoidCollisions={true}
-            onEscapeKeyDown={(e) => {
-              e.preventDefault();
-              setIsOpen(false);
-            }}
             onInteractOutside={(e) => {
-              // Empêcher toutes les interactions extérieures de fermer le popover
-              e.preventDefault();
+              // Prévention sélective des interactions extérieures
+              if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+                e.preventDefault();
+              }
             }}
-            onPointerDownOutside={(e) => {
-              // Empêcher les clics à l'extérieur de fermer le popover
-              e.preventDefault();
-            }}
-            forceMount // Assurer que le contenu reste monté
+            onClick={(e) => e.stopPropagation()}
           >
             <Card className="border-0 rounded-none">
               <div className="flex justify-between items-center p-3 border-b bg-muted/30 sticky top-0 z-[65]">

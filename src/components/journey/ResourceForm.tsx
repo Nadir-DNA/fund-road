@@ -31,12 +31,23 @@ export default function ResourceForm({
   exportPanel
 }: ResourceFormProps) {
   
+  // Utiliser useRef pour éviter les boucles de rendu avec les données initiales
+  const initialFormDataRef = useRef(formData);
+  const hasCalledOnDataSavedRef = useRef(false);
+  
   const {
     isLoading,
     isSaving,
     handleSave,
     session
-  } = useResourceData(stepId, substepTitle, resourceType, formData, onDataSaved);
+  } = useResourceData(stepId, substepTitle, resourceType, initialFormDataRef.current, (data) => {
+    // Éviter les déclenchements multiples de onDataSaved lors de l'initialisation
+    if (hasCalledOnDataSavedRef.current) {
+      if (onDataSaved) onDataSaved(data);
+    } else {
+      hasCalledOnDataSavedRef.current = true;
+    }
+  });
   
   // Use ref to track unmounting
   const isUnmountingRef = useRef(false);
@@ -48,9 +59,9 @@ export default function ResourceForm({
 
   // Force save on unmount to ensure data persistence, but only if data changed
   useEffect(() => {
-    // Store the initial form data for comparison
-    if (!lastSavedDataRef.current) {
-      lastSavedDataRef.current = currentFormDataString;
+    // Store the initial form data for comparison after first render
+    if (!lastSavedDataRef.current && formData) {
+      lastSavedDataRef.current = JSON.stringify(formData);
     }
 
     return () => {
@@ -58,7 +69,7 @@ export default function ResourceForm({
       if (session && !isUnmountingRef.current) {
         isUnmountingRef.current = true;
         
-        // Only save if data actually changed
+        // Only save if data actually changed since last save
         if (currentFormDataString !== lastSavedDataRef.current) {
           console.log("Data changed, triggering final save");
           handleSave(session);

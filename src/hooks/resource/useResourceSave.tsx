@@ -28,6 +28,7 @@ export function useResourceSave({
   const lastSavedContentRef = useRef('');
   const toastShownRef = useRef(false);
   const saveTimeoutRef = useRef<any>(null);
+  const initialSaveCompletedRef = useRef(false);
   
   const handleSave = useCallback(async (session?: any) => {
     console.log("handleSave called with session:", session ? "present" : "not present");
@@ -41,6 +42,13 @@ export function useResourceSave({
       });
       navigate("/auth");
       return false;
+    }
+    
+    // Ne pas sauvegarder pendant l'initialisation (chargement initial)
+    if (!initialSaveCompletedRef.current) {
+      console.log("Initial save protection activated, marking as completed");
+      initialSaveCompletedRef.current = true;
+      return true; // Simuler un succès sans effectuer de sauvegarde
     }
     
     // Check if content has changed to prevent unnecessary saves
@@ -131,7 +139,7 @@ export function useResourceSave({
           
           saveTimeoutRef.current = setTimeout(() => {
             toastShownRef.current = false;
-          }, 5000); // Reset after 5 seconds
+          }, 10000); // Reset after 10 seconds (augmenté pour réduire la fréquence)
         }
         
         return true;
