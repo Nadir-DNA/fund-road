@@ -47,7 +47,7 @@ export default function CourseContentPopover({
   });
 
   return (
-    <Popover open={isOpen} onOpenChange={handleOpenChange}>
+    <Popover open={isOpen} onOpenChange={handleOpenChange} modal={true}>
       <PopoverTrigger asChild>
         <Button 
           variant="outline" 
@@ -63,13 +63,19 @@ export default function CourseContentPopover({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-[340px] sm:w-[400px] max-h-[500px] overflow-y-auto p-0 z-[100]" 
+        className="w-[340px] sm:w-[400px] max-h-[500px] overflow-y-auto p-0 z-[9999]" 
         side="top" 
         align="start"
+        sideOffset={5}
+        avoidCollisions={true}
         onClick={(e) => e.stopPropagation()} // Prevent propagation
+        onInteractOutside={(e) => {
+          e.preventDefault();
+          setIsOpen(false);
+        }}
       >
         <Card className="border-0 rounded-none">
-          <div className="flex justify-between items-center p-3 border-b">
+          <div className="flex justify-between items-center p-3 border-b bg-muted/30 sticky top-0 z-10">
             <h3 className="font-medium text-sm">Contenu du cours</h3>
             <Button 
               variant="ghost" 
