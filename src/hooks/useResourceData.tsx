@@ -1,21 +1,8 @@
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { supabase } from "@/integrations/supabase/client";
-import { useResourceSave } from "./resource/useResourceSave";
-import { useResourceSession } from "./resource/useResourceSession";
-import { useToast } from "@/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
-
-interface UserResource {
-  id?: string;
-  user_id: string;
-  step_id: number;
-  substep_title: string;
-  resource_type: string;
-  content: any;
-  created_at?: string;
-  updated_at?: string;
-}
+import { useEffect, useMemo } from 'react';
+import { useResourceDataLoader } from "./resource/useResourceDataLoader";
+import { useResourceFormState } from "./resource/useResourceFormState";
+import { useResourceActions } from "./resource/useResourceActions";
 
 export const useResourceData = (
   stepId: number, 
@@ -24,14 +11,35 @@ export const useResourceData = (
   defaultValues?: any,
   onDataSaved?: (data: any) => void
 ) => {
+  // Initialize default values
   const initialValues = useMemo(() => defaultValues || {}, [defaultValues]);
-  const [formData, setFormData] = useState<any>(initialValues);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [resourceId, setResourceId] = useState<string | null>(null);
-  const { session, fetchSession } = useResourceSession();
-  const { toast } = useToast();
-  const navigate = useNavigate();
+  
+  // Use the form state management hook
+  const {
+    formData,
+    setFormData,
+    handleFormChange
+  } = useResourceFormState(initialValues, onDataSaved);
+
+  // Use the data loader hook
+  const {
+    isLoading,
+    resourceId,
+    session,
+    fetchSession
+  } = useResourceDataLoader(stepId, substepTitle, resourceType, setFormData);
+
+  // Use the resource actions hook
+  const {
+    isSaving,
+    handleSave
+  } = useResourceActions(
+    formData,
+    stepId, 
+    substepTitle,
+    resourceType,
+    resourceId
+  );
 
   // Initial values effect ONLY once
   useEffect(() => {
@@ -39,163 +47,6 @@ export const useResourceData = (
       onDataSaved(initialValues);
     }
   }, [initialValues, onDataSaved]);
-
-  // Initialize session and resource data
-  useEffect(() => {
-    const fetchSessionAndData = async () => {
-      setIsLoading(true);
-      try {
-        console.log(`Fetching data for: stepId=${stepId}, substep=${substepTitle}, type=${resourceType}`);
-        
-        // Get current session
-        const currentSession = session || await fetchSession();
-        
-        if (!currentSession) {
-          console.log("No authenticated session found");
-          setIsLoading(false);
-          return;
-        }
-        
-        // Try to fetch user resource - Use array instead of maybeSingle to handle multiple results
-        const { data: userResources, error: userResourceError } = await supabase
-          .from('user_resources')
-          .select('*')
-          .eq('user_id', currentSession.user.id)
-          .eq('step_id', stepId)
-          .eq('substep_title', substepTitle)
-          .eq('resource_type', resourceType);
-          
-        if (userResourceError) {
-          console.error("Error fetching user resource:", userResourceError);
-          toast({
-            title: "Erreur",
-            description: "Impossible de charger les données de la ressource",
-            variant: "destructive",
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        console.log("User resources fetch result:", userResources);
-
-        // Use most recent user resource if available
-        if (userResources && userResources.length > 0) {
-          // Sort by updated_at in descending order to get the most recent
-          const mostRecent = userResources.sort((a, b) => 
-            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-          )[0];
-          
-          const content = mostRecent.content || {};
-          console.log("Setting form data from user resource:", content);
-          setFormData(content);
-          setResourceId(mostRecent.id);
-          onDataSaved && onDataSaved(content);
-          setIsLoading(false);
-          return;
-        } else {
-          console.log("No user resource found, checking for template");
-        }
-
-        // Fallback: template resource
-        const { data: templateResources, error: templateError } = await supabase
-          .from('entrepreneur_resources')
-          .select('*')
-          .eq('step_id', stepId)
-          .eq('substep_title', substepTitle)
-          .eq('resource_type', resourceType)
-          .limit(1);
-          
-        if (templateError) {
-          console.error("Error fetching template resource:", templateError);
-          setIsLoading(false);
-          return;
-        }
-
-        console.log("Template resources fetch result:", templateResources);
-
-        if (templateResources && templateResources.length > 0) {
-          const templateResource = templateResources[0];
-          try {
-            if (templateResource.course_content) {
-              const parsedContent = typeof templateResource.course_content === "string"
-                ? JSON.parse(templateResource.course_content)
-                : templateResource.course_content;
-
-              console.log("Setting form data from template:", parsedContent);
-              setFormData(parsedContent);
-              onDataSaved && onDataSaved(parsedContent);
-            }
-          } catch (e) {
-            console.log("Error parsing template content, using as-is");
-            const content = { content: templateResource.course_content };
-            setFormData(content);
-            onDataSaved && onDataSaved(content);
-          }
-        } else {
-          console.log("No template found either, using default values");
-        }
-      } catch (error) {
-        console.error("Error fetching resource data:", error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les données de la ressource",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSessionAndData();
-  }, [stepId, substepTitle, resourceType, toast, onDataSaved, session, fetchSession]);
-
-  const handleFormChange = useCallback((field: string, value: any) => {
-    setFormData(prev => {
-      const updated = { ...prev, [field]: value };
-      console.log(`Form field "${field}" updated:`, value);
-      if (onDataSaved) onDataSaved(updated);
-      return updated;
-    });
-  }, [onDataSaved]);
-
-  // Create save function with the useResourceSave hook
-  const { handleSave: saveResource } = useResourceSave({
-    formData,
-    stepId,
-    substepTitle,
-    resourceType,
-    resourceId,
-    onSaved: (id) => {
-      console.log("Resource saved with ID:", id);
-      setResourceId(id);
-    },
-    setIsSaving,
-  });
-  
-  // Wrapper function for handleSave to include session
-  const handleSave = useCallback(async (currentSession?: any) => {
-    console.log("Manual save triggered with data:", formData);
-    try {
-      // If no session provided, try to get the current one or fetch a new one
-      const sessionToUse = currentSession || session || await fetchSession();
-      
-      if (!sessionToUse) {
-        console.error("No valid session available for saving");
-        toast({
-          title: "Erreur d'authentification",
-          description: "Vous devez être connecté pour sauvegarder vos ressources.",
-          variant: "destructive"
-        });
-        navigate("/auth");
-        return false;
-      }
-      
-      return await saveResource(sessionToUse);
-    } catch (err) {
-      console.error("Error during save operation:", err);
-      return false;
-    }
-  }, [formData, saveResource, session, fetchSession, toast, navigate]);
 
   return {
     formData,
