@@ -1,5 +1,5 @@
 
-import { ReactNode, useEffect, useRef } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useResourceData } from "@/hooks/useResourceData";
@@ -31,21 +31,56 @@ export default function ResourceForm({
   exportPanel
 }: ResourceFormProps) {
   
-  // Utiliser useRef pour éviter les boucles de rendu avec les données initiales
+  // Utiliser useRef et useState pour gérer formData de façon stable
   const initialFormDataRef = useRef(formData);
+  const [stableFormData, setStableFormData] = useState(formData);
   const hasCalledOnDataSavedRef = useRef(false);
+  const formUpdateTimerRef = useRef<any>(null);
   
+  // Mettre à jour les données stables uniquement si les données initiales changent significativement
+  useEffect(() => {
+    if (JSON.stringify(formData) !== JSON.stringify(stableFormData)) {
+      // Utiliser un timer pour éviter les mises à jour trop fréquentes
+      if (formUpdateTimerRef.current) {
+        clearTimeout(formUpdateTimerRef.current);
+      }
+      
+      formUpdateTimerRef.current = setTimeout(() => {
+        console.log("Updating stableFormData after delay");
+        setStableFormData(formData);
+      }, 500);
+    }
+    
+    return () => {
+      if (formUpdateTimerRef.current) {
+        clearTimeout(formUpdateTimerRef.current);
+      }
+    };
+  }, [formData]);
+  
+  // Utiliser les données stables pour le hook useResourceData
   const {
     isLoading,
     isSaving,
     handleSave,
     session
   } = useResourceData(stepId, substepTitle, resourceType, initialFormDataRef.current, (data) => {
-    // Éviter les déclenchements multiples de onDataSaved lors de l'initialisation
+    // Éviter les déclenchements multiples de onDataSaved
     if (hasCalledOnDataSavedRef.current) {
-      if (onDataSaved) onDataSaved(data);
+      if (onDataSaved && JSON.stringify(data) !== JSON.stringify(stableFormData)) {
+        console.log("Calling onDataSaved from ResourceForm after validation");
+        onDataSaved(data);
+      }
     } else {
+      console.log("First onDataSaved call in ResourceForm");
       hasCalledOnDataSavedRef.current = true;
+      
+      if (onDataSaved) {
+        // Delay to prevent loops
+        setTimeout(() => {
+          onDataSaved(data);
+        }, 500);
+      }
     }
   });
   
@@ -55,13 +90,13 @@ export default function ResourceForm({
   const lastSavedDataRef = useRef<string>("");
 
   // Convert current formData to string for comparison
-  const currentFormDataString = JSON.stringify(formData);
+  const currentFormDataString = JSON.stringify(stableFormData);
 
   // Force save on unmount to ensure data persistence, but only if data changed
   useEffect(() => {
     // Store the initial form data for comparison after first render
-    if (!lastSavedDataRef.current && formData) {
-      lastSavedDataRef.current = JSON.stringify(formData);
+    if (!lastSavedDataRef.current && stableFormData) {
+      lastSavedDataRef.current = JSON.stringify(stableFormData);
     }
 
     return () => {
@@ -88,10 +123,8 @@ export default function ResourceForm({
     console.log("Manual save button clicked");
     wasManualSaveRef.current = true;
     if (session) {
-      const saveResult = handleSave(session);
-      if (saveResult) {
-        lastSavedDataRef.current = currentFormDataString;
-      }
+      handleSave(session);
+      lastSavedDataRef.current = currentFormDataString;
     } else {
       console.log("No session available for manual save");
     }

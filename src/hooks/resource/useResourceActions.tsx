@@ -19,9 +19,11 @@ export const useResourceActions = (
   const navigate = useNavigate();
   const lastSavedDataRef = useRef<string>(JSON.stringify(formData || {}));
   const saveInProgressRef = useRef(false);
+  const saveDebounceTimerRef = useRef<any>(null);
+  const saveAttemptCountRef = useRef(0);
   
   // Get save function from useResourceSave hook
-  const { handleSave: saveResource } = useResourceSave({
+  const { handleSave: saveResource, handleManualSave: saveResourceManual } = useResourceSave({
     formData,
     stepId,
     substepTitle,
@@ -37,7 +39,20 @@ export const useResourceActions = (
   const handleSave = useCallback(async (currentSession?: any) => {
     console.log("Save triggered with data:", formData);
     
-    // Éviter les sauvegardes simultanées ou trop fréquentes
+    // Protection contre les boucles - limiter le nombre de tentatives rapprochées
+    saveAttemptCountRef.current += 1;
+    if (saveAttemptCountRef.current > 3) {
+      const resetCountAndBlock = () => {
+        saveAttemptCountRef.current = 0;
+        return false;
+      };
+      
+      console.log("Too many save attempts in short period, blocking...");
+      setTimeout(() => { saveAttemptCountRef.current = 0; }, 3000);
+      return resetCountAndBlock();
+    }
+    
+    // Éviter les sauvegardes simultanées
     if (saveInProgressRef.current) {
       console.log("Save already in progress, skipping");
       return false;
@@ -50,41 +65,74 @@ export const useResourceActions = (
       return true;
     }
     
-    try {
-      saveInProgressRef.current = true;
-      
-      if (!currentSession) {
-        console.error("No valid session available for saving");
-        toast({
-          title: "Erreur d'authentification",
-          description: "Vous devez être connecté pour sauvegarder vos ressources.",
-          variant: "destructive"
-        });
-        navigate("/auth");
-        return false;
-      }
-      
-      const saveResult = await saveResource(currentSession);
-      
-      if (saveResult) {
-        // Mettre à jour la référence uniquement en cas de succès
-        lastSavedDataRef.current = currentDataString;
-      }
-      
-      return saveResult;
-    } catch (err) {
-      console.error("Error during save operation:", err);
-      return false;
-    } finally {
-      // Autoriser de nouvelles sauvegardes après une période minimale
-      setTimeout(() => {
-        saveInProgressRef.current = false;
-      }, 1000);
+    // Debounce les sauvegardes pour éviter les rafales de requêtes
+    if (saveDebounceTimerRef.current) {
+      clearTimeout(saveDebounceTimerRef.current);
     }
+    
+    return new Promise((resolve) => {
+      saveDebounceTimerRef.current = setTimeout(async () => {
+        try {
+          saveInProgressRef.current = true;
+          
+          if (!currentSession) {
+            console.error("No valid session available for saving");
+            toast({
+              title: "Erreur d'authentification",
+              description: "Vous devez être connecté pour sauvegarder vos ressources.",
+              variant: "destructive"
+            });
+            navigate("/auth");
+            resolve(false);
+            return;
+          }
+          
+          const saveResult = await saveResource(currentSession);
+          
+          if (saveResult) {
+            // Mettre à jour la référence uniquement en cas de succès
+            lastSavedDataRef.current = currentDataString;
+          }
+          
+          resolve(saveResult);
+        } catch (err) {
+          console.error("Error during save operation:", err);
+          resolve(false);
+        } finally {
+          // Autoriser de nouvelles sauvegardes après une période minimale
+          setTimeout(() => {
+            saveInProgressRef.current = false;
+          }, 1000);
+        }
+      }, 400); // Debounce delay
+    });
   }, [formData, saveResource, toast, navigate]);
+  
+  // Version explicitement manuelle pour le bouton de sauvegarde
+  const handleManualSave = useCallback(async (currentSession?: any) => {
+    console.log("Manual save requested");
+    
+    // Réinitialiser le compteur pour les sauvegardes manuelles
+    saveAttemptCountRef.current = 0;
+    
+    if (!currentSession) {
+      console.error("No valid session available");
+      toast({
+        title: "Erreur d'authentification",
+        description: "Vous devez être connecté pour sauvegarder vos ressources.",
+        variant: "destructive"
+      });
+      navigate("/auth");
+      return false;
+    }
+    
+    // Utiliser la version "manuelle" de la sauvegarde
+    return saveResourceManual(currentSession);
+  }, [saveResourceManual, toast, navigate]);
 
   return {
     isSaving,
-    handleSave
+    handleSave,
+    handleManualSave
   };
 };

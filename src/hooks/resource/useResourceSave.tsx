@@ -29,9 +29,22 @@ export function useResourceSave({
   const toastShownRef = useRef(false);
   const saveTimeoutRef = useRef<any>(null);
   const initialSaveCompletedRef = useRef(false);
+  const manualSaveRef = useRef(false);
+  const savesAttemptedRef = useRef(0);
   
   const handleSave = useCallback(async (session?: any) => {
     console.log("handleSave called with session:", session ? "present" : "not present");
+    
+    // Incrémenter le compteur de tentatives pour détecter les boucles
+    savesAttemptedRef.current += 1;
+    
+    // Protéger contre les boucles de sauvegarde rapprochées
+    const now = Date.now();
+    if (savesAttemptedRef.current > 5 && !manualSaveRef.current) {
+      console.warn("Too many save attempts detected, throttling to prevent loops");
+      savesAttemptedRef.current = 0;
+      return false;
+    }
     
     if (!session || !session.user) {
       console.error("No valid session available");
@@ -44,11 +57,11 @@ export function useResourceSave({
       return false;
     }
     
-    // Ne pas sauvegarder pendant l'initialisation (chargement initial)
+    // Ne pas sauvegarder pendant l'initialisation 
     if (!initialSaveCompletedRef.current) {
       console.log("Initial save protection activated, marking as completed");
       initialSaveCompletedRef.current = true;
-      return true; // Simuler un succès sans effectuer de sauvegarde
+      return true;
     }
     
     // Check if content has changed to prevent unnecessary saves
@@ -97,14 +110,10 @@ export function useResourceSave({
           updated_at: new Date().toISOString()
         };
         
-        console.log("Resource data to insert:", resourceData);
-        
         result = await supabase
           .from('user_resources')
           .insert(resourceData)
           .select();
-          
-        console.log("Insert result:", result);
       }
       
       const { error, data } = result;
@@ -122,8 +131,8 @@ export function useResourceSave({
         // Update the last saved content signature
         lastSavedContentRef.current = contentSignature;
         
-        // Only show toast for manual saves or first automatic save, and limit frequency
-        if (!toastShownRef.current) {
+        // Only show toast for manual saves or significant content changes, and limit frequency
+        if ((manualSaveRef.current || !toastShownRef.current) && contentSignature.length > 20) {
           toast({
             title: "Ressource sauvegardée",
             description: "Vos données ont été enregistrées avec succès."
@@ -131,17 +140,20 @@ export function useResourceSave({
           
           // Set flag to avoid showing toast too frequently
           toastShownRef.current = true;
+          manualSaveRef.current = false;
           
-          // Reset toast flag after delay
+          // Reset toast flag after longer delay
           if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
           }
           
           saveTimeoutRef.current = setTimeout(() => {
             toastShownRef.current = false;
-          }, 10000); // Reset after 10 seconds (augmenté pour réduire la fréquence)
+          }, 15000); // 15 secondes pour vraiment réduire la fréquence
         }
         
+        // Reset save attempts counter after successful save
+        savesAttemptedRef.current = 0;
         return true;
       } else {
         console.error("No data returned from save operation");
@@ -160,5 +172,14 @@ export function useResourceSave({
     }
   }, [formData, stepId, substepTitle, resourceType, resourceId, navigate, onSaved, setIsSaving, toast]);
 
-  return { handleSave };
+  // Marquer une sauvegarde comme "manuelle" (déclenchée par l'utilisateur)
+  const handleManualSave = useCallback(async (session?: any) => {
+    manualSaveRef.current = true;
+    return handleSave(session);
+  }, [handleSave]);
+
+  return { 
+    handleSave,
+    handleManualSave
+  };
 }

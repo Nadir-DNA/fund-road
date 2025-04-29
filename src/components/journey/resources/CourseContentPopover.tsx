@@ -22,12 +22,14 @@ export default function CourseContentPopover({
   className
 }: CourseContentPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const preventCloseRef = useRef(false);
   const initialRenderRef = useRef(true);
   
   // Get course content from Supabase only when needed
   const { data: courseContent, isLoading } = useQuery({
-    queryKey: ['courseContent', stepId, substepTitle],
+    queryKey: ['courseContent', stepId, substepTitle, isOpen],
     queryFn: async () => {
       if (!isOpen) return '';
       
@@ -52,19 +54,57 @@ export default function CourseContentPopover({
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
-  // Gérer explicitement l'ouverture/fermeture du popover avec une protection contre les boucles
+  // Utiliser un effet pour garantir que le popover reste ouvert
+  useEffect(() => {
+    if (isOpen) {
+      // Empêcher la fermeture intempestive
+      const handleClickOutside = (e: MouseEvent) => {
+        if (preventCloseRef.current || 
+            (popoverRef.current && popoverRef.current.contains(e.target as Node)) ||
+            (contentRef.current && contentRef.current.contains(e.target as Node))) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      };
+      
+      // Capturer les clics pour éviter la fermeture
+      document.addEventListener('click', handleClickOutside, { capture: true });
+      
+      return () => {
+        document.removeEventListener('click', handleClickOutside, { capture: true });
+      };
+    }
+  }, [isOpen]);
+  
+  // Gérer explicitement l'ouverture/fermeture du popover avec protection
   const handleOpenChange = (open: boolean) => {
     console.log("Popover state requested to change to:", open);
+    
+    if (preventCloseRef.current && !open) {
+      console.log("Preventing unintended close");
+      return;
+    }
     
     // Évite de déclencher des ouvertures/fermetures en boucle
     if (initialRenderRef.current && open) {
       initialRenderRef.current = false;
     }
     
-    // Ne mettre à jour l'état que si nécessaire
+    // Mettre à jour l'état uniquement si nécessaire
     if (isOpen !== open) {
       setIsOpen(open);
     }
+  };
+  
+  // Gestionnaire explicite pour l'ouverture
+  const handleOpen = () => {
+    preventCloseRef.current = true;
+    setIsOpen(true);
+    
+    // Permettre à nouveau la fermeture uniquement par le bouton X
+    setTimeout(() => {
+      preventCloseRef.current = false;
+    }, 200);
   };
   
   // Gestionnaire pour la fermeture manuelle avec arrêt de propagation
@@ -75,7 +115,7 @@ export default function CourseContentPopover({
   };
 
   return (
-    <div ref={popoverRef}>
+    <div ref={popoverRef} className="self-contained-popover">
       <Popover open={isOpen} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <Button 
@@ -83,11 +123,9 @@ export default function CourseContentPopover({
             size="sm" 
             className={`gap-2 ${className}`}
             onClick={(e) => {
-              // Empêcher la propagation du clic pour éviter les fermetures intempestives
+              e.preventDefault();
               e.stopPropagation();
-              if (!isOpen) {
-                setIsOpen(true);
-              }
+              handleOpen();
             }}
           >
             <BookOpen className="h-4 w-4" />
@@ -97,17 +135,22 @@ export default function CourseContentPopover({
         
         {isOpen && (
           <PopoverContent 
+            ref={contentRef}
             className="w-[340px] sm:w-[400px] max-h-[500px] overflow-y-auto p-0"
             side="top" 
             align="start"
             sideOffset={5}
+            onEscapeKeyDown={(e) => {
+              // Permettre uniquement la fermeture via ESC
+              e.preventDefault();
+              setIsOpen(false);
+            }}
             onInteractOutside={(e) => {
-              // Prévention sélective des interactions extérieures
-              if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-                e.preventDefault();
-              }
+              // Bloquer TOUTES les interactions extérieures
+              e.preventDefault();
             }}
             onClick={(e) => e.stopPropagation()}
+            onPointerDownOutside={(e) => e.preventDefault()}
           >
             <Card className="border-0 rounded-none">
               <div className="flex justify-between items-center p-3 border-b bg-muted/30 sticky top-0 z-[65]">

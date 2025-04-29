@@ -11,12 +11,14 @@ export const useResourceFormState = (
   const [formData, setFormData] = useState<any>(initialValues);
   const isInitialRenderRef = useRef(true);
   const debounceTimerRef = useRef<any>(null);
+  const previousDataRef = useRef<string>("");
   
   // Seule mise à jour sûre initiale
   useEffect(() => {
     if (isInitialRenderRef.current && initialValues && Object.keys(initialValues).length > 0) {
       console.log("Initial form data set:", initialValues);
       setFormData(initialValues);
+      previousDataRef.current = JSON.stringify(initialValues);
       isInitialRenderRef.current = false;
     }
   }, [initialValues]);
@@ -27,6 +29,15 @@ export const useResourceFormState = (
       const updated = { ...prev, [field]: value };
       console.log(`Form field "${field}" updated:`, value);
       
+      // Vérifier si les données ont réellement changé
+      const updatedString = JSON.stringify(updated);
+      if (updatedString === previousDataRef.current) {
+        console.log("No actual data change detected, skipping callback");
+        return updated;
+      }
+      
+      previousDataRef.current = updatedString;
+      
       // Debounce the onDataChanged callback to avoid rapid updates
       if (onDataChanged) {
         if (debounceTimerRef.current) {
@@ -36,7 +47,7 @@ export const useResourceFormState = (
         debounceTimerRef.current = setTimeout(() => {
           console.log("Calling onDataChanged after debounce");
           onDataChanged(updated);
-        }, 300);
+        }, 500); // Increased to reduce frequency
       }
       
       return updated;
@@ -45,26 +56,31 @@ export const useResourceFormState = (
 
   // Update all form data at once with protection
   const updateFormData = useCallback((data: any) => {
-    // Prevent unnecessary updates
-    if (JSON.stringify(data) === JSON.stringify(formData)) {
+    // Convert to string for proper comparison
+    const dataString = JSON.stringify(data);
+    
+    // Prevent unnecessary updates and loops
+    if (dataString === previousDataRef.current) {
       console.log("Skipping identical form data update");
       return;
     }
     
+    previousDataRef.current = dataString;
     console.log("Updating all form data");
     setFormData(data);
     
-    // Same debounce pattern for bulk updates
+    // Same debounce pattern for bulk updates with increased delay
     if (onDataChanged) {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
       
       debounceTimerRef.current = setTimeout(() => {
+        console.log("Calling onDataChanged after bulk update debounce");
         onDataChanged(data);
-      }, 300);
+      }, 600);
     }
-  }, [formData, onDataChanged]);
+  }, [onDataChanged]);
   
   // Cleanup
   useEffect(() => {
