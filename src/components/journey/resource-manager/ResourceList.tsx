@@ -13,6 +13,8 @@ interface ResourceListProps {
 }
 
 export default function ResourceList({ resources, stepId, substepTitle, subsubstepTitle, selectedResourceName }: ResourceListProps) {
+  console.log("ResourceList rendering with resources:", resources);
+  
   if (!resources || resources.length === 0) {
     return (
       <Card>
@@ -20,7 +22,7 @@ export default function ResourceList({ resources, stepId, substepTitle, subsubst
           <div className="flex flex-col items-center justify-center py-12">
             <Package className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
             <p className="text-center text-muted-foreground">
-              Toutes les ressources prévues pour cette section sont déjà disponibles.
+              Aucune ressource disponible dans cette catégorie.
             </p>
           </div>
         </CardContent>
@@ -32,7 +34,7 @@ export default function ResourceList({ resources, stepId, substepTitle, subsubst
     <div className="space-y-4 mt-2">
       {resources.map((resource, idx) => (
         <ResourceCard
-          key={idx}
+          key={`resource-${idx}-${resource.title}`}
           resource={resource}
           stepId={stepId}
           substepTitle={substepTitle}

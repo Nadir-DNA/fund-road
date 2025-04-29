@@ -47,17 +47,43 @@ export default function ResourceManager({
     selectedSubSubstepTitle
   );
 
+  console.log("ResourceManager - materials:", materials);
+  console.log("ResourceManager - step.resources:", step.resources);
+  
+  // In case we have no resources yet, use those from step data directly
+  useEffect(() => {
+    if (resources.length === 0 && step.resources) {
+      if (selectedSubstepTitle && step.subSteps) {
+        const subStep = step.subSteps.find((sub: any) => sub.title === selectedSubstepTitle);
+        if (subStep && subStep.resources) {
+          console.log("Using resources from substep directly:", subStep.resources);
+          setResources(subStep.resources);
+        }
+      } else if (step.resources) {
+        console.log("Using resources from step directly:", step.resources);
+        setResources(step.resources);
+      }
+    }
+  }, [step, selectedSubstepTitle, resources.length]);
+
   // Handle resources found by ResourceFilters
   const handleResourcesFound = (foundResources: Resource[]) => {
-    setResources(foundResources);
+    console.log("Resources found:", foundResources);
+    if (foundResources.length > 0) {
+      setResources(foundResources);
+    }
   };
 
   // Handle selected resource display
   if (selectedResourceName && selectedSubstepTitle) {
+    console.log("Looking for resource:", selectedResourceName);
+    console.log("Current resources:", resources);
+    
     const selectedResource = resources?.find(r => r.componentName === selectedResourceName) ||
       step.resources?.find((r: Resource) => r.componentName === selectedResourceName);
 
     if (selectedResource) {
+      console.log("Selected resource found:", selectedResource);
       return (
         <ResourceManagerContent 
           selectedResource={selectedResource}
@@ -66,6 +92,8 @@ export default function ResourceManager({
           selectedResourceName={selectedResourceName}
         />
       );
+    } else {
+      console.log("Selected resource not found in resources array");
     }
   }
 
@@ -78,6 +106,8 @@ export default function ResourceManager({
   const availableResources = resources.filter((r: any) => r.status !== 'coming-soon');
   const comingSoonResources = resources.filter((r: any) => r.status === 'coming-soon');
 
+  console.log("Filtered resources - available:", availableResources.length, "coming soon:", comingSoonResources.length);
+
   return (
     <div className="mt-4">
       <ResourceFilters
@@ -89,14 +119,20 @@ export default function ResourceManager({
         onResourcesFound={handleResourcesFound}
       />
       <h3 className="text-lg font-medium mb-4">Ressources disponibles</h3>
-      <ResourceManagerTabs 
-        availableResources={availableResources}
-        comingSoonResources={comingSoonResources}
-        stepId={step.id}
-        substepTitle={selectedSubstepTitle || ""}
-        selectedResourceName={selectedResourceName}
-        subsubstepTitle={selectedSubSubstepTitle}
-      />
+      {resources.length === 0 ? (
+        <div className="p-6 text-center border rounded-lg bg-muted/20">
+          <p className="text-muted-foreground">Aucune ressource disponible pour cette section.</p>
+        </div>
+      ) : (
+        <ResourceManagerTabs 
+          availableResources={availableResources}
+          comingSoonResources={comingSoonResources}
+          stepId={step.id}
+          substepTitle={selectedSubstepTitle || ""}
+          selectedResourceName={selectedResourceName}
+          subsubstepTitle={selectedSubSubstepTitle}
+        />
+      )}
     </div>
   );
 }

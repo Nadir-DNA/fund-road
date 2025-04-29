@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Resource } from "@/types/journey";
+import { toast } from "@/components/ui/use-toast";
 
 interface ResourceFiltersProps {
   step: any;
@@ -22,7 +23,7 @@ export function ResourceFilters({
 }: ResourceFiltersProps) {
   // Get the resources to display
   useQuery({
-    queryKey: ['resources', step.id, selectedSubstepTitle, selectedSubSubstepTitle, materials],
+    queryKey: ['resources', step.id, selectedSubstepTitle, selectedSubSubstepTitle, materials?.length],
     queryFn: async () => {
       console.log(`Loading resources for step ID: ${step.id}, substep: ${selectedSubstepTitle || 'main step'}, subsubstep: ${selectedSubSubstepTitle || 'none'}`);
 
@@ -45,10 +46,10 @@ export function ResourceFilters({
           description: item.description || '',
           componentName: item.component_name || '',
           url: item.file_url,
-          status: 'available' as const // Use const assertion to match the literal type
+          status: 'available' as const // Ensure we use the correct literal type
         }));
 
-        console.log(`Found ${filteredResources.length} resources from materials`);
+        console.log(`Found ${filteredResources.length} resources from materials`, filteredResources);
 
         if (filteredResources.length > 0) {
           onResourcesFound(filteredResources);
@@ -61,15 +62,18 @@ export function ResourceFilters({
         if (hasSession === false) {
           console.log("No authenticated session found when fetching resources (cached)");
           const stepResources = getStepResources(step, selectedSubstepTitle);
+          console.log("Using step resources:", stepResources);
           onResourcesFound(stepResources);
           return stepResources;
         }
 
-        const { data: session } = await supabase.auth.getSession();
+        const { data: sessionData } = await supabase.auth.getSession();
+        const session = sessionData?.session;
 
-        if (!session?.session) {
+        if (!session) {
           console.log("No authenticated session found when fetching resources");
           const stepResources = getStepResources(step, selectedSubstepTitle);
+          console.log("Using step resources:", stepResources);
           onResourcesFound(stepResources);
           return stepResources;
         }
@@ -98,12 +102,17 @@ export function ResourceFilters({
 
         if (error) {
           console.error("Error fetching resources:", error);
+          toast({
+            title: "Erreur de chargement",
+            description: "Impossible de récupérer les ressources",
+            variant: "destructive"
+          });
           const stepResources = getStepResources(step, selectedSubstepTitle);
           onResourcesFound(stepResources);
           return stepResources;
         }
 
-        console.log(`Retrieved ${data?.length || 0} resources from Supabase for step ${step.id}`);
+        console.log(`Retrieved ${data?.length || 0} resources from Supabase for step ${step.id}`, data);
 
         if (data && data.length > 0) {
           const mappedResources = data.map(item => ({
@@ -111,24 +120,31 @@ export function ResourceFilters({
             description: item.description || '',
             componentName: item.component_name,
             url: item.file_url,
-            status: 'available' as const // Use const assertion to match the literal type
+            status: 'available' as const // Ensure we use the correct literal type
           }));
+          console.log("Mapped resources:", mappedResources);
           onResourcesFound(mappedResources);
           return mappedResources;
         }
 
         const stepResources = getStepResources(step, selectedSubstepTitle);
+        console.log("No resources from DB, using step resources:", stepResources);
         onResourcesFound(stepResources);
         return stepResources;
 
       } catch (err) {
         console.error("Error in resource query:", err);
+        toast({
+          title: "Erreur de chargement",
+          description: "Problème lors de la récupération des ressources",
+          variant: "destructive"
+        });
         const stepResources = getStepResources(step, selectedSubstepTitle);
         onResourcesFound(stepResources);
         return stepResources;
       }
     },
-    staleTime: 1000 * 60 * 2, // Cache for 2 minutes
+    staleTime: 1000 * 60 * 1, // Cache for 1 minute
     enabled: hasSession !== null && materials !== undefined,
     retry: 1
   });
@@ -139,9 +155,17 @@ export function ResourceFilters({
 // Helper function to get resources from step data
 function getStepResources(step: any, selectedSubstepTitle: string | undefined): Resource[] {
   // Get resources from subStep or step directly
-  const resources = selectedSubstepTitle
-    ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)?.resources || []
-    : step.resources || [];
+  const stepData = selectedSubstepTitle
+    ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)
+    : step;
+  
+  if (!stepData) {
+    console.log("No step data found for resources");
+    return [];
+  }
+  
+  const resources = stepData.resources || [];
+  console.log("Step resources found:", resources);
   
   // The resources from step data should already have the correct status type,
   // but we'll ensure type safety by returning them as is

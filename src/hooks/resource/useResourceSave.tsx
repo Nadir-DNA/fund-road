@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -25,14 +25,10 @@ export function useResourceSave({
 }: SaveOptions) {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const lastSavedContentRef = useRef('');
+  const toastShownRef = useRef(false);
+  const saveTimeoutRef = useRef<any>(null);
   
-  // Track last saved content to prevent duplicate toasts
-  const lastSavedContentRef = useCallback((data: any) => {
-    return JSON.stringify(data);
-  }, []);
-  
-  let lastSavedSignature = '';
-
   const handleSave = useCallback(async (session?: any) => {
     console.log("handleSave called with session:", session ? "present" : "not present");
     
@@ -48,8 +44,8 @@ export function useResourceSave({
     }
     
     // Check if content has changed to prevent unnecessary saves
-    const contentSignature = lastSavedContentRef(formData);
-    if (contentSignature === lastSavedSignature) {
+    const contentSignature = JSON.stringify(formData);
+    if (contentSignature === lastSavedContentRef.current) {
       console.log("Content unchanged, skipping save");
       return true;
     }
@@ -58,7 +54,6 @@ export function useResourceSave({
     
     try {
       console.log(`Saving resource: stepId=${stepId}, substep=${substepTitle}, type=${resourceType}, resourceId=${resourceId}`);
-      console.log("Form data:", formData);
       
       // Ensure we have valid content to save
       if (!formData || typeof formData !== 'object') {
@@ -117,13 +112,27 @@ export function useResourceSave({
         }
 
         // Update the last saved content signature
-        lastSavedSignature = contentSignature;
+        lastSavedContentRef.current = contentSignature;
         
-        // Only show toast for manual saves, not automatic ones
-        toast({
-          title: "Ressource sauvegardée",
-          description: "Vos données ont été enregistrées avec succès."
-        });
+        // Only show toast for manual saves or first automatic save, and limit frequency
+        if (!toastShownRef.current) {
+          toast({
+            title: "Ressource sauvegardée",
+            description: "Vos données ont été enregistrées avec succès."
+          });
+          
+          // Set flag to avoid showing toast too frequently
+          toastShownRef.current = true;
+          
+          // Reset toast flag after delay
+          if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+          }
+          
+          saveTimeoutRef.current = setTimeout(() => {
+            toastShownRef.current = false;
+          }, 5000); // Reset after 5 seconds
+        }
         
         return true;
       } else {
@@ -141,7 +150,7 @@ export function useResourceSave({
     } finally {
       setIsSaving(false);
     }
-  }, [formData, stepId, substepTitle, resourceType, resourceId, navigate, onSaved, setIsSaving, toast, lastSavedContentRef]);
+  }, [formData, stepId, substepTitle, resourceType, resourceId, navigate, onSaved, setIsSaving, toast]);
 
   return { handleSave };
 }

@@ -23,13 +23,8 @@ export default function CourseContentPopover({
 }: CourseContentPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const clickInsideRef = useRef(false);
   
-  // Close the popover when clicking outside
-  const handleOpenChange = useCallback((open: boolean) => {
-    console.log("Popover state changing to:", open);
-    setIsOpen(open);
-  }, []);
-
   // Get course content from Supabase
   const { data: courseContent, isLoading } = useQuery({
     queryKey: ['courseContent', stepId, substepTitle],
@@ -46,12 +41,26 @@ export default function CourseContentPopover({
       return data?.course_content || '';
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    enabled: isOpen, // Only fetch when popover is open
   });
+
+  // Handle opening and closing
+  const handleOpenChange = useCallback((open: boolean) => {
+    console.log("Popover state changing to:", open);
+    
+    // Only change state if we're opening or this is an intentional close
+    if (open || !clickInsideRef.current) {
+      setIsOpen(open);
+    }
+    
+    clickInsideRef.current = false;
+  }, []);
 
   // Click handler for the trigger button
   const handleTriggerClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    clickInsideRef.current = true;
     console.log("Trigger button clicked, toggling popover");
     setIsOpen(prev => !prev);
   };
@@ -60,26 +69,42 @@ export default function CourseContentPopover({
   const handleCloseClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    clickInsideRef.current = false;
     console.log("Close button clicked");
     setIsOpen(false);
+  };
+
+  // Prevent internal clicks from closing the popover
+  const handleContentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    clickInsideRef.current = true;
   };
 
   // Click outside handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node) && isOpen) {
+      if (popoverRef.current && 
+          !popoverRef.current.contains(event.target as Node) && 
+          isOpen && 
+          !clickInsideRef.current) {
         console.log("Click outside detected, closing popover");
         setIsOpen(false);
+        clickInsideRef.current = false;
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+      // Use a timeout to add listener after current event loop completes
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 100);
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+    return undefined;
   }, [isOpen]);
 
   return (
@@ -106,7 +131,7 @@ export default function CourseContentPopover({
         align="start"
         sideOffset={5}
         avoidCollisions={true}
-        onClick={(e) => e.stopPropagation()}
+        onClick={handleContentClick}
       >
         <Card className="border-0 rounded-none">
           <div className="flex justify-between items-center p-3 border-b bg-muted/30 sticky top-0 z-10">
