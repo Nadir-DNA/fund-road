@@ -1,14 +1,12 @@
 
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import ResourceList from "./resource-manager/ResourceList";
-import { renderResourceComponent } from "./utils/resourceRenderer";
-import { isBrowser } from "@/utils/navigationUtils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { useCourseMaterials } from "@/hooks/course/useCourseMaterials";
 import { useEffect, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
+import ResourceManagerTabs from "./resource-manager/ResourceManagerTabs";
+import ResourceManagerLoading from "./resource-manager/ResourceManagerLoading";
+import ResourceManagerContent from "./resource-manager/ResourceManagerContent";
 
 interface ResourceManagerProps {
   step: any;
@@ -40,7 +38,7 @@ export default function ResourceManager({
     checkSession();
   }, []);
 
-  // Use customized hook to get materials for step, substep, and now subsubstep
+  // Use customized hook to get materials for step, substep, and subsubstep
   const { materials, isLoading: isMaterialsLoading } = useCourseMaterials(
     step.id,
     selectedSubstepTitle || null,
@@ -86,18 +84,14 @@ export default function ResourceManager({
         // Check if we already determined there's no session
         if (hasSession === false) {
           console.log("No authenticated session found when fetching resources (cached)");
-          return selectedSubstepTitle
-            ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)?.resources || []
-            : step.resources || [];
+          return getStepResources();
         }
 
         const { data: session } = await supabase.auth.getSession();
 
         if (!session?.session) {
           console.log("No authenticated session found when fetching resources");
-          return selectedSubstepTitle
-            ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)?.resources || []
-            : step.resources || [];
+          return getStepResources();
         }
 
         console.log("Building Supabase query for resources");
@@ -129,9 +123,7 @@ export default function ResourceManager({
             description: "Impossible de charger les ressources",
             variant: "destructive"
           });
-          return selectedSubstepTitle
-            ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)?.resources || []
-            : step.resources || [];
+          return getStepResources();
         }
 
         console.log(`Retrieved ${data?.length || 0} resources from Supabase for step ${step.id}`);
@@ -146,15 +138,11 @@ export default function ResourceManager({
           }));
         }
 
-        return selectedSubstepTitle
-          ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)?.resources || []
-          : step.resources || [];
+        return getStepResources();
 
       } catch (err) {
         console.error("Error in resource query:", err);
-        return selectedSubstepTitle
-          ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)?.resources || []
-          : step.resources || [];
+        return getStepResources();
       }
     },
     staleTime: 1000 * 60 * 2, // Cache for 2 minutes
@@ -162,29 +150,33 @@ export default function ResourceManager({
     retry: 1
   });
 
+  // Helper function to get resources from step data
+  const getStepResources = () => {
+    return selectedSubstepTitle
+      ? step.subSteps?.find((s: any) => s.title === selectedSubstepTitle)?.resources || []
+      : step.resources || [];
+  };
+
+  // Handle selected resource display
   if (selectedResourceName && selectedSubstepTitle) {
     const selectedResource = resources?.find(r => r.componentName === selectedResourceName) ||
       step.resources?.find(r => r.componentName === selectedResourceName);
 
     if (selectedResource) {
       return (
-        <div className="mt-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium">{selectedResource.title}</h3>
-          </div>
-          <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
-          {isBrowser() && renderResourceComponent(selectedResourceName, step.id, selectedSubstepTitle)}
-        </div>
+        <ResourceManagerContent 
+          selectedResource={selectedResource}
+          stepId={step.id}
+          selectedSubstepTitle={selectedSubstepTitle}
+          selectedResourceName={selectedResourceName}
+        />
       );
     }
   }
 
+  // Show loading indicator
   if (hasSession === null || isLoading || isMaterialsLoading) {
-    return (
-      <div className="flex justify-center items-center p-12">
-        <LoadingIndicator size="lg" />
-      </div>
-    );
+    return <ResourceManagerLoading />;
   }
 
   const resourcesToShow = resources ||
@@ -192,32 +184,20 @@ export default function ResourceManager({
       ? step.subSteps?.find((substep: any) => substep.title === selectedSubstepTitle)?.resources
       : step.resources) || [];
 
+  const availableResources = resourcesToShow.filter((r: any) => r.status !== 'coming-soon');
+  const comingSoonResources = resourcesToShow.filter((r: any) => r.status === 'coming-soon');
+
   return (
     <div className="mt-4">
       <h3 className="text-lg font-medium mb-4">Ressources disponibles</h3>
-      <Tabs defaultValue="available" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="available">Disponibles</TabsTrigger>
-          <TabsTrigger value="coming">À venir</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="available">
-          <ResourceList
-            resources={resourcesToShow.filter((r: any) => r.status !== 'coming-soon')}
-            stepId={step.id}
-            substepTitle={selectedSubstepTitle || ""}
-            selectedResourceName={selectedResourceName}
-          />
-        </TabsContent>
-
-        <TabsContent value="coming">
-          <ResourceList
-            resources={resourcesToShow.filter((r: any) => r.status === 'coming-soon')}
-            stepId={step.id}
-            substepTitle={selectedSubstepTitle || ""}
-          />
-        </TabsContent>
-      </Tabs>
+      <ResourceManagerTabs 
+        availableResources={availableResources}
+        comingSoonResources={comingSoonResources}
+        stepId={step.id}
+        substepTitle={selectedSubstepTitle || ""}
+        selectedResourceName={selectedResourceName}
+        subsubstepTitle={selectedSubSubstepTitle}
+      />
     </div>
   );
 }
