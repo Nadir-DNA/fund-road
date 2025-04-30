@@ -1,4 +1,3 @@
-
 export type SubStep = { 
   title: string; 
   description: string; 
@@ -14,9 +13,11 @@ export type SubSubStep = {
   resources?: Resource[];
 };
 
-export type Resource = {
+export interface Resource {
+  id: string;
   title: string;
   description: string;
+  type: string;
   url?: string;
   componentName?: string;
   status?: 'available' | 'coming-soon' | 'beta';
@@ -58,4 +59,3 @@ export type UserSubstepProgress = {
   is_completed: boolean;
   updated_at?: string;
 };
-
