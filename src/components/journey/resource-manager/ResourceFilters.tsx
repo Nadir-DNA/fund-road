@@ -42,11 +42,13 @@ export function ResourceFilters({
               : item.substep_title === null)
           )
         ).map(item => ({
+          id: item.id || `material-${Math.random().toString(36).substring(7)}`,
           title: item.title,
           description: item.description || '',
           componentName: item.component_name || '',
           url: item.file_url,
-          status: 'available' as const // Ensure we use the correct literal type
+          type: item.resource_type || 'resource',
+          status: 'available' as const
         }));
 
         console.log(`Found ${filteredResources.length} resources from materials`, filteredResources);
@@ -116,11 +118,13 @@ export function ResourceFilters({
 
         if (data && data.length > 0) {
           const mappedResources = data.map(item => ({
+            id: item.id || `db-${Math.random().toString(36).substring(7)}`,
             title: item.title,
             description: item.description || '',
             componentName: item.component_name,
             url: item.file_url,
-            status: 'available' as const // Ensure we use the correct literal type
+            type: item.resource_type || 'resource',
+            status: 'available' as const
           }));
           console.log("Mapped resources:", mappedResources);
           onResourcesFound(mappedResources);
@@ -167,7 +171,10 @@ function getStepResources(step: any, selectedSubstepTitle: string | undefined): 
   const resources = stepData.resources || [];
   console.log("Step resources found:", resources);
   
-  // The resources from step data should already have the correct status type,
-  // but we'll ensure type safety by returning them as is
-  return resources;
+  // Add missing id and type properties to ensure type safety
+  return resources.map((resource: any) => ({
+    ...resource,
+    id: resource.id || `step-${Math.random().toString(36).substring(7)}`,
+    type: resource.type || 'resource'
+  }));
 }

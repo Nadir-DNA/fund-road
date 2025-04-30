@@ -5,15 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { ExternalLink, FileText } from "lucide-react";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-
-// Update Resource interface to include missing properties
-interface Resource {
-  title: string;
-  description: string;
-  componentName?: string;
-  externalUrl?: string;
-  type: string;
-}
+import { Resource } from "@/types/journey";
 
 interface ResourceCardProps {
   resource: Resource;
@@ -34,8 +26,8 @@ export default function ResourceCard({
   const handleResourceClick = () => {
     setIsLoading(true);
     
-    if (resource.externalUrl) {
-      window.open(resource.externalUrl, '_blank');
+    if (resource.url) {
+      window.open(resource.url, '_blank');
       setTimeout(() => setIsLoading(false), 300);
       return;
     }
@@ -57,7 +49,7 @@ export default function ResourceCard({
       <CardContent className="py-2">
         <div className="flex items-center text-xs text-muted-foreground">
           <FileText className="h-3 w-3 mr-1" />
-          <span>{resource.type}</span>
+          <span>{resource.type || 'resource'}</span>
         </div>
       </CardContent>
       
@@ -71,7 +63,7 @@ export default function ResourceCard({
         >
           {isLoading ? (
             <LoadingIndicator size="sm" />
-          ) : resource.externalUrl ? (
+          ) : resource.url ? (
             <>
               Voir <ExternalLink className="ml-1 h-3 w-3" />
             </>

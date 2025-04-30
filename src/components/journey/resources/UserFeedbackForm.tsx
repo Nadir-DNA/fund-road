@@ -4,7 +4,7 @@ import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import CourseContentPopover from "./CourseContentPopover";
+import CourseContentPopover from "../CourseContentPopover";
 
 interface UserFeedbackFormProps {
   stepId: number;
@@ -51,11 +51,10 @@ export default function UserFeedbackForm({ stepId, substepTitle }: UserFeedbackF
       <div className="space-y-6">
         <div className="flex justify-end mb-2">
           <CourseContentPopover
-            stepId={stepId}
-            substepTitle={substepTitle}
-            triggerText="Voir le cours"
-            className="mb-2"
-          />
+            courseId={stepId.toString()}
+          >
+            <span className="mb-2">Voir le cours</span>
+          </CourseContentPopover>
         </div>
         
         <Card className="p-5">

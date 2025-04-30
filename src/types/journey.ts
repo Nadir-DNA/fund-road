@@ -1,3 +1,4 @@
+
 export type SubStep = { 
   title: string; 
   description: string; 
@@ -14,10 +15,10 @@ export type SubSubStep = {
 };
 
 export interface Resource {
-  id: string;
+  id?: string;
   title: string;
   description: string;
-  type: string;
+  type?: string;
   url?: string;
   componentName?: string;
   status?: 'available' | 'coming-soon' | 'beta';
