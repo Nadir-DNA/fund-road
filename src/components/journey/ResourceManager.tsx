@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { useCourseMaterials } from "@/hooks/course/useCourseMaterials";
@@ -7,7 +6,7 @@ import { Resource } from "@/types/journey";
 import ResourceManagerTabs from "./resource-manager/ResourceManagerTabs";
 import ResourceManagerLoading from "./resource-manager/ResourceManagerLoading";
 import ResourceManagerContent from "./resource-manager/ResourceManagerContent";
-import { ResourceFilters } from "./resource-manager/ResourceFilters";
+import { ResourceFilters, getStepResources } from "./resource-manager/ResourceFilters";
 
 interface ResourceManagerProps {
   step: any;
