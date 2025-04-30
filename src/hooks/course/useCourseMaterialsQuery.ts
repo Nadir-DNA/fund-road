@@ -50,7 +50,7 @@ export const useCourseMaterialsQuery = (stepId: number, substepTitle: string | n
           console.log(`Filtrage par sous-sous-étape: "${subsubstepTitle}"`);
         }
         
-        // Apply all filters with or logic
+        // Apply all filters
         query = query.eq('step_id', stepId);
         
         if (substepTitle) {

@@ -22,16 +22,22 @@ export default function StepDetail() {
   const [activeTab, setActiveTab] = useState(resourceName ? "resources" : "overview");
   
   const stepId = parseInt(stepIdParam || "1");
-  const substepTitle = substepTitleParam || null;
+  const substepTitle = substepTitleParam ? decodeURIComponent(substepTitleParam) : null;
   
   // Find the current step from the journey steps
   const step = journeySteps.find(s => s.id === stepId);
   const selectedSubStep = step?.subSteps?.find(s => s.title === substepTitle) || null;
   
+  console.log("StepDetail - stepId:", stepId, "substepTitle:", substepTitle);
+  console.log("step found:", step?.title);
+  console.log("selectedSubStep found:", selectedSubStep?.title);
+  
   const { materials, isLoading: isLoadingMaterials } = useCourseMaterials(
     stepId,
     substepTitle
   );
+  
+  console.log("Materials loaded:", materials?.length);
   
   // Find course content
   const courseMaterial = materials?.find(material => 
@@ -41,7 +47,10 @@ export default function StepDetail() {
       : material.substep_title === null)
   );
   
+  console.log("Course material found:", courseMaterial?.title);
+  
   const courseContent = courseMaterial?.course_content || "";
+  console.log("Course content length:", courseContent.length);
   
   // Navigation functions
   const navigateToNextStep = () => {

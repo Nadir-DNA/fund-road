@@ -33,6 +33,7 @@ export default function ResourceCard({
     }
 
     if (resource.componentName) {
+      // Make sure to encode the substep title for the URL
       const encodedSubstep = substepTitle ? `/${encodeURIComponent(substepTitle)}` : '';
       navigate(`/step/${stepId}${encodedSubstep}/resource/${resource.componentName}`);
       setTimeout(() => setIsLoading(false), 300);
@@ -59,7 +60,7 @@ export default function ResourceCard({
           size="sm"
           className="w-full"
           onClick={handleResourceClick}
-          disabled={isLoading}
+          disabled={isLoading || resource.status === 'coming-soon'}
         >
           {isLoading ? (
             <LoadingIndicator size="sm" />
