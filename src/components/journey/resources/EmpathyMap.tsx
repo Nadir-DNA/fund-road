@@ -1,5 +1,5 @@
 
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useRef } from "react";
 import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ interface EmpathyMapProps {
 export default function EmpathyMap({ stepId, substepTitle, onClose }: EmpathyMapProps) {
   // Track first render to avoid initial data save loops
   const isFirstRender = useRef(true);
+  const hasManualSave = useRef(false);
   
   const [formData, setFormData] = useState({
     persona_name: "",
@@ -30,40 +31,33 @@ export default function EmpathyMap({ stepId, substepTitle, onClose }: EmpathyMap
     goals: ""
   });
 
-  // Fixed initial values that won't change
-  const initialValues = useMemo(() => formData, []);
-  
-  // Stable data handler with loop prevention
-  const handleDataSaved = useCallback((data: any) => {
-    // Skip the first automatic data save to prevent initialization loops
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      console.log("EmpathyMap - First render, skipping initial data save");
-      return;
-    }
-    
-    // Only update if data has actually changed
-    if (JSON.stringify(data) !== JSON.stringify(formData)) {
-      console.log("EmpathyMap - onDataSaved avec changements");
-      setFormData(data);
-      
-      // Call onClose only after manual save, not during automatic saves
-      if (onClose) {
-        console.log("EmpathyMap - Calling onClose to collapse panel");
-        onClose();
-      }
-    } else {
-      console.log("EmpathyMap - onDataSaved sans changements, ignoré");
-    }
-  }, [formData, onClose]);
-
-  // Stable field change handler
-  const handleChange = useCallback((field: string, value: string) => {
+  const handleChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-  }, []);
+  };
+  
+  const handleDataSaved = (data: any) => {
+    // Si c'est le premier rendu, on ne fait rien pour éviter les boucles d'initialisation
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      console.log("EmpathyMap - Premier rendu, on ignore la sauvegarde initiale");
+      return;
+    }
+    
+    // Si l'utilisateur a explicitement demandé une sauvegarde, on ferme le panneau
+    if (hasManualSave.current && onClose) {
+      console.log("EmpathyMap - Sauvegarde manuelle, on ferme le panneau");
+      hasManualSave.current = false;
+      onClose();
+    }
+    
+    // On met à jour les données locales si nécessaire
+    if (JSON.stringify(data) !== JSON.stringify(formData)) {
+      setFormData(data);
+    }
+  };
 
   return (
     <ResourceForm
@@ -72,7 +66,7 @@ export default function EmpathyMap({ stepId, substepTitle, onClose }: EmpathyMap
       resourceType="empathy_map"
       title="Carte d'Empathie Utilisateur"
       description="Développez une compréhension profonde des utilisateurs de votre solution"
-      formData={formData} // Pass as current data for controlled behavior
+      formData={formData}
       onDataSaved={handleDataSaved}
     >
       <div className="space-y-8">
