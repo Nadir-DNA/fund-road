@@ -9,9 +9,10 @@ import { Card } from "@/components/ui/card";
 interface EmpathyMapProps {
   stepId: number;
   substepTitle: string;
+  onClose?: () => void;
 }
 
-export default function EmpathyMap({ stepId, substepTitle }: EmpathyMapProps) {
+export default function EmpathyMap({ stepId, substepTitle, onClose }: EmpathyMapProps) {
   const [formData, setFormData] = useState({
     persona_name: "",
     persona_role: "",
@@ -26,16 +27,24 @@ export default function EmpathyMap({ stepId, substepTitle }: EmpathyMapProps) {
     goals: ""
   });
 
+  // Valeurs initiales figées une fois au montage pour éviter les resets
+  const initialValues = useMemo(() => formData, []);
+  
   // Stabilize data handler to prevent loops
   const handleDataSaved = useCallback((data: any) => {
-    // Check if we have real changes to prevent unnecessary updates
+    // Ne mettre à jour que si les données ont vraiment changé
     if (JSON.stringify(data) !== JSON.stringify(formData)) {
-      console.log("EmpathyMap - onDataSaved with changes");
+      console.log("EmpathyMap - onDataSaved avec changements");
       setFormData(data);
+      
+      // Si onClose est fourni, l'appeler (pour fermer le panneau dépliant)
+      if (onClose) {
+        onClose();
+      }
     } else {
-      console.log("EmpathyMap - onDataSaved with no changes, ignoring");
+      console.log("EmpathyMap - onDataSaved sans changements, ignoré");
     }
-  }, [formData]);
+  }, [formData, onClose]);
 
   // Stable field change handler
   const handleChange = useCallback((field: string, value: string) => {
