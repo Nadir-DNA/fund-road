@@ -35,7 +35,9 @@ export default function ResourceCard({
     if (resource.componentName) {
       // Make sure to encode the substep title for the URL
       const encodedSubstep = substepTitle ? `/${encodeURIComponent(substepTitle)}` : '';
-      navigate(`/step/${stepId}${encodedSubstep}/resource/${resource.componentName}`);
+      const resourceUrl = `/step/${stepId}${encodedSubstep}/resource/${resource.componentName}`;
+      console.log("Navigating to resource:", resourceUrl);
+      navigate(resourceUrl);
       setTimeout(() => setIsLoading(false), 300);
     }
   };
@@ -51,6 +53,7 @@ export default function ResourceCard({
         <div className="flex items-center text-xs text-muted-foreground">
           <FileText className="h-3 w-3 mr-1" />
           <span>{resource.type || 'resource'}</span>
+          {resource.componentName && <span className="ml-1 text-xs opacity-50">({resource.componentName})</span>}
         </div>
       </CardContent>
       

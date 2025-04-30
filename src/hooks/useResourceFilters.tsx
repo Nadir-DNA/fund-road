@@ -19,6 +19,54 @@ export const useResourceFilters = (
     queryFn: async () => {
       console.log(`Loading resources for step ID: ${step.id}, substep: ${selectedSubstepTitle || 'main step'}, subsubstep: ${selectedSubSubstepTitle || 'none'}`);
 
+      // Map material names to component names for correct linking
+      const mapMaterialToComponentName = (resourceType: string) => {
+        // This mapping converts the database resource_type to the proper component name
+        const mappings: Record<string, string> = {
+          'user_research_notebook': 'UserResearchNotebook',
+          'customer_behavior_notes': 'CustomerBehaviorNotes',
+          'persona_builder': 'PersonaBuilder',
+          'empathy_map': 'EmpathyMap',
+          'opportunity_definition': 'OpportunityDefinition',
+          'swot_analysis': 'SwotAnalysis',
+          'business_model_canvas': 'BusinessModelCanvas',
+          'problem_solution_canvas': 'ProblemSolutionCanvas',
+          'problem_solution_matrix': 'ProblemSolutionMatrix',
+          'competitive_analysis_table': 'CompetitiveAnalysisTable',
+          'market_analysis_grid': 'MarketAnalysisGrid',
+          'market_size_estimator': 'MarketSizeEstimator',
+          'mvp_selector': 'MVPSelector',
+          'mvp_specification': 'MvpSpecification',
+          'feature_prioritization_matrix': 'FeaturePrioritizationMatrix',
+          'product_roadmap_editor': 'ProductRoadmapEditor',
+          'user_feedback_form': 'UserFeedbackForm',
+          'experiment_summary': 'ExperimentSummary',
+          'business_plan_intent': 'BusinessPlanIntent',
+          'business_plan_editor': 'BusinessPlanEditor',
+          'financial_tables': 'FinancialTables',
+          'monetization_test_grid': 'MonetizationTestGrid',
+          'growth_projection': 'GrowthProjection',
+          'dilution_simulator': 'DilutionSimulator',
+          'legal_status_selector': 'LegalStatusSelector',
+          'legal_status_comparison': 'LegalStatusComparison',
+          'cofounder_profile': 'CofounderProfile',
+          'cofounder_alignment': 'CofounderAlignment',
+          'recruitment_plan': 'RecruitmentPlan',
+          'cap_table_editor': 'CapTableEditor',
+          'ip_self_assessment': 'IPSelfAssessment',
+          'ip_procedures_checklist': 'IPProceduresChecklist',
+          'funding_map': 'FundingMap',
+          'term_sheet_builder': 'TermSheetBuilder',
+          'pitch_storyteller': 'PitchStoryTeller',
+          'investor_email_script': 'InvestorEmailScript',
+          'investor_objection_prep': 'InvestorObjectionPrep',
+          'investor_followup_plan': 'InvestorFollowUpPlan',
+          'startup_tool_picker': 'StartupToolPicker'
+        };
+        
+        return mappings[resourceType] || resourceType;
+      };
+
       if (materials && materials.length > 0) {
         console.log("Using materials from useCourseMaterials for resources");
 
@@ -37,7 +85,7 @@ export const useResourceFilters = (
           id: item.id || `material-${Math.random().toString(36).substring(7)}`,
           title: item.title,
           description: item.description || '',
-          componentName: item.component_name || '',
+          componentName: mapMaterialToComponentName(item.resource_type) || item.component_name || '',
           url: item.file_url,
           type: item.resource_type || 'resource',
           status: 'available' as const
@@ -57,8 +105,15 @@ export const useResourceFilters = (
           console.log("No authenticated session found when fetching resources (cached)");
           const stepResources = getStepResources(step, selectedSubstepTitle);
           console.log("Using step resources:", stepResources);
-          onResourcesFound(stepResources);
-          return stepResources;
+          
+          // Map component names from resource types
+          const mappedResources = stepResources.map(resource => ({
+            ...resource,
+            componentName: resource.componentName || mapMaterialToComponentName(resource.type || '')
+          }));
+          
+          onResourcesFound(mappedResources);
+          return mappedResources;
         }
 
         const { data: sessionData } = await supabase.auth.getSession();
@@ -68,8 +123,15 @@ export const useResourceFilters = (
           console.log("No authenticated session found when fetching resources");
           const stepResources = getStepResources(step, selectedSubstepTitle);
           console.log("Using step resources:", stepResources);
-          onResourcesFound(stepResources);
-          return stepResources;
+          
+          // Map component names from resource types
+          const mappedResources = stepResources.map(resource => ({
+            ...resource,
+            componentName: resource.componentName || mapMaterialToComponentName(resource.type || '')
+          }));
+          
+          onResourcesFound(mappedResources);
+          return mappedResources;
         }
 
         console.log("Building Supabase query for resources");
@@ -102,8 +164,15 @@ export const useResourceFilters = (
             variant: "destructive"
           });
           const stepResources = getStepResources(step, selectedSubstepTitle);
-          onResourcesFound(stepResources);
-          return stepResources;
+          
+          // Map component names from resource types
+          const mappedResources = stepResources.map(resource => ({
+            ...resource,
+            componentName: resource.componentName || mapMaterialToComponentName(resource.type || '')
+          }));
+          
+          onResourcesFound(mappedResources);
+          return mappedResources;
         }
 
         console.log(`Retrieved ${data?.length || 0} resources from Supabase for step ${step.id}`, data);
@@ -113,7 +182,7 @@ export const useResourceFilters = (
             id: item.id || `db-${Math.random().toString(36).substring(7)}`,
             title: item.title,
             description: item.description || '',
-            componentName: item.component_name,
+            componentName: mapMaterialToComponentName(item.resource_type) || item.component_name,
             url: item.file_url,
             type: item.resource_type || 'resource',
             status: 'available' as const
@@ -125,8 +194,15 @@ export const useResourceFilters = (
 
         const stepResources = getStepResources(step, selectedSubstepTitle);
         console.log("No resources from DB, using step resources:", stepResources);
-        onResourcesFound(stepResources);
-        return stepResources;
+        
+        // Map component names from resource types
+        const mappedResources = stepResources.map(resource => ({
+          ...resource,
+          componentName: resource.componentName || mapMaterialToComponentName(resource.type || '')
+        }));
+        
+        onResourcesFound(mappedResources);
+        return mappedResources;
 
       } catch (err) {
         console.error("Error in resource query:", err);
@@ -136,8 +212,15 @@ export const useResourceFilters = (
           variant: "destructive"
         });
         const stepResources = getStepResources(step, selectedSubstepTitle);
-        onResourcesFound(stepResources);
-        return stepResources;
+        
+        // Map component names from resource types
+        const mappedResources = stepResources.map(resource => ({
+          ...resource,
+          componentName: resource.componentName || mapMaterialToComponentName(resource.type || '')
+        }));
+        
+        onResourcesFound(mappedResources);
+        return mappedResources;
       }
     },
     staleTime: 1000 * 60 * 1, // Cache for 1 minute
@@ -145,4 +228,3 @@ export const useResourceFilters = (
     retry: 1
   });
 };
-

@@ -16,7 +16,20 @@ export default function ResourceManagerContent({
   selectedSubstepTitle,
   selectedResourceName
 }: ResourceManagerContentProps) {
-  if (!selectedResource) return null;
+  if (!selectedResource) {
+    console.log("No resource selected or resource not found:", selectedResourceName);
+    return (
+      <div className="p-6 text-center border rounded-lg bg-muted/20">
+        <p className="text-muted-foreground">Ressource non trouvée ou non disponible.</p>
+      </div>
+    );
+  }
+  
+  console.log("Rendering resource component:", {
+    resourceName: selectedResourceName,
+    componentName: selectedResource.componentName,
+    resourceType: selectedResource.type
+  });
   
   return (
     <div className="mt-4">
@@ -24,7 +37,11 @@ export default function ResourceManagerContent({
         <h3 className="text-lg font-medium">{selectedResource.title}</h3>
       </div>
       <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
-      {isBrowser() && renderResourceComponent(selectedResourceName, stepId, selectedSubstepTitle)}
+      {isBrowser() && renderResourceComponent(
+        selectedResource.componentName || selectedResourceName, 
+        stepId, 
+        selectedSubstepTitle
+      )}
     </div>
   );
 }
