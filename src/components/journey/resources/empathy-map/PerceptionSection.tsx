@@ -2,58 +2,78 @@
 import React from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 
 interface PerceptionSectionProps {
   thinksSays: string;
   does: string;
+  feels: string;
   hears: string;
   sees: string;
   onChange: (field: string, value: string) => void;
 }
 
-export function PerceptionSection({ thinksSays, does, hears, sees, onChange }: PerceptionSectionProps) {
+export function PerceptionSection({ 
+  thinksSays, 
+  does, 
+  feels,
+  hears,
+  sees,
+  onChange 
+}: PerceptionSectionProps) {
   return (
     <div className="space-y-6">
-      <h3 className="font-medium text-lg">Ce que le persona perçoit</h3>
+      <h3 className="font-medium text-lg">Perceptions et comportements</h3>
       
-      {/* Ce que le persona PENSE et DIT */}
+      {/* THINKS & SAYS */}
       <div className="p-5 border rounded-md bg-blue-50/10">
-        <Label className="font-medium mb-3 block">Ce qu'il/elle pense et dit</Label>
+        <Label className="font-medium mb-3 block">Pense et dit</Label>
         <Textarea 
-          placeholder="Quelles sont ses réflexions et ses expressions verbales ?"
+          placeholder="Que pense et dit votre persona ?"
           className="min-h-[150px]"
           value={thinksSays}
           onChange={(e) => onChange('thinks_says', e.target.value)}
         />
       </div>
 
-      {/* Ce que le persona FAIT */}
-      <div className="p-5 border rounded-md bg-green-50/10">
-        <Label className="font-medium mb-3 block">Ce qu'il/elle fait</Label>
+      {/* DOES */}
+      <div className="p-5 border rounded-md bg-amber-50/10">
+        <Label className="font-medium mb-3 block">Fait</Label>
         <Textarea 
-          placeholder="Quels sont ses comportements et ses actions ?"
+          placeholder="Que fait votre persona ? Quelles actions ?"
           className="min-h-[150px]"
           value={does}
           onChange={(e) => onChange('does', e.target.value)}
         />
       </div>
 
-      {/* Ce que le persona ENTEND */}
-      <div className="p-5 border rounded-md bg-yellow-50/10">
-        <Label className="font-medium mb-3 block">Ce qu'il/elle entend</Label>
+      {/* FEELS */}
+      <div className="p-5 border rounded-md bg-red-50/10">
+        <Label className="font-medium mb-3 block">Ressent</Label>
         <Textarea 
-          placeholder="Quelles influences reçoit-il/elle de son entourage ?"
+          placeholder="Quelles émotions ressent votre persona ?"
+          className="min-h-[150px]"
+          value={feels}
+          onChange={(e) => onChange('feels', e.target.value)}
+        />
+      </div>
+
+      {/* HEARS */}
+      <div className="p-5 border rounded-md bg-purple-50/10">
+        <Label className="font-medium mb-3 block">Entend</Label>
+        <Textarea 
+          placeholder="Qu'entend votre persona dans son environnement ?"
           className="min-h-[150px]"
           value={hears}
           onChange={(e) => onChange('hears', e.target.value)}
         />
       </div>
 
-      {/* Ce que le persona VOIT */}
-      <div className="p-5 border rounded-md bg-purple-50/10">
-        <Label className="font-medium mb-3 block">Ce qu'il/elle voit</Label>
+      {/* SEES */}
+      <div className="p-5 border rounded-md bg-emerald-50/10">
+        <Label className="font-medium mb-3 block">Voit</Label>
         <Textarea 
-          placeholder="À quel environnement est-il/elle exposé(e) ?"
+          placeholder="Que voit votre persona dans son environnement ?"
           className="min-h-[150px]"
           value={sees}
           onChange={(e) => onChange('sees', e.target.value)}
