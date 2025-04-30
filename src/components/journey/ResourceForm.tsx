@@ -39,6 +39,7 @@ export default function ResourceForm({
   const initialDataRef = useRef(formData || defaultValues);
   const hasCalledOnDataSavedRef = useRef(false);
   const [stableInitialData] = useState(initialDataRef.current); // Use only once at mount
+  const manualSaveTriggeredRef = useRef(false);
   
   // Use ResourceData hook with stable initial data to prevent loops
   const {
@@ -49,31 +50,36 @@ export default function ResourceForm({
     handleManualSave,
     session
   } = useResourceData(stepId, substepTitle, resourceType, stableInitialData, useCallback((data) => {
-    // Only call parent's onDataSaved if we have meaningful data and not in an initialization loop
+    // Only call parent's onDataSaved for manual saves or after initial load
     if (onDataSavedRef.current && data && Object.keys(data).length > 0) {
-      if (hasCalledOnDataSavedRef.current) {
-        // Normal update
+      if (hasCalledOnDataSavedRef.current || manualSaveTriggeredRef.current) {
+        // Normal update or manual save
         console.log("Calling onDataSaved from ResourceForm after validation");
         onDataSavedRef.current(data);
+        // Reset manual save flag
+        manualSaveTriggeredRef.current = false;
       } else {
         // First call - mark flag and delay to prevent loops
         console.log("First onDataSaved call in ResourceForm");
         hasCalledOnDataSavedRef.current = true;
         
-        // Only call if we have a handler
-        setTimeout(() => {
-          if (onDataSavedRef.current) {
-            console.log("Delayed first onDataSaved to prevent loops");
-            onDataSavedRef.current(data);
-          }
-        }, 500);
+        // Skip auto-call for initial data to prevent loops
+        if (JSON.stringify(data).length > 20) {
+          setTimeout(() => {
+            if (onDataSavedRef.current) {
+              console.log("Delayed first onDataSaved to prevent loops");
+              onDataSavedRef.current(data);
+            }
+          }, 500);
+        } else {
+          console.log("Initial data too small, skipping first onDataSaved call");
+        }
       }
     }
   }, []));
   
   // Use ref to track unmounting
   const isUnmountingRef = useRef(false);
-  const wasManualSaveRef = useRef(false);
   const lastSavedDataRef = useRef<string>("");
 
   // Convert current formData to string for comparison
@@ -92,7 +98,7 @@ export default function ResourceForm({
         isUnmountingRef.current = true;
         
         // Only save if data actually changed since last save
-        if (currentFormDataString !== lastSavedDataRef.current) {
+        if (currentFormDataString !== lastSavedDataRef.current && currentFormDataString.length > 20) {
           console.log("Data changed, triggering final save");
           handleSave(session);
           lastSavedDataRef.current = currentFormDataString;
@@ -108,7 +114,7 @@ export default function ResourceForm({
   // Handle manual save button click
   const onSaveClick = useCallback(() => {
     console.log("Manual save button clicked");
-    wasManualSaveRef.current = true;
+    manualSaveTriggeredRef.current = true;
     if (session) {
       handleManualSave(session);
       lastSavedDataRef.current = currentFormDataString;

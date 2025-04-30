@@ -13,6 +13,7 @@ export const useResourceFormState = (
   const debounceTimerRef = useRef<any>(null);
   const previousDataRef = useRef<string>(JSON.stringify(initialValues || {}));
   const updatesCountRef = useRef(0);
+  const manualUpdateTriggeredRef = useRef(false);
   
   // Safe initial update
   useEffect(() => {
@@ -41,7 +42,7 @@ export const useResourceFormState = (
       
       // Limit update frequency
       updatesCountRef.current += 1;
-      if (updatesCountRef.current > 10) {
+      if (updatesCountRef.current > 10 && !manualUpdateTriggeredRef.current) {
         setTimeout(() => { updatesCountRef.current = 0; }, 2000);
         console.log("Too many updates in short period, throttling callbacks");
         return updated;
@@ -55,8 +56,13 @@ export const useResourceFormState = (
         
         debounceTimerRef.current = setTimeout(() => {
           console.log("Calling onDataChanged after debounce");
-          onDataChanged(updated);
-        }, 800);  // Increased debounce time
+          // Only call if we have meaningful data (not empty)
+          if (updatedString.length > 10) {
+            onDataChanged(updated);
+          } else {
+            console.log("Data too small, skipping callback");
+          }
+        }, 1000);  // Increased debounce time
       }
       
       return updated;
@@ -80,9 +86,9 @@ export const useResourceFormState = (
       return;
     }
     
-    // Throttle updates
+    // Throttle updates unless it's a manual update
     updatesCountRef.current += 1;
-    if (updatesCountRef.current > 5) {
+    if (updatesCountRef.current > 5 && !manualUpdateTriggeredRef.current) {
       setTimeout(() => { updatesCountRef.current = 0; }, 2000);
       console.log("Too many bulk updates, throttling");
       return;
@@ -91,6 +97,12 @@ export const useResourceFormState = (
     previousDataRef.current = dataString;
     console.log("Updating all form data");
     setFormData(data);
+    
+    // Skip callback for minor updates
+    if (dataString.length < 10) {
+      console.log("Data too minimal, skipping callback");
+      return;
+    }
     
     // Same debounce pattern for bulk updates with increased delay
     if (onDataChanged) {
@@ -101,9 +113,19 @@ export const useResourceFormState = (
       debounceTimerRef.current = setTimeout(() => {
         console.log("Calling onDataChanged after bulk update debounce");
         onDataChanged(data);
-      }, 1000);
+      }, 1200);
     }
   }, [onDataChanged]);
+  
+  // Method to trigger a manual update that bypasses throttling
+  const triggerManualUpdate = useCallback((data: any) => {
+    manualUpdateTriggeredRef.current = true;
+    updateFormData(data);
+    // Reset the flag after a delay
+    setTimeout(() => {
+      manualUpdateTriggeredRef.current = false;
+    }, 1000);
+  }, [updateFormData]);
   
   // Cleanup
   useEffect(() => {
@@ -117,6 +139,7 @@ export const useResourceFormState = (
   return {
     formData,
     setFormData: updateFormData,
+    triggerManualUpdate,
     handleFormChange
   };
 };

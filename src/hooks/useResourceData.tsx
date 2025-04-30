@@ -16,6 +16,7 @@ export const useResourceData = (
   const isInitializingRef = useRef(true);
   const firstLoadCompletedRef = useRef(false);
   const previousDataStringRef = useRef("");
+  const manualSaveRequestedRef = useRef(false);
   
   // Initialize default values with memoization to prevent loops
   const initialValues = useMemo(() => defaultValues || {}, []);
@@ -28,12 +29,15 @@ export const useResourceData = (
   } = useResourceFormState(initialValues, (data) => {
     // Skip callbacks during initialization or loops
     if (!isInitializingRef.current && onDataSaved) {
-      // Compare with previous data to avoid unnecessary callbacks
+      // Only trigger onDataSaved for manual saves or significant changes
       const currentDataString = JSON.stringify(data);
-      if (currentDataString !== previousDataStringRef.current) {
+      if ((manualSaveRequestedRef.current || currentDataString !== previousDataStringRef.current) && 
+          firstLoadCompletedRef.current) {
         console.log("Data changed after initialization, calling onDataSaved");
         previousDataStringRef.current = currentDataString;
         onDataSaved(data);
+        // Reset the manual save flag
+        manualSaveRequestedRef.current = false;
       }
     }
   });
@@ -61,11 +65,11 @@ export const useResourceData = (
     }, 500);
   });
 
-  // Use the resource actions hook
+  // Use the resource actions hook with manual save tracking
   const {
     isSaving,
     handleSave,
-    handleManualSave
+    handleManualSave: originalHandleManualSave
   } = useResourceActions(
     formData,
     stepId, 
@@ -73,6 +77,13 @@ export const useResourceData = (
     resourceType,
     resourceId
   );
+  
+  // Wrap the manual save handler to set our flag
+  const handleManualSave = async (session: any) => {
+    console.log("Manual save requested");
+    manualSaveRequestedRef.current = true;
+    return originalHandleManualSave(session);
+  };
 
   // Initial values effect - run ONCE in a controlled way
   useEffect(() => {
@@ -92,9 +103,9 @@ export const useResourceData = (
         if (!hasCalledInitialDataSavedRef.current) {
           hasCalledInitialDataSavedRef.current = true;
           
-          // Compare with current form data to avoid unnecessary updates
+          // Only trigger after meaningful data changes
           const initialDataString = JSON.stringify(initialValues);
-          if (initialDataString !== previousDataStringRef.current) {
+          if (initialDataString !== previousDataStringRef.current && initialDataString.length > 10) {
             previousDataStringRef.current = initialDataString;
             console.log("First and only initial onDataSaved call");
             onDataSaved(initialValues);

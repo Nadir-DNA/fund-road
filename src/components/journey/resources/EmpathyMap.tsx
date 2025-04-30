@@ -1,5 +1,5 @@
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,9 @@ interface EmpathyMapProps {
 }
 
 export default function EmpathyMap({ stepId, substepTitle, onClose }: EmpathyMapProps) {
+  // Track first render to avoid initial data save loops
+  const isFirstRender = useRef(true);
+  
   const [formData, setFormData] = useState({
     persona_name: "",
     persona_role: "",
@@ -27,18 +30,26 @@ export default function EmpathyMap({ stepId, substepTitle, onClose }: EmpathyMap
     goals: ""
   });
 
-  // Valeurs initiales figées une fois au montage pour éviter les resets
+  // Fixed initial values that won't change
   const initialValues = useMemo(() => formData, []);
   
-  // Stabilize data handler to prevent loops
+  // Stable data handler with loop prevention
   const handleDataSaved = useCallback((data: any) => {
-    // Ne mettre à jour que si les données ont vraiment changé
+    // Skip the first automatic data save to prevent initialization loops
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      console.log("EmpathyMap - First render, skipping initial data save");
+      return;
+    }
+    
+    // Only update if data has actually changed
     if (JSON.stringify(data) !== JSON.stringify(formData)) {
       console.log("EmpathyMap - onDataSaved avec changements");
       setFormData(data);
       
-      // Si onClose est fourni, l'appeler (pour fermer le panneau dépliant)
+      // Call onClose only after manual save, not during automatic saves
       if (onClose) {
+        console.log("EmpathyMap - Calling onClose to collapse panel");
         onClose();
       }
     } else {
