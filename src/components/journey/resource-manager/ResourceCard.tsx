@@ -1,11 +1,19 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Resource } from "@/types/journey";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, FileText } from "lucide-react";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
+
+// Update Resource interface to include missing properties
+interface Resource {
+  title: string;
+  description: string;
+  componentName?: string;
+  externalUrl?: string;
+  type: string;
+}
 
 interface ResourceCardProps {
   resource: Resource;

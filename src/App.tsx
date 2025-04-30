@@ -1,6 +1,5 @@
 
 import { Routes, Route, Navigate } from "react-router-dom";
-import DashboardLayout from "@/layouts/DashboardLayout";
 import NotFound from "@/pages/NotFound";
 import Roadmap from "@/pages/Roadmap";
 import StepDetail from "@/pages/StepDetail";
@@ -24,7 +23,7 @@ function App() {
         <Route path="/" element={<Navigate to="/roadmap" replace />} />
         <Route path="/roadmap" element={<Roadmap />} />
         
-        {/* Nouvelles routes pour les étapes */}
+        {/* Routes pour les étapes */}
         <Route path="/step/:stepId" element={<StepDetail />} />
         <Route path="/step/:stepId/:substepTitle" element={<StepDetail />} />
         <Route path="/step/:stepId/:substepTitle/resource/:resource" element={<StepDetail />} />
