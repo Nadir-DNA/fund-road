@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Resource } from "@/types/journey";
 import { toast } from "@/components/ui/use-toast";
+import { getStepResources } from "@/utils/resourceHelpers";
 
 export const useResourceFilters = (
   step: any,
@@ -144,3 +145,4 @@ export const useResourceFilters = (
     retry: 1
   });
 };
+
