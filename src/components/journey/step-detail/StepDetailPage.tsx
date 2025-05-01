@@ -8,85 +8,55 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import StepContent from "./StepContent";
 import StepNavigation from "./StepNavigation";
-import { supabase } from "@/integrations/supabase/client";
+import { useStepTabs } from "@/hooks/useStepTabs";
+import { toast } from "@/components/ui/use-toast";
 
 export default function StepDetailPage() {
   const { stepId: stepIdParam, substepTitle: substepTitleParam, resource: resourceName } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [courseContent, setCourseContent] = useState<string | null>(null);
   const [isLoadingCourse, setIsLoadingCourse] = useState<boolean>(false);
   
+  // Récupération des paramètres d'URL
   const selectedResource = searchParams.get('resource');
+  const tabFromUrl = searchParams.get('tab');
   const stepId = parseInt(stepIdParam || "1");
   const substepTitle = substepTitleParam ? decodeURIComponent(substepTitleParam) : null;
+  
+  // Utiliser le hook pour gérer l'onglet actif
+  const { activeTab, handleTabChange } = useStepTabs(selectedResource || resourceName || null);
   
   // Find the current step from the journey steps
   const step = journeySteps.find(s => s.id === stepId);
   const selectedSubStep = step?.subSteps?.find(s => s.title === substepTitle) || null;
   
-  console.log("StepDetail - stepId:", stepId, "substepTitle:", substepTitle, "resourceName:", resourceName || selectedResource);
-  console.log("step found:", step?.title);
-  console.log("selectedSubStep found:", selectedSubStep?.title);
+  console.log("StepDetailPage - Loading with:", { 
+    stepId, 
+    substepTitle, 
+    resourceName: resourceName || selectedResource,
+    activeTab,
+    tabFromUrl 
+  });
 
-  // Check if we should show resources tab by default
+  // Check if we should show resources tab by default based on URL or localStorage
   useEffect(() => {
-    const showResources = localStorage.getItem('showResources') === 'true';
+    const showResources = localStorage.getItem('showResources') === 'true' || tabFromUrl === 'resources';
     
     if (showResources) {
-      // Clear the flag
+      // Clear the localStorage flag
       localStorage.removeItem('showResources');
       
+      // Log for debugging
+      console.log("Setting activeTab to resources based on flag or URL param");
+      
       // Update search params to switch to resources tab
+      handleTabChange('resources');
+      
       const newSearchParams = new URLSearchParams(searchParams);
       newSearchParams.set('tab', 'resources');
       navigate({ search: newSearchParams.toString() }, { replace: true });
     }
-  }, [navigate, searchParams]);
-
-  // Fetch course content from Supabase
-  useEffect(() => {
-    const fetchCourseContent = async () => {
-      setIsLoadingCourse(true);
-      
-      try {
-        console.log(`Fetching course content for step ${stepId} and substep ${substepTitle || 'main'}`);
-        
-        let query = supabase
-          .from('entrepreneur_resources')
-          .select('*')
-          .eq('step_id', stepId)
-          .eq('resource_type', 'course');
-        
-        if (substepTitle) {
-          query = query.eq('substep_title', substepTitle);
-        } else {
-          query = query.is('substep_title', null);
-        }
-        
-        const { data: courses, error } = await query;
-        
-        if (error) {
-          console.error("Error fetching course content:", error);
-          return;
-        }
-        
-        if (courses && courses.length > 0) {
-          console.log(`Found ${courses.length} courses from Supabase:`, courses);
-          setCourseContent(courses[0].course_content);
-        } else {
-          console.log("No course content found in Supabase");
-          setCourseContent(null);
-        }
-      } catch (err) {
-        console.error("Failed to fetch course content:", err);
-      } finally {
-        setIsLoadingCourse(false);
-      }
-    };
-    
-    fetchCourseContent();
-  }, [stepId, substepTitle]);
+  }, [navigate, searchParams, handleTabChange]);
 
   if (!step) {
     return (
@@ -125,8 +95,9 @@ export default function StepDetailPage() {
           stepId={stepId}
           substepTitle={substepTitle}
           resourceName={resourceName || selectedResource}
-          courseContent={courseContent}
           isLoading={isLoadingCourse}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
         />
         
         <StepNavigation 

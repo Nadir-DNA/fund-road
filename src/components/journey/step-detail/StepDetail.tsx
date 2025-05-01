@@ -14,10 +14,16 @@ interface StepDetailProps {
 export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
   const navigate = useNavigate();
   
-  const { materials, isLoading: isLoadingMaterials } = useCourseMaterials(
+  // Utilisez le hook avec stepId et le titre de la sous-étape
+  const { materials, isLoading: isLoadingMaterials, error: materialsError } = useCourseMaterials(
     step.id, 
     selectedSubStep?.title || null
   );
+
+  // Debug pour vérifier les chargements et les erreurs
+  console.log("Materials chargés:", materials?.length || 0);
+  console.log("Step ID:", step.id, "SubStep:", selectedSubStep?.title || "étape principale");
+  if (materialsError) console.error("Erreur de chargement des matériaux:", materialsError);
 
   // Handle back navigation
   useEffect(() => {
@@ -33,11 +39,6 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
     return () => window.removeEventListener('popstate', handleBackNavigation);
   }, [navigate]);
 
-  // Debugging pour mieux comprendre le problème
-  console.log("Materials récupérés:", materials);
-  console.log("Étape sélectionnée:", step.id, step.title);
-  console.log("Sous-étape sélectionnée:", selectedSubStep?.title || "étape principale");
-
   // Get course content from materials
   const courseMaterial = materials?.find(material => 
     material.resource_type === 'course' && 
@@ -46,9 +47,8 @@ export default function StepDetail({ step, selectedSubStep }: StepDetailProps) {
       : material.substep_title === null)
   );
 
-  console.log("Matériel de cours trouvé:", courseMaterial);
+  console.log("Matériel de cours trouvé:", courseMaterial ? 'Oui' : 'Non');
   const courseContent = courseMaterial?.course_content || "";
-  console.log("Contenu du cours:", courseContent ? `Disponible (longueur: ${courseContent.length})` : "Non disponible");
 
   const handleDialogClose = () => {
     console.log("Dialog close handler called in StepDetail");

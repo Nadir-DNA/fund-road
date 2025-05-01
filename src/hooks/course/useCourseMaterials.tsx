@@ -49,6 +49,8 @@ export const useCourseMaterials = (stepId: number, substepTitle: string | null, 
       }
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    // Force refetch when stepId or substepTitle changes
+    enabled: stepId > 0,
   });
 
   // Return a structured object with materials property

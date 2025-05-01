@@ -33,6 +33,14 @@ export function ResourceFilters({
     onResourcesFound
   );
 
+  // Log current state for debugging
+  console.log("ResourceFilters - Params:", {
+    stepId: step.id, 
+    substep: selectedSubstepTitle || "main", 
+    subsubstep: selectedSubSubstepTitle || "none"
+  });
+  console.log("ResourceFilters - Resources:", resources?.length || 0);
+  
   // Add direct Supabase query for course content
   useEffect(() => {
     const fetchCourseContent = async () => {
@@ -85,7 +93,10 @@ export function ResourceFilters({
       }
     };
     
-    fetchCourseContent();
+    // Only fetch if we have a valid step id
+    if (step && step.id) {
+      fetchCourseContent();
+    }
   }, [step.id, selectedSubstepTitle, onResourcesFound, resources]);
 
   // Le composant ne rend rien directement, il gère uniquement la logique de requête

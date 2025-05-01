@@ -25,6 +25,12 @@ export default function ResourceManager({
   const [hasSession, setHasSession] = useState<boolean | null>(null);
   const [resources, setResources] = useState<Resource[]>([]);
   
+  console.log("ResourceManager - Rendering with params:", { 
+    stepId: step.id, 
+    substep: selectedSubstepTitle || "main",
+    resource: selectedResourceName || "none"
+  });
+  
   // Check for session on mount
   useEffect(() => {
     const checkSession = async () => {
@@ -41,14 +47,15 @@ export default function ResourceManager({
   }, []);
 
   // Use customized hook to get materials for step, substep, and subsubstep
-  const { materials, isLoading: isMaterialsLoading } = useCourseMaterials(
+  const { materials, isLoading: isMaterialsLoading, error: materialsError } = useCourseMaterials(
     step.id,
     selectedSubstepTitle || null,
     selectedSubSubstepTitle
   );
 
-  console.log("ResourceManager - materials:", materials);
-  console.log("ResourceManager - step.resources:", step.resources);
+  // Log for debugging
+  console.log("ResourceManager - materials count:", materials?.length || 0);
+  console.log("ResourceManager - step.resources:", step.resources?.length || 0);
   
   // In case we have no resources yet, use those from step data directly
   useEffect(() => {
@@ -68,7 +75,7 @@ export default function ResourceManager({
 
   // Handle resources found by ResourceFilters
   const handleResourcesFound = (foundResources: Resource[]) => {
-    console.log("Resources found:", foundResources);
+    console.log("Resources found:", foundResources.length);
     if (foundResources.length > 0) {
       setResources(foundResources);
     }
@@ -77,13 +84,12 @@ export default function ResourceManager({
   // Handle selected resource display
   if (selectedResourceName && selectedSubstepTitle) {
     console.log("Looking for resource:", selectedResourceName);
-    console.log("Current resources:", resources);
     
     const selectedResource = resources?.find(r => r.componentName === selectedResourceName) ||
       step.resources?.find((r: Resource) => r.componentName === selectedResourceName);
 
     if (selectedResource) {
-      console.log("Selected resource found:", selectedResource);
+      console.log("Selected resource found:", selectedResource.title);
       return (
         <ResourceManagerContent 
           selectedResource={selectedResource}
@@ -100,6 +106,18 @@ export default function ResourceManager({
   // Show loading indicator
   if (hasSession === null || isMaterialsLoading) {
     return <ResourceManagerLoading />;
+  }
+
+  // Show error if present
+  if (materialsError) {
+    return (
+      <div className="mt-4 p-6 bg-destructive/10 rounded-lg border border-destructive/30">
+        <h3 className="text-lg font-medium mb-2 text-destructive">Erreur de chargement</h3>
+        <p className="text-muted-foreground">
+          Impossible de charger les ressources. Veuillez réessayer ou contacter le support.
+        </p>
+      </div>
+    );
   }
 
   // Filter resources for display
@@ -121,7 +139,12 @@ export default function ResourceManager({
       <h3 className="text-lg font-medium mb-4">Ressources disponibles</h3>
       {resources.length === 0 ? (
         <div className="p-6 text-center border rounded-lg bg-muted/20">
-          <p className="text-muted-foreground">Aucune ressource disponible pour cette section.</p>
+          <p className="text-muted-foreground">
+            Aucune ressource disponible pour {selectedSubstepTitle || "cette étape"}.
+            <span className="block text-sm mt-1 text-muted-foreground/80">
+              (Étape: {step.id}, {selectedSubstepTitle ? `Sous-étape: ${selectedSubstepTitle}` : "Étape principale"})
+            </span>
+          </p>
         </div>
       ) : (
         <ResourceManagerTabs 

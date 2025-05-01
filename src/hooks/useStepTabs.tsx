@@ -1,19 +1,28 @@
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 
 export const useStepTabs = (selectedResourceName: string | null) => {
-  const [activeTab, setActiveTab] = useState<string>("overview");
+  const [searchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
   
-  // Set the activeTab based on the selectedResourceName
-  // This effect runs when the component mounts or when selectedResourceName changes
+  // Initialize activeTab based on URL params or default to overview
+  const [activeTab, setActiveTab] = useState<string>(tabFromUrl || "overview");
+  
+  // Set the activeTab based on the URL params and the selectedResourceName
   useEffect(() => {
-    if (selectedResourceName) {
-      // If a resource is selected, switch to the resources tab
+    if (tabFromUrl) {
+      console.log(`Setting activeTab to ${tabFromUrl} from URL params`);
+      setActiveTab(tabFromUrl);
+    } else if (selectedResourceName) {
+      // If a resource is selected but no tab is specified, switch to the resources tab
+      console.log(`Setting activeTab to resources because resource ${selectedResourceName} is selected`);
       setActiveTab("resources");
     }
-  }, [selectedResourceName]);
+  }, [tabFromUrl, selectedResourceName]);
 
   const handleTabChange = (value: string) => {
+    console.log(`Tab changed to: ${value}`);
     setActiveTab(value);
   };
 

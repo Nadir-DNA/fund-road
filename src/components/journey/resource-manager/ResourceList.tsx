@@ -6,6 +6,7 @@ import { Package } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
+import { toast } from "@/components/ui/use-toast";
 
 interface ResourceListProps {
   resources: Resource[];
@@ -18,14 +19,22 @@ interface ResourceListProps {
 export default function ResourceList({ resources, stepId, substepTitle, subsubstepTitle, selectedResourceName }: ResourceListProps) {
   const [isLoadingCourses, setIsLoadingCourses] = useState(false);
   const [allResources, setAllResources] = useState<Resource[]>(resources);
+  const [error, setError] = useState<string | null>(null);
   
-  // Effect to fetch course content directly when component mounts
+  console.log("ResourceList - Rendering with params:", { 
+    stepId, 
+    substepTitle, 
+    initialResources: resources.length 
+  });
+  
+  // Effect to fetch course content directly when component mounts or params change
   useEffect(() => {
     // Start with the existing resources
     setAllResources(resources);
     
     const fetchCourseContent = async () => {
       setIsLoadingCourses(true);
+      setError(null);
       try {
         console.log(`ResourceList: Fetching courses for step ${stepId} and substep ${substepTitle || 'main'}`);
         
@@ -45,6 +54,12 @@ export default function ResourceList({ resources, stepId, substepTitle, subsubst
         
         if (error) {
           console.error("Error fetching course content:", error);
+          setError("Erreur lors du chargement des ressources");
+          toast({
+            title: "Erreur de chargement",
+            description: "Impossible de récupérer les ressources du cours",
+            variant: "destructive"
+          });
           return;
         }
         
@@ -68,15 +83,21 @@ export default function ResourceList({ resources, stepId, substepTitle, subsubst
             const nonCourseResources = prevResources.filter(r => r.type !== 'course');
             return [...nonCourseResources, ...courseResources];
           });
+        } else {
+          console.log("No courses found from Supabase for this step/substep");
         }
       } catch (err) {
         console.error("Failed to fetch courses:", err);
+        setError("Erreur inattendue lors du chargement");
       } finally {
         setIsLoadingCourses(false);
       }
     };
     
-    fetchCourseContent();
+    // Only fetch if we have a valid stepId
+    if (stepId) {
+      fetchCourseContent();
+    }
   }, [stepId, substepTitle, resources]);
   
   if (isLoadingCourses) {
@@ -88,6 +109,23 @@ export default function ResourceList({ resources, stepId, substepTitle, subsubst
     );
   }
 
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col items-center justify-center py-8">
+            <p className="text-center text-destructive mb-2">
+              {error}
+            </p>
+            <p className="text-center text-muted-foreground text-sm">
+              Veuillez réessayer ou contacter le support si le problème persiste
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!allResources || allResources.length === 0) {
     return (
       <Card>
@@ -95,7 +133,10 @@ export default function ResourceList({ resources, stepId, substepTitle, subsubst
           <div className="flex flex-col items-center justify-center py-12">
             <Package className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
             <p className="text-center text-muted-foreground">
-              Aucune ressource disponible dans cette catégorie.
+              Aucune ressource disponible pour {substepTitle || "cette étape"}.
+            </p>
+            <p className="text-center text-muted-foreground/80 text-sm mt-2">
+              (step: {stepId}, substep: {substepTitle || 'main'})
             </p>
           </div>
         </CardContent>
