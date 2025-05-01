@@ -6,9 +6,9 @@ import { toast } from "@/components/ui/use-toast";
 /**
  * Hook pour récupérer les matériels de cours depuis Supabase
  */
-export const useCourseMaterials = (stepId: number, substepTitle: string | null) => {
-  return useQuery({
-    queryKey: ['course-materials', stepId, substepTitle],
+export const useCourseMaterials = (stepId: number, substepTitle: string | null, subsubstepTitle?: string | null) => {
+  const query = useQuery({
+    queryKey: ['course-materials', stepId, substepTitle, subsubstepTitle],
     queryFn: async () => {
       try {
         console.log(`Fetching course materials for stepId: ${stepId}, substepTitle: ${substepTitle || 'main'}`);
@@ -22,6 +22,11 @@ export const useCourseMaterials = (stepId: number, substepTitle: string | null) 
           query = query.eq('substep_title', substepTitle);
         } else {
           query = query.is('substep_title', null);
+        }
+        
+        // Add subsubstepTitle filter if provided
+        if (subsubstepTitle) {
+          query = query.eq('subsubstep_title', subsubstepTitle);
         }
         
         const { data, error } = await query;
@@ -45,4 +50,12 @@ export const useCourseMaterials = (stepId: number, substepTitle: string | null) 
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
+
+  // Return a structured object with materials property
+  return {
+    materials: query.data || [],
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch
+  };
 };
