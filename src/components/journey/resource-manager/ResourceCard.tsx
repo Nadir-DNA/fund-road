@@ -3,10 +3,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, FileText } from "lucide-react";
+import { BookOpen, ExternalLink, FileText, BookOpenCheck } from "lucide-react";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { Resource } from "@/types/journey";
 import { toast } from "@/components/ui/use-toast";
+import { saveResourceReturnPath } from "@/utils/navigationUtils";
 
 interface ResourceCardProps {
   resource: Resource;
@@ -33,11 +34,30 @@ export default function ResourceCard({
       return;
     }
 
-    if (resource.componentName) {
+    const componentName = resource.componentName || resource.type === 'course' ? 'CourseContentDisplay' : undefined;
+    
+    if (componentName) {
+      // Save current path for back navigation
+      saveResourceReturnPath(window.location.pathname + window.location.search);
+      
       // Make sure to encode the substep title for the URL
       const encodedSubstep = substepTitle ? `/${encodeURIComponent(substepTitle)}` : '';
-      const resourceUrl = `/step/${stepId}${encodedSubstep}/resource/${resource.componentName}`;
+      const resourceUrl = `/step/${stepId}${encodedSubstep}/resource/${componentName}`;
       console.log("Navigating to resource:", resourceUrl);
+      
+      // Add the resource itself to localStorage to ensure its data is available
+      if (resource.type === 'course' && resource.courseContent) {
+        try {
+          localStorage.setItem('currentCourseContent', JSON.stringify({
+            stepId,
+            substepTitle,
+            title: resource.title,
+            content: resource.courseContent
+          }));
+        } catch (err) {
+          console.error("Failed to save course content to localStorage:", err);
+        }
+      }
       
       navigate(resourceUrl);
       setTimeout(() => setIsLoading(false), 300);
@@ -51,6 +71,14 @@ export default function ResourceCard({
     }
   };
 
+  // Define the icon based on resource type
+  const getResourceIcon = () => {
+    if (resource.type === 'course') {
+      return <BookOpenCheck className="h-3 w-3 mr-1" />;
+    }
+    return <FileText className="h-3 w-3 mr-1" />;
+  };
+
   return (
     <Card className="group transition-all duration-200 border hover:border-primary/50">
       <CardHeader className="pb-2">
@@ -60,7 +88,7 @@ export default function ResourceCard({
       
       <CardContent className="py-2">
         <div className="flex items-center text-xs text-muted-foreground">
-          <FileText className="h-3 w-3 mr-1" />
+          {getResourceIcon()}
           <span>{resource.type || 'resource'}</span>
           {resource.componentName && <span className="ml-1 text-xs opacity-50">({resource.componentName})</span>}
         </div>
@@ -72,13 +100,17 @@ export default function ResourceCard({
           size="sm"
           className="w-full"
           onClick={handleResourceClick}
-          disabled={isLoading || resource.status === 'coming-soon' || !resource.componentName}
+          disabled={isLoading || resource.status === 'coming-soon'}
         >
           {isLoading ? (
             <LoadingIndicator size="sm" />
           ) : resource.url ? (
             <>
               Voir <ExternalLink className="ml-1 h-3 w-3" />
+            </>
+          ) : resource.type === 'course' ? (
+            <>
+              <BookOpen className="mr-1 h-3 w-3" /> Ouvrir le cours
             </>
           ) : (
             "Ouvrir"

@@ -3,6 +3,8 @@ import { renderResourceComponent } from "../utils/resourceRenderer";
 import { isBrowser } from "@/utils/navigationUtils";
 import { Resource } from "@/types/journey";
 import { useState, useEffect } from "react";
+import { toast } from "@/components/ui/use-toast";
+import CourseContentDisplay from "../CourseContentDisplay";
 
 interface ResourceManagerContentProps {
   selectedResource: Resource | undefined;
@@ -27,8 +29,9 @@ export default function ResourceManagerContent({
       setError(null);
       console.log(`Rendering resource:`, {
         title: selectedResource.title,
+        type: selectedResource.type,
         componentName: selectedResource.componentName || selectedResourceName,
-        type: selectedResource.type
+        courseContent: selectedResource.type === 'course' ? 'Available' : 'N/A'
       });
     }
   }, [selectedResource, selectedResourceName, stepId, selectedSubstepTitle]);
@@ -40,7 +43,26 @@ export default function ResourceManagerContent({
       </div>
     );
   }
+
+  // Special handling for course content
+  if (selectedResource.type === 'course' && selectedResource.courseContent) {
+    return (
+      <div className="mt-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium">{selectedResource.title}</h3>
+        </div>
+        <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
+        <CourseContentDisplay 
+          stepId={stepId}
+          substepTitle={selectedSubstepTitle}
+          stepTitle={selectedResource.title}
+          courseContent={selectedResource.courseContent}
+        />
+      </div>
+    );
+  }
   
+  // Default rendering for other resource types
   const componentName = selectedResource.componentName || selectedResourceName;
   
   return (

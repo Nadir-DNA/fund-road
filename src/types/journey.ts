@@ -22,6 +22,7 @@ export interface Resource {
   url?: string;
   componentName?: string;
   status?: 'available' | 'coming-soon' | 'beta';
+  courseContent?: string; // Added for course resources
 };
 
 export type Step = {

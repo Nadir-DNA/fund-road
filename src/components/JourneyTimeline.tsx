@@ -5,6 +5,7 @@ import { journeySteps } from "@/data/journeySteps";
 import { useJourneyProgress } from "@/hooks/useJourneyProgress";
 import StepCard from "@/components/journey/StepCard";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
+import { toast } from "@/components/ui/use-toast";
 
 export default function JourneyTimeline() {
   const { localSteps, isLoading: stepsLoading } = useJourneyProgress(journeySteps);
@@ -14,11 +15,22 @@ export default function JourneyTimeline() {
   const handleStepClick = (stepId: number) => {
     console.log(`Step clicked: ${stepId}`);
     setSelectedStep(stepId);
+    
+    // Set a flag in localStorage to indicate resources should be shown
+    localStorage.setItem('showResources', 'true');
+    
+    // Navigate to step detail page
     navigate(`/step/${stepId}`);
   };
 
   const handleSubStepClick = (stepId: number, substepTitle: string) => {
     console.log(`Substep clicked: ${stepId}/${substepTitle}`);
+    
+    // Set a flag in localStorage to indicate resources should be shown
+    localStorage.setItem('showResources', 'true');
+    localStorage.setItem('selectedSubstep', substepTitle);
+    
+    // Navigate to substep detail page
     navigate(`/step/${stepId}/${encodeURIComponent(substepTitle)}`);
   };
 
