@@ -6,9 +6,10 @@ import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 interface ResourcesListProps {
   stepId: number;
   substepTitle: string | null;
+  stepTitle?: string; // Make stepTitle optional
 }
 
-export default function ResourcesList({ stepId, substepTitle }: ResourcesListProps) {
+export default function ResourcesList({ stepId, substepTitle, stepTitle }: ResourcesListProps) {
   const { data: resources, isLoading, error } = useCourseContent(stepId, substepTitle);
 
   console.log(`ResourcesList - Rendering with stepId: ${stepId}, substepTitle: ${substepTitle || 'main'}`);
@@ -64,7 +65,7 @@ export default function ResourcesList({ stepId, substepTitle }: ResourcesListPro
             <CourseContentDisplay 
               stepId={stepId}
               substepTitle={substepTitle}
-              stepTitle={resource.title || ""}
+              stepTitle={stepTitle || resource.title || ""}
               courseContent={resource.course_content}
             />
           )}

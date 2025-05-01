@@ -29,8 +29,8 @@ function App() {
         </Route>
         
         {/* Legacy compatibility route */}
-        <Route path="/step/:stepId" element={<Navigate to={(params) => `/roadmap/step/${params.stepId}`} replace />} />
-        <Route path="/step/:stepId/:substepTitle" element={<Navigate to={(params) => `/roadmap/step/${params.stepId}/${params.substepTitle}`} replace />} />
+        <Route path="/step/:stepId" element={<Navigate to={params => `/roadmap/step/${params.stepId}`} replace />} />
+        <Route path="/step/:stepId/:substepTitle" element={<Navigate to={params => `/roadmap/step/${params.stepId}/${params.substepTitle}`} replace />} />
         
         {/* Fallback for routes not found */}
         <Route path="*" element={<NotFound />} />
