@@ -28,9 +28,8 @@ export default function StepContent({
   substepTitle
 }: StepContentProps) {
   const [searchParams] = useSearchParams();
-  const tabFromParams = searchParams.get('tab');
   const selectedResourceName = searchParams.get('resource');
-  const { activeTab, handleTabChange } = useStepTabs(selectedResourceName || tabFromParams);
+  const { activeTab, handleTabChange } = useStepTabs(selectedResourceName || resourceName);
 
   return (
     <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange} className="w-full">
@@ -53,7 +52,7 @@ export default function StepContent({
           step={step} 
           selectedSubstepTitle={selectedSubStep?.title}
           selectedSubSubstepTitle={selectedSubSubStepTitle}
-          selectedResourceName={resourceName}
+          selectedResourceName={resourceName || selectedResourceName}
         />
       </TabsContent>
     </Tabs>

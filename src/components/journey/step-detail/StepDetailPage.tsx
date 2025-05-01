@@ -19,12 +19,8 @@ export default function StepDetailPage() {
   
   // Récupération des paramètres d'URL
   const selectedResource = searchParams.get('resource');
-  const tabFromUrl = searchParams.get('tab');
   const stepId = parseInt(stepIdParam || "1");
   const substepTitle = substepTitleParam ? decodeURIComponent(substepTitleParam) : null;
-  
-  // Utiliser le hook pour gérer l'onglet actif
-  const { activeTab, handleTabChange } = useStepTabs(selectedResource || resourceName || null);
   
   // Find the current step from the journey steps
   const step = journeySteps.find(s => s.id === stepId);
@@ -34,13 +30,13 @@ export default function StepDetailPage() {
     stepId, 
     substepTitle, 
     resourceName: resourceName || selectedResource,
-    activeTab,
-    tabFromUrl 
+    activeTab: searchParams.get('tab') || 'overview',
+    tabFromUrl: searchParams.get('tab')
   });
 
   // Check if we should show resources tab by default based on URL or localStorage
   useEffect(() => {
-    const showResources = localStorage.getItem('showResources') === 'true' || tabFromUrl === 'resources';
+    const showResources = localStorage.getItem('showResources') === 'true';
     
     if (showResources) {
       // Clear the localStorage flag
@@ -50,13 +46,11 @@ export default function StepDetailPage() {
       console.log("Setting activeTab to resources based on flag or URL param");
       
       // Update search params to switch to resources tab
-      handleTabChange('resources');
-      
       const newSearchParams = new URLSearchParams(searchParams);
       newSearchParams.set('tab', 'resources');
       navigate({ search: newSearchParams.toString() }, { replace: true });
     }
-  }, [navigate, searchParams, handleTabChange]);
+  }, [navigate, searchParams]);
 
   if (!step) {
     return (
@@ -96,8 +90,6 @@ export default function StepDetailPage() {
           substepTitle={substepTitle}
           resourceName={resourceName || selectedResource}
           isLoading={isLoadingCourse}
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
         />
         
         <StepNavigation 
