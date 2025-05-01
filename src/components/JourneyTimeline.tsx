@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { journeySteps } from "@/data/journeySteps";
 import { useJourneyProgress } from "@/hooks/useJourneyProgress";
 import StepCard from "@/components/journey/StepCard";
@@ -10,11 +10,14 @@ import { toast } from "@/components/ui/use-toast";
 export default function JourneyTimeline() {
   const { localSteps, isLoading: stepsLoading } = useJourneyProgress(journeySteps);
   const navigate = useNavigate();
-  const [selectedStep, setSelectedStep] = useState<number | null>(null);
+  const location = useLocation();
+  
+  // Get the current step ID from URL
+  const match = location.pathname.match(/\/step\/(\d+)/);
+  const currentStepId = match ? Number(match[1]) : null;
 
   const handleStepClick = (stepId: number) => {
     console.log(`Step clicked: ${stepId}`);
-    setSelectedStep(stepId);
     
     // Set a flag in localStorage to indicate resources should be shown
     localStorage.setItem('showResources', 'true');
@@ -48,7 +51,7 @@ export default function JourneyTimeline() {
         <StepCard
           key={step.id}
           step={step}
-          isSelected={selectedStep === step.id}
+          isSelected={currentStepId === step.id}
           onClick={() => handleStepClick(step.id)}
           onSubStepClick={(substep) => handleSubStepClick(step.id, substep.title)}
         />

@@ -1,7 +1,7 @@
 
 import { useEffect } from "react";
 import { Step, SubStep } from "@/types/journey";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useCourseMaterials } from "@/hooks/course/useCourseMaterials";
 import { getResourceReturnPath, clearResourceReturnPath } from "@/utils/navigationUtils";
 import StepDetailDialog from "./StepDetailDialog";
