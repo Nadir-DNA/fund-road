@@ -52,9 +52,11 @@ export function ResourceFilters({
           .eq('step_id', step.id)
           .eq('resource_type', 'course');
         
+        // Properly handle null substep_title
         if (selectedSubstepTitle) {
           query = query.eq('substep_title', selectedSubstepTitle);
         } else {
+          // For main step, look for NULL substep_title values
           query = query.is('substep_title', null);
         }
         

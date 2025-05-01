@@ -18,9 +18,11 @@ export const useCourseMaterials = (stepId: number, substepTitle: string | null, 
           .select('*')
           .eq('step_id', stepId);
         
+        // Properly handle null substep_title
         if (substepTitle) {
           query = query.eq('substep_title', substepTitle);
         } else {
+          // For main step, look for NULL substep_title values
           query = query.is('substep_title', null);
         }
         

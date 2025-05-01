@@ -44,9 +44,11 @@ export default function ResourceList({ resources, stepId, substepTitle, subsubst
           .eq('step_id', stepId)
           .eq('resource_type', 'course');
           
+        // Handle substepTitle correctly
         if (substepTitle) {
           query = query.eq('substep_title', substepTitle);
         } else {
+          // For main step, look for NULL substep_title values
           query = query.is('substep_title', null);
         }
         
