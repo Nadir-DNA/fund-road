@@ -11,7 +11,7 @@ export const useCourseMaterials = (stepId: number, substepTitle: string | null, 
     queryKey: ['course-materials', stepId, substepTitle, subsubstepTitle],
     queryFn: async () => {
       try {
-        console.log(`Fetching course materials for stepId: ${stepId}, substepTitle: ${substepTitle || 'main'}`);
+        console.log(`Fetching course materials for stepId: ${stepId}, substepTitle: ${substepTitle || 'main'}, subsubstepTitle: ${subsubstepTitle || 'none'}`);
         
         let query = supabase
           .from('entrepreneur_resources')
