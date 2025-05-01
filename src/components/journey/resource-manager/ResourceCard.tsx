@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, FileText } from "lucide-react";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { Resource } from "@/types/journey";
+import { toast } from "@/components/ui/use-toast";
 
 interface ResourceCardProps {
   resource: Resource;
@@ -37,13 +38,21 @@ export default function ResourceCard({
       const encodedSubstep = substepTitle ? `/${encodeURIComponent(substepTitle)}` : '';
       const resourceUrl = `/step/${stepId}${encodedSubstep}/resource/${resource.componentName}`;
       console.log("Navigating to resource:", resourceUrl);
+      
       navigate(resourceUrl);
       setTimeout(() => setIsLoading(false), 300);
+    } else {
+      toast({
+        title: "Ressource non disponible",
+        description: "Cette ressource n'a pas de composant associé.",
+        variant: "destructive"
+      });
+      setIsLoading(false);
     }
   };
 
   return (
-    <Card className="group transition-all duration-200 border">
+    <Card className="group transition-all duration-200 border hover:border-primary/50">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">{resource.title}</CardTitle>
         <CardDescription className="text-xs line-clamp-2">{resource.description}</CardDescription>
@@ -63,7 +72,7 @@ export default function ResourceCard({
           size="sm"
           className="w-full"
           onClick={handleResourceClick}
-          disabled={isLoading || resource.status === 'coming-soon'}
+          disabled={isLoading || resource.status === 'coming-soon' || !resource.componentName}
         >
           {isLoading ? (
             <LoadingIndicator size="sm" />

@@ -23,3 +23,16 @@ export function getStepResources(step: any, selectedSubstepTitle: string | undef
     type: resource.type || 'resource'
   }));
 }
+
+// Function to convert resource type to component name
+export function resourceTypeToComponentName(resourceType: string): string {
+  const typeMap: Record<string, string> = {
+    'swot-analysis': 'SwotAnalysis',
+    'user-research': 'UserResearchNotebook',
+    'problem-solution': 'ProblemSolutionCanvas',
+    'business-model': 'BusinessModelCanvas',
+    // Ajouter d'autres mappings selon les besoins
+  };
+  
+  return typeMap[resourceType] || resourceType;
+}

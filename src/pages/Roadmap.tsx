@@ -12,6 +12,7 @@ import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { clearLastPath } from "@/utils/navigationUtils";
 import RoadmapHeader from "@/components/roadmap/RoadmapHeader";
 import { useRoadmapState } from "@/components/roadmap/useRoadmapState";
+import { Step } from "@/types/journey";
 
 export default function Roadmap() {
   const { t } = useLanguage();
@@ -26,8 +27,16 @@ export default function Roadmap() {
     isAuthenticated
   } = useRoadmapState();
   
+  const [selectedStepId, setSelectedStepId] = useState<number | null>(null);
+  
   const targetStepId = searchParams.get('step') ? parseInt(searchParams.get('step') || '1') : null;
   const targetSubstep = searchParams.get('substep');
+  
+  // Handle step selection
+  const handleStepSelected = (step: Step) => {
+    console.log("Step selected:", step.id);
+    setSelectedStepId(step.id);
+  };
   
   // Scroll to target step when parameters or loading state changes
   useEffect(() => {
@@ -36,6 +45,7 @@ export default function Roadmap() {
         const stepElement = document.querySelector(`[data-step-id="${targetStepId}"]`);
         if (stepElement) {
           stepElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setSelectedStepId(targetStepId);
           
           setTimeout(() => {
             (stepElement as HTMLElement).click();
@@ -80,6 +90,8 @@ export default function Roadmap() {
     const stepElement = document.querySelector(`[data-step-id="${nextStep.stepId}"]`);
     if (stepElement) {
       stepElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setSelectedStepId(nextStep.stepId);
+      
       setTimeout(() => {
         (stepElement as HTMLElement).click();
         setIsNavigating(false);

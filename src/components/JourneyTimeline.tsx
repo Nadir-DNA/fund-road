@@ -12,11 +12,13 @@ export default function JourneyTimeline() {
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
 
   const handleStepClick = (stepId: number) => {
+    console.log(`Step clicked: ${stepId}`);
     setSelectedStep(stepId);
     navigate(`/step/${stepId}`);
   };
 
   const handleSubStepClick = (stepId: number, substepTitle: string) => {
+    console.log(`Substep clicked: ${stepId}/${substepTitle}`);
     navigate(`/step/${stepId}/${encodeURIComponent(substepTitle)}`);
   };
 

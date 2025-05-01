@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Step, SubStep } from "@/types/journey";
 import { journeySteps } from "@/data/journeySteps";
 import { isBrowser } from "@/utils/navigationUtils";
@@ -15,7 +15,9 @@ import StepNavigation from "./StepNavigation";
 export default function StepDetailPage() {
   const { stepId: stepIdParam, substepTitle: substepTitleParam, resource: resourceName } = useParams();
   const navigate = useNavigate();
-
+  const [searchParams] = useSearchParams();
+  
+  const selectedResource = searchParams.get('resource');
   const stepId = parseInt(stepIdParam || "1");
   const substepTitle = substepTitleParam ? decodeURIComponent(substepTitleParam) : null;
   
@@ -23,9 +25,16 @@ export default function StepDetailPage() {
   const step = journeySteps.find(s => s.id === stepId);
   const selectedSubStep = step?.subSteps?.find(s => s.title === substepTitle) || null;
   
-  console.log("StepDetail - stepId:", stepId, "substepTitle:", substepTitle);
+  console.log("StepDetail - stepId:", stepId, "substepTitle:", substepTitle, "resourceName:", resourceName || selectedResource);
   console.log("step found:", step?.title);
   console.log("selectedSubStep found:", selectedSubStep?.title);
+
+  // If resource is provided, ensure we show the resources tab
+  useEffect(() => {
+    if (resourceName || selectedResource) {
+      console.log("Resource provided, showing resources tab");
+    }
+  }, [resourceName, selectedResource]);
 
   if (!step) {
     return (
@@ -63,7 +72,7 @@ export default function StepDetailPage() {
           selectedSubStep={selectedSubStep}
           stepId={stepId}
           substepTitle={substepTitle}
-          resourceName={resourceName}
+          resourceName={resourceName || selectedResource}
         />
         
         <StepNavigation 

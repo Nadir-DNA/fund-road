@@ -21,7 +21,7 @@ export function ResourceFilters({
   onResourcesFound
 }: ResourceFiltersProps) {
   // Use the hook to fetch resources
-  useResourceFilters(
+  const { data, isLoading, error } = useResourceFilters(
     step,
     selectedSubstepTitle,
     selectedSubSubstepTitle,
@@ -30,7 +30,8 @@ export function ResourceFilters({
     onResourcesFound
   );
 
-  return null; // This component doesn't render anything
+  // Le composant ne rend rien directement, il gère uniquement la logique de requête
+  return null;
 }
 
 // Export the helper function for direct use
