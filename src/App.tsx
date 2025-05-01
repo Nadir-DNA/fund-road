@@ -1,8 +1,8 @@
 
 import { Routes, Route, Navigate } from "react-router-dom";
 import NotFound from "@/pages/NotFound";
-import Roadmap from "@/pages/Roadmap";
-import StepDetailPage from "@/components/journey/step-detail/StepDetailPage";
+import RoadmapPage from "@/pages/roadmap/RoadmapPage";
+import StepDetailPage from "@/pages/roadmap/StepDetailPage";
 import { useAuth } from "@/hooks/useAuth";
 import { ToastIntegration } from "@/components/ToastIntegration";
 
@@ -21,14 +21,18 @@ function App() {
     <>
       <Routes>
         <Route path="/" element={<Navigate to="/roadmap" replace />} />
-        <Route path="/roadmap" element={<Roadmap />} />
         
-        {/* Routes pour les étapes */}
+        {/* Roadmap routes with nested structure */}
+        <Route path="/roadmap" element={<RoadmapPage />}>
+          <Route path="step/:stepId" element={<StepDetailPage />} />
+          <Route path="step/:stepId/:substepTitle" element={<StepDetailPage />} />
+        </Route>
+        
+        {/* Legacy compatibility route */}
         <Route path="/step/:stepId" element={<StepDetailPage />} />
         <Route path="/step/:stepId/:substepTitle" element={<StepDetailPage />} />
-        <Route path="/step/:stepId/:substepTitle/resource/:resource" element={<StepDetailPage />} />
         
-        {/* Fallback pour les routes non trouvées */}
+        {/* Fallback for routes not found */}
         <Route path="*" element={<NotFound />} />
       </Routes>
       <ToastIntegration />

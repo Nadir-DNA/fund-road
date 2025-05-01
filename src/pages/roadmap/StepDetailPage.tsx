@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import ResourcesList from "@/components/journey/ResourcesList";
 import CourseContentDisplay from "@/components/journey/CourseContentDisplay";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import { JourneyProgressIndicator } from "@/components/journey/JourneyProgressIndicator";
+import JourneyProgressIndicator from "@/components/journey/JourneyProgressIndicator";
 import { useCourseMaterials } from "@/hooks/course/useCourseMaterials";
 
 export default function StepDetailPage() {
@@ -106,6 +106,7 @@ export default function StepDetailPage() {
             ) : (
               <div className="py-8 text-center">
                 <p className="text-muted-foreground">Aucun contenu de cours disponible pour cette étape.</p>
+                <pre className="mt-4 text-sm text-left p-4 bg-gray-100 rounded">Debug: {JSON.stringify({ stepId, substepTitle, materials }, null, 2)}</pre>
               </div>
             )}
           </TabsContent>

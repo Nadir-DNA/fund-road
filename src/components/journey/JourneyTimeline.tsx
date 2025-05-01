@@ -14,9 +14,15 @@ export default function JourneyTimeline() {
   const navigate = useNavigate();
   const location = useLocation();
   
+  console.log("JourneyTimeline - Current path:", location.pathname);
+  
   // Check if current route matches a specific step
   const isStepActive = (stepId: number) => {
-    return location.pathname.includes(`/step/${stepId}`);
+    const paths = [
+      `/step/${stepId}`, 
+      `/roadmap/step/${stepId}`
+    ];
+    return paths.some(path => location.pathname.startsWith(path));
   };
 
   if (isLoading) {
@@ -34,8 +40,14 @@ export default function JourneyTimeline() {
           key={step.id}
           step={step}
           isSelected={isStepActive(step.id)}
-          onClick={() => navigate(`/step/${step.id}`)}
-          onSubStepClick={(substep) => navigate(`/step/${step.id}/${encodeURIComponent(substep.title)}`)}
+          onClick={() => {
+            console.log(`Navigating to step ${step.id}`);
+            navigate(`/roadmap/step/${step.id}`);
+          }}
+          onSubStepClick={(substep) => {
+            console.log(`Navigating to substep ${step.id}/${substep.title}`);
+            navigate(`/roadmap/step/${step.id}/${encodeURIComponent(substep.title)}`);
+          }}
         />
       ))}
     </div>
@@ -50,7 +62,7 @@ interface StepCardProps {
 }
 
 function StepCard({ step, isSelected, onClick, onSubStepClick }: StepCardProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(isSelected); // Auto-open the currently selected step
 
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();

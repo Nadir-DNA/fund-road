@@ -84,6 +84,18 @@ export default function ResourcesList({ stepId, substepTitle, stepTitle }: Resou
     return (
       <div className="py-8 text-center">
         <p className="text-muted-foreground">Aucune ressource disponible pour cette étape.</p>
+        <pre className="mt-4 text-sm text-left p-4 bg-gray-100 rounded">Debug Info: {JSON.stringify({ 
+          stepId, 
+          substepTitle, 
+          queryDetails: { 
+            table: 'entrepreneur_resources',
+            filters: {
+              step_id: stepId,
+              resource_type: 'course',
+              substep_title: substepTitle || 'IS NULL'
+            }
+          }
+        }, null, 2)}</pre>
       </div>
     );
   }

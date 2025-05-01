@@ -21,6 +21,12 @@ export default function RoadmapPage() {
   // Redirect to first step if on main roadmap page
   useEffect(() => {
     if (isMainRoadmap && !stepsLoading && localSteps.length > 0) {
+      console.log("RoadmapPage - On main roadmap, redirecting to first step", { 
+        isMainRoadmap, 
+        stepsLoading, 
+        stepsCount: localSteps.length 
+      });
+      
       // Find the first incomplete step, or default to the first step
       const firstIncompleteStep = localSteps.find(step => !step.isCompleted) || localSteps[0];
       
