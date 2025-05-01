@@ -1,16 +1,14 @@
 
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { journeySteps } from "@/data/journeySteps";
-import { Step } from "@/types/journey";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { useJourneyProgress } from "@/hooks/useJourneyProgress";
 
 export default function JourneyTimeline() {
-  const { localSteps, isLoading } = useJourneyProgress(journeySteps);
+  const { localSteps } = useJourneyProgress(journeySteps);
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -18,23 +16,11 @@ export default function JourneyTimeline() {
   
   // Check if current route matches a specific step
   const isStepActive = (stepId: number) => {
-    const paths = [
-      `/step/${stepId}`, 
-      `/roadmap/step/${stepId}`
-    ];
-    return paths.some(path => location.pathname.startsWith(path));
+    return location.pathname.includes(`/step/${stepId}`);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center py-20">
-        <LoadingIndicator size="lg" />
-      </div>
-    );
-  }
-
   return (
-    <div className="mt-4 space-y-8">
+    <div className="mt-4 space-y-4">
       {localSteps.map((step) => (
         <StepCard
           key={step.id}
@@ -55,7 +41,7 @@ export default function JourneyTimeline() {
 }
 
 interface StepCardProps {
-  step: Step;
+  step: any; // Use proper Step type from your types
   isSelected: boolean;
   onClick: () => void;
   onSubStepClick: (subStep: any) => void;
@@ -102,7 +88,7 @@ function StepCard({ step, isSelected, onClick, onSubStepClick }: StepCardProps) 
       {isOpen && step.subSteps && step.subSteps.length > 0 && (
         <CardContent className="pt-0 pb-4 px-4 border-t mt-1">
           <ul className="space-y-2">
-            {step.subSteps.map((subStep) => (
+            {step.subSteps.map((subStep: any) => (
               <li
                 key={subStep.title}
                 onClick={(e) => {
