@@ -1,148 +1,138 @@
 
 import { useNavigate, useLocation } from "react-router-dom";
 import { journeySteps } from "@/data/journeySteps";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useJourneyProgress } from "@/hooks/useJourneyProgress";
+import { ChevronRight, BookOpen } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export default function JourneyTimeline() {
   const { localSteps, toggleStepCompletion, toggleSubStepCompletion } = useJourneyProgress(journeySteps);
   const navigate = useNavigate();
   const location = useLocation();
   
-  console.log("JourneyTimeline - Current path:", location.pathname);
-  
   // Check if current route matches a specific step
   const isStepActive = (stepId: number) => {
     return location.pathname.includes(`/step/${stepId}`);
   };
+  
+  // Check if current route matches a specific substep
+  const isSubStepActive = (stepId: number, subStepTitle: string) => {
+    return location.pathname.includes(`/step/${stepId}/${encodeURIComponent(subStepTitle)}`);
+  };
 
   return (
-    <div className="mt-4 space-y-4">
-      {localSteps.map((step) => (
-        <StepCard
-          key={step.id}
-          step={step}
-          isSelected={isStepActive(step.id)}
-          onClick={() => {
-            console.log(`Navigating to step ${step.id}`);
-            navigate(`/roadmap/step/${step.id}`);
-          }}
-          onSubStepClick={(substep) => {
-            console.log(`Navigating to substep ${step.id}/${substep.title}`);
-            navigate(`/roadmap/step/${step.id}/${encodeURIComponent(substep.title)}`);
-          }}
-          onToggleStepCompletion={() => toggleStepCompletion(step.id)}
-          onToggleSubStepCompletion={(substepTitle) => toggleSubStepCompletion(step.id, substepTitle)}
-        />
-      ))}
+    <div className="mt-4 space-y-1">
+      {localSteps.map((step) => {
+        const isSelected = isStepActive(step.id);
+        
+        return (
+          <div key={step.id} className="relative">
+            {/* Ligne verticale connectant les étapes */}
+            {step.id < localSteps.length && (
+              <div className="absolute left-4 top-8 bottom-0 w-[2px] bg-gray-700"></div>
+            )}
+            
+            <div className="mb-6">
+              {/* En-tête de l'étape avec cercle et titre */}
+              <div 
+                className={cn(
+                  "flex items-start gap-3 cursor-pointer",
+                  isSelected && "text-primary"
+                )}
+                onClick={() => navigate(`/roadmap/step/${step.id}`)}
+              >
+                <div className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10",
+                  step.isCompleted ? "bg-green-900 border-2 border-green-500" : 
+                  isSelected ? "bg-primary/20 border-2 border-primary" : "bg-gray-800 border-2 border-gray-600"
+                )}>
+                  <span className="text-sm">{step.id}</span>
+                </div>
+                
+                <div>
+                  <h3 className="font-medium text-lg">{step.title}</h3>
+                  <p className="text-sm text-gray-400 mt-1">{step.description}</p>
+                </div>
+              </div>
+              
+              {/* Sous-étapes */}
+              {step.subSteps && step.subSteps.length > 0 && (
+                <div className="mt-3 ml-12 space-y-4">
+                  {step.subSteps.map((subStep) => {
+                    const isSubActive = isSubStepActive(step.id, subStep.title);
+                    
+                    return (
+                      <div 
+                        key={subStep.title} 
+                        className={cn(
+                          "relative border-l-2 border-gray-700 pl-5 pb-4",
+                          isSubActive && "border-primary"
+                        )}
+                      >
+                        <div 
+                          className={cn(
+                            "flex items-center justify-between group cursor-pointer",
+                            isSubActive && "text-primary"
+                          )}
+                          onClick={() => navigate(`/roadmap/step/${step.id}/${encodeURIComponent(subStep.title)}`)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "absolute -left-[5px] h-2 w-2 rounded-full",
+                              isSubActive || subStep.isCompleted ? "bg-primary" : "bg-gray-600"
+                            )} />
+                            
+                            <span>{subStep.title}</span>
+                          </div>
+                          
+                          <ChevronRight className="h-4 w-4 opacity-70 group-hover:text-primary" />
+                        </div>
+                        
+                        {/* Description de la sous-étape */}
+                        <p className="text-xs text-gray-400 mt-1">{subStep.description}</p>
+                        
+                        {/* Outils de la sous-étape */}
+                        {subStep.resources && subStep.resources.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            {subStep.resources.filter(resource => resource.componentName).map((resource, idx) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <Badge 
+                                  variant="outline"
+                                  className="text-xs py-0.5 px-2 bg-gray-800 border-gray-700"
+                                >
+                                  Outil
+                                </Badge>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-6 px-2 text-xs hover:bg-gray-800"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (resource.componentName) {
+                                      navigate(`/roadmap/step/${step.id}/${encodeURIComponent(subStep.title)}?resource=${resource.componentName}`);
+                                    }
+                                  }}
+                                >
+                                  <BookOpen className="h-3 w-3 mr-1" />
+                                  {resource.title}
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
-
-interface StepCardProps {
-  step: any; // Use proper Step type from your types
-  isSelected: boolean;
-  onClick: () => void;
-  onSubStepClick: (subStep: any) => void;
-  onToggleStepCompletion: () => void;
-  onToggleSubStepCompletion: (substepTitle: string) => void;
-}
-
-function StepCard({ step, isSelected, onClick, onSubStepClick, onToggleStepCompletion, onToggleSubStepCompletion }: StepCardProps) {
-  const [isOpen, setIsOpen] = useState(isSelected); // Auto-open the currently selected step
-
-  const handleToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsOpen(!isOpen);
-  };
-
-  const handleCheckboxClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggleStepCompletion();
-  };
-
-  const handleSubStepCheckboxClick = (e: React.MouseEvent, subStep: any) => {
-    e.stopPropagation();
-    onToggleSubStepCompletion(subStep.title);
-  };
-
-  return (
-    <Card
-      data-step-id={step.id}
-      className={cn(
-        "transition-all border hover:border-primary",
-        isSelected && "border-primary shadow-md"
-      )}
-    >
-      <CardHeader className="p-4 flex flex-row items-center justify-between" onClick={onClick}>
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            "w-8 h-8 rounded-full flex items-center justify-center",
-            step.isCompleted ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-500"
-          )}>
-            {step.isCompleted ? <Check className="h-4 w-4" /> : <span>{step.id}</span>}
-          </div>
-          <div className="flex items-center gap-2">
-            <Checkbox 
-              id={`step-${step.id}`}
-              checked={step.isCompleted}
-              onClick={handleCheckboxClick}
-              className="mr-1"
-            />
-            <CardTitle className="text-lg cursor-pointer">{step.title}</CardTitle>
-          </div>
-        </div>
-        
-        {step.subSteps && step.subSteps.length > 0 && (
-          <button
-            onClick={handleToggle}
-            className="p-2 rounded-full hover:bg-gray-100"
-          >
-            {isOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-          </button>
-        )}
-      </CardHeader>
-      
-      {isOpen && step.subSteps && step.subSteps.length > 0 && (
-        <CardContent className="pt-0 pb-4 px-4 border-t mt-1">
-          <ul className="space-y-2">
-            {step.subSteps.map((subStep: any) => (
-              <li
-                key={subStep.title}
-                className="flex items-center justify-between p-2 rounded-md hover:bg-gray-50"
-              >
-                <div className="flex items-center">
-                  <Checkbox 
-                    id={`substep-${step.id}-${subStep.title}`}
-                    checked={subStep.isCompleted}
-                    onClick={(e) => handleSubStepCheckboxClick(e, subStep)}
-                    className="mr-2"
-                  />
-                  <span 
-                    className="text-sm cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSubStepClick(subStep);
-                    }}
-                  >
-                    {subStep.title}
-                  </span>
-                </div>
-                {subStep.isCompleted && (
-                  <div className="bg-green-100 text-green-600 px-2 py-1 rounded text-xs font-medium">
-                    Complété
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      )}
-    </Card>
-  );
-}
-
