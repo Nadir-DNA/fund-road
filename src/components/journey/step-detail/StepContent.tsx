@@ -39,21 +39,25 @@ export default function StepContent({
       </TabsList>
       
       <TabsContent value="overview">
-        <OverviewTab 
-          step={step} 
-          selectedSubStep={selectedSubStep} 
-          isLoading={isLoading}
-          courseContent={courseContent || ""}
-        />
+        <div className="bg-slate-800 p-4 rounded-lg">
+          <OverviewTab 
+            step={step} 
+            selectedSubStep={selectedSubStep} 
+            isLoading={isLoading}
+            courseContent={courseContent || ""}
+          />
+        </div>
       </TabsContent>
       
       <TabsContent value="resources" className="py-4">
-        <ResourceManager 
-          step={step} 
-          selectedSubstepTitle={selectedSubStep?.title}
-          selectedSubSubstepTitle={selectedSubSubStepTitle}
-          selectedResourceName={resourceName || selectedResourceName}
-        />
+        <div className="bg-slate-800 p-4 rounded-lg">
+          <ResourceManager 
+            step={step} 
+            selectedSubstepTitle={selectedSubStep?.title}
+            selectedSubSubstepTitle={selectedSubSubStepTitle}
+            selectedResourceName={resourceName || selectedResourceName}
+          />
+        </div>
       </TabsContent>
     </Tabs>
   );

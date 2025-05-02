@@ -49,7 +49,7 @@ export default function StepDetailPage() {
 
   if (!step) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-slate-900 text-gray-100">
         <Navbar />
         <div className="container mx-auto flex-grow flex items-center justify-center">
           <p>Étape non trouvée</p>
@@ -65,7 +65,7 @@ export default function StepDetailPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-slate-900 text-gray-100">
       <Navbar />
       <main className="container mx-auto flex-grow p-4 md:p-8 pt-20 pb-16">
         <Button 

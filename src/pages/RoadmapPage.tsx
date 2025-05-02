@@ -16,7 +16,7 @@ export default function RoadmapPage() {
   const isMainRoadmap = location.pathname === "/roadmap";
   
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
+    <div className="min-h-screen bg-slate-900 text-gray-100 flex flex-col">
       <Navbar />
       
       <main className="flex-grow pt-20 pb-16">
@@ -38,9 +38,9 @@ export default function RoadmapPage() {
             
             <div className="lg:col-span-2">
               {isMainRoadmap ? (
-                <div className="flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow">
+                <div className="flex flex-col items-center justify-center p-8 bg-slate-800 rounded-lg">
                   <h2 className="text-xl font-semibold mb-4">Bienvenue dans votre parcours entrepreneur</h2>
-                  <p className="text-gray-600 text-center mb-6">
+                  <p className="text-gray-400 text-center mb-6">
                     Sélectionnez une étape dans la timeline à gauche pour commencer votre parcours.
                   </p>
                   <div className="flex justify-center">

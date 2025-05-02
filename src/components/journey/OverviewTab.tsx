@@ -37,7 +37,7 @@ export default function OverviewTab({ step, selectedSubStep, isLoading, courseCo
         </>
       ) : (
         <div className="space-y-6 max-w-full">
-          <Card className="p-6">
+          <Card className="p-6 bg-slate-700">
             <div className="flex flex-col items-center justify-center text-center">
               <BookOpen className="h-12 w-12 text-muted-foreground/50 mb-4" />
               <h3 className="text-lg font-semibold mb-2">Contenu non disponible</h3>
@@ -57,7 +57,7 @@ export default function OverviewTab({ step, selectedSubStep, isLoading, courseCo
               <h3 className="text-lg font-semibold mb-2">Sous-étapes</h3>
               <div className="space-y-3">
                 {step.subSteps.map((subStep, i) => (
-                  <li key={i} className="p-3 sm:p-4 border rounded-lg list-none hover:border-primary/50 transition-colors">
+                  <li key={i} className="p-3 sm:p-4 border rounded-lg list-none hover:border-primary/50 transition-colors bg-slate-700">
                     <h4 className="font-medium text-sm sm:text-base">{subStep.title}</h4>
                     <p className="text-muted-foreground mt-1 text-xs sm:text-sm">{subStep.description}</p>
                   </li>

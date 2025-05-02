@@ -76,7 +76,7 @@ export default function HelpTab({ resources, stepId, substepTitle }: HelpTabProp
         {resources && resources.length > 0 ? (
           <div className="space-y-4 mt-6">
             {resources.map((resource, i) => (
-              <Card key={i} className="p-5 hover:border-primary/50 transition-colors">
+              <Card key={i} className="p-5 hover:border-primary/50 transition-colors bg-slate-700">
                 <div className="flex items-start gap-4">
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     {resource.url ? <ExternalLink className="h-5 w-5 text-primary" /> : <FileText className="h-5 w-5 text-primary" />}
@@ -121,7 +121,7 @@ export default function HelpTab({ resources, stepId, substepTitle }: HelpTabProp
             ))}
           </div>
         ) : (
-          <div className="p-8 border rounded-lg text-center text-muted-foreground mt-6">
+          <div className="p-8 border rounded-lg text-center text-muted-foreground mt-6 bg-slate-700">
             <Package className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
             <p>Aucune ressource d'aide supplémentaire n'est disponible pour le moment.</p>
           </div>
