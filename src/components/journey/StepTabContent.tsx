@@ -4,6 +4,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import ResourcesList from "@/components/journey/ResourcesList";
 import CourseContentDisplay from "@/components/journey/CourseContentDisplay";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
+import OverviewTab from "./OverviewTab";
+import { Step, SubStep } from "@/types/journey";
+import { useSearchParams } from "react-router-dom";
+import { useStepTabs } from "@/hooks/useStepTabs";
 
 interface StepTabContentProps {
   stepId: number;
@@ -24,12 +28,28 @@ export default function StepTabContent({
   courseError,
   showResourcesTab = false
 }: StepTabContentProps) {
-  const [activeTab, setActiveTab] = useState(showResourcesTab ? "resources" : "overview");
-
-  const handleTabChange = (value: string) => {
-    console.log(`Tab changed to: ${value}`);
-    setActiveTab(value);
+  // Use our hook to manage tab state
+  const [searchParams] = useSearchParams();
+  const selectedResource = searchParams.get('resource');
+  const { activeTab, handleTabChange } = useStepTabs(showResourcesTab ? "resources" : null);
+  
+  // Determine if we have course content
+  const hasCourseContent = materials && materials.length > 0 && materials[0].course_content;
+  const courseContent = hasCourseContent ? materials[0].course_content : "";
+  
+  // Create a mock step object for the OverviewTab
+  const mockStep: Step = {
+    id: stepId,
+    title: stepTitle,
+    description: "",
+    resources: []
   };
+  
+  // Create a mock subStep for the OverviewTab
+  const mockSubStep: SubStep | null = substepTitle ? {
+    title: substepTitle,
+    description: ""
+  } : null;
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-6">
@@ -47,20 +67,13 @@ export default function StepTabContent({
           <div className="py-8 text-center">
             <p className="text-red-500">{courseError}</p>
           </div>
-        ) : materials && materials.length > 0 && materials[0].course_content ? (
-          <CourseContentDisplay
-            stepId={stepId}
-            substepTitle={substepTitle}
-            stepTitle={stepTitle}
-            courseContent={materials[0].course_content}
-          />
         ) : (
-          <div className="py-8 text-center">
-            <p className="text-gray-500">Aucun contenu de cours disponible pour cette étape.</p>
-            <pre className="mt-4 text-sm text-left p-4 bg-gray-50 rounded overflow-auto">
-              Debug: {JSON.stringify({ stepId, substepTitle, materialsCount: materials?.length }, null, 2)}
-            </pre>
-          </div>
+          <OverviewTab
+            step={mockStep}
+            selectedSubStep={mockSubStep}
+            isLoading={false}
+            courseContent={courseContent}
+          />
         )}
       </TabsContent>
       
