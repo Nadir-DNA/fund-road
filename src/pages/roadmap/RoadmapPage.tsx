@@ -43,7 +43,7 @@ export default function RoadmapPage() {
   }, [isMainRoadmap, stepsLoading, localSteps, navigate]);
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
       
       <main className="flex-grow pt-20 pb-16">

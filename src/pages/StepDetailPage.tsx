@@ -42,7 +42,7 @@ export default function StepDetailPage() {
 
   if (!step) {
     return (
-      <div className="p-8 bg-white rounded-lg shadow">
+      <div className="p-8">
         <div className="text-center">
           <p className="text-red-500 font-medium">Étape non trouvée</p>
           <button 
@@ -57,7 +57,7 @@ export default function StepDetailPage() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="p-6">
       <StepHeader 
         step={step}
         stepId={stepId}
