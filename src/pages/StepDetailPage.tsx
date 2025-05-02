@@ -9,6 +9,9 @@ import ResourcesList from "@/components/journey/ResourcesList";
 import CourseContentDisplay from "@/components/journey/CourseContentDisplay";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { useCourseContent } from "@/hooks/useCourseContent";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useJourneyProgress } from "@/hooks/useJourneyProgress";
+import { Card } from "@/components/ui/card";
 
 export default function StepDetailPage() {
   const { stepId: stepIdParam, substepTitle: substepTitleParam } = useParams();
@@ -25,6 +28,9 @@ export default function StepDetailPage() {
 
   // Get course content using our custom hook
   const { data: materials, isLoading: courseMaterialsLoading, error: courseError } = useCourseContent(stepId, substepTitle);
+  
+  // Get journey progress functions
+  const { toggleStepCompletion, toggleSubStepCompletion } = useJourneyProgress(journeySteps);
 
   console.log("StepDetailPage - Loading with:", { 
     stepId, 
@@ -76,11 +82,24 @@ export default function StepDetailPage() {
         <ChevronLeft className="mr-2 h-4 w-4" /> Retour
       </Button>
       
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">{step.title}</h1>
-        <p className="text-gray-600 mt-2">
-          {selectedSubStep ? selectedSubStep.description : step.description}
-        </p>
+      <div className="mb-6 flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-bold">{step.title}</h1>
+          <p className="text-gray-600 mt-2">
+            {selectedSubStep ? selectedSubStep.description : step.description}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <Checkbox 
+            id={`step-complete-${stepId}`}
+            checked={step.isCompleted} 
+            onCheckedChange={() => toggleStepCompletion(stepId)}
+            className="mr-2"
+          />
+          <label htmlFor={`step-complete-${stepId}`} className="text-sm font-medium">
+            Marquer comme complété
+          </label>
+        </div>
       </div>
       
       <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-6">
@@ -119,9 +138,50 @@ export default function StepDetailPage() {
           <ResourcesList 
             stepId={stepId} 
             substepTitle={substepTitle}
+            stepTitle={step.title}
           />
         </TabsContent>
       </Tabs>
+      
+      {/* Sous-étapes avec cases à cocher */}
+      {step.subSteps && step.subSteps.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">Sous-étapes</h2>
+          <div className="space-y-2">
+            {step.subSteps.map((subStep) => (
+              <Card key={subStep.title} className="p-3 hover:bg-gray-50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Checkbox 
+                      id={`substep-${stepId}-${subStep.title}`}
+                      checked={subStep.isCompleted}
+                      onCheckedChange={() => toggleSubStepCompletion(stepId, subStep.title)}
+                      className="mr-3"
+                    />
+                    <div>
+                      <label 
+                        htmlFor={`substep-${stepId}-${subStep.title}`}
+                        className="font-medium cursor-pointer"
+                        onClick={() => navigate(`/roadmap/step/${stepId}/${encodeURIComponent(subStep.title)}`)}
+                      >
+                        {subStep.title}
+                      </label>
+                      {subStep.description && (
+                        <p className="text-sm text-gray-500">{subStep.description}</p>
+                      )}
+                    </div>
+                  </div>
+                  {subStep.isCompleted && (
+                    <div className="bg-green-100 text-green-600 px-2 py-1 rounded text-xs font-medium">
+                      Complété
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
       
       <div className="mt-8 flex justify-between">
         {stepId > 1 && (
