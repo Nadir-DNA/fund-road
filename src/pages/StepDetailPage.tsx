@@ -2,21 +2,15 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { journeySteps } from "@/data/journeySteps";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import ResourcesList from "@/components/journey/ResourcesList";
-import CourseContentDisplay from "@/components/journey/CourseContentDisplay";
-import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import { useCourseContent } from "@/hooks/useCourseContent";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useJourneyProgress } from "@/hooks/useJourneyProgress";
-import { Card } from "@/components/ui/card";
+import { useCourseContent } from "@/hooks/useCourseContent";
+import StepHeader from "@/components/journey/StepHeader";
+import StepTabContent from "@/components/journey/StepTabContent";
+import SubstepList from "@/components/journey/SubstepList";
+import StepNavigation from "@/components/journey/StepNavigation";
 
 export default function StepDetailPage() {
   const { stepId: stepIdParam, substepTitle: substepTitleParam } = useParams();
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("overview");
   
   // Parse parameters
   const stepId = parseInt(stepIdParam || "1");
@@ -26,18 +20,14 @@ export default function StepDetailPage() {
   const step = journeySteps.find(s => s.id === stepId);
   const selectedSubStep = step?.subSteps?.find(s => s.title === substepTitle) || null;
 
+  // Get journey progress functions
+  const { toggleStepCompletion, toggleSubStepCompletion } = useJourneyProgress(journeySteps);
+  
   // Get course content using our custom hook
   const { data: materials, isLoading: courseMaterialsLoading, error: courseError } = useCourseContent(stepId, substepTitle);
   
-  // Get journey progress functions
-  const { toggleStepCompletion, toggleSubStepCompletion } = useJourneyProgress(journeySteps);
-
-  console.log("StepDetailPage - Loading with:", { 
-    stepId, 
-    substepTitle,
-    activeTab,
-    foundMaterials: materials?.length || 0
-  });
+  // Check if we should show resources tab by default based on localStorage
+  const [showResourcesTab, setShowResourcesTab] = useState(false);
 
   useEffect(() => {
     // Check if we should show resources tab by default based on URL or localStorage
@@ -46,7 +36,7 @@ export default function StepDetailPage() {
     if (showResources) {
       // Clear the localStorage flag
       localStorage.removeItem('showResources');
-      setActiveTab("resources");
+      setShowResourcesTab(true);
     }
   }, []);
 
@@ -55,153 +45,43 @@ export default function StepDetailPage() {
       <div className="p-8 bg-white rounded-lg shadow">
         <div className="text-center">
           <p className="text-red-500 font-medium">Étape non trouvée</p>
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/roadmap')}
-            className="mt-4"
+          <button 
+            className="mt-4 text-blue-500 hover:underline"
+            onClick={() => window.history.back()}
           >
-            <ChevronLeft className="mr-2 h-4 w-4" /> Retour au parcours
-          </Button>
+            Retour au parcours
+          </button>
         </div>
       </div>
     );
   }
 
-  const handleTabChange = (value: string) => {
-    console.log(`Tab changed to: ${value}`);
-    setActiveTab(value);
-  };
-
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <Button 
-        variant="ghost" 
-        onClick={() => navigate('/roadmap')}
-        className="mb-4"
-      >
-        <ChevronLeft className="mr-2 h-4 w-4" /> Retour
-      </Button>
+      <StepHeader 
+        step={step}
+        stepId={stepId}
+        selectedSubStep={selectedSubStep}
+        toggleStepCompletion={toggleStepCompletion}
+      />
       
-      <div className="mb-6 flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold">{step.title}</h1>
-          <p className="text-gray-600 mt-2">
-            {selectedSubStep ? selectedSubStep.description : step.description}
-          </p>
-        </div>
-        <div className="flex items-center">
-          <Checkbox 
-            id={`step-complete-${stepId}`}
-            checked={step.isCompleted} 
-            onCheckedChange={() => toggleStepCompletion(stepId)}
-            className="mr-2"
-          />
-          <label htmlFor={`step-complete-${stepId}`} className="text-sm font-medium">
-            Marquer comme complété
-          </label>
-        </div>
-      </div>
+      <StepTabContent 
+        stepId={stepId}
+        substepTitle={substepTitle}
+        stepTitle={step.title}
+        materials={materials}
+        courseMaterialsLoading={courseMaterialsLoading}
+        courseError={courseError}
+        showResourcesTab={showResourcesTab}
+      />
       
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-6">
-        <TabsList>
-          <TabsTrigger value="overview">Aperçu</TabsTrigger>
-          <TabsTrigger value="resources">Ressources</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="mt-6">
-          {courseMaterialsLoading ? (
-            <div className="flex justify-center items-center py-12">
-              <LoadingIndicator size="lg" />
-            </div>
-          ) : courseError ? (
-            <div className="py-8 text-center">
-              <p className="text-red-500">{courseError}</p>
-            </div>
-          ) : materials && materials.length > 0 && materials[0].course_content ? (
-            <CourseContentDisplay
-              stepId={stepId}
-              substepTitle={substepTitle}
-              stepTitle={step.title}
-              courseContent={materials[0].course_content}
-            />
-          ) : (
-            <div className="py-8 text-center">
-              <p className="text-gray-500">Aucun contenu de cours disponible pour cette étape.</p>
-              <pre className="mt-4 text-sm text-left p-4 bg-gray-50 rounded overflow-auto">
-                Debug: {JSON.stringify({ stepId, substepTitle, materialsCount: materials?.length }, null, 2)}
-              </pre>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="resources" className="mt-6">
-          <ResourcesList 
-            stepId={stepId} 
-            substepTitle={substepTitle}
-            stepTitle={step.title}
-          />
-        </TabsContent>
-      </Tabs>
+      <SubstepList 
+        step={step}
+        stepId={stepId}
+        toggleSubStepCompletion={toggleSubStepCompletion}
+      />
       
-      {/* Sous-étapes avec cases à cocher */}
-      {step.subSteps && step.subSteps.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Sous-étapes</h2>
-          <div className="space-y-2">
-            {step.subSteps.map((subStep) => (
-              <Card key={subStep.title} className="p-3 hover:bg-gray-50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Checkbox 
-                      id={`substep-${stepId}-${subStep.title}`}
-                      checked={subStep.isCompleted}
-                      onCheckedChange={() => toggleSubStepCompletion(stepId, subStep.title)}
-                      className="mr-3"
-                    />
-                    <div>
-                      <label 
-                        htmlFor={`substep-${stepId}-${subStep.title}`}
-                        className="font-medium cursor-pointer"
-                        onClick={() => navigate(`/roadmap/step/${stepId}/${encodeURIComponent(subStep.title)}`)}
-                      >
-                        {subStep.title}
-                      </label>
-                      {subStep.description && (
-                        <p className="text-sm text-gray-500">{subStep.description}</p>
-                      )}
-                    </div>
-                  </div>
-                  {subStep.isCompleted && (
-                    <div className="bg-green-100 text-green-600 px-2 py-1 rounded text-xs font-medium">
-                      Complété
-                    </div>
-                  )}
-                </div>
-              </Card>
-            ))}
-          </div>
-        </section>
-      )}
-      
-      <div className="mt-8 flex justify-between">
-        {stepId > 1 && (
-          <Button 
-            variant="outline" 
-            onClick={() => navigate(`/roadmap/step/${stepId - 1}`)}
-          >
-            Étape précédente
-          </Button>
-        )}
-        
-        {stepId < journeySteps.length && (
-          <Button
-            onClick={() => navigate(`/roadmap/step/${stepId + 1}`)}
-            className="ml-auto"
-          >
-            Étape suivante
-          </Button>
-        )}
-      </div>
+      <StepNavigation stepId={stepId} />
     </div>
   );
 }
