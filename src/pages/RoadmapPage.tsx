@@ -1,4 +1,3 @@
-
 import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -7,16 +6,16 @@ import JourneyProgressIndicator from "@/components/journey/JourneyProgressIndica
 import { journeySteps } from "@/data/journeySteps";
 import { useJourneyProgress } from "@/hooks/useJourneyProgress";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-
 export default function RoadmapPage() {
-  const { localSteps, isLoading: stepsLoading } = useJourneyProgress(journeySteps);
+  const {
+    localSteps,
+    isLoading: stepsLoading
+  } = useJourneyProgress(journeySteps);
   const location = useLocation();
-  
+
   // Check if we're on the main roadmap page without a step
   const isMainRoadmap = location.pathname === "/roadmap";
-  
-  return (
-    <div className="min-h-screen bg-slate-900 text-gray-100 flex flex-col">
+  return <div className="min-h-screen bg-slate-900 text-gray-100 flex flex-col">
       <Navbar />
       
       <main className="flex-grow pt-20 pb-16">
@@ -27,29 +26,16 @@ export default function RoadmapPage() {
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
             <div className="lg:col-span-1">
-              {stepsLoading ? (
-                <div className="w-full flex justify-center py-12">
+              {stepsLoading ? <div className="w-full flex justify-center py-12">
                   <LoadingIndicator size="lg" />
-                </div>
-              ) : (
-                <JourneyTimeline />
-              )}
+                </div> : <JourneyTimeline />}
             </div>
             
-            <div className="lg:col-span-2">
-              {isMainRoadmap ? (
-                <div className="flex justify-center items-center h-64">
-                  <LoadingIndicator size="lg" />
-                </div>
-              ) : (
-                <Outlet />
-              )}
-            </div>
+            
           </div>
         </section>
       </main>
       
       <Footer />
-    </div>
-  );
+    </div>;
 }
