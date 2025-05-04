@@ -38,14 +38,8 @@ export default function RoadmapPage() {
             
             <div className="lg:col-span-2">
               {isMainRoadmap ? (
-                <div className="flex flex-col items-center justify-center p-8 bg-slate-800 rounded-lg">
-                  <h2 className="text-xl font-semibold mb-4">Bienvenue dans votre parcours entrepreneur</h2>
-                  <p className="text-gray-400 text-center mb-6">
-                    Sélectionnez une étape dans la timeline à gauche pour commencer votre parcours.
-                  </p>
-                  <div className="flex justify-center">
-                    <LoadingIndicator size="lg" />
-                  </div>
+                <div className="flex justify-center items-center h-64">
+                  <LoadingIndicator size="lg" />
                 </div>
               ) : (
                 <Outlet />
