@@ -4,7 +4,7 @@ import NotFound from "@/pages/NotFound";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import RoadmapPage from "@/pages/roadmap/RoadmapPage";
-import StepDetailPage from "@/pages/StepDetailPage";
+import StepDetailPage from "@/pages/roadmap/StepDetailPage";
 import { useAuth } from "@/hooks/useAuth";
 import { ToastIntegration } from "@/components/ToastIntegration";
 
@@ -39,7 +39,7 @@ function App() {
         {/* Auth page */}
         <Route path="/auth" element={<Auth />} />
         
-        {/* Roadmap routes with nested structure */}
+        {/* Roadmap with step detail side by side */}
         <Route path="/roadmap" element={<RoadmapPage />}>
           <Route path="step/:stepId" element={<StepDetailPage />} />
           <Route path="step/:stepId/:substepTitle" element={<StepDetailPage />} />

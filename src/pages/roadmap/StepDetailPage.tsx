@@ -65,82 +65,75 @@ export default function StepDetailPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-900 text-gray-100">
-      <Navbar />
-      <main className="container mx-auto flex-grow p-4 md:p-8 pt-20 pb-16">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate('/roadmap')}
-          className="mb-4"
-        >
-          <ChevronLeft className="mr-2 h-4 w-4" /> Retour au parcours
-        </Button>
+    <div className="bg-slate-800 rounded-lg p-6">
+      <Button 
+        variant="ghost" 
+        onClick={() => navigate('/roadmap')}
+        className="mb-4"
+      >
+        <ChevronLeft className="mr-2 h-4 w-4" /> Retour au parcours
+      </Button>
+      
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold">{step.title}</h1>
+        <p className="text-muted-foreground mt-2">
+          {selectedSubStep ? selectedSubStep.description : step.description}
+        </p>
+      </div>
+      
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-6">
+        <TabsList>
+          <TabsTrigger value="overview">Aperçu</TabsTrigger>
+          <TabsTrigger value="resources">Ressources</TabsTrigger>
+        </TabsList>
         
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold">{step.title}</h1>
-          <p className="text-muted-foreground mt-2">
-            {selectedSubStep ? selectedSubStep.description : step.description}
-          </p>
-        </div>
-
-        <JourneyProgressIndicator />
-        
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-6">
-          <TabsList>
-            <TabsTrigger value="overview">Aperçu</TabsTrigger>
-            <TabsTrigger value="resources">Ressources</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="overview" className="mt-6">
-            {courseMaterialsLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <LoadingIndicator size="lg" />
-              </div>
-            ) : materials && materials.length > 0 && materials[0].course_content ? (
-              <CourseContentDisplay
-                stepId={stepId}
-                substepTitle={substepTitle}
-                stepTitle={step.title}
-                courseContent={materials[0].course_content}
-              />
-            ) : (
-              <div className="py-8 text-center">
-                <p className="text-muted-foreground">Aucun contenu de cours disponible pour cette étape.</p>
-                <pre className="mt-4 text-sm text-left p-4 bg-gray-100 rounded">Debug: {JSON.stringify({ stepId, substepTitle, materials }, null, 2)}</pre>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="resources" className="mt-6">
-            <ResourcesList 
-              stepId={stepId} 
+        <TabsContent value="overview" className="mt-6">
+          {courseMaterialsLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <LoadingIndicator size="lg" />
+            </div>
+          ) : materials && materials.length > 0 && materials[0].course_content ? (
+            <CourseContentDisplay
+              stepId={stepId}
               substepTitle={substepTitle}
               stepTitle={step.title}
+              courseContent={materials[0].course_content}
             />
-          </TabsContent>
-        </Tabs>
+          ) : (
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground">Aucun contenu de cours disponible pour cette étape.</p>
+            </div>
+          )}
+        </TabsContent>
         
-        <div className="mt-8 flex justify-between">
-          {stepId > 1 && (
-            <Button 
-              variant="outline" 
-              onClick={() => navigate(`/step/${stepId - 1}`)}
-            >
-              Étape précédente
-            </Button>
-          )}
-          
-          {stepId < journeySteps.length && (
-            <Button
-              onClick={() => navigate(`/step/${stepId + 1}`)}
-              className="ml-auto"
-            >
-              Étape suivante
-            </Button>
-          )}
-        </div>
-      </main>
-      <Footer />
+        <TabsContent value="resources" className="mt-6">
+          <ResourcesList 
+            stepId={stepId} 
+            substepTitle={substepTitle}
+            stepTitle={step.title}
+          />
+        </TabsContent>
+      </Tabs>
+      
+      <div className="mt-8 flex justify-between">
+        {stepId > 1 && (
+          <Button 
+            variant="outline" 
+            onClick={() => navigate(`/roadmap/step/${stepId - 1}`)}
+          >
+            Étape précédente
+          </Button>
+        )}
+        
+        {stepId < journeySteps.length && (
+          <Button
+            onClick={() => navigate(`/roadmap/step/${stepId + 1}`)}
+            className="ml-auto"
+          >
+            Étape suivante
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

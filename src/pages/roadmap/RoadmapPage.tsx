@@ -35,7 +35,7 @@ export default function RoadmapPage() {
       
       // Wait a moment to allow the UI to render before navigating
       const timer = setTimeout(() => {
-        navigate(`/step/${firstIncompleteStep.id}`);
+        navigate(`/roadmap/step/${firstIncompleteStep.id}`);
       }, 100);
       
       return () => clearTimeout(timer);

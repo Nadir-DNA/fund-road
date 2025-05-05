@@ -25,18 +25,18 @@ export default function JourneyTimeline() {
   }
 
   const handleStepClick = (stepId: number) => {
-    navigate(`/step/${stepId}`);
+    navigate(`/roadmap/step/${stepId}`);
   };
 
   const handleSubStepClick = (stepId: number, substepTitle: string) => {
-    navigate(`/step/${stepId}/${encodeURIComponent(substepTitle)}`);
+    navigate(`/roadmap/step/${stepId}/${encodeURIComponent(substepTitle)}`);
   };
 
   const handleResourceClick = (stepId: number, substepTitle: string | null, resourceName: string) => {
     if (substepTitle) {
-      navigate(`/step/${stepId}/${encodeURIComponent(substepTitle)}?resource=${resourceName}`);
+      navigate(`/roadmap/step/${stepId}/${encodeURIComponent(substepTitle)}?resource=${resourceName}`);
     } else {
-      navigate(`/step/${stepId}?resource=${resourceName}`);
+      navigate(`/roadmap/step/${stepId}?resource=${resourceName}`);
     }
   };
 
