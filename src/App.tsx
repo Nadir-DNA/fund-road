@@ -1,7 +1,9 @@
 
 import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import NotFound from "@/pages/NotFound";
-import RoadmapPage from "@/pages/RoadmapPage";
+import Index from "@/pages/Index";
+import Auth from "@/pages/Auth";
+import RoadmapPage from "@/pages/roadmap/RoadmapPage";
 import StepDetailPage from "@/pages/StepDetailPage";
 import { useAuth } from "@/hooks/useAuth";
 import { ToastIntegration } from "@/components/ToastIntegration";
@@ -31,7 +33,11 @@ function App() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<Navigate to="/roadmap" replace />} />
+        {/* Home page */}
+        <Route path="/" element={<Index />} />
+        
+        {/* Auth page */}
+        <Route path="/auth" element={<Auth />} />
         
         {/* Roadmap routes with nested structure */}
         <Route path="/roadmap" element={<RoadmapPage />}>

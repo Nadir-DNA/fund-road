@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Menu, X, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NavLinks } from "./nav/NavLinks";
@@ -7,22 +8,25 @@ import { AuthButtons } from "./nav/AuthButtons";
 import { MobileMenu } from "./nav/MobileMenu";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
+
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const {
-    isAuthenticated,
-    handleSignOut
-  } = useAuthStatus();
+  const { isAuthenticated, handleSignOut } = useAuthStatus();
+  
   const handleAuthClick = () => {
     navigate('/auth');
   };
-  return <nav className="fixed top-0 left-0 right-0 z-50 h-[72px] py-4 backdrop-blur-md bg-black/50 border-b border-white/10">
+  
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50 h-[72px] py-4 backdrop-blur-md bg-black/50 border-b border-white/10">
       <div className="container mx-auto px-4 md:px-6 relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <img src="/lovable-uploads/965b31f2-63c1-45e2-9ab0-95b60a8b9d83.png" alt="Fund Road Logo" className="h-10 w-auto" />
-            <a href="/" className="font-bold text-xl">Fund Road</a>
+            <Link to="/">
+              <img src="/lovable-uploads/965b31f2-63c1-45e2-9ab0-95b60a8b9d83.png" alt="Fund Road Logo" className="h-10 w-auto" />
+            </Link>
+            <Link to="/" className="font-bold text-xl">Fund Road</Link>
           </div>
           
           <NavLinks isAuthenticated={isAuthenticated} />
@@ -48,5 +52,6 @@ export default function Navbar() {
           </div>
         </div>
       </div>
-    </nav>;
+    </nav>
+  );
 }
