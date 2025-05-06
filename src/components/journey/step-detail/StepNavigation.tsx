@@ -5,10 +5,9 @@ import { journeySteps } from "@/data/journeySteps";
 
 interface StepNavigationProps {
   stepId: number;
-  substepTitle?: string | null;
 }
 
-export default function StepNavigation({ stepId, substepTitle }: StepNavigationProps) {
+export default function StepNavigation({ stepId }: StepNavigationProps) {
   const navigate = useNavigate();
   console.log("StepNavigation rendered with stepId:", stepId);
 

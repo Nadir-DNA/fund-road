@@ -3,7 +3,8 @@ import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import NotFound from "@/pages/NotFound";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
-import SubstepPage from "@/pages/SubstepPage";
+import RoadmapPage from "@/pages/roadmap/RoadmapPage";
+import StepDetailPage from "@/pages/roadmap/StepDetailPage";
 import { useAuth } from "@/hooks/useAuth";
 import { ToastIntegration } from "@/components/ToastIntegration";
 
@@ -38,8 +39,11 @@ function App() {
         {/* Auth page */}
         <Route path="/auth" element={<Auth />} />
         
-        {/* Simple direct route to substep page - make sure no props are passed */}
-        <Route path="/roadmap/step/:stepId/:substepTitle" element={<SubstepPage />} />
+        {/* Roadmap with step detail side by side */}
+        <Route path="/roadmap" element={<RoadmapPage />}>
+          <Route path="step/:stepId" element={<StepDetailPage />} />
+          <Route path="step/:stepId/:substepTitle" element={<StepDetailPage />} />
+        </Route>
         
         {/* Legacy compatibility route - using wrapper components */}
         <Route path="/step/:stepId" element={<StepRedirect />} />
