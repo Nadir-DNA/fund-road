@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Save, LogIn, CheckCircle } from "lucide-react";
-import { wasSaveSuccessful, getLastSaveTime } from "@/utils/navigationUtils";
+import { wasSaveSuccessful, getLastSaveTime, formatLastSaveTime } from "@/utils/navigationUtils";
 
 interface SaveButtonProps {
   isSaving: boolean;
@@ -32,28 +32,12 @@ export default function SaveButton({ isSaving, handleSave, isAuthenticated = tru
     }
   }, [isSaving]);
 
-  // Format the last save time for display
-  const formatSaveTime = (timeString: string | null): string => {
-    if (!timeString) return "";
-    
-    try {
-      const date = new Date(timeString);
-      return date.toLocaleTimeString(undefined, {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      });
-    } catch (e) {
-      return "";
-    }
-  };
-
   return (
     <div className="flex flex-col">
       <Button 
         variant={saveSuccess ? "secondary" : "outline"}
         onClick={handleSave} 
-        disabled={isSaving}
+        disabled={isSaving || !isAuthenticated}
         className="transition-colors duration-300"
       >
         {isSaving ? (
@@ -80,7 +64,7 @@ export default function SaveButton({ isSaving, handleSave, isAuthenticated = tru
       </Button>
       {lastSaveTime && (
         <span className="text-xs text-muted-foreground mt-1">
-          Dernier enregistrement à {formatSaveTime(lastSaveTime)}
+          Dernier enregistrement à {formatLastSaveTime(lastSaveTime)}
         </span>
       )}
     </div>

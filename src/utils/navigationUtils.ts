@@ -46,6 +46,11 @@ export const saveLastPath = (path: string): void => {
   }
 };
 
+// Save the current path (alias for saveLastPath for backward compatibility)
+export const saveCurrentPath = (path: string): void => {
+  saveLastPath(path);
+};
+
 // Get the last saved path
 export const getLastPath = (): string | null => {
   if (!isBrowser()) return null;
@@ -58,11 +63,6 @@ export const clearLastPath = (): void => {
     localStorage.removeItem(LAST_PATH_KEY);
     console.log("Last path cleared");
   }
-};
-
-// Add the missing function that's imported in SubStepItem.tsx
-export const saveCurrentPath = (path: string): void => {
-  saveLastPath(path);
 };
 
 // Save time of last successful data save
@@ -92,4 +92,20 @@ export const markSaveFailed = (): void => {
 export const wasSaveSuccessful = (): boolean => {
   if (!isBrowser()) return false;
   return localStorage.getItem(SAVE_STATUS_KEY) === 'success';
+};
+
+// Format the last save time for display
+export const formatLastSaveTime = (timeString: string | null): string => {
+  if (!timeString) return "";
+  
+  try {
+    const date = new Date(timeString);
+    return date.toLocaleTimeString(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  } catch (e) {
+    return "";
+  }
 };

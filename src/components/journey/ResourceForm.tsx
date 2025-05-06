@@ -1,228 +1,147 @@
 
-import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useResourceData } from "@/hooks/useResourceData";
-import FormSkeleton from "./resource-form/FormSkeleton";
-import SaveButton from "./resource-form/SaveButton";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useEffect, useState, ReactNode } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { useNavigate, useLocation } from "react-router-dom";
-import { saveLastPath, saveLastSaveTime, markSaveFailed } from "@/utils/navigationUtils";
+import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
+import SaveButton from "./resource-form/SaveButton";
+import { useResourceData } from "@/hooks/useResourceData";
+import { supabase } from "@/integrations/supabase/client";
+import { saveLastSaveTime, wasSaveSuccessful } from "@/utils/navigationUtils";
+import ResourceFormHeader from "./resource-form/ResourceFormHeader";
 
 interface ResourceFormProps {
+  children: ReactNode;
   stepId: number;
   substepTitle: string;
   resourceType: string;
   title: string;
   description: string;
-  children: ReactNode;
+  formData: any;
   onDataSaved?: (data: any) => void;
-  formData?: any; // Controlled data from parent
-  defaultValues?: any; // Uncontrolled initial values
-  exportPanel?: React.ReactNode;
+  exportPanel?: ReactNode;
 }
 
 export default function ResourceForm({
+  children,
   stepId,
   substepTitle,
   resourceType,
   title,
   description,
-  children,
-  onDataSaved,
   formData,
-  defaultValues,
+  onDataSaved,
   exportPanel
 }: ResourceFormProps) {
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   
-  // Use ref for stable values to prevent loops
-  const onDataSavedRef = useRef(onDataSaved);
-  onDataSavedRef.current = onDataSaved;
-  
-  const initialDataRef = useRef(formData || defaultValues);
-  const hasCalledOnDataSavedRef = useRef(false);
-  const [stableInitialData] = useState(initialDataRef.current); // Use only once at mount
-  const manualSaveTriggeredRef = useRef(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
-  // Check authentication status
+  // State to track user authentication
   useEffect(() => {
     const checkAuth = async () => {
       const { data } = await supabase.auth.getSession();
       setIsAuthenticated(!!data.session);
+      setUserId(data.session?.user?.id || null);
+      
+      // Setup auth state change listener
+      const { data: authListener } = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          setIsAuthenticated(!!session);
+          setUserId(session?.user?.id || null);
+        }
+      );
+      
+      return () => {
+        authListener.subscription.unsubscribe();
+      };
     };
     
     checkAuth();
-    
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
-    });
-    
-    return () => subscription.unsubscribe();
   }, []);
-  
-  // Use ResourceData hook with stable initial data to prevent loops
+
+  // Use the resource data hook to handle loading/saving
   const {
-    formData: hookFormData,
+    formData: resourceData,
     isLoading,
     isSaving,
+    handleFormChange,
     handleSave,
     handleManualSave,
     session,
-    userId
-  } = useResourceData(stepId, substepTitle, resourceType, stableInitialData, useCallback((data) => {
-    // Only call parent's onDataSaved for manual saves or after initial load
-    if (onDataSavedRef.current && data && Object.keys(data).length > 0) {
-      if (hasCalledOnDataSavedRef.current || manualSaveTriggeredRef.current) {
-        // Normal update or manual save
-        console.log("Calling onDataSaved from ResourceForm after validation");
-        onDataSavedRef.current(data);
-        
-        // Record successful save
-        saveLastSaveTime();
-        
-        // Reset manual save flag
-        manualSaveTriggeredRef.current = false;
-      } else {
-        // First call - mark flag and delay to prevent loops
-        console.log("First onDataSaved call in ResourceForm");
-        hasCalledOnDataSavedRef.current = true;
-        
-        // Skip auto-call for initial data to prevent loops
-        if (JSON.stringify(data).length > 20) {
-          setTimeout(() => {
-            if (onDataSavedRef.current) {
-              console.log("Delayed first onDataSaved to prevent loops");
-              onDataSavedRef.current(data);
-              saveLastSaveTime();
-            }
-          }, 500);
-        } else {
-          console.log("Initial data too small, skipping first onDataSaved call");
-        }
-      }
-    }
-  }, []));
-  
-  // Use ref to track unmounting
-  const isUnmountingRef = useRef(false);
-  const lastSavedDataRef = useRef<string>("");
+    retryLoading
+  } = useResourceData(stepId, substepTitle, resourceType, formData, onDataSaved);
 
-  // Convert current formData to string for comparison
-  const currentFormDataString = JSON.stringify(hookFormData);
-
-  // Force save on unmount to ensure data persistence, but only if data changed
+  // Effect to show success toast after saving
   useEffect(() => {
-    // Store the initial form data for comparison after first render
-    if (!lastSavedDataRef.current && hookFormData) {
-      lastSavedDataRef.current = JSON.stringify(hookFormData);
+    if (wasSaveSuccessful() && !isSaving) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
     }
+  }, [isSaving]);
 
-    return () => {
-      console.log("ResourceForm unmounting - checking if save needed");
-      if (session && !isUnmountingRef.current) {
-        isUnmountingRef.current = true;
-        
-        // Only save if data actually changed since last save
-        if (currentFormDataString !== lastSavedDataRef.current && currentFormDataString.length > 20) {
-          console.log("Data changed, triggering final save before unmount");
-          try {
-            handleSave(session);
-            lastSavedDataRef.current = currentFormDataString;
-            saveLastSaveTime();
-            
-            // Show feedback to user
-            toast({
-              title: "Données sauvegardées",
-              description: "Vos modifications ont été enregistrées automatiquement",
-              duration: 3000
-            });
-          } catch (e) {
-            console.error("Error during final save:", e);
-            markSaveFailed();
-          }
-        } else {
-          console.log("No data changes detected, skipping final save");
-        }
-      } else {
-        console.log("No session available for final save or save already triggered");
-      }
-    };
-  }, [handleSave, session, currentFormDataString, toast]);
-
-  // Handle manual save button click with better error handling
-  const onSaveClick = useCallback(() => {
-    console.log("Manual save button clicked");
-    
+  // Handle manual save button click
+  const handleSaveClick = async () => {
     if (!isAuthenticated) {
-      console.log("User not authenticated, redirecting to login");
       toast({
         title: "Authentification requise",
-        description: "Vous devez être connecté pour sauvegarder vos ressources.",
+        description: "Connectez-vous pour enregistrer vos données",
         variant: "destructive"
       });
-      
-      // Save current path for later redirection
-      saveLastPath(location.pathname + location.search);
-      navigate("/auth");
       return;
     }
-    
-    manualSaveTriggeredRef.current = true;
-    if (session) {
-      console.log("Session available for manual save");
-      try {
-        handleManualSave(session);
-        lastSavedDataRef.current = currentFormDataString;
-      } catch (e) {
-        console.error("Error during manual save:", e);
-        markSaveFailed();
-        toast({
-          title: "Erreur de sauvegarde",
-          description: "Une erreur est survenue lors de l'enregistrement des données",
-          variant: "destructive"
-        });
-      }
-    } else {
-      console.log("No session available for manual save");
-      markSaveFailed();
-    }
-  }, [session, handleManualSave, currentFormDataString, isAuthenticated, navigate, location, toast]);
 
-  if (isLoading) {
-    return <FormSkeleton />;
-  }
+    try {
+      const success = await handleManualSave(session);
+      if (success) {
+        toast({
+          title: "Enregistrement réussi",
+          description: "Vos données ont été sauvegardées",
+          variant: "success"
+        });
+        saveLastSaveTime();
+      }
+    } catch (error) {
+      console.error("Save error:", error);
+      toast({
+        title: "Erreur d'enregistrement",
+        description: "Impossible de sauvegarder vos données",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
-    <Card className="w-full max-w-[95vw] lg:max-w-5xl">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xl md:text-2xl">{title}</CardTitle>
-        <p className="text-sm text-muted-foreground mt-1">{description}</p>
+    <Card className="w-full">
+      <CardHeader>
+        <ResourceFormHeader 
+          title={title}
+          description={description}
+          stepId={stepId}
+          substepTitle={substepTitle}
+        />
       </CardHeader>
       
-      <CardContent className="pt-4 pb-6">
-        {children}
-      </CardContent>
-      
-      <CardFooter className="flex flex-col sm:flex-row justify-between border-t p-4 pt-4 mt-2 gap-4">
-        <SaveButton 
-          isSaving={isSaving} 
-          handleSave={onSaveClick} 
-          isAuthenticated={isAuthenticated}
-        />
-        {exportPanel}
-        
-        {!isAuthenticated && (
-          <div className="text-sm text-amber-500 sm:ml-4">
-            Connectez-vous pour sauvegarder vos données
+      <CardContent>
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <LoadingIndicator size="md" />
+            <span className="ml-2 text-muted-foreground">Chargement des données...</span>
           </div>
+        ) : (
+          <>
+            <div className="mb-6">{children}</div>
+            <div className="flex justify-between items-center mt-8">
+              <SaveButton 
+                isSaving={isSaving} 
+                handleSave={handleSaveClick}
+                isAuthenticated={isAuthenticated} 
+              />
+              {exportPanel && <div className="ml-4">{exportPanel}</div>}
+            </div>
+          </>
         )}
-      </CardFooter>
+      </CardContent>
     </Card>
   );
 }

@@ -1,211 +1,149 @@
-// Utility functions to format different resource types for export
 
 export interface FormattedExport {
   title: string;
   date: string;
-  sections: Array<{ name: string; content: string }>;
+  sections?: FormattedSection[];
 }
 
-export const formatBusinessModelCanvas = (data: any): FormattedExport => {
-  return {
-    title: `Business Model Canvas - ${data.projectName}`,
-    date: data.exportDate,
-    sections: [
-      { name: "Partenaires clés", content: data.key_partners || "" },
-      { name: "Activités clés", content: data.key_activities || "" },
-      { name: "Ressources clés", content: data.key_resources || "" },
-      { name: "Proposition de valeur", content: data.value_propositions || "" },
-      { name: "Relations clients", content: data.customer_relationships || "" },
-      { name: "Canaux de distribution", content: data.channels || "" },
-      { name: "Segments clients", content: data.customer_segments || "" },
-      { name: "Structure de coûts", content: data.cost_structure || "" },
-      { name: "Sources de revenus", content: data.revenue_streams || "" }
-    ]
-  };
+export interface FormattedSection {
+  name: string;
+  content: string;
+}
+
+// Function to format date for export
+const formatDate = (): string => {
+  const now = new Date();
+  return now.toLocaleDateString(undefined, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
 };
 
-export const formatSWOTAnalysis = (data: any): FormattedExport => {
-  return {
-    title: `Analyse SWOT - ${data.projectName}`,
-    date: data.exportDate,
+// Resource formatters for different resource types
+const formatters: Record<string, (formData: any) => FormattedExport> = {
+  // Format for SWOT analysis
+  swot_analysis: (formData) => ({
+    title: "Analyse SWOT",
+    date: formatDate(),
     sections: [
-      { name: "Forces", content: data.strengths || "" },
-      { name: "Faiblesses", content: data.weaknesses || "" },
-      { name: "Opportunités", content: data.opportunities || "" },
-      { name: "Menaces", content: data.threats || "" }
+      { name: "Forces", content: formData.strengths || "" },
+      { name: "Faiblesses", content: formData.weaknesses || "" },
+      { name: "Opportunités", content: formData.opportunities || "" },
+      { name: "Menaces", content: formData.threats || "" },
+      { name: "Conclusion", content: formData.conclusion || "" }
     ]
-  };
-};
-
-export const formatLegalStatusComparison = (data: any): FormattedExport => {
-  return {
-    title: `Comparaison des Statuts Juridiques - ${data.projectName}`,
-    date: data.exportDate,
-    sections: [
-      { name: "SAS", content: data.sas || "" },
-      { name: "SARL", content: data.sarl || "" },
-      { name: "Micro-entreprise", content: data.micro || "" },
-      { name: "Conclusion", content: data.conclusion || "" }
-    ]
-  };
-};
-
-export const formatDilutionSimulator = (data: any): FormattedExport => {
-  return {
-    title: `Simulateur de Dilution - ${data.projectName}`,
-    date: data.exportDate,
-    sections: [
-      { name: "Valorisation post-money", content: data.post_money_valuation || "" },
-      { name: "Montant levé", content: data.funding_asked || "" },
-      { name: "Part de l'investisseur estimée", content: data.investor_equity || "" }
-    ]
-  };
-};
-
-export const formatGrowthProjection = (data: any): FormattedExport => {
-  return {
-    title: `Projection de Croissance - ${data.projectName}`,
-    date: data.exportDate,
-    sections: [
-      { name: "Jalons clés", content: data.key_milestones || "" },
-      { name: "Objectifs de croissance", content: data.expected_growth || "" },
-      { name: "Évolution de l'équipe", content: data.team_scaling || "" },
-      { name: "Évolution produit / tech", content: data.product_scaling || "" }
-    ]
-  };
-};
-
-export const formatEmpathyMap = (data: any): FormattedExport => {
-  return {
-    title: `Matrice d'Empathie - ${data.projectName}`,
-    date: data.exportDate,
-    sections: [
-      { name: "Utilisateur", content: `${data.persona_name || ""}${data.persona_role ? ` - ${data.persona_role}` : ""}${data.persona_age ? ` (${data.persona_age} ans)` : ""}` },
-      { name: "Ce qu'il pense et dit", content: data.thinks_says || "" },
-      { name: "Ce qu'il ressent", content: data.feels || "" },
-      { name: "Ce qu'il entend", content: data.hears || "" },
-      { name: "Ce qu'il voit", content: data.sees || "" },
-      { name: "Ce qu'il fait", content: data.does || "" },
-      { name: "Points douloureux", content: data.pains || "" },
-      { name: "Gains potentiels", content: data.gains || "" },
-      { name: "Objectifs", content: data.goals || "" }
-    ]
-  };
-};
-
-export const formatProblemSolutionMatrix = (data: any): FormattedExport => {
-  return {
-    title: `Matrice Problème-Solution - ${data.projectName}`,
-    date: data.exportDate,
-    sections: [
-      { name: "Proposition de valeur", content: data.value_proposition || "" },
-      { name: "Segment cible", content: data.target_users || "" },
-      { name: "Problème 1", content: data.problem1 || "" },
-      { name: "Solution 1", content: data.problem1_solution || "" },
-      { name: "Validation 1", content: data.problem1_validation || "" },
-      { name: "Problème 2", content: data.problem2 || "" },
-      { name: "Solution 2", content: data.problem2_solution || "" },
-      { name: "Validation 2", content: data.problem2_validation || "" },
-      { name: "Problème 3", content: data.problem3 || "" },
-      { name: "Solution 3", content: data.problem3_solution || "" },
-      { name: "Validation 3", content: data.problem3_validation || "" }
-    ]
-  };
-};
-
-export const formatMVPSelector = (data: any): FormattedExport => {
-  if (!data.features) return { title: `MVP Selector - ${data.projectName || 'Mon Projet'}`, date: data.exportDate, sections: [] };
+  }),
   
-  const mvpFeatures = data.features.filter((f: any) => f.inMvp);
-  const futureFeatures = data.features.filter((f: any) => !f.inMvp);
-  
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case 'must': return 'Must have';
-      case 'should': return 'Should have';
-      case 'could': return 'Could have';
-      case 'wont': return 'Won\'t have';
-      default: return '';
-    }
-  };
-  
-  return {
-    title: `Sélecteur de MVP - ${data.projectName}`,
-    date: data.exportDate,
+  // Format for market size estimator
+  market_size_estimator: (formData) => ({
+    title: "Estimation de la taille du marché",
+    date: formatDate(),
     sections: [
-      { 
-        name: "Fonctionnalités MVP", 
-        content: mvpFeatures.map((f: any) => 
-          `${f.name} (${getPriorityLabel(f.priority)}) - Impact: ${f.impact}, Complexité: ${f.complexity}\n${f.description}`
-        ).join('\n\n') 
-      },
-      { 
-        name: "Fonctionnalités futures", 
-        content: futureFeatures.map((f: any) => 
-          `${f.name} (${getPriorityLabel(f.priority)}) - Impact: ${f.impact}, Complexité: ${f.complexity}\n${f.description}`
-        ).join('\n\n') 
-      }
+      { name: "Marché total (TAM)", content: formData.tam || "" },
+      { name: "Marché adressable (SAM)", content: formData.sam || "" },
+      { name: "Marché serviceable (SOM)", content: formData.som || "" },
+      { name: "Méthodologie", content: formData.methodology || "" }
     ]
-  };
+  }),
+  
+  // Format for business model canvas
+  business_model_canvas: (formData) => ({
+    title: "Business Model Canvas",
+    date: formatDate(),
+    sections: [
+      { name: "Segments clients", content: formData.customer_segments || "" },
+      { name: "Proposition de valeur", content: formData.value_proposition || "" },
+      { name: "Canaux de distribution", content: formData.channels || "" },
+      { name: "Relations clients", content: formData.customer_relationships || "" },
+      { name: "Sources de revenus", content: formData.revenue_streams || "" },
+      { name: "Ressources clés", content: formData.key_resources || "" },
+      { name: "Activités clés", content: formData.key_activities || "" },
+      { name: "Partenaires clés", content: formData.key_partners || "" },
+      { name: "Structure de coûts", content: formData.cost_structure || "" },
+    ]
+  }),
+  
+  // Format for opportunity definition
+  opportunity_definition: (formData) => ({
+    title: "Définition de l'opportunité",
+    date: formatDate(),
+    sections: [
+      { name: "Problème identifié", content: formData.problem || "" },
+      { name: "Solution proposée", content: formData.solution || "" },
+      { name: "Marché cible", content: formData.target_market || "" },
+      { name: "Analyse de la concurrence", content: formData.competition || "" },
+      { name: "Avantage unique", content: formData.unique_advantage || "" }
+    ]
+  }),
+  
+  // Format for legal status comparison
+  legal_status_comparison: (formData) => ({
+    title: "Comparaison des statuts juridiques",
+    date: formatDate(),
+    sections: [
+      { name: "SAS", content: formData.sas || "" },
+      { name: "SARL", content: formData.sarl || "" },
+      { name: "Micro-entreprise", content: formData.micro || "" },
+      { name: "Conclusion", content: formData.conclusion || "" }
+    ]
+  }),
+  
+  // Format for IP self-assessment
+  ip_self_assessment: (formData) => ({
+    title: "Auto-diagnostic stratégique de la PI",
+    date: formatDate(),
+    sections: [
+      { name: "Valeur stratégique", content: formData.strategic_value || "" },
+      { name: "Type d'innovation", content: formData.innovation_type || "" },
+      { name: "Avantage concurrentiel", content: formData.competitive_advantage || "" },
+      { name: "Risque de copie", content: formData.risk_of_copy || "" },
+      { name: "Impact sur la valorisation", content: formData.valorisation_impact || "" }
+    ]
+  }),
+  
+  // Format for investor objection prep
+  investor_objection_prep: (formData) => ({
+    title: "Préparation aux objections",
+    date: formatDate(),
+    sections: [
+      { name: "Manque de traction", content: formData.traction_gap || "" },
+      { name: "Question sur la valorisation", content: formData.valuation_question || "" },
+      { name: "Doute sur l'équipe", content: formData.team_doubt || "" },
+      { name: "Scalabilité du projet", content: formData.scalability_question || "" },
+      { name: "Autres réponses préparées", content: formData.other_prepared_answers || "" }
+    ]
+  }),
+  
+  // Format for growth projection
+  growth_projection: (formData) => ({
+    title: "Projection de croissance",
+    date: formatDate(),
+    sections: [
+      { name: "Jalons clés", content: formData.key_milestones || "" },
+      { name: "Objectifs de croissance", content: formData.expected_growth || "" },
+      { name: "Évolution de l'équipe", content: formData.team_scaling || "" },
+      { name: "Évolution produit / tech", content: formData.product_scaling || "" }
+    ]
+  }),
+  
+  // Add more formatters for other resource types
 };
 
-export const formatCapTable = (data: any): FormattedExport => {
-  if (!data.shareholders) return { title: `Cap Table - ${data.projectName || 'Mon Projet'}`, date: data.exportDate, sections: [] };
+// Default formatter for unknown resource types
+const defaultFormatter = (formData: any): FormattedExport => {
+  const title = "Exportation de données";
+  const date = formatDate();
+  const sections = Object.entries(formData).map(([key, value]) => {
+    const name = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
+    return { name, content: String(value) };
+  });
   
-  return {
-    title: `Table de Capitalisation - ${data.projectName}`,
-    date: data.exportDate,
-    sections: [
-      {
-        name: "Actionnaires",
-        content: data.shareholders.map((s: any) => 
-          `${s.name}: ${s.shares} actions (${s.percentage}%)`
-        ).join('\n')
-      },
-      {
-        name: "Investissements",
-        content: data.investmentHistory ? data.investmentHistory.map((inv: any) => 
-          `${inv.investor}: ${inv.amount} € (${inv.shares} actions)`
-        ).join('\n') : "Aucun investissement"
-      }
-    ]
-  };
+  return { title, date, sections };
 };
 
-// Centralizing the formatter selection
-export const formatDataForExport = (data: any, format: "pdf" | "docx" | "xlsx", projectName: string, resourceType: string): FormattedExport => {
-  // Add common metadata
-  const exportData = {
-    ...data,
-    projectName,
-    exportDate: new Date().toLocaleDateString('fr-FR'),
-  };
-
-  // Format according to resource type
-  switch (resourceType) {
-    case "business_model_canvas":
-      return formatBusinessModelCanvas(exportData);
-    case "swot_analysis":
-      return formatSWOTAnalysis(exportData);
-    case "empathy_map":
-      return formatEmpathyMap(exportData);
-    case "problem_solution_matrix":
-      return formatProblemSolutionMatrix(exportData);
-    case "mvp_selector":
-      return formatMVPSelector(exportData);
-    case "cap_table":
-      return formatCapTable(exportData);
-    case "legal_status_comparison":
-      return formatLegalStatusComparison(exportData);
-    case "dilution_simulator":
-      return formatDilutionSimulator(exportData);
-    case "growth_projection":
-      return formatGrowthProjection(exportData);
-    default:
-      return {
-        title: `${resourceType} - ${projectName}`,
-        date: exportData.exportDate,
-        sections: []
-      };
-  }
+// Main export function
+export const formatResourceData = (formData: any, resourceType: string): FormattedExport => {
+  const formatter = formatters[resourceType] || defaultFormatter;
+  return formatter(formData);
 };

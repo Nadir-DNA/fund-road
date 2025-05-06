@@ -1,104 +1,76 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { DownloadIcon } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import { formatDataForExport } from "./formatters";
+import { Download } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formatResourceData } from "./formatters";
 import { exportToFile } from "./exportUtils";
 
 interface ExportPanelProps {
   formData: any;
   resourceType: string;
   isExporting: boolean;
-  setIsExporting: (value: boolean) => void;
+  setIsExporting: (isExporting: boolean) => void;
 }
 
 export default function ExportPanel({ 
   formData, 
-  resourceType, 
-  isExporting, 
+  resourceType,
+  isExporting,
   setIsExporting 
 }: ExportPanelProps) {
-  const { toast } = useToast();
-  const [exportFormat, setExportFormat] = useState<"pdf" | "docx" | "xlsx">("pdf");
+  const [format, setFormat] = useState<"pdf" | "docx" | "xlsx">("pdf");
 
-  const handleExport = async () => {
+  const handleExport = () => {
     setIsExporting(true);
     
-    // Ask for project name for the export
-    const projectName = prompt("Nom de votre projet pour l'export :", "Mon Projet");
-    
-    if (!projectName) {
-      setIsExporting(false);
-      return; // User canceled
-    }
-    
     try {
-      // Format data for export
-      const exportData = formatDataForExport(formData, exportFormat, projectName, resourceType);
+      // Format and transform the data for export
+      const formattedData = formatResourceData(formData, resourceType);
       
-      // Export the file
-      exportToFile(exportFormat, formData, projectName, resourceType, exportData);
+      // Export to the selected file format
+      exportToFile(format, formData, "Mon Projet", resourceType, formattedData);
       
-      toast({
-        title: "Export réussi",
-        description: `Le fichier a été téléchargé.`
-      });
+      console.log(`Exporting ${resourceType} as ${format}`);
     } catch (error) {
-      console.error("Error exporting file:", error);
-      toast({
-        title: "Erreur d'export",
-        description: "Une erreur est survenue lors de l'export du fichier.",
-        variant: "destructive"
-      });
+      console.error("Export error:", error);
     } finally {
-      setIsExporting(false);
+      // Reset exporting state after a delay to show feedback
+      setTimeout(() => setIsExporting(false), 800);
     }
   };
 
   return (
-    <Tabs 
-      defaultValue="pdf" 
-      className="w-auto"
-      value={exportFormat}
-      onValueChange={(value) => setExportFormat(value as "pdf" | "docx" | "xlsx")}
-    >
-      <TabsList className="grid grid-cols-3 w-[200px]">
-        <TabsTrigger value="pdf">PDF</TabsTrigger>
-        <TabsTrigger value="docx">DOCX</TabsTrigger>
-        <TabsTrigger value="xlsx">XLSX</TabsTrigger>
-      </TabsList>
-      <TabsContent value="pdf">
-        <Button 
-          variant="outline"
-          onClick={handleExport}
-          disabled={isExporting}
-        >
-          <DownloadIcon className="mr-2 h-4 w-4" />
-          {isExporting ? "Export..." : "Export PDF"}
-        </Button>
-      </TabsContent>
-      <TabsContent value="docx">
-        <Button 
-          variant="outline"
-          onClick={handleExport}
-          disabled={isExporting}
-        >
-          <DownloadIcon className="mr-2 h-4 w-4" />
-          {isExporting ? "Export..." : "Export DOCX"}
-        </Button>
-      </TabsContent>
-      <TabsContent value="xlsx">
-        <Button 
-          variant="outline"
-          onClick={handleExport}
-          disabled={isExporting}
-        >
-          <DownloadIcon className="mr-2 h-4 w-4" />
-          {isExporting ? "Export..." : "Export XLSX"}
-        </Button>
-      </TabsContent>
-    </Tabs>
+    <div className="flex items-center space-x-2">
+      <Select value={format} onValueChange={(value: any) => setFormat(value)}>
+        <SelectTrigger className="w-[100px]">
+          <SelectValue placeholder="Format" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="pdf">PDF</SelectItem>
+          <SelectItem value="docx">Word</SelectItem>
+          <SelectItem value="xlsx">Excel</SelectItem>
+        </SelectContent>
+      </Select>
+      
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={handleExport}
+        disabled={isExporting}
+      >
+        {isExporting ? (
+          <span className="flex items-center">
+            <span className="animate-spin mr-1 h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+            Export...
+          </span>
+        ) : (
+          <span className="flex items-center">
+            <Download className="h-4 w-4 mr-1" />
+            Exporter
+          </span>
+        )}
+      </Button>
+    </div>
   );
 }
