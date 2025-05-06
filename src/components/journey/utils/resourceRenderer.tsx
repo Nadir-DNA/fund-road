@@ -63,51 +63,31 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
   // Return the component with a stable key
   return (
     <Suspense fallback={<StableLoadingFallback />}>
-      <ResourceComponentWrapper key={componentKey}>
+      <div key={componentKey} id={`resource-container-${componentName}`}>
         <Component 
           stepId={stepId} 
           substepTitle={substepTitle} 
           subsubstepTitle={subsubstepTitle} 
         />
-      </ResourceComponentWrapper>
+      </div>
     </Suspense>
   );
 };
 
-// Wrapper to prevent unnecessary re-renders
-const ResourceComponentWrapper = ({ children }: { children: React.ReactNode }) => {
-  const mountedRef = useRef(true);
-  
-  useEffect(() => {
-    console.log("Resource component mounted");
-    return () => {
-      mountedRef.current = false;
-      console.log("Resource component unmounted");
-    };
-  }, []);
-  
-  return <>{children}</>;
-};
-
 // Create a stable loading component to prevent re-renders
 const StableLoadingFallback = () => {
-  const [isVisible, setIsVisible] = useState(true);
+  const [mounted, setMounted] = useState(false);
   
   useEffect(() => {
-    // Add a longer timeout to ensure loading state is visible long enough
-    const id = setTimeout(() => {
-      console.log("Stable loading fallback timeout completed");
-    }, 2000);
+    const timeout = setTimeout(() => {
+      setMounted(true);
+    }, 100);
     
     return () => {
-      clearTimeout(id);
-      console.log("Loading fallback unmounting as resource is ready");
+      clearTimeout(timeout);
+      console.log("Loading fallback unmounted");
     };
   }, []);
-  
-  if (!isVisible) {
-    return null;
-  }
   
   return (
     <div className="flex justify-center p-6 min-h-[200px] items-center">

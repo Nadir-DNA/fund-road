@@ -21,7 +21,7 @@ export default function LazyLoad({
   priority = true // Always prioritize loading by default
 }: LazyLoadProps) {
   const [isLoaded, setIsLoaded] = useState(priority);
-  const [initialMount, setInitialMount] = useState(true);
+  const [initialRender, setInitialRender] = useState(true);
   const mountedRef = useRef(true);
   const timeoutRef = useRef<number | null>(null);
   
@@ -59,11 +59,16 @@ export default function LazyLoad({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [delay, priority]);
+  }, [delay, priority, isLoaded]);
 
-  // UseEffect to mark initial mount completed
+  // UseEffect to mark initial render completed
   useEffect(() => {
-    setInitialMount(false);
+    // Use requestAnimationFrame to ensure we're in the next paint cycle
+    requestAnimationFrame(() => {
+      if (mountedRef.current) {
+        setInitialRender(false);
+      }
+    });
   }, []);
 
   if (!isLoaded) {
@@ -80,6 +85,6 @@ export default function LazyLoad({
     );
   }
 
-  // Return children directly when loaded
-  return <>{children}</>;
+  // Return children directly when loaded with a key to force remounting
+  return <div key={initialRender ? 'initial' : 'loaded'}>{children}</div>;
 }

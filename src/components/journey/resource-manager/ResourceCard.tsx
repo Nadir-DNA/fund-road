@@ -25,42 +25,49 @@ export default function ResourceCard({
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const isNavigatingRef = useRef(false);
-  const navigationAttempted = useRef(false);
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Reset navigation state when component remounts
+  // Clear any lingering timeouts on unmount
   useEffect(() => {
     return () => {
-      navigationAttempted.current = false;
-      isNavigatingRef.current = false;
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
     };
   }, []);
   
   const handleResourceClick = () => {
-    // Prevent multiple navigation attempts
-    if (isNavigatingRef.current || navigationAttempted.current) {
+    // Prevent multiple clicks or navigation in progress
+    if (isNavigatingRef.current || isLoading) {
       console.log("Navigation already in progress, ignoring click");
       return;
     }
     
+    // Set loading state and navigation lock
     setIsLoading(true);
     isNavigatingRef.current = true;
-    navigationAttempted.current = true;
     
     console.log(`Resource clicked: ${resource.title}`);
     
+    // Handle external URL resources
     if (resource.url) {
       console.log(`Opening external URL: ${resource.url}`);
       window.open(resource.url, '_blank');
-      setTimeout(() => {
+      
+      // Reset loading state after a short delay
+      clickTimeoutRef.current = setTimeout(() => {
         setIsLoading(false);
         isNavigatingRef.current = false;
       }, 300);
+      
       return;
     }
 
-    const componentName = resource.componentName || (resource.type === 'course' ? 'CourseContentDisplay' : undefined);
+    // Get component name from resource or fallback to type-based component
+    const componentName = resource.componentName || 
+      (resource.type === 'course' ? 'CourseContentDisplay' : undefined);
     
-    if (componentName) {
+    if (componentName && stepId && substepTitle) {
       try {
         console.log(`Navigating to component: ${componentName}`);
         
@@ -68,11 +75,11 @@ export default function ResourceCard({
         saveResourceReturnPath(window.location.pathname + window.location.search);
         
         // Make sure to encode the substep title for the URL
-        const encodedSubstep = substepTitle ? `/${encodeURIComponent(substepTitle)}` : '';
-        const resourceUrl = `/step/${stepId}${encodedSubstep}/resource/${componentName}`;
+        const encodedSubstep = encodeURIComponent(substepTitle);
+        const resourceUrl = `/step/${stepId}/${encodedSubstep}/resource/${componentName}`;
         console.log("Navigating to resource:", resourceUrl);
         
-        // Add the resource itself to localStorage to ensure its data is available
+        // For course resources, save content to localStorage
         if (resource.type === 'course' && resource.courseContent) {
           try {
             localStorage.setItem('currentCourseContent', JSON.stringify({
@@ -88,9 +95,17 @@ export default function ResourceCard({
         }
         
         // Navigate with a small delay to ensure state is updated
-        setTimeout(() => {
+        clickTimeoutRef.current = setTimeout(() => {
           console.log(`Executing navigation to: ${resourceUrl}`);
           navigate(resourceUrl);
+          
+          // Reset loading state and navigation flag after navigation
+          clickTimeoutRef.current = setTimeout(() => {
+            if (isNavigatingRef.current) {
+              setIsLoading(false);
+              isNavigatingRef.current = false;
+            }
+          }, 500);
         }, 100);
       } catch (err) {
         console.error("Navigation error:", err);
@@ -101,7 +116,6 @@ export default function ResourceCard({
         });
         setIsLoading(false);
         isNavigatingRef.current = false;
-        navigationAttempted.current = false;
       }
     } else {
       toast({
@@ -111,7 +125,6 @@ export default function ResourceCard({
       });
       setIsLoading(false);
       isNavigatingRef.current = false;
-      navigationAttempted.current = false;
     }
   };
 
@@ -152,10 +165,13 @@ export default function ResourceCard({
           size="sm"
           className="w-full"
           onClick={handleResourceClick}
-          disabled={isLoading || resource.status === 'coming-soon' || isNavigatingRef.current}
+          disabled={isLoading || resource.status === 'coming-soon'}
         >
           {isLoading ? (
-            <LoadingIndicator size="sm" />
+            <>
+              <LoadingIndicator size="sm" className="mr-2" />
+              Chargement...
+            </>
           ) : resource.url ? (
             <>
               Voir <ExternalLink className="ml-1 h-3 w-3" />

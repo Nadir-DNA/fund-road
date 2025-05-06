@@ -22,6 +22,7 @@ export default function ResourceManagerContent({
 }: ResourceManagerContentProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isReady, setIsReady] = useState(false);
   const hasInitializedRef = useRef(false);
   const componentMountedRef = useRef(true);
 
@@ -46,8 +47,14 @@ export default function ResourceManagerContent({
       setTimeout(() => {
         if (componentMountedRef.current) {
           setIsLoading(false);
+          // Additional delay to ensure component is fully loaded
+          setTimeout(() => {
+            if (componentMountedRef.current) {
+              setIsReady(true);
+            }
+          }, 100);
         }
-      }, 500);
+      }, 300);
     }
     
     hasInitializedRef.current = true;
@@ -74,7 +81,7 @@ export default function ResourceManagerContent({
           <h3 className="text-lg font-medium">{selectedResource.title}</h3>
         </div>
         <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
-        <LazyLoad priority={true} showLoader={true} height={400}>
+        <LazyLoad priority={true} showLoader={true} height={400} delay={100}>
           <CourseContentDisplay 
             stepId={stepId}
             substepTitle={selectedSubstepTitle}
@@ -96,8 +103,13 @@ export default function ResourceManagerContent({
       </div>
       <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
       {isBrowser() && (
-        <div className="min-h-[400px] relative">
-          <LazyLoad priority={true} showLoader={true} height={400}>
+        <div className="min-h-[400px] relative" id={`resource-wrapper-${componentName}`}>
+          <LazyLoad 
+            priority={true} 
+            showLoader={true} 
+            height={400} 
+            delay={100}
+          >
             {renderResourceComponent(
               componentName, 
               stepId, 
