@@ -65,28 +65,21 @@ export default function SubstepPage() {
   // Handle fallback if no resources found
   useEffect(() => {
     if (!isLoading && resources.length === 0 && stepIdNumber === 1 && 
-        decodedSubstepTitle === "Définition de l'opportunité") {
+        decodedSubstepTitle === "Recherche utilisateur") {
       console.log("No resources found, adding hardcoded fallbacks for step 1");
       setResources([
         {
-          id: 'opportunity-definition',
-          title: 'Synthèse qualitative',
-          description: 'Définissez votre opportunité entrepreneuriale',
-          component_name: 'OpportunityDefinition',
+          id: 'user-research',
+          title: 'Journal de recherche utilisateur',
+          description: 'Documentez vos observations et insights utilisateurs',
+          component_name: 'UserResearchNotebook',
           resource_type: 'interactive'
         },
         {
-          id: 'market-size-estimator',
-          title: 'Estimation de marché TAM/SAM/SOM',
-          description: 'Calculez la taille de votre marché adressable',
-          component_name: 'MarketSizeEstimator',
-          resource_type: 'interactive'
-        },
-        {
-          id: 'competitive-analysis-table',
-          title: 'Analyse concurrentielle',
-          description: 'Analysez vos concurrents pour identifier votre différenciation',
-          component_name: 'CompetitiveAnalysisTable',
+          id: 'customer-behavior',
+          title: 'Analyse comportementale',
+          description: 'Notez les comportements et habitudes utilisateurs',
+          component_name: 'CustomerBehaviorNotes',
           resource_type: 'interactive'
         }
       ]);
@@ -144,7 +137,7 @@ export default function SubstepPage() {
           ) : resources.length > 0 ? (
             <div className="space-y-6">
               {resources.map((resource, index) => (
-                <div key={`resource-${index}`}>
+                <div key={`resource-${index}`} className="border border-slate-700 rounded-lg p-6 bg-slate-800/50">
                   <h3 className="text-lg font-medium mb-2">{resource.title}</h3>
                   <p className="text-sm text-muted-foreground mb-4">{resource.description}</p>
                   

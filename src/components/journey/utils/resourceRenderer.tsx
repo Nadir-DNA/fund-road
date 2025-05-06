@@ -41,6 +41,7 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
     return (
       <div className="text-center p-4 text-muted-foreground border border-destructive/40 rounded">
         <p>Ressource indisponible: "{componentName}"</p>
+        <p className="text-xs mt-2">Composants disponibles: {Object.keys(resourceComponentsMap).join(', ')}</p>
       </div>
     );
   }
