@@ -1,9 +1,11 @@
+
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { Suspense, lazy } from "react";
 import CourseContentDisplay from "@/components/journey/CourseContentDisplay";
+import { toast } from "@/components/ui/use-toast";
 
 interface Resource {
   id: string;
@@ -23,6 +25,11 @@ const DynamicResourceComponent = ({ componentName, stepId, substepTitle }: { com
       return { default: module.default };
     } catch (error) {
       console.error(`Failed to load component: ${componentName}`, error);
+      toast({
+        title: "Erreur de chargement",
+        description: `Le composant ${componentName} n'a pas été trouvé.`,
+        variant: "destructive"
+      });
       return { 
         default: () => <div className="p-4 text-red-500">Failed to load resource: {componentName}</div>
       };
