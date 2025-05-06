@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
@@ -156,7 +155,7 @@ export default function ResourceForm({
         />
         
         {isOfflineMode && (
-          <Alert variant="warning" className="mt-4">
+          <Alert variant="destructive" className="mt-4">
             <WifiOff className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between">
               <span>Mode hors ligne activé. Vos modifications sont sauvegardées localement.</span>

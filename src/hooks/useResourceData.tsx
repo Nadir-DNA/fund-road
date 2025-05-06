@@ -91,7 +91,7 @@ export const useResourceData = (
         toast({
           title: "Mode hors ligne",
           description: "Vos données seront enregistrées localement et synchronisées ultérieurement",
-          variant: "warning"
+          variant: "default"
         });
       }
     }
