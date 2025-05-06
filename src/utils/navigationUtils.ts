@@ -57,3 +57,8 @@ export const clearLastPath = (): void => {
     console.log("Last path cleared");
   }
 };
+
+// Add the missing function that's imported in SubStepItem.tsx
+export const saveCurrentPath = (path: string): void => {
+  saveLastPath(path);
+};
