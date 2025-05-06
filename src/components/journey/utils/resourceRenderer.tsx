@@ -55,29 +55,48 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
     );
   }
 
-  // Use a stable loading fallback component to prevent re-renders
+  console.log(`Rendering resource component: ${componentName} for step ${stepId}, substep ${substepTitle}`);
+
+  // Prevent unnecessary re-renders by using a stable component reference
   return (
     <Suspense fallback={<StableLoadingFallback />}>
-      <Component 
-        stepId={stepId} 
-        substepTitle={substepTitle} 
-        subsubstepTitle={subsubstepTitle} 
-      />
+      <ResourceComponentWrapper>
+        <Component 
+          stepId={stepId} 
+          substepTitle={substepTitle} 
+          subsubstepTitle={subsubstepTitle} 
+        />
+      </ResourceComponentWrapper>
     </Suspense>
   );
 };
 
+// Wrapper to prevent unnecessary re-renders
+const ResourceComponentWrapper = ({ children }: { children: React.ReactNode }) => {
+  const mountedRef = useRef(true);
+  
+  useEffect(() => {
+    console.log("Resource component mounted");
+    return () => {
+      mountedRef.current = false;
+      console.log("Resource component unmounted");
+    };
+  }, []);
+  
+  return <>{children}</>;
+};
+
 // Create a stable loading component to prevent re-renders
 const StableLoadingFallback = () => {
-  const isLoadingRef = useRef(true);
   const [isVisible, setIsVisible] = useState(true);
   
   useEffect(() => {
-    isLoadingRef.current = true;
+    const id = setTimeout(() => {
+      console.log("Stable loading fallback timeout completed");
+    }, 1000);
     
-    // Ensure component stays mounted until parent is ready
     return () => {
-      isLoadingRef.current = false;
+      clearTimeout(id);
       console.log("Loading fallback unmounting as resource is ready");
     };
   }, []);

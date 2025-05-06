@@ -22,22 +22,28 @@ export default function ResourceManagerContent({
 }: ResourceManagerContentProps) {
   const [error, setError] = useState<string | null>(null);
   const hasInitializedRef = useRef(false);
+  const componentMountedRef = useRef(true);
 
   useEffect(() => {
+    componentMountedRef.current = true;
+    
     if (!selectedResource && !hasInitializedRef.current) {
       setError("Ressource non trouvée ou non disponible.");
       console.warn(`Resource not found: ${selectedResourceName} for step ${stepId}, substep ${selectedSubstepTitle}`);
-    } else {
+    } else if (selectedResource) {
       setError(null);
-      console.log(`Rendering resource:`, {
-        title: selectedResource?.title,
-        type: selectedResource?.type,
-        componentName: selectedResource?.componentName || selectedResourceName,
-        courseContent: selectedResource?.type === 'course' ? 'Available' : 'N/A'
+      console.log("Resource found:", {
+        title: selectedResource.title,
+        type: selectedResource.type,
+        componentName: selectedResource.componentName || selectedResourceName
       });
     }
     
     hasInitializedRef.current = true;
+    
+    return () => {
+      componentMountedRef.current = false;
+    };
   }, [selectedResource, selectedResourceName, stepId, selectedSubstepTitle]);
   
   if (!selectedResource) {
@@ -78,14 +84,14 @@ export default function ResourceManagerContent({
       </div>
       <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
       {isBrowser() && (
-        <LazyLoad priority={true} showLoader={true} height={400}>
+        <div className="min-h-[400px] relative">
           {renderResourceComponent(
             componentName, 
             stepId, 
             selectedSubstepTitle,
             selectedResource.subsubstepTitle
           )}
-        </LazyLoad>
+        </div>
       )}
     </div>
   );

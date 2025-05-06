@@ -3,7 +3,7 @@ import { Resource } from "@/types/journey";
 import ResourceCard from "./ResourceCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Package } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { toast } from "@/components/ui/use-toast";
@@ -20,6 +20,7 @@ export default function ResourceList({ resources, stepId, substepTitle, subsubst
   const [isLoadingCourses, setIsLoadingCourses] = useState(false);
   const [allResources, setAllResources] = useState<Resource[]>(resources);
   const [error, setError] = useState<string | null>(null);
+  const initialLoadDoneRef = useRef(false);
   
   console.log("ResourceList - Rendering with params:", { 
     stepId, 
@@ -29,6 +30,12 @@ export default function ResourceList({ resources, stepId, substepTitle, subsubst
   
   // Effect to fetch course content directly when component mounts or params change
   useEffect(() => {
+    // Skip if we've already loaded resources once
+    if (initialLoadDoneRef.current) {
+      console.log("ResourceList: Initial load already done, using existing resources");
+      return;
+    }
+    
     // Start with the existing resources
     setAllResources(resources);
     
@@ -88,6 +95,10 @@ export default function ResourceList({ resources, stepId, substepTitle, subsubst
         } else {
           console.log("No courses found from Supabase for this step/substep");
         }
+        
+        // Mark initial load as done even if no courses were found
+        initialLoadDoneRef.current = true;
+        
       } catch (err) {
         console.error("Failed to fetch courses:", err);
         setError("Erreur inattendue lors du chargement");
