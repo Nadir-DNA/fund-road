@@ -1,5 +1,5 @@
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,14 +25,31 @@ export default function ResourceCard({
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const isNavigatingRef = useRef(false);
+  const navigationAttempted = useRef(false);
+  
+  // Reset navigation state when component remounts
+  useEffect(() => {
+    return () => {
+      navigationAttempted.current = false;
+      isNavigatingRef.current = false;
+    };
+  }, []);
   
   const handleResourceClick = () => {
-    if (isNavigatingRef.current) return; // Prevent multiple clicks
+    // Prevent multiple navigation attempts
+    if (isNavigatingRef.current || navigationAttempted.current) {
+      console.log("Navigation already in progress, ignoring click");
+      return;
+    }
     
     setIsLoading(true);
     isNavigatingRef.current = true;
+    navigationAttempted.current = true;
+    
+    console.log(`Resource clicked: ${resource.title}`);
     
     if (resource.url) {
+      console.log(`Opening external URL: ${resource.url}`);
       window.open(resource.url, '_blank');
       setTimeout(() => {
         setIsLoading(false);
@@ -45,6 +62,8 @@ export default function ResourceCard({
     
     if (componentName) {
       try {
+        console.log(`Navigating to component: ${componentName}`);
+        
         // Save current path for back navigation
         saveResourceReturnPath(window.location.pathname + window.location.search);
         
@@ -70,8 +89,9 @@ export default function ResourceCard({
         
         // Navigate with a small delay to ensure state is updated
         setTimeout(() => {
+          console.log(`Executing navigation to: ${resourceUrl}`);
           navigate(resourceUrl);
-        }, 50);
+        }, 100);
       } catch (err) {
         console.error("Navigation error:", err);
         toast({
@@ -81,6 +101,7 @@ export default function ResourceCard({
         });
         setIsLoading(false);
         isNavigatingRef.current = false;
+        navigationAttempted.current = false;
       }
     } else {
       toast({
@@ -90,6 +111,7 @@ export default function ResourceCard({
       });
       setIsLoading(false);
       isNavigatingRef.current = false;
+      navigationAttempted.current = false;
     }
   };
 
@@ -98,7 +120,16 @@ export default function ResourceCard({
     if (resource.type === 'course') {
       return <BookOpenCheck className="h-3 w-3 mr-1" />;
     }
-    return <FileText className="h-3 w-3 mr-1" />;
+    switch(resource.componentName) {
+      case 'MarketSizeEstimator':
+        return <FileText className="h-3 w-3 mr-1 text-blue-400" />;
+      case 'OpportunityDefinition':
+        return <FileText className="h-3 w-3 mr-1 text-green-400" />;
+      case 'CompetitiveAnalysisTable':
+        return <FileText className="h-3 w-3 mr-1 text-amber-400" />;
+      default:
+        return <FileText className="h-3 w-3 mr-1" />;
+    }
   };
 
   return (
@@ -112,7 +143,6 @@ export default function ResourceCard({
         <div className="flex items-center text-xs text-muted-foreground">
           {getResourceIcon()}
           <span>{resource.type || 'resource'}</span>
-          {resource.componentName && <span className="ml-1 text-xs opacity-50">({resource.componentName})</span>}
         </div>
       </CardContent>
       

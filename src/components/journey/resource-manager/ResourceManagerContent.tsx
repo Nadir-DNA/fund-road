@@ -21,15 +21,19 @@ export default function ResourceManagerContent({
   selectedResourceName
 }: ResourceManagerContentProps) {
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const hasInitializedRef = useRef(false);
   const componentMountedRef = useRef(true);
 
+  // Effect to handle resource initialization
   useEffect(() => {
     componentMountedRef.current = true;
+    setIsLoading(true);
     
     if (!selectedResource && !hasInitializedRef.current) {
       setError("Ressource non trouvée ou non disponible.");
       console.warn(`Resource not found: ${selectedResourceName} for step ${stepId}, substep ${selectedSubstepTitle}`);
+      setIsLoading(false);
     } else if (selectedResource) {
       setError(null);
       console.log("Resource found:", {
@@ -37,6 +41,13 @@ export default function ResourceManagerContent({
         type: selectedResource.type,
         componentName: selectedResource.componentName || selectedResourceName
       });
+      
+      // Add a small delay to ensure proper loading
+      setTimeout(() => {
+        if (componentMountedRef.current) {
+          setIsLoading(false);
+        }
+      }, 500);
     }
     
     hasInitializedRef.current = true;
@@ -46,6 +57,7 @@ export default function ResourceManagerContent({
     };
   }, [selectedResource, selectedResourceName, stepId, selectedSubstepTitle]);
   
+  // If resource not found
   if (!selectedResource) {
     return (
       <div className="p-6 text-center border rounded-lg bg-muted/20">
@@ -85,12 +97,14 @@ export default function ResourceManagerContent({
       <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
       {isBrowser() && (
         <div className="min-h-[400px] relative">
-          {renderResourceComponent(
-            componentName, 
-            stepId, 
-            selectedSubstepTitle,
-            selectedResource.subsubstepTitle
-          )}
+          <LazyLoad priority={true} showLoader={true} height={400}>
+            {renderResourceComponent(
+              componentName, 
+              stepId, 
+              selectedSubstepTitle,
+              selectedResource.subsubstepTitle
+            )}
+          </LazyLoad>
         </div>
       )}
     </div>

@@ -57,10 +57,13 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
 
   console.log(`Rendering resource component: ${componentName} for step ${stepId}, substep ${substepTitle}`);
 
-  // Prevent unnecessary re-renders by using a stable component reference
+  // Use a memoized key to prevent unnecessary re-renders
+  const componentKey = `${componentName}-${stepId}-${substepTitle}-${subsubstepTitle || ''}`;
+
+  // Return the component with a stable key
   return (
     <Suspense fallback={<StableLoadingFallback />}>
-      <ResourceComponentWrapper>
+      <ResourceComponentWrapper key={componentKey}>
         <Component 
           stepId={stepId} 
           substepTitle={substepTitle} 
@@ -91,9 +94,10 @@ const StableLoadingFallback = () => {
   const [isVisible, setIsVisible] = useState(true);
   
   useEffect(() => {
+    // Add a longer timeout to ensure loading state is visible long enough
     const id = setTimeout(() => {
       console.log("Stable loading fallback timeout completed");
-    }, 1000);
+    }, 2000);
     
     return () => {
       clearTimeout(id);

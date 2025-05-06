@@ -17,10 +17,11 @@ export default function LazyLoad({
   height = 200, 
   className = "", 
   showLoader = false,
-  delay = 0, // No delay by default
+  delay = 0,
   priority = true // Always prioritize loading by default
 }: LazyLoadProps) {
   const [isLoaded, setIsLoaded] = useState(priority);
+  const [initialMount, setInitialMount] = useState(true);
   const mountedRef = useRef(true);
   const timeoutRef = useRef<number | null>(null);
   
@@ -29,7 +30,7 @@ export default function LazyLoad({
     // Mark component as mounted
     mountedRef.current = true;
     
-    // If priority is true, skip the delay
+    // If priority is true, show content immediately
     if (priority) {
       setIsLoaded(true);
       return;
@@ -37,7 +38,6 @@ export default function LazyLoad({
     
     // Only apply delay when not in priority mode
     if (!isLoaded && delay > 0) {
-      // Use a ref to store timeout ID for proper cleanup
       console.log(`LazyLoad: Setting up delay of ${delay}ms`);
       timeoutRef.current = window.setTimeout(() => {
         if (mountedRef.current) {
@@ -59,7 +59,12 @@ export default function LazyLoad({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [delay, priority, isLoaded]);
+  }, [delay, priority]);
+
+  // UseEffect to mark initial mount completed
+  useEffect(() => {
+    setInitialMount(false);
+  }, []);
 
   if (!isLoaded) {
     return (
