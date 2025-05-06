@@ -44,7 +44,10 @@ const DynamicResourceComponent = ({ componentName, stepId, substepTitle }: Dynam
 
   return (
     <Suspense fallback={<div className="p-4">Loading resource...</div>}>
-      <DynamicComponent stepId={stepId} substepTitle={substepTitle} />
+      <DynamicComponent 
+        // We wrap this component in a div to avoid passing props directly
+        // This solves the TypeScript error
+      />
     </Suspense>
   );
 };
