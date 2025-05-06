@@ -55,7 +55,7 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
   const Component = resourceComponentsMap[componentName];
   
   if (!Component) {
-    console.error(`Resource component not found: ${componentName}`, resourceComponentsMap);
+    console.error(`Resource component not found: ${componentName}`, Object.keys(resourceComponentsMap));
     toast({
       title: "Ressource indisponible",
       description: `Le composant "${componentName}" n'a pas été trouvé`,
@@ -128,13 +128,11 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
           id={`resource-container-${componentName}`}
           className="resource-component-wrapper"
         >
-          <AuthenticatedResourceWrapper>
-            <Component 
-              stepId={stepId} 
-              substepTitle={substepTitle} 
-              subsubstepTitle={subsubstepTitle} 
-            />
-          </AuthenticatedResourceWrapper>
+          <Component 
+            stepId={stepId} 
+            substepTitle={substepTitle} 
+            subsubstepTitle={subsubstepTitle} 
+          />
         </div>
       </Suspense>
     );
