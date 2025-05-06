@@ -88,7 +88,7 @@ export default function ResourcesList({ stepId, substepTitle, stepTitle }: Resou
               }
             },
             clientInfo: {
-              supabaseUrl: supabase.supabaseUrl,
+              // Remove reference to supabase.supabaseUrl
               authMethod: supabase.auth.getSession() ? "Session Present" : "No Session"
             }
           }, null, 2)}
