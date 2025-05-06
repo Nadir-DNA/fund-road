@@ -2,9 +2,10 @@
 import { renderResourceComponent } from "../utils/resourceRenderer";
 import { isBrowser } from "@/utils/navigationUtils";
 import { Resource } from "@/types/journey";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "@/components/ui/use-toast";
 import CourseContentDisplay from "../CourseContentDisplay";
+import LazyLoad from "@/components/LazyLoad";
 
 interface ResourceManagerContentProps {
   selectedResource: Resource | undefined;
@@ -20,20 +21,23 @@ export default function ResourceManagerContent({
   selectedResourceName
 }: ResourceManagerContentProps) {
   const [error, setError] = useState<string | null>(null);
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
-    if (!selectedResource) {
+    if (!selectedResource && !hasInitializedRef.current) {
       setError("Ressource non trouvée ou non disponible.");
       console.warn(`Resource not found: ${selectedResourceName} for step ${stepId}, substep ${selectedSubstepTitle}`);
     } else {
       setError(null);
       console.log(`Rendering resource:`, {
-        title: selectedResource.title,
-        type: selectedResource.type,
-        componentName: selectedResource.componentName || selectedResourceName,
-        courseContent: selectedResource.type === 'course' ? 'Available' : 'N/A'
+        title: selectedResource?.title,
+        type: selectedResource?.type,
+        componentName: selectedResource?.componentName || selectedResourceName,
+        courseContent: selectedResource?.type === 'course' ? 'Available' : 'N/A'
       });
     }
+    
+    hasInitializedRef.current = true;
   }, [selectedResource, selectedResourceName, stepId, selectedSubstepTitle]);
   
   if (!selectedResource) {
@@ -52,12 +56,14 @@ export default function ResourceManagerContent({
           <h3 className="text-lg font-medium">{selectedResource.title}</h3>
         </div>
         <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
-        <CourseContentDisplay 
-          stepId={stepId}
-          substepTitle={selectedSubstepTitle}
-          stepTitle={selectedResource.title}
-          courseContent={selectedResource.courseContent}
-        />
+        <LazyLoad priority={true} showLoader={true} height={400}>
+          <CourseContentDisplay 
+            stepId={stepId}
+            substepTitle={selectedSubstepTitle}
+            stepTitle={selectedResource.title}
+            courseContent={selectedResource.courseContent}
+          />
+        </LazyLoad>
       </div>
     );
   }
@@ -71,10 +77,15 @@ export default function ResourceManagerContent({
         <h3 className="text-lg font-medium">{selectedResource.title}</h3>
       </div>
       <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
-      {isBrowser() && renderResourceComponent(
-        componentName, 
-        stepId, 
-        selectedSubstepTitle
+      {isBrowser() && (
+        <LazyLoad priority={true} showLoader={true} height={400}>
+          {renderResourceComponent(
+            componentName, 
+            stepId, 
+            selectedSubstepTitle,
+            selectedResource.subsubstepTitle
+          )}
+        </LazyLoad>
       )}
     </div>
   );

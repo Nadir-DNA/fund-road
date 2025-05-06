@@ -62,12 +62,16 @@ export default function ResourceCard({
               title: resource.title,
               content: resource.courseContent
             }));
+            console.log("Course content saved to localStorage");
           } catch (err) {
             console.error("Failed to save course content to localStorage:", err);
           }
         }
         
-        navigate(resourceUrl);
+        // Navigate with a small delay to ensure state is updated
+        setTimeout(() => {
+          navigate(resourceUrl);
+        }, 50);
       } catch (err) {
         console.error("Navigation error:", err);
         toast({
@@ -75,12 +79,8 @@ export default function ResourceCard({
           description: "Impossible d'accéder à cette ressource",
           variant: "destructive"
         });
-      } finally {
-        // Reset state after a delay
-        setTimeout(() => {
-          setIsLoading(false);
-          isNavigatingRef.current = false;
-        }, 500);
+        setIsLoading(false);
+        isNavigatingRef.current = false;
       }
     } else {
       toast({

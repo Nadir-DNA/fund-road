@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { resourceComponentsMap } from "../resourceComponentsMap";
 import { toast } from "@/components/ui/use-toast";
@@ -58,19 +58,26 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
   // Use a stable loading fallback component to prevent re-renders
   return (
     <Suspense fallback={<StableLoadingFallback />}>
-      <Component stepId={stepId} substepTitle={substepTitle} subsubstepTitle={subsubstepTitle} />
+      <Component 
+        stepId={stepId} 
+        substepTitle={substepTitle} 
+        subsubstepTitle={subsubstepTitle} 
+      />
     </Suspense>
   );
 };
 
 // Create a stable loading component to prevent re-renders
 const StableLoadingFallback = () => {
+  const isLoadingRef = useRef(true);
   const [isVisible, setIsVisible] = useState(true);
   
-  // This will ensure the component doesn't unmount/remount repeatedly
   useEffect(() => {
-    // This component will stay mounted until the actual component is ready
+    isLoadingRef.current = true;
+    
+    // Ensure component stays mounted until parent is ready
     return () => {
+      isLoadingRef.current = false;
       console.log("Loading fallback unmounting as resource is ready");
     };
   }, []);
