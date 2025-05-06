@@ -9,7 +9,7 @@ interface LazyLoadProps {
   className?: string;
   showLoader?: boolean;
   delay?: number;
-  priority?: boolean; // Option pour chargement immédiat
+  priority?: boolean; // Option for immediate loading
 }
 
 export default function LazyLoad({ 
@@ -17,19 +17,19 @@ export default function LazyLoad({
   height = 200, 
   className = "", 
   showLoader = false,
-  delay = 100,
-  priority = false
+  delay = 50, // Reduced default delay
+  priority = true // Set default to true for faster loading
 }: LazyLoadProps) {
   const [isLoaded, setIsLoaded] = useState(priority);
 
   useEffect(() => {
-    // Si priority est true, on saute le délai
+    // If priority is true, skip the delay
     if (priority) {
       setIsLoaded(true);
       return;
     }
     
-    // Délai minimal pour éviter les flashs
+    // Minimal delay to avoid flashes
     const timeout = setTimeout(() => {
       setIsLoaded(true);
     }, delay);

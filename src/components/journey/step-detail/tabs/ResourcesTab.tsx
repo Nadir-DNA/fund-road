@@ -1,5 +1,4 @@
-
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { Step, Resource } from "@/types/journey";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import ResourceCard from "../ResourceCard";
@@ -22,36 +21,34 @@ export default function ResourcesTab({
   selectedResourceName 
 }: ResourcesTabProps) {
   const [resources, setResources] = useState<Resource[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   
-  // Optimisé : Chargement plus rapide des ressources
   useEffect(() => {
     console.log(`Loading resources for step ${stepId}, substep ${substepTitle || 'main'}`);
     
     try {
-      // Prioritiser l'identification des ressources
+      // Prioritize identification of resources
       const stepData = substepTitle
         ? step.subSteps?.find(s => s.title === substepTitle)
         : step;
         
-      // Préparer les ressources plus efficacement
       if (stepData) {
         const availableComponentNames = Object.keys(resourceComponentsMap);
         
-        // Optimisé: sélection rapide des composants pour cette étape
+        // Optimized: fast selection of components for this step
         const componentResources: Resource[] = availableComponentNames
           .filter(compName => isComponentRelevantForStep(compName, stepId, substepTitle))
           .map(componentName => ({
             id: `local-${componentName}`,
             title: formatComponentTitle(componentName),
-            description: `Ressource interactive pour l'étape ${stepId}`,
+            description: `Interactive resource for step ${stepId}`,
             componentName,
             type: 'interactive',
             status: 'available'
           }));
           
-        console.log(`Found ${componentResources.length} relevant resources for step ${stepId}, substep ${substepTitle || 'main'}`);
+        console.log(`Found ${componentResources.length} relevant resources`);
         setResources(componentResources);
         
         // Auto-select resource if specified in URL
@@ -69,8 +66,8 @@ export default function ResourcesTab({
     } catch (error) {
       console.error("Error loading resources:", error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les ressources",
+        title: "Error",
+        description: "Unable to load resources",
         variant: "destructive"
       });
     } finally {
@@ -79,6 +76,7 @@ export default function ResourcesTab({
   }, [step, stepId, substepTitle, selectedResourceName]);
   
   const handleResourceSelect = (resource: Resource) => {
+    console.log("Selected resource:", resource.title);
     setSelectedResource(resource);
   };
   
@@ -94,7 +92,7 @@ export default function ResourcesTab({
     return (
       <div className="text-center py-6">
         <p className="text-muted-foreground">
-          Aucune ressource disponible pour cette étape.
+          No resources available for this step.
         </p>
       </div>
     );
@@ -109,14 +107,14 @@ export default function ResourcesTab({
               onClick={() => setSelectedResource(null)}
               className="text-primary hover:underline text-sm"
             >
-              ← Retour aux ressources
+              ← Back to resources
             </button>
           </div>
           <h2 className="text-xl font-bold mb-4">{selectedResource.title}</h2>
           <LazyLoad 
             priority={true} 
             showLoader={true}
-            height={300}
+            height={400}
           >
             {renderResourceComponent(
               selectedResource.componentName || "", 
@@ -127,7 +125,7 @@ export default function ResourcesTab({
         </div>
       ) : (
         <div>
-          <h2 className="text-lg font-semibold mb-4">Ressources disponibles ({resources.length})</h2>
+          <h2 className="text-lg font-semibold mb-4">Available resources ({resources.length})</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {resources.map((resource) => (
               <ResourceCard
@@ -149,7 +147,7 @@ function isComponentRelevantForStep(
   stepId: number, 
   substepTitle: string | null
 ): boolean {
-  // Mapping based on your provided resource structure
+  // Mapping based on provided resource structure
   const mapping: Record<number, Record<string, string[]>> = {
     1: {
       "Identification des besoins ou problèmes": ["UserResearchNotebook"],
@@ -200,7 +198,7 @@ function isComponentRelevantForStep(
     return false;
   }
   
-  // Check if the component is relevant for this specific substep
+  // Check if component is relevant for this specific substep
   const substepMapping = mapping[stepId]?.[substepTitle];
   if (substepMapping) {
     return substepMapping.includes(componentName);

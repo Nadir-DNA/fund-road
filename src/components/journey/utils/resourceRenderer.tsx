@@ -14,23 +14,15 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
       </div>
     );
   }
-
-  console.log(`Rendering resource component: ${componentName} for step: ${stepId}, substep: ${substepTitle}`);
   
-  const resourceProps = {
-    stepId,
-    substepTitle,
-    subsubstepTitle
-  };
-
-  // Cas spécial pour les contenus de cours
+  // Special case for course content
   if (componentName === 'CourseContentDisplay') {
     try {
       const savedCourseData = localStorage.getItem('currentCourseContent');
       if (savedCourseData) {
         const { content, title } = JSON.parse(savedCourseData);
         return (
-          <Suspense fallback={<div className="flex justify-center p-4"><LoadingIndicator size="md" /></div>}>
+          <Suspense fallback={<div className="flex justify-center p-4"><LoadingIndicator size="sm" /></div>}>
             <CourseContentDisplay 
               stepId={stepId}
               substepTitle={substepTitle} 
@@ -45,28 +37,28 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
     }
   }
 
-  // Vérifier si le composant existe dans la map
+  // Check if component exists in the map
   const Component = resourceComponentsMap[componentName];
   
   if (!Component) {
-    console.error(`Composant de ressource non trouvé: ${componentName}`);
+    console.error(`Resource component not found: ${componentName}`);
     toast({
-      title: "Erreur de ressource",
-      description: `Le composant "${componentName}" n'a pas été trouvé.`,
+      title: "Resource error",
+      description: `The component "${componentName}" was not found.`,
       variant: "destructive"
     });
     
     return (
       <div className="text-center p-4 text-muted-foreground">
-        Ressource non disponible: "{componentName}" n'est pas un composant connu
+        Resource unavailable: "{componentName}" is not a known component
       </div>
     );
   }
 
-  // Optimisé: fallback plus léger et timeout réduit
+  // More lightweight fallback with reduced timeout
   return (
-    <Suspense fallback={<div className="flex justify-center p-4"><LoadingIndicator size="md" /></div>}>
-      <Component {...resourceProps} />
+    <Suspense fallback={<div className="flex justify-center p-4"><LoadingIndicator size="sm" /></div>}>
+      <Component stepId={stepId} substepTitle={substepTitle} subsubstepTitle={subsubstepTitle} />
     </Suspense>
   );
 };
