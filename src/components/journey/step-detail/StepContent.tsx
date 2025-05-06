@@ -1,31 +1,27 @@
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Step, SubStep } from "@/types/journey";
-import ResourceManager from "../ResourceManager";
-import OverviewTab from "../OverviewTab";
+import { Step, SubStep, Resource } from "@/types/journey";
 import { useStepTabs } from "@/hooks/useStepTabs";
 import { useSearchParams } from "react-router-dom";
+import OverviewTab from "./tabs/OverviewTab";
+import ResourcesTab from "./tabs/ResourcesTab";
 
 interface StepContentProps {
   step: Step;
   selectedSubStep: SubStep | null;
-  selectedSubSubStepTitle?: string | null;
-  resourceName?: string | null;
-  courseContent?: string | null;
-  isLoading?: boolean;
   stepId: number;
   substepTitle: string | null;
+  resourceName?: string | null;
+  isLoading?: boolean;
 }
 
 export default function StepContent({ 
   step, 
   selectedSubStep,
-  selectedSubSubStepTitle,
-  resourceName,
-  courseContent,
-  isLoading = false,
   stepId,
-  substepTitle
+  substepTitle,
+  resourceName,
+  isLoading = false,
 }: StepContentProps) {
   const [searchParams] = useSearchParams();
   const selectedResourceName = searchParams.get('resource');
@@ -41,20 +37,20 @@ export default function StepContent({
       <TabsContent value="overview">
         <div className="bg-slate-800 p-4 rounded-lg">
           <OverviewTab 
-            step={step} 
-            selectedSubStep={selectedSubStep} 
+            stepId={stepId}
+            substepTitle={substepTitle}
+            stepTitle={step.title}
             isLoading={isLoading}
-            courseContent={courseContent || ""}
           />
         </div>
       </TabsContent>
       
       <TabsContent value="resources" className="py-4">
         <div className="bg-slate-800 p-4 rounded-lg">
-          <ResourceManager 
+          <ResourcesTab 
             step={step} 
-            selectedSubstepTitle={selectedSubStep?.title}
-            selectedSubSubstepTitle={selectedSubSubStepTitle}
+            stepId={stepId}
+            substepTitle={substepTitle}
             selectedResourceName={resourceName || selectedResourceName}
           />
         </div>

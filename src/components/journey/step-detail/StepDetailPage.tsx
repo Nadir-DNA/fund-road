@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { journeySteps } from "@/data/journeySteps";
 import Navbar from "@/components/Navbar";
@@ -8,14 +8,12 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import StepContent from "./StepContent";
 import StepNavigation from "./StepNavigation";
-import { useStepTabs } from "@/hooks/useStepTabs";
-import { toast } from "@/components/ui/use-toast";
 
 export default function StepDetailPage() {
   const { stepId: stepIdParam, substepTitle: substepTitleParam, resource: resourceName } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [isLoadingCourse, setIsLoadingCourse] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   
   // Récupération des paramètres d'URL
   const selectedResource = searchParams.get('resource');
@@ -29,28 +27,8 @@ export default function StepDetailPage() {
   console.log("StepDetailPage - Loading with:", { 
     stepId, 
     substepTitle, 
-    resourceName: resourceName || selectedResource,
-    activeTab: searchParams.get('tab') || 'overview',
-    tabFromUrl: searchParams.get('tab')
+    resourceName: resourceName || selectedResource
   });
-
-  // Check if we should show resources tab by default based on URL or localStorage
-  useEffect(() => {
-    const showResources = localStorage.getItem('showResources') === 'true';
-    
-    if (showResources) {
-      // Clear the localStorage flag
-      localStorage.removeItem('showResources');
-      
-      // Log for debugging
-      console.log("Setting activeTab to resources based on flag or URL param");
-      
-      // Update search params to switch to resources tab
-      const newSearchParams = new URLSearchParams(searchParams);
-      newSearchParams.set('tab', 'resources');
-      navigate({ search: newSearchParams.toString() }, { replace: true });
-    }
-  }, [navigate, searchParams]);
 
   if (!step) {
     return (
@@ -89,10 +67,9 @@ export default function StepDetailPage() {
           stepId={stepId}
           substepTitle={substepTitle}
           resourceName={resourceName || selectedResource}
-          isLoading={isLoadingCourse}
+          isLoading={isLoading}
         />
         
-        {/* Correction de l'erreur en passant seulement stepId au composant */}
         <StepNavigation stepId={stepId} />
       </main>
       <Footer />
