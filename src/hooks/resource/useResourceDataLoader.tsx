@@ -14,7 +14,7 @@ export const useResourceDataLoader = (
   resourceType: string,
   onDataLoaded?: (data: any) => void
 ) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [resourceId, setResourceId] = useState<string | null>(null);
   const [loadAttempts, setLoadAttempts] = useState(0);
   const { session, fetchSession } = useResourceSession();
@@ -32,6 +32,7 @@ export const useResourceDataLoader = (
       
       if (!currentSession) {
         console.log("No authenticated session found for resource data loading");
+        // Even with no session, we should exit loading state
         setIsLoading(false);
         return { content: {}, resourceId: null };
       }
@@ -154,6 +155,10 @@ export const useResourceDataLoader = (
   useEffect(() => {
     let isMounted = true;
     
+    // Always start with loading state
+    setIsLoading(true);
+    console.log("Starting to load resource data...");
+    
     loadResourceData().then((result) => {
       if (!isMounted) return;
       
@@ -163,12 +168,15 @@ export const useResourceDataLoader = (
           setResourceId(result.resourceId);
         }
       }
+      
+      // Ensure loading is set to false even if there's an error
+      setIsLoading(false);
     });
     
     return () => { 
       isMounted = false;
     };
-  }, [stepId, substepTitle, resourceType, loadResourceData]);
+  }, [stepId, substepTitle, resourceType, loadResourceData, loadAttempts]);
 
   // Add a function to retry loading
   const retryLoading = () => {

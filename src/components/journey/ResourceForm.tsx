@@ -97,7 +97,7 @@ export default function ResourceForm({
         toast({
           title: "Enregistrement réussi",
           description: "Vos données ont été sauvegardées",
-          variant: "default" // Changed from "success" to "default"
+          variant: "default" // Using "default" instead of "success"
         });
         saveLastSaveTime();
       }
