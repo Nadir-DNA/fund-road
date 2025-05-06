@@ -5,10 +5,12 @@ import { journeySteps } from "@/data/journeySteps";
 
 interface StepNavigationProps {
   stepId: number;
+  substepTitle?: string | null;
 }
 
-export default function StepNavigation({ stepId }: StepNavigationProps) {
+export default function StepNavigation({ stepId, substepTitle }: StepNavigationProps) {
   const navigate = useNavigate();
+  console.log("StepNavigation rendered with stepId:", stepId);
 
   return (
     <div className="mt-8 flex justify-between">

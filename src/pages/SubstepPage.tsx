@@ -12,7 +12,6 @@ interface Resource {
   resource_type: string;
   course_content?: string;
   url?: string;
-  resource_url?: string;
   component_name?: string;
   title?: string;
 }
@@ -45,7 +44,10 @@ const DynamicResourceComponent = ({ componentName, stepId, substepTitle }: { com
 };
 
 export default function SubstepPage() {
-  const { stepId, substepTitle } = useParams();
+  const { stepId: stepIdParam, substepTitle: substepTitleParam } = useParams();
+  
+  const stepId = stepIdParam ? parseInt(stepIdParam) : 0;
+  const substepTitle = substepTitleParam || "";
   
   console.log("SubstepPage mounted with:", { stepId, substepTitle });
   
@@ -59,7 +61,7 @@ export default function SubstepPage() {
       const { data, error } = await supabase
         .from("entrepreneur_resources")
         .select("id, course_content, resource_url, component_name, resource_type, title")
-        .eq("step_id", +stepId)
+        .eq("step_id", stepId)
         .eq("substep_title", decodeURIComponent(substepTitle));
       
       if (error) {
@@ -68,9 +70,16 @@ export default function SubstepPage() {
       }
       
       console.log(`Found ${data?.length || 0} resources:`, data);
-      return (data || []).map(r => ({ 
-        ...r, 
-        url: r.resource_url 
+      // Handle possible null data and safely map only if data exists
+      if (!data) return [] as Resource[];
+      
+      return data.map(r => ({ 
+        id: r.id,
+        resource_type: r.resource_type,
+        course_content: r.course_content,
+        url: r.resource_url,
+        component_name: r.component_name,
+        title: r.title
       })) as Resource[];
     }
   });
