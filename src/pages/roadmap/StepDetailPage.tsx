@@ -2,15 +2,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { journeySteps } from "@/data/journeySteps";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import ResourcesList from "@/components/journey/ResourcesList";
 import CourseContentDisplay from "@/components/journey/CourseContentDisplay";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import JourneyProgressIndicator from "@/components/journey/JourneyProgressIndicator";
 import { useCourseMaterials } from "@/hooks/course/useCourseMaterials";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -108,12 +105,8 @@ export default function StepDetailPage() {
 
   if (!step) {
     return (
-      <div className="min-h-screen flex flex-col bg-slate-900 text-gray-100">
-        <Navbar />
-        <div className="container mx-auto flex-grow flex items-center justify-center">
-          <p>Étape non trouvée</p>
-        </div>
-        <Footer />
+      <div className="bg-slate-800 rounded-lg p-6">
+        <p>Étape non trouvée</p>
       </div>
     );
   }
