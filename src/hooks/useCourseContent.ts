@@ -1,66 +1,69 @@
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CourseContent {
   id: string;
-  course_content: string;
   title?: string;
   description?: string;
+  resource_type?: string;
+  course_content?: string;
+  component_name?: string;
   [key: string]: any;
 }
 
-export function useCourseContent(stepId: number | undefined, substepTitle: string | null) {
+export function useCourseContent(stepId: number, substepTitle: string | null) {
   const [data, setData] = useState<CourseContent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Don't fetch if stepId is not provided
-    if (!stepId) {
-      setIsLoading(false);
-      return;
-    }
-
-    async function fetchCourseContent() {
+    const fetchContent = async () => {
       setIsLoading(true);
       setError(null);
-
-      console.log(`useCourseContent - Fetching for stepId: ${stepId}, substepTitle: ${substepTitle || 'main'}`);
       
       try {
+        console.log(`useCourseContent - Fetching for stepId: ${stepId}, substepTitle: ${substepTitle || 'main'}`);
+        
+        // Basic validation
+        if (!stepId || isNaN(stepId)) {
+          throw new Error("Invalid step ID");
+        }
+        
+        // Construct query
         let query = supabase
           .from('entrepreneur_resources')
           .select('*')
-          .eq('step_id', stepId)
-          .eq('resource_type', 'course');
-        
-        // Handle null substep_title correctly
+          .eq('step_id', stepId);
+          
+        // Filter by substep_title
         if (substepTitle) {
           query = query.eq('substep_title', substepTitle);
         } else {
-          // For main step, look for NULL substep_title values
           query = query.is('substep_title', null);
         }
-
-        const { data: courseData, error: fetchError } = await query;
         
-        if (fetchError) {
-          console.error("Error fetching course content:", fetchError);
-          setError("Une erreur s'est produite lors du chargement des cours.");
-        } else {
-          console.log(`useCourseContent - Found ${courseData?.length || 0} courses:`, courseData);
-          setData(courseData || []);
+        // Optional filter for course content
+        // query = query.eq('resource_type', 'course');
+        
+        // Execute query
+        const { data, error: supabaseError } = await query;
+        
+        if (supabaseError) {
+          throw new Error(supabaseError.message);
         }
+        
+        console.log(`useCourseContent - Found ${data?.length || 0} courses:`, data);
+        setData(data || []);
       } catch (err) {
-        console.error("Failed to fetch course content:", err);
-        setError("Une erreur inattendue s'est produite.");
+        console.error('Error fetching course content:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch course content');
       } finally {
         setIsLoading(false);
       }
-    }
+    };
 
-    fetchCourseContent();
+    fetchContent();
   }, [stepId, substepTitle]);
 
   return { data, isLoading, error };
