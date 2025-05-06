@@ -1,11 +1,12 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Step, Resource } from "@/types/journey";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import ResourceCard from "../ResourceCard";
 import { resourceComponentsMap } from "../../resourceComponentsMap";
 import { toast } from "@/components/ui/use-toast";
 import { renderResourceComponent } from "../../utils/resourceRenderer";
+import LazyLoad from "@/components/LazyLoad";
 
 interface ResourcesTabProps {
   step: Step;
@@ -24,64 +25,57 @@ export default function ResourcesTab({
   const [isLoading, setIsLoading] = useState(true);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   
-  // Get resources for the step/substep
+  // Optimisé : Chargement plus rapide des ressources
   useEffect(() => {
-    const loadResources = () => {
-      setIsLoading(true);
-      try {
-        console.log(`Loading resources for step ${stepId}, substep ${substepTitle || 'main'}`);
-        
-        const stepData = substepTitle
-          ? step.subSteps?.find(s => s.title === substepTitle)
-          : step;
-          
-        // Prepare local component resources for this step/substep
-        if (stepData) {
-          const availableComponentNames = Object.keys(resourceComponentsMap);
-          
-          // Create resource objects for components that match the step
-          const componentResources: Resource[] = availableComponentNames
-            .filter(compName => {
-              // Filter based on the mapping for this step/substep
-              const isRelevant = isComponentRelevantForStep(compName, stepId, substepTitle);
-              return isRelevant;
-            })
-            .map(componentName => ({
-              id: `local-${componentName}`,
-              title: formatComponentTitle(componentName),
-              description: `Ressource interactive pour l'étape ${stepId}`,
-              componentName,
-              type: 'interactive',
-              status: 'available'
-            }));
-            
-          setResources(componentResources);
-          
-          // Auto-select resource if specified in URL
-          if (selectedResourceName) {
-            const foundResource = componentResources.find(
-              r => r.componentName === selectedResourceName
-            );
-            if (foundResource) {
-              setSelectedResource(foundResource);
-            }
-          }
-        } else {
-          setResources([]);
-        }
-      } catch (error) {
-        console.error("Error loading resources:", error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les ressources",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    console.log(`Loading resources for step ${stepId}, substep ${substepTitle || 'main'}`);
     
-    loadResources();
+    try {
+      // Prioritiser l'identification des ressources
+      const stepData = substepTitle
+        ? step.subSteps?.find(s => s.title === substepTitle)
+        : step;
+        
+      // Préparer les ressources plus efficacement
+      if (stepData) {
+        const availableComponentNames = Object.keys(resourceComponentsMap);
+        
+        // Optimisé: sélection rapide des composants pour cette étape
+        const componentResources: Resource[] = availableComponentNames
+          .filter(compName => isComponentRelevantForStep(compName, stepId, substepTitle))
+          .map(componentName => ({
+            id: `local-${componentName}`,
+            title: formatComponentTitle(componentName),
+            description: `Ressource interactive pour l'étape ${stepId}`,
+            componentName,
+            type: 'interactive',
+            status: 'available'
+          }));
+          
+        console.log(`Found ${componentResources.length} relevant resources for step ${stepId}, substep ${substepTitle || 'main'}`);
+        setResources(componentResources);
+        
+        // Auto-select resource if specified in URL
+        if (selectedResourceName) {
+          const foundResource = componentResources.find(
+            r => r.componentName === selectedResourceName
+          );
+          if (foundResource) {
+            setSelectedResource(foundResource);
+          }
+        }
+      } else {
+        setResources([]);
+      }
+    } catch (error) {
+      console.error("Error loading resources:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les ressources",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }, [step, stepId, substepTitle, selectedResourceName]);
   
   const handleResourceSelect = (resource: Resource) => {
@@ -90,7 +84,7 @@ export default function ResourcesTab({
   
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-8">
+      <div className="flex justify-center items-center py-4">
         <LoadingIndicator size="lg" />
       </div>
     );
@@ -98,7 +92,7 @@ export default function ResourcesTab({
   
   if (resources.length === 0) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-6">
         <p className="text-muted-foreground">
           Aucune ressource disponible pour cette étape.
         </p>
@@ -119,15 +113,21 @@ export default function ResourcesTab({
             </button>
           </div>
           <h2 className="text-xl font-bold mb-4">{selectedResource.title}</h2>
-          {renderResourceComponent(
-            selectedResource.componentName || "", 
-            stepId, 
-            substepTitle || ""
-          )}
+          <LazyLoad 
+            priority={true} 
+            showLoader={true}
+            height={300}
+          >
+            {renderResourceComponent(
+              selectedResource.componentName || "", 
+              stepId, 
+              substepTitle || ""
+            )}
+          </LazyLoad>
         </div>
       ) : (
         <div>
-          <h2 className="text-lg font-semibold mb-4">Ressources disponibles</h2>
+          <h2 className="text-lg font-semibold mb-4">Ressources disponibles ({resources.length})</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {resources.map((resource) => (
               <ResourceCard

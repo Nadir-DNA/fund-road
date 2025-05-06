@@ -23,14 +23,14 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
     subsubstepTitle
   };
 
-  // Special case for course content
+  // Cas spécial pour les contenus de cours
   if (componentName === 'CourseContentDisplay') {
     try {
       const savedCourseData = localStorage.getItem('currentCourseContent');
       if (savedCourseData) {
         const { content, title } = JSON.parse(savedCourseData);
         return (
-          <Suspense fallback={<div className="flex justify-center p-8"><LoadingIndicator size="lg" /></div>}>
+          <Suspense fallback={<div className="flex justify-center p-4"><LoadingIndicator size="md" /></div>}>
             <CourseContentDisplay 
               stepId={stepId}
               substepTitle={substepTitle} 
@@ -45,7 +45,7 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
     }
   }
 
-  // Check if component exists in the map
+  // Vérifier si le composant existe dans la map
   const Component = resourceComponentsMap[componentName];
   
   if (!Component) {
@@ -63,8 +63,9 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
     );
   }
 
+  // Optimisé: fallback plus léger et timeout réduit
   return (
-    <Suspense fallback={<div className="flex justify-center p-8"><LoadingIndicator size="lg" /></div>}>
+    <Suspense fallback={<div className="flex justify-center p-4"><LoadingIndicator size="md" /></div>}>
       <Component {...resourceProps} />
     </Suspense>
   );
