@@ -24,6 +24,8 @@ export const useResourceDataLoader = (
   const { toast } = useToast();
   const navigate = useNavigate();
   const failedAttemptsRef = useRef(0);
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef(true);
   
   // Check for offline cache
   const getOfflineCache = useCallback(() => {
@@ -52,8 +54,30 @@ export const useResourceDataLoader = (
 
   // Create a memoized load function to avoid recreation during renders
   const loadResourceData = useCallback(async () => {
+    // Initial load state - ALWAYS true at first
     setIsLoading(true);
     console.log(`[Attempt ${loadAttempts + 1}] Loading data for: stepId=${stepId}, substep=${substepTitle}, type=${resourceType}`);
+    
+    // Set safety timeout to force exit loading state after max 3 seconds
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+    }
+    
+    loadingTimeoutRef.current = setTimeout(() => {
+      if (isMountedRef.current) {
+        console.log("⚠️ Safety timeout triggered - forcing loading to complete");
+        setIsLoading(false);
+        
+        // Switch to offline mode after timeout
+        setIsOfflineMode(true);
+        
+        // Try to use offline cache or default values
+        const offlineData = getOfflineCache() || { initialized: true, offlineMode: true };
+        if (onDataLoaded) {
+          onDataLoaded(offlineData);
+        }
+      }
+    }, 3000); // Reduced from 5s to 3s
     
     // Check offline cache first in case of connection issues
     const offlineData = getOfflineCache();
@@ -66,18 +90,24 @@ export const useResourceDataLoader = (
     }
     
     try {
-      // Get current session
-      const currentSession = session || await fetchSession().catch(err => {
-        console.warn("Failed to fetch session:", err);
-        return null;
-      });
+      // Get current session - but limit the waiting time
+      let currentSession = null;
+      try {
+        currentSession = session || await Promise.race([
+          fetchSession().catch(() => null),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Auth timeout")), 2000))
+        ]);
+      } catch (err) {
+        console.warn("Failed to fetch session (timeout or error):", err);
+        // Continue with null session, will use offline mode
+      }
       
       if (!currentSession) {
         console.log("No authenticated session found for resource data loading");
         failedAttemptsRef.current++;
         
-        // Switch to offline mode after multiple failures
-        if (failedAttemptsRef.current >= 2) {
+        // Switch to offline mode after just 1 failure (was 2)
+        if (failedAttemptsRef.current >= 1) {
           setIsOfflineMode(true);
           console.log("Switching to offline mode due to authentication issues");
           
@@ -90,161 +120,89 @@ export const useResourceDataLoader = (
           setIsLoading(false);
           return { content: fallbackData, resourceId: null };
         }
-        
-        // Even with no session, exit loading state
-        setIsLoading(false);
-        return { content: {}, resourceId: null };
       }
       
-      // Try to fetch user resource with timeout
-      const fetchPromise = new Promise(async (resolve, reject) => {
+      // If we have a session, try to fetch data with a short timeout
+      if (currentSession) {
         try {
-          const { data: userResources, error: userResourceError } = await supabase
-            .from('user_resources')
-            .select('*')
-            .eq('user_id', currentSession.user.id)
-            .eq('step_id', stepId)
-            .eq('substep_title', substepTitle)
-            .eq('resource_type', resourceType);
-            
-          if (userResourceError) {
-            reject(userResourceError);
-            return;
-          }
-          resolve(userResources);
-        } catch (err) {
-          reject(err);
-        }
-      });
-      
-      // Add a timeout to the fetch
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Request timed out")), 3000);
-      });
-      
-      // Race the fetch against the timeout
-      const userResources = await Promise.race([fetchPromise, timeoutPromise])
-        .catch(err => {
-          console.error("Error or timeout fetching user resource:", err);
-          failedAttemptsRef.current++;
-          return null;
-        });
-
-      if (!userResources) {
-        // Handle network error by using offline cache
-        if (offlineData) {
-          console.log("Network error, using offline cache data");
-          setIsOfflineMode(true);
-          setIsLoading(false);
-          return { content: offlineData, resourceId: null };
-        }
-        
-        // If offline mode is active, just return minimal data
-        if (isOfflineMode) {
-          const defaultContent = { initialized: true, offlineMode: true };
-          setIsLoading(false);
-          return { content: defaultContent, resourceId: null };
-        }
-      } else {
-        console.log("User resources fetch result:", userResources);
-        
-        // Reset offline mode and failure count on successful fetch
-        if (failedAttemptsRef.current > 0) {
-          failedAttemptsRef.current = 0;
-          setIsOfflineMode(false);
-        }
-
-        // Use most recent user resource if available
-        if (userResources && Array.isArray(userResources) && userResources.length > 0) {
-          // Sort by updated_at in descending order to get the most recent
-          const mostRecent = userResources.sort((a, b) => 
-            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-          )[0];
-          
-          const content = mostRecent.content || {};
-          console.log("Found user resource:", mostRecent.id);
-          setResourceId(mostRecent.id);
-          
-          // Save to offline cache for future use
-          saveToOfflineCache(content);
-          
-          setIsLoading(false);
-          
-          if (onDataLoaded) {
-            onDataLoaded(content);
-          }
-          
-          return { content, resourceId: mostRecent.id };
-        }
-      }
-
-      // If no user resource found and not in offline mode, check for template
-      if (!isOfflineMode) {
-        console.log("No user resource found, checking for template");
-
-        try {
-          // Fallback: template resource
-          const { data: templateResources, error: templateError } = await supabase
-            .from('entrepreneur_resources')
-            .select('*')
-            .eq('step_id', stepId)
-            .eq('substep_title', substepTitle)
-            .eq('resource_type', resourceType)
-            .limit(1);
-            
-          if (templateError) {
-            console.error("Error fetching template resource:", templateError);
-          } else if (templateResources && templateResources.length > 0) {
-            console.log("Template resources fetch result:", templateResources);
-            
-            const templateResource = templateResources[0];
+          // Try to fetch user resource with timeout
+          const fetchPromise = new Promise(async (resolve, reject) => {
             try {
-              if (templateResource.course_content) {
-                const parsedContent = typeof templateResource.course_content === "string"
-                  ? JSON.parse(templateResource.course_content)
-                  : templateResource.course_content;
-
-                console.log("Using template data");
+              const { data: userResources, error: userResourceError } = await supabase
+                .from('user_resources')
+                .select('*')
+                .eq('user_id', currentSession.user.id)
+                .eq('step_id', stepId)
+                .eq('substep_title', substepTitle)
+                .eq('resource_type', resourceType);
                 
-                // Cache the template data for offline use
-                saveToOfflineCache(parsedContent);
-                
-                setIsLoading(false);
-                
-                if (onDataLoaded) {
-                  onDataLoaded(parsedContent);
-                }
-                
-                return { content: parsedContent, resourceId: null };
+              if (userResourceError) {
+                reject(userResourceError);
+                return;
               }
-            } catch (e) {
-              console.log("Error parsing template content, using as-is");
-              const content = { content: templateResource.course_content };
-              
-              // Cache the template data for offline use
-              saveToOfflineCache(content);
-              
-              setIsLoading(false);
-              
-              if (onDataLoaded) {
-                onDataLoaded(content);
-              }
-              
-              return { content, resourceId: null };
+              resolve(userResources);
+            } catch (err) {
+              reject(err);
             }
+          });
+          
+          // Add a timeout to the fetch - reduced from 3s to 2s
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error("Request timed out")), 2000);
+          });
+          
+          // Race the fetch against the timeout
+          const userResources = await Promise.race([fetchPromise, timeoutPromise])
+            .catch(err => {
+              console.error("Error or timeout fetching user resource:", err);
+              failedAttemptsRef.current++;
+              return null;
+            });
+
+          if (userResources && Array.isArray(userResources) && userResources.length > 0) {
+            // Sort by updated_at in descending order to get the most recent
+            const mostRecent = userResources.sort((a, b) => 
+              new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+            )[0];
+            
+            const content = mostRecent.content || {};
+            console.log("Found user resource:", mostRecent.id);
+            setResourceId(mostRecent.id);
+            
+            // Save to offline cache for future use
+            saveToOfflineCache(content);
+            
+            if (loadingTimeoutRef.current) {
+              clearTimeout(loadingTimeoutRef.current);
+              loadingTimeoutRef.current = null;
+            }
+            
+            setIsLoading(false);
+            
+            if (onDataLoaded) {
+              onDataLoaded(content);
+            }
+            
+            return { content, resourceId: mostRecent.id };
           }
         } catch (err) {
-          console.error("Error fetching template resource:", err);
+          console.error("Error in user resources fetch:", err);
         }
       }
+
+      // If no user resource found, use offline data or default
+      const defaultContent = offlineData || { initialized: true, offlineMode: true };
       
-      // Default empty content as last resort
-      const defaultContent = { initialized: true };
-      
-      // Save default content to cache
+      // Save default content to cache for future use
       saveToOfflineCache(defaultContent);
       
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
+      
       setIsLoading(false);
+      setIsOfflineMode(true);
       
       if (onDataLoaded) {
         onDataLoaded(defaultContent);
@@ -255,20 +213,15 @@ export const useResourceDataLoader = (
     } catch (error) {
       console.error("Error loading resource data:", error);
       
-      // Move to offline mode if multiple failures
-      failedAttemptsRef.current++;
-      if (failedAttemptsRef.current >= 2) {
-        setIsOfflineMode(true);
-      }
+      // Move to offline mode immediately after failure
+      setIsOfflineMode(true);
       
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les données de la ressource",
-        variant: "destructive",
-      });
-      
-      // Use offline data or default
       const fallbackData = offlineData || { initialized: true, offlineMode: true };
+      
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
       
       setIsLoading(false);
       
@@ -294,29 +247,30 @@ export const useResourceDataLoader = (
 
   // Effect to load resource data on mount or when key parameters change
   useEffect(() => {
-    let isMounted = true;
+    isMountedRef.current = true;
     
     // Always start with loading state
     setIsLoading(true);
     console.log("Starting to load resource data...");
     
+    // Set safety timeout for initial load
     const loadTimeout = setTimeout(() => {
       // If still loading after timeout, use offline mode
-      if (isMounted && isLoading) {
-        console.log("Loading timeout, switching to offline mode");
+      if (isMountedRef.current && isLoading) {
+        console.log("Initial loading timeout, forcing offline mode");
         setIsOfflineMode(true);
-        const cachedData = getOfflineCache();
-        if (cachedData && onDataLoaded) {
+        setIsLoading(false);
+        const cachedData = getOfflineCache() || { initialized: true, offlineMode: true };
+        if (onDataLoaded) {
           onDataLoaded(cachedData);
         }
-        setIsLoading(false);
       }
-    }, 5000); // 5 second timeout
+    }, 3000); // 3 second timeout
     
     loadResourceData().then((result) => {
-      if (!isMounted) return;
+      if (!isMountedRef.current) return;
       
-      if (result && onDataLoaded) {
+      if (result && result.content && onDataLoaded) {
         onDataLoaded(result.content);
         if (result.resourceId) {
           setResourceId(result.resourceId);
@@ -328,7 +282,10 @@ export const useResourceDataLoader = (
     });
     
     return () => { 
-      isMounted = false;
+      isMountedRef.current = false;
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
       clearTimeout(loadTimeout);
     };
   }, [stepId, substepTitle, resourceType, loadResourceData, loadAttempts, getOfflineCache, onDataLoaded]);

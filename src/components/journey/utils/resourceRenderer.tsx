@@ -38,6 +38,7 @@ class ResourceErrorBoundary extends React.Component<
       return (
         <div className="text-center p-4 text-destructive border border-destructive/40 rounded">
           <p>Erreur lors du chargement du composant</p>
+          <p className="text-sm mt-1">Un problème est survenu lors du chargement de cette ressource.</p>
           <pre className="text-xs mt-2 bg-slate-800 p-2 rounded overflow-auto max-h-[100px]">
             {this.state.error?.message || "Erreur inconnue"}
           </pre>
@@ -48,6 +49,25 @@ class ResourceErrorBoundary extends React.Component<
     return this.props.children;
   }
 }
+
+// Create a fallback component for when a component isn't found
+const ComponentNotFoundFallback = ({ componentName, stepId, substepTitle }: { 
+  componentName: string; 
+  stepId: number;
+  substepTitle: string;
+}) => {
+  return (
+    <div className="p-4 border border-amber-500/20 bg-amber-500/10 rounded-lg">
+      <h3 className="text-lg font-medium mb-2">Ressource en cours de chargement</h3>
+      <p className="text-sm text-muted-foreground mb-4">
+        La ressource <strong>{componentName}</strong> n'a pas pu être chargée pour le moment.
+      </p>
+      <p className="text-xs text-muted-foreground/70">
+        Étape: {stepId}, Sous-étape: {substepTitle}
+      </p>
+    </div>
+  );
+};
 
 export const renderResourceComponent = (componentName: string, stepId: number, substepTitle: string, subsubstepTitle?: string | null) => {
   console.log(`Rendering resource: ${componentName} for step ${stepId}, substep ${substepTitle}`);
@@ -70,24 +90,61 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
     );
   }
   
+  // For the special case of UserResearchNotebook in step 1, substep "Recherche utilisateur"
+  if (stepId === 1 && substepTitle === "Recherche utilisateur" && 
+      (componentName === "UserResearchNotebook" || componentName === "CustomerBehaviorNotes")) {
+    console.log("Using special handling for UserResearchNotebook or CustomerBehaviorNotes");
+    // Try to find a component that exists
+    let Component = resourceComponentsMap[componentName] || 
+                    resourceComponentsMap['UserResearchJournal'] || 
+                    resourceComponentsMap['UserResearch'] ||
+                    resourceComponentsMap['UserNotes'] ||
+                    resourceComponentsMap['CustomerInsights'];
+    
+    // If we still can't find a component, fall back to a placeholder
+    if (!Component) {
+      console.log("No component found for research notebook, using placeholder");
+      return renderOfflinePlaceholder();
+    }
+    
+    // Use the found component
+    console.log("Found substitute component, using it");
+    const componentKey = `${componentName}-${stepId}-${substepTitle}-${subsubstepTitle || ''}`;
+    
+    return (
+      <ResourceErrorBoundary componentName={componentName}>
+        <Suspense fallback={<StableLoadingFallback />}>
+          <div 
+            key={componentKey} 
+            id={`resource-container-${componentName}`}
+            className="resource-component-wrapper"
+          >
+            <Component 
+              stepId={stepId} 
+              substepTitle={substepTitle} 
+              subsubstepTitle={subsubstepTitle} 
+            />
+          </div>
+        </Suspense>
+      </ResourceErrorBoundary>
+    );
+  }
+  
   // Check if component exists in the map with graceful fallback
   const Component = resourceComponentsMap[componentName];
   
   if (!Component) {
     console.error(`Resource component not found: ${componentName}`, Object.keys(resourceComponentsMap));
     
-    toast({
-      title: "Ressource indisponible",
-      description: `Le composant "${componentName}" n'a pas été trouvé`,
-      variant: "destructive"
-    });
+    // Don't show toast, just log the error
+    console.log(`Component "${componentName}" not found in resourceComponentsMap`);
     
-    return (
-      <div className="text-center p-4 text-muted-foreground border border-destructive/40 rounded">
-        <p>Ressource indisponible: "{componentName}"</p>
-        <p className="text-xs mt-2">Composants disponibles: {Object.keys(resourceComponentsMap).join(', ')}</p>
-      </div>
-    );
+    // Return fallback component
+    return <ComponentNotFoundFallback 
+      componentName={componentName} 
+      stepId={stepId} 
+      substepTitle={substepTitle} 
+    />;
   }
 
   // Use a memoized key to prevent unnecessary re-renders
@@ -114,12 +171,6 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
     );
   } catch (error) {
     console.error("Error rendering resource component:", error);
-    toast({
-      title: "Erreur",
-      description: "Impossible de charger le composant de ressource",
-      variant: "destructive"
-    });
-    
     // Return the offline fallback as last resort
     return renderOfflinePlaceholder();
   }

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
@@ -40,28 +41,44 @@ export default function ResourceForm({
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [showLoading, setShowLoading] = useState(true);
   const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [forceShowContent, setForceShowContent] = useState(false);
   
   // State to track user authentication
   useEffect(() => {
     const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      setIsAuthenticated(!!data.session);
-      setUserId(data.session?.user?.id || null);
-      
-      // Setup auth state change listener
-      const { data: authListener } = supabase.auth.onAuthStateChange(
-        (event, session) => {
-          setIsAuthenticated(!!session);
-          setUserId(session?.user?.id || null);
-        }
-      );
-      
-      return () => {
-        authListener.subscription.unsubscribe();
-      };
+      try {
+        const { data } = await supabase.auth.getSession();
+        setIsAuthenticated(!!data.session);
+        setUserId(data.session?.user?.id || null);
+        
+        // Setup auth state change listener
+        const { data: authListener } = supabase.auth.onAuthStateChange(
+          (event, session) => {
+            setIsAuthenticated(!!session);
+            setUserId(session?.user?.id || null);
+          }
+        );
+        
+        return () => {
+          authListener.subscription.unsubscribe();
+        };
+      } catch (err) {
+        console.warn("Auth check failed:", err);
+        // Continue without auth - will use offline mode
+      }
     };
     
     checkAuth();
+  }, []);
+
+  // Force showing the form content after a timeout to prevent indefinite loading
+  useEffect(() => {
+    const forceShowTimer = setTimeout(() => {
+      setForceShowContent(true);
+      setShowLoading(false);
+    }, 5000); // Show form after 5 seconds regardless of loading state
+    
+    return () => clearTimeout(forceShowTimer);
   }, []);
 
   // Use the resource data hook to handle loading/saving with improved offline support
@@ -78,7 +95,7 @@ export default function ResourceForm({
     retryLoading
   } = useResourceData(stepId, substepTitle, resourceType, formData, onDataSaved);
 
-  // Add a buffer to loading state to prevent flickering
+  // Add a buffer to loading state to prevent flickering, but with a shorter delay
   useEffect(() => {
     if (isLoading) {
       setShowLoading(true);
@@ -88,10 +105,10 @@ export default function ResourceForm({
         clearTimeout(loadingTimeout);
       }
     } else {
-      // Delay turning off loading indicator to prevent flickering
+      // Delay turning off loading indicator to prevent flickering, but make it shorter
       const timeout = setTimeout(() => {
         setShowLoading(false);
-      }, 500);
+      }, 300); // Reduced from 500ms to 300ms
       
       setLoadingTimeout(timeout);
     }
@@ -173,7 +190,7 @@ export default function ResourceForm({
       </CardHeader>
       
       <CardContent>
-        {showLoading ? (
+        {showLoading && !forceShowContent ? (
           <div className="flex justify-center items-center py-12">
             <LoadingIndicator size="md" />
             <span className="ml-2 text-muted-foreground">Chargement des données...</span>
