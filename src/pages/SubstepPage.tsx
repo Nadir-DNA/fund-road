@@ -68,7 +68,10 @@ export default function SubstepPage() {
       }
       
       console.log(`Found ${data?.length || 0} resources:`, data);
-      return (data || []).map(r => ({ ...r, url: r.resource_url })) as Resource[];
+      return (data || []).map(r => ({ 
+        ...r, 
+        url: r.resource_url 
+      })) as Resource[];
     }
   });
 
