@@ -16,30 +16,44 @@ export const buildResourceUrl = (stepId: number, substepTitle: string, resourceC
 
 // Save the path to return to after viewing a resource
 export const saveResourceReturnPath = (path: string): void => {
-  localStorage.setItem(RESOURCE_RETURN_PATH_KEY, path);
+  if (isBrowser()) {
+    localStorage.setItem(RESOURCE_RETURN_PATH_KEY, path);
+    console.log("Resource return path saved:", path);
+  }
 };
 
 // Get the resource return path
 export const getResourceReturnPath = (): string | null => {
+  if (!isBrowser()) return null;
   return localStorage.getItem(RESOURCE_RETURN_PATH_KEY);
 };
 
 // Clear the resource return path
 export const clearResourceReturnPath = (): void => {
-  localStorage.removeItem(RESOURCE_RETURN_PATH_KEY);
+  if (isBrowser()) {
+    localStorage.removeItem(RESOURCE_RETURN_PATH_KEY);
+    console.log("Resource return path cleared");
+  }
 };
 
 // Save the current path for later return (e.g. after authentication)
-export const saveCurrentPath = (path: string): void => {
-  localStorage.setItem(LAST_PATH_KEY, path);
+export const saveLastPath = (path: string): void => {
+  if (isBrowser()) {
+    localStorage.setItem(LAST_PATH_KEY, path);
+    console.log("Last path saved for redirection:", path);
+  }
 };
 
 // Get the last saved path
 export const getLastPath = (): string | null => {
+  if (!isBrowser()) return null;
   return localStorage.getItem(LAST_PATH_KEY);
 };
 
 // Clear the last saved path
 export const clearLastPath = (): void => {
-  localStorage.removeItem(LAST_PATH_KEY);
+  if (isBrowser()) {
+    localStorage.removeItem(LAST_PATH_KEY);
+    console.log("Last path cleared");
+  }
 };

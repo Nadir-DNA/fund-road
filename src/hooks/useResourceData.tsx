@@ -1,8 +1,10 @@
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useResourceDataLoader } from "./resource/useResourceDataLoader";
 import { useResourceFormState } from "./resource/useResourceFormState";
 import { useResourceActions } from "./resource/useResourceActions";
+import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useResourceData = (
   stepId: number, 
@@ -17,9 +19,22 @@ export const useResourceData = (
   const firstLoadCompletedRef = useRef(false);
   const previousDataStringRef = useRef("");
   const manualSaveRequestedRef = useRef(false);
+  const [userId, setUserId] = useState<string | null>(null);
   
   // Initialize default values with memoization to prevent loops
   const initialValues = useMemo(() => defaultValues || {}, []);
+  
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) {
+        setUserId(data.session.user.id);
+      }
+    };
+    
+    checkAuth();
+  }, []);
   
   // Use the form state management hook with protection against loops
   const {
@@ -47,7 +62,8 @@ export const useResourceData = (
     isLoading,
     resourceId,
     session,
-    fetchSession
+    fetchSession,
+    retryLoading
   } = useResourceDataLoader(stepId, substepTitle, resourceType, (loadedData) => {
     // Avoid cascade triggers during initial loading
     isInitializingRef.current = true;
@@ -78,9 +94,24 @@ export const useResourceData = (
     resourceId
   );
   
-  // Wrap the manual save handler to set our flag
+  // Wrap the manual save handler to set our flag and enforce authentication
   const handleManualSave = async (session: any) => {
     console.log("Manual save requested");
+    
+    if (!session) {
+      // Check for current session
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        toast({
+          title: "Authentification requise",
+          description: "Vous devez être connecté pour sauvegarder vos données.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      session = data.session;
+    }
+    
     manualSaveRequestedRef.current = true;
     return originalHandleManualSave(session);
   };
@@ -115,6 +146,27 @@ export const useResourceData = (
     }
   }, [initialValues, onDataSaved, firstLoadCompletedRef.current]);
 
+  // Auto-save effect triggered when form data changes and user is authenticated
+  useEffect(() => {
+    // Skip during initialization
+    if (isInitializingRef.current || !userId || !session) return;
+    
+    // Debounce to avoid too many saves
+    const currentDataString = JSON.stringify(formData);
+    if (currentDataString !== previousDataStringRef.current && 
+        currentDataString.length > 20 &&
+        firstLoadCompletedRef.current) {
+      
+      console.log("Data changed, triggering auto-save");
+      const saveTimeout = setTimeout(() => {
+        handleSave(session);
+        previousDataStringRef.current = currentDataString;
+      }, 2000); // 2 second debounce
+      
+      return () => clearTimeout(saveTimeout);
+    }
+  }, [formData, session, userId]);
+
   return {
     formData,
     isLoading,
@@ -123,6 +175,8 @@ export const useResourceData = (
     handleSave,
     handleManualSave,
     setFormData,
-    session
+    session,
+    userId,
+    retryLoading
   };
 };

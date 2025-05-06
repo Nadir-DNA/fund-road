@@ -5,6 +5,10 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { useResourceData } from "@/hooks/useResourceData";
 import FormSkeleton from "./resource-form/FormSkeleton";
 import SaveButton from "./resource-form/SaveButton";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
+import { saveLastPath } from "@/utils/navigationUtils";
 
 interface ResourceFormProps {
   stepId: number;
@@ -31,6 +35,8 @@ export default function ResourceForm({
   defaultValues,
   exportPanel
 }: ResourceFormProps) {
+  const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Use ref for stable values to prevent loops
   const onDataSavedRef = useRef(onDataSaved);
@@ -40,6 +46,24 @@ export default function ResourceForm({
   const hasCalledOnDataSavedRef = useRef(false);
   const [stableInitialData] = useState(initialDataRef.current); // Use only once at mount
   const manualSaveTriggeredRef = useRef(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      setIsAuthenticated(!!data.session);
+    };
+    
+    checkAuth();
+    
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+    
+    return () => subscription.unsubscribe();
+  }, []);
   
   // Use ResourceData hook with stable initial data to prevent loops
   const {
@@ -48,7 +72,8 @@ export default function ResourceForm({
     isSaving,
     handleSave,
     handleManualSave,
-    session
+    session,
+    userId
   } = useResourceData(stepId, substepTitle, resourceType, stableInitialData, useCallback((data) => {
     // Only call parent's onDataSaved for manual saves or after initial load
     if (onDataSavedRef.current && data && Object.keys(data).length > 0) {
@@ -114,14 +139,30 @@ export default function ResourceForm({
   // Handle manual save button click
   const onSaveClick = useCallback(() => {
     console.log("Manual save button clicked");
+    
+    if (!isAuthenticated) {
+      console.log("User not authenticated, redirecting to login");
+      toast({
+        title: "Authentification requise",
+        description: "Vous devez être connecté pour sauvegarder vos ressources.",
+        variant: "destructive"
+      });
+      
+      // Save current path for later redirection
+      saveLastPath(window.location.pathname);
+      navigate("/auth");
+      return;
+    }
+    
     manualSaveTriggeredRef.current = true;
     if (session) {
+      console.log("Session available for manual save");
       handleManualSave(session);
       lastSavedDataRef.current = currentFormDataString;
     } else {
       console.log("No session available for manual save");
     }
-  }, [session, handleManualSave, currentFormDataString]);
+  }, [session, handleManualSave, currentFormDataString, isAuthenticated, navigate]);
 
   if (isLoading) {
     return <FormSkeleton />;
@@ -139,8 +180,18 @@ export default function ResourceForm({
       </CardContent>
       
       <CardFooter className="flex flex-col sm:flex-row justify-between border-t p-4 pt-4 mt-2 gap-4">
-        <SaveButton isSaving={isSaving} handleSave={onSaveClick} />
+        <SaveButton 
+          isSaving={isSaving} 
+          handleSave={onSaveClick} 
+          isAuthenticated={isAuthenticated}
+        />
         {exportPanel}
+        
+        {!isAuthenticated && (
+          <div className="text-sm text-amber-500 sm:ml-4">
+            Connectez-vous pour sauvegarder vos données
+          </div>
+        )}
       </CardFooter>
     </Card>
   );

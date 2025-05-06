@@ -1,8 +1,9 @@
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { saveLastPath } from "@/utils/navigationUtils";
 
 interface SaveOptions {
   formData: any;
@@ -32,6 +33,7 @@ export function useResourceSave({
   const manualSaveRef = useRef(false);
   const savesAttemptedRef = useRef(0);
   const firstRenderRef = useRef(true);
+  const [lastSaveAttempt, setLastSaveAttempt] = useState<Date | null>(null);
   
   // Skip the very first save attempt to avoid initialization loops
   if (firstRenderRef.current) {
@@ -45,6 +47,7 @@ export function useResourceSave({
     
     // Increment attempt counter to detect loops
     savesAttemptedRef.current += 1;
+    setLastSaveAttempt(new Date());
     
     // Protect against rapid save loops
     if (savesAttemptedRef.current > 3 && !manualSaveRef.current) {
@@ -54,14 +57,34 @@ export function useResourceSave({
     }
     
     if (!session || !session.user) {
-      console.error("No valid session available");
-      toast({
-        title: "Erreur d'authentification",
-        description: "Vous devez être connecté pour sauvegarder vos ressources.",
-        variant: "destructive"
-      });
-      navigate("/auth");
-      return false;
+      console.error("No valid session available, attempting to get current session");
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session?.user) {
+          console.log("Found session via getSession");
+          session = data.session;
+        } else {
+          console.error("No session via getSession either");
+          toast({
+            title: "Erreur d'authentification",
+            description: "Vous devez être connecté pour sauvegarder vos ressources.",
+            variant: "destructive"
+          });
+          
+          // Save the current path for redirecting back after login
+          saveLastPath(window.location.pathname);
+          navigate("/auth");
+          return false;
+        }
+      } catch (err) {
+        console.error("Error fetching session:", err);
+        toast({
+          title: "Erreur d'authentification",
+          description: "Impossible de vérifier votre session. Veuillez vous reconnecter.",
+          variant: "destructive"
+        });
+        return false;
+      }
     }
     
     // Don't save during initialization 
@@ -88,6 +111,8 @@ export function useResourceSave({
     
     try {
       console.log(`Saving resource: stepId=${stepId}, substep=${substepTitle}, type=${resourceType}, resourceId=${resourceId}`);
+      console.log("User ID:", session.user.id);
+      console.log("Form data:", formData);
       
       // Ensure we have valid content to save
       if (!formData || typeof formData !== 'object') {
@@ -111,7 +136,7 @@ export function useResourceSave({
         console.log("Update result:", result);
       } else {
         // Create new resource
-        console.log("Creating new resource");
+        console.log("Creating new resource with user_id:", session.user.id);
         // Ensure all required fields are present
         const resourceData = {
           user_id: session.user.id,
@@ -123,16 +148,25 @@ export function useResourceSave({
           updated_at: new Date().toISOString()
         };
         
+        console.log("Resource data to insert:", resourceData);
+        
         result = await supabase
           .from('user_resources')
           .insert(resourceData)
           .select();
+          
+        console.log("Insert result:", result);
       }
       
       const { error, data } = result;
       if (error) {
         console.error("Supabase error during save:", error);
-        throw error;
+        toast({
+          title: "Erreur de sauvegarde",
+          description: `${error.message || "Une erreur est survenue lors de la sauvegarde."}`,
+          variant: "destructive"
+        });
+        return false;
       }
       
       if (data && data[0]) {
@@ -187,6 +221,7 @@ export function useResourceSave({
 
   // Mark a save as "manual" (triggered by the user)
   const handleManualSave = useCallback(async (session?: any) => {
+    console.log("Manual save triggered");
     manualSaveRef.current = true;
     // Reset attempt counter for manual saves
     savesAttemptedRef.current = 0;
@@ -195,6 +230,7 @@ export function useResourceSave({
 
   return { 
     handleSave,
-    handleManualSave
+    handleManualSave,
+    lastSaveAttempt
   };
 }
