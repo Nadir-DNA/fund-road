@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +16,13 @@ interface Resource {
   title?: string;
 }
 
-const DynamicResourceComponent = ({ componentName, stepId, substepTitle }: { componentName: string; stepId: number; substepTitle: string }) => {
+interface DynamicResourceComponentProps {
+  componentName: string;
+  stepId: number;
+  substepTitle: string;
+}
+
+const DynamicResourceComponent = ({ componentName, stepId, substepTitle }: DynamicResourceComponentProps) => {
   // Create a lazy-loaded component
   const DynamicComponent = lazy(async () => {
     try {

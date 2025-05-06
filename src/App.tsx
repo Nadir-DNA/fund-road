@@ -38,7 +38,7 @@ function App() {
         {/* Auth page */}
         <Route path="/auth" element={<Auth />} />
         
-        {/* Simple direct route to substep page */}
+        {/* Simple direct route to substep page - make sure no props are passed */}
         <Route path="/roadmap/step/:stepId/:substepTitle" element={<SubstepPage />} />
         
         {/* Legacy compatibility route - using wrapper components */}
