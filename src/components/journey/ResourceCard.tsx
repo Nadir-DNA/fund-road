@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, FileText, ExternalLink } from "lucide-react";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { toast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
+import { buildResourceUrl, saveResourceReturnPath } from "@/utils/navigationUtils";
 
 interface ResourceCardProps {
   resource: any;
@@ -14,38 +16,61 @@ interface ResourceCardProps {
 
 export default function ResourceCard({ resource, stepId, substepTitle }: ResourceCardProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
   
   const handleResourceClick = () => {
+    if (isLoading) return;
     setIsLoading(true);
     
+    // If there's a direct URL, open it
     if (resource.file_url) {
+      console.log("Opening external resource:", resource.file_url);
       window.open(resource.file_url, '_blank');
-      setIsLoading(false);
+      setTimeout(() => setIsLoading(false), 300);
       return;
     }
 
     // Check if this resource has a component to display
-    if (resource.component_name) {
-      // TODO: Handle dynamic component display
-      toast({
-        title: "Fonctionnalité à venir",
-        description: `La ressource "${resource.title}" sera bientôt disponible.`,
-        variant: "default"
-      });
-    } else {
-      toast({
-        title: "Ressource non disponible",
-        description: "Cette ressource n'a pas de contenu associé.",
-        variant: "destructive"
-      });
+    if (resource.componentName) {
+      console.log("Navigating to component resource:", resource.componentName);
+      try {
+        // Save current path for potential return
+        saveResourceReturnPath(window.location.pathname);
+        
+        // Build the resource URL
+        const resourceUrl = buildResourceUrl(stepId, substepTitle, resource.componentName);
+        
+        // Add a small delay to avoid race conditions
+        setTimeout(() => {
+          navigate(resourceUrl);
+          // Reset loading state after navigating
+          setTimeout(() => setIsLoading(false), 200);
+        }, 100);
+      } catch (error) {
+        console.error("Navigation error:", error);
+        toast({
+          title: "Erreur de navigation",
+          description: "Impossible d'accéder à cette ressource.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+      }
+      return;
     }
+    
+    // Fallback if neither URL nor component name is available
+    toast({
+      title: "Ressource non disponible",
+      description: "Cette ressource n'a pas de contenu associé.",
+      variant: "destructive"
+    });
     
     setIsLoading(false);
   };
 
   // Define the icon based on resource type
   const getResourceIcon = () => {
-    switch(resource.resource_type) {
+    switch(resource.resource_type || resource.type) {
       case 'document':
         return <FileText className="h-3 w-3 mr-1" />;
       case 'course':
@@ -65,7 +90,7 @@ export default function ResourceCard({ resource, stepId, substepTitle }: Resourc
       <CardContent className="py-2">
         <div className="flex items-center text-xs text-muted-foreground">
           {getResourceIcon()}
-          <span>{resource.resource_type || 'resource'}</span>
+          <span>{resource.resource_type || resource.type || 'resource'}</span>
         </div>
       </CardContent>
       

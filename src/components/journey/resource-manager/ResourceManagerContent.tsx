@@ -23,44 +23,42 @@ export default function ResourceManagerContent({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isReady, setIsReady] = useState(false);
-  const hasInitializedRef = useRef(false);
-  const componentMountedRef = useRef(true);
-
+  const componentId = useRef(`resource-${Math.random().toString(36).substring(7)}`);
+  
   // Effect to handle resource initialization
   useEffect(() => {
-    componentMountedRef.current = true;
+    console.log("ResourceManagerContent: Resource changed or mounted", { 
+      resource: selectedResource?.title, 
+      componentName: selectedResource?.componentName || selectedResourceName
+    });
+    
     setIsLoading(true);
+    setError(null);
     
-    if (!selectedResource && !hasInitializedRef.current) {
-      setError("Ressource non trouvée ou non disponible.");
-      console.warn(`Resource not found: ${selectedResourceName} for step ${stepId}, substep ${selectedSubstepTitle}`);
+    // Short timer to ensure component is rendered
+    const timer = setTimeout(() => {
+      if (!selectedResource) {
+        setError("Ressource non trouvée ou non disponible.");
+        console.warn(`Resource not found: ${selectedResourceName} for step ${stepId}, substep ${selectedSubstepTitle}`);
+      } else {
+        console.log("Resource ready to render:", {
+          title: selectedResource.title,
+          type: selectedResource.type,
+          componentName: selectedResource.componentName || selectedResourceName
+        });
+      }
       setIsLoading(false);
-    } else if (selectedResource) {
-      setError(null);
-      console.log("Resource found:", {
-        title: selectedResource.title,
-        type: selectedResource.type,
-        componentName: selectedResource.componentName || selectedResourceName
-      });
       
-      // Add a small delay to ensure proper loading
+      // Additional delay to ensure component is fully loaded
       setTimeout(() => {
-        if (componentMountedRef.current) {
-          setIsLoading(false);
-          // Additional delay to ensure component is fully loaded
-          setTimeout(() => {
-            if (componentMountedRef.current) {
-              setIsReady(true);
-            }
-          }, 100);
-        }
-      }, 300);
-    }
-    
-    hasInitializedRef.current = true;
+        setIsReady(true);
+        console.log("Resource manager content marked as ready");
+      }, 200);
+    }, 300);
     
     return () => {
-      componentMountedRef.current = false;
+      clearTimeout(timer);
+      console.log("ResourceManagerContent: Unmounting");
     };
   }, [selectedResource, selectedResourceName, stepId, selectedSubstepTitle]);
   
@@ -75,6 +73,7 @@ export default function ResourceManagerContent({
 
   // Special handling for course content
   if (selectedResource.type === 'course' && selectedResource.courseContent) {
+    console.log("Rendering course content resource:", selectedResource.title);
     return (
       <div className="mt-4">
         <div className="flex items-center justify-between mb-4">
@@ -95,6 +94,7 @@ export default function ResourceManagerContent({
   
   // Default rendering for other resource types
   const componentName = selectedResource.componentName || selectedResourceName;
+  console.log(`Rendering resource component: ${componentName}`);
   
   return (
     <div className="mt-4">
@@ -103,12 +103,17 @@ export default function ResourceManagerContent({
       </div>
       <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
       {isBrowser() && (
-        <div className="min-h-[400px] relative" id={`resource-wrapper-${componentName}`}>
+        <div 
+          className="min-h-[400px] relative" 
+          id={`resource-wrapper-${componentId.current}`}
+          data-component-name={componentName}
+        >
           <LazyLoad 
             priority={true} 
             showLoader={true} 
             height={400} 
-            delay={100}
+            delay={0}
+            className="resource-wrapper"
           >
             {renderResourceComponent(
               componentName, 

@@ -1,96 +1,162 @@
+
 import { useState } from "react";
-import ResourceForm from "../ResourceForm";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 interface MarketSizeEstimatorProps {
   stepId: number;
   substepTitle: string;
+  subsubstepTitle?: string | null;
 }
 
-export default function MarketSizeEstimator({ stepId, substepTitle }: MarketSizeEstimatorProps) {
-  const [formData, setFormData] = useState({
-    tam_value: "",
-    tam_description: "",
-    sam_value: "",
-    sam_description: "",
-    som_value: "",
-    som_description: ""
+export default function MarketSizeEstimator({
+  stepId,
+  substepTitle,
+  subsubstepTitle
+}: MarketSizeEstimatorProps) {
+  const [market, setMarket] = useState({
+    tam: 1000000,
+    sam: 200000,
+    som: 40000,
+    currency: "€",
+    tamName: "Total Available Market",
+    samName: "Serviceable Available Market",
+    somName: "Serviceable Obtainable Market"
   });
+  
+  console.log("MarketSizeEstimator rendered", { stepId, substepTitle });
 
-  const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({
+  const handleChange = (field: keyof typeof market, value: any) => {
+    setMarket(prev => ({
       ...prev,
-      [field]: value
+      [field]: field === 'tam' || field === 'sam' || field === 'som' 
+        ? parseInt(value) || 0 
+        : value
     }));
   };
 
+  const data = [
+    { name: "TAM", value: market.tam, color: "#3b82f6" },
+    { name: "SAM", value: market.sam, color: "#10b981" },
+    { name: "SOM", value: market.som, color: "#6366f1" }
+  ];
+
+  const formatter = new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0
+  });
+
   return (
-    <ResourceForm
-      stepId={stepId}
-      substepTitle={substepTitle}
-      resourceType="market_size_estimator"
-      title="Estimateur de taille de marché (TAM/SAM/SOM)"
-      description="Calculez la taille de votre marché total, serviceable et votre part atteignable."
-      formData={formData}
-      onDataSaved={data => setFormData(data)}
-    >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-        {/* TAM */}
-        <Card className="p-4 border-primary/20 bg-primary/5">
-          <Label className="block font-medium mb-2">TAM – Marché total</Label>
-          <Input
-            type="text"
-            placeholder="Ex: 2 000 000 €"
-            value={formData.tam_value}
-            onChange={(e) => handleChange("tam_value", e.target.value)}
-          />
-          <Textarea
-            className="mt-3"
-            placeholder="Qui sont tous les utilisateurs ou clients concernés par la problématique au niveau global ?"
-            value={formData.tam_description}
-            onChange={(e) => handleChange("tam_description", e.target.value)}
-          />
+    <div className="p-4">
+      <h2 className="text-2xl font-bold mb-6">Estimation du marché TAM/SAM/SOM</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Card className="p-4 bg-blue-500/10 border-blue-500/30">
+          <Label className="text-blue-400">TAM (Total Available Market)</Label>
+          <div className="flex items-center mt-2">
+            <Input
+              type="number"
+              min="0"
+              value={market.tam}
+              onChange={(e) => handleChange("tam", e.target.value)}
+              className="border-blue-500/30 focus:ring-blue-500"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Taille totale du marché pour votre produit/service.
+          </p>
         </Card>
 
-        {/* SAM */}
-        <Card className="p-4 border-blue-200/20 bg-blue-50/10">
-          <Label className="block font-medium mb-2">SAM – Marché accessible</Label>
-          <Input
-            type="text"
-            placeholder="Ex: 800 000 €"
-            value={formData.sam_value}
-            onChange={(e) => handleChange("sam_value", e.target.value)}
-          />
-          <Textarea
-            className="mt-3"
-            placeholder="Quel segment du marché total pouvez-vous raisonnablement adresser avec votre offre ?"
-            value={formData.sam_description}
-            onChange={(e) => handleChange("sam_description", e.target.value)}
-          />
+        <Card className="p-4 bg-green-500/10 border-green-500/30">
+          <Label className="text-green-400">SAM (Serviceable Available Market)</Label>
+          <div className="flex items-center mt-2">
+            <Input
+              type="number"
+              min="0"
+              max={market.tam}
+              value={market.sam}
+              onChange={(e) => handleChange("sam", e.target.value)}
+              className="border-green-500/30 focus:ring-green-500"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Segment du marché que vous pouvez réellement servir.
+          </p>
         </Card>
 
-        {/* SOM */}
-        <Card className="p-4 border-emerald-200/20 bg-emerald-50/10">
-          <Label className="block font-medium mb-2">SOM – Marché atteignable</Label>
-          <Input
-            type="text"
-            placeholder="Ex: 120 000 €"
-            value={formData.som_value}
-            onChange={(e) => handleChange("som_value", e.target.value)}
-          />
-          <Textarea
-            className="mt-3"
-            placeholder="Quelle part pouvez-vous atteindre à court terme (1 à 3 ans) avec vos ressources actuelles ?"
-            value={formData.som_description}
-            onChange={(e) => handleChange("som_description", e.target.value)}
-          />
+        <Card className="p-4 bg-indigo-500/10 border-indigo-500/30">
+          <Label className="text-indigo-400">SOM (Serviceable Obtainable Market)</Label>
+          <div className="flex items-center mt-2">
+            <Input
+              type="number"
+              min="0"
+              max={market.sam}
+              value={market.som}
+              onChange={(e) => handleChange("som", e.target.value)}
+              className="border-indigo-500/30 focus:ring-indigo-500"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Part que vous pouvez réalistement obtenir.
+          </p>
         </Card>
-
       </div>
-    </ResourceForm>
+
+      <Card className="p-6 bg-slate-800">
+        <h3 className="text-xl font-bold mb-4">Visualisation</h3>
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                label={({name, value}) => `${name}: ${formatter.format(value)}`}
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => formatter.format(Number(value))} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+      
+      <div className="mt-6">
+        <h3 className="text-lg font-bold mb-2">Résumé</h3>
+        <ul className="space-y-2 text-sm">
+          <li className="flex justify-between">
+            <span className="font-medium">TAM:</span>
+            <span>{formatter.format(market.tam)}</span>
+          </li>
+          <li className="flex justify-between">
+            <span className="font-medium">SAM:</span>
+            <span>{formatter.format(market.sam)}</span>
+          </li>
+          <li className="flex justify-between">
+            <span className="font-medium">SOM:</span>
+            <span>{formatter.format(market.som)}</span>
+          </li>
+          <li className="flex justify-between">
+            <span className="font-medium">Ratio SAM/TAM:</span>
+            <span>{((market.sam / market.tam) * 100).toFixed(1)}%</span>
+          </li>
+          <li className="flex justify-between">
+            <span className="font-medium">Ratio SOM/SAM:</span>
+            <span>{((market.som / market.sam) * 100).toFixed(1)}%</span>
+          </li>
+        </ul>
+      </div>
+    </div>
   );
 }

@@ -21,7 +21,8 @@ export default function LazyLoad({
   priority = true // Always prioritize loading by default
 }: LazyLoadProps) {
   const [isLoaded, setIsLoaded] = useState(priority);
-  const [initialRender, setInitialRender] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
+  const componentRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef(true);
   const timeoutRef = useRef<number | null>(null);
   
@@ -32,6 +33,7 @@ export default function LazyLoad({
     
     // If priority is true, show content immediately
     if (priority) {
+      console.log("LazyLoad: Priority mode - showing content immediately");
       setIsLoaded(true);
       return;
     }
@@ -61,30 +63,45 @@ export default function LazyLoad({
     };
   }, [delay, priority, isLoaded]);
 
-  // UseEffect to mark initial render completed
+  // Effect for intersection observer to detect when component is in viewport
   useEffect(() => {
-    // Use requestAnimationFrame to ensure we're in the next paint cycle
-    requestAnimationFrame(() => {
-      if (mountedRef.current) {
-        setInitialRender(false);
-      }
-    });
-  }, []);
+    if (!componentRef.current || priority) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && mountedRef.current) {
+          setIsVisible(true);
+          console.log("LazyLoad: Component is now visible in viewport");
+          
+          if (!isLoaded && mountedRef.current) {
+            console.log("LazyLoad: Loading content due to visibility");
+            setIsLoaded(true);
+          }
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    observer.observe(componentRef.current);
+    
+    return () => {
+      observer.disconnect();
+    };
+  }, [isLoaded, priority]);
 
-  if (!isLoaded) {
-    return (
-      <div className={`w-full ${className}`} style={{ height }}>
-        {showLoader ? (
+  return (
+    <div ref={componentRef} className={`w-full ${className}`} style={{ height: isLoaded ? 'auto' : height }}>
+      {!isLoaded ? (
+        showLoader ? (
           <div className="flex items-center justify-center h-full">
             <LoadingIndicator size="sm" />
           </div>
         ) : (
           <Skeleton className="h-full w-full" />
-        )}
-      </div>
-    );
-  }
-
-  // Return children directly when loaded with a key to force remounting
-  return <div key={initialRender ? 'initial' : 'loaded'}>{children}</div>;
+        )
+      ) : (
+        <div className="lazy-loaded-content">{children}</div>
+      )}
+    </div>
+  );
 }
