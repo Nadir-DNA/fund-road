@@ -6,6 +6,7 @@ import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { Suspense, lazy } from "react";
 import CourseContentDisplay from "@/components/journey/CourseContentDisplay";
 import { toast } from "@/components/ui/use-toast";
+import StepNavigation from "@/components/journey/step-detail/StepNavigation";
 
 interface Resource {
   id: string;
@@ -60,7 +61,7 @@ export default function SubstepPage() {
       
       const { data, error } = await supabase
         .from("entrepreneur_resources")
-        .select("id, course_content, resource_url, component_name, resource_type, title")
+        .select("id, course_content, file_url, component_name, resource_type, title")
         .eq("step_id", stepId)
         .eq("substep_title", decodeURIComponent(substepTitle));
       
@@ -77,7 +78,7 @@ export default function SubstepPage() {
         id: r.id,
         resource_type: r.resource_type,
         course_content: r.course_content,
-        url: r.resource_url,
+        url: r.file_url,
         component_name: r.component_name,
         title: r.title
       })) as Resource[];
@@ -191,6 +192,8 @@ export default function SubstepPage() {
           </pre>
         </details>
       )}
+
+      <StepNavigation stepId={stepId} substepTitle={substepTitle} />
     </div>
   );
 }
