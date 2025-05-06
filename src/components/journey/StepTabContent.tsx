@@ -16,7 +16,6 @@ interface StepTabContentProps {
   materials: any[];
   courseMaterialsLoading: boolean;
   courseError: string | null;
-  showResourcesTab?: boolean;
 }
 
 export default function StepTabContent({ 
@@ -25,13 +24,12 @@ export default function StepTabContent({
   stepTitle,
   materials, 
   courseMaterialsLoading, 
-  courseError,
-  showResourcesTab = false
+  courseError 
 }: StepTabContentProps) {
   // Use our hook to manage tab state
   const [searchParams] = useSearchParams();
   const selectedResource = searchParams.get('resource');
-  const { activeTab, handleTabChange } = useStepTabs(showResourcesTab ? "resources" : null);
+  const { activeTab, handleTabChange } = useStepTabs(selectedResource);
   
   // Determine if we have course content
   const hasCourseContent = materials && materials.length > 0 && materials[0].course_content;
@@ -54,7 +52,7 @@ export default function StepTabContent({
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-6">
       <TabsList>
-        <TabsTrigger value="overview">Aperçu</TabsTrigger>
+        <TabsTrigger value="overview">Cours</TabsTrigger>
         <TabsTrigger value="resources">Ressources</TabsTrigger>
       </TabsList>
       

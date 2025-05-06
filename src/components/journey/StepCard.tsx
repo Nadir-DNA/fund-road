@@ -1,91 +1,77 @@
 
 import { useState } from "react";
-import { Step } from "@/types/journey";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Step, SubStep } from "@/types/journey";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChevronDown, ChevronUp, CheckCircle } from "lucide-react";
+import SubstepButton from "./SubstepButton";
 
 interface StepCardProps {
   step: Step;
   isSelected: boolean;
   onClick: () => void;
-  onSubStepClick: (subStep: any) => void;
+  onSubStepClick: (substep: SubStep) => void;
 }
 
-export default function StepCard({
-  step,
-  isSelected,
-  onClick,
-  onSubStepClick,
-}: StepCardProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const handleToggle = (e: React.MouseEvent) => {
+export default function StepCard({ step, isSelected, onClick, onSubStepClick }: StepCardProps) {
+  const [isExpanded, setIsExpanded] = useState(isSelected);
+  
+  const toggleExpand = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsOpen(!isOpen);
+    setIsExpanded(!isExpanded);
   };
 
   return (
-    <Card
-      data-step-id={step.id}
-      onClick={onClick}
+    <Card 
       className={cn(
-        "cursor-pointer transition-all border hover:border-primary",
-        isSelected && "border-primary shadow-md"
+        "transition-all duration-200 hover:border-primary/50",
+        isSelected && "border-primary/70"
       )}
     >
-      <CardHeader className="p-4 flex flex-row items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            "w-8 h-8 rounded-full flex items-center justify-center",
-            step.isCompleted ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-500"
-          )}>
-            {step.isCompleted ? (
-              <Check className="h-4 w-4" />
-            ) : (
-              <span>{step.id}</span>
+      <CardHeader 
+        className="cursor-pointer py-3" 
+        onClick={onClick}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            {step.isCompleted && (
+              <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
             )}
+            <CardTitle className="text-base md:text-lg">
+              {step.id}. {step.title}
+            </CardTitle>
           </div>
-          <CardTitle className="text-lg">{step.title}</CardTitle>
-        </div>
-        
-        {step.subSteps && step.subSteps.length > 0 && (
-          <button
-            onClick={handleToggle}
-            className="p-2 rounded-full hover:bg-gray-100"
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleExpand}
           >
-            {isOpen ? (
-              <ChevronUp className="h-5 w-5" />
-            ) : (
-              <ChevronDown className="h-5 w-5" />
-            )}
-          </button>
-        )}
+            {isExpanded ? <ChevronUp /> : <ChevronDown />}
+          </Button>
+        </div>
       </CardHeader>
-      
-      {isOpen && step.subSteps && step.subSteps.length > 0 && (
-        <CardContent className="pt-0 pb-4 px-4 border-t mt-1">
-          <ul className="space-y-2">
-            {step.subSteps.map((subStep) => (
-              <li
-                key={subStep.title}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSubStepClick(subStep);
-                }}
-                className="flex items-center justify-between p-2 rounded-md hover:bg-gray-50"
-              >
-                <span className="text-sm">{subStep.title}</span>
-                {subStep.isCompleted && (
-                  <Badge variant="secondary" className="bg-green-100 text-green-600">
-                    Complété
-                  </Badge>
-                )}
-              </li>
-            ))}
-          </ul>
-        </CardContent>
+
+      {isExpanded && (
+        <>
+          <CardContent className="pb-3">
+            <p className="text-sm text-muted-foreground">{step.description}</p>
+          </CardContent>
+          
+          {step.subSteps && step.subSteps.length > 0 && (
+            <CardFooter className="flex flex-col items-stretch pt-0">
+              <div className="grid grid-cols-1 gap-2 w-full">
+                {step.subSteps.map((substep, index) => (
+                  <SubstepButton
+                    key={index}
+                    substep={substep}
+                    onClick={() => onSubStepClick(substep)}
+                  />
+                ))}
+              </div>
+            </CardFooter>
+          )}
+        </>
       )}
     </Card>
   );

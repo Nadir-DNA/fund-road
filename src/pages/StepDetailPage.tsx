@@ -25,20 +25,6 @@ export default function StepDetailPage() {
   
   // Get course content using our custom hook
   const { data: materials, isLoading: courseMaterialsLoading, error: courseError } = useCourseContent(stepId, substepTitle);
-  
-  // Check if we should show resources tab by default based on localStorage
-  const [showResourcesTab, setShowResourcesTab] = useState(false);
-
-  useEffect(() => {
-    // Check if we should show resources tab by default based on URL or localStorage
-    const showResources = localStorage.getItem('showResources') === 'true';
-    
-    if (showResources) {
-      // Clear the localStorage flag
-      localStorage.removeItem('showResources');
-      setShowResourcesTab(true);
-    }
-  }, []);
 
   if (!step) {
     return (
@@ -72,7 +58,6 @@ export default function StepDetailPage() {
         materials={materials}
         courseMaterialsLoading={courseMaterialsLoading}
         courseError={courseError}
-        showResourcesTab={showResourcesTab}
       />
       
       <SubstepList 

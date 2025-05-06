@@ -1,6 +1,5 @@
 
 import React, { useMemo } from "react";
-import LazyLoad from "../LazyLoad";
 
 interface CourseContentDisplayProps {
   stepId: number;
@@ -41,40 +40,38 @@ const CourseContentDisplay = ({ stepId, substepTitle, stepTitle, courseContent }
   }, [courseContent]);
 
   return (
-    <LazyLoad height={400}>
-      <div className="prose prose-sm max-w-none course-content">
-        <style>
-          {`
-          .course-content .list-item {
-            margin-bottom: 0.75rem;
-            line-height: 1.5;
-          }
-          .course-content .list-number {
-            font-weight: 600;
-            margin-right: 0.25rem;
-          }
-          .course-content .bullet-item {
-            margin-bottom: 0.75rem;
-            line-height: 1.5;
-            padding-left: 0.5rem;
-          }
-          .course-content strong {
-            font-weight: 600;
-          }
-          .course-content h2, .course-content h3, .course-content h4 {
-            margin-top: 1.5rem;
-            margin-bottom: 0.75rem;
-            font-weight: 600;
-          }
-          .course-content p {
-            margin-bottom: 1rem;
-            line-height: 1.6;
-          }
-          `}
-        </style>
-        <div dangerouslySetInnerHTML={{ __html: formattedContent.startsWith('<p') ? formattedContent : `<p class="mb-4">${formattedContent}</p>` }} />
-      </div>
-    </LazyLoad>
+    <div className="prose prose-sm max-w-none course-content">
+      <style>
+        {`
+        .course-content .list-item {
+          margin-bottom: 0.75rem;
+          line-height: 1.5;
+        }
+        .course-content .list-number {
+          font-weight: 600;
+          margin-right: 0.25rem;
+        }
+        .course-content .bullet-item {
+          margin-bottom: 0.75rem;
+          line-height: 1.5;
+          padding-left: 0.5rem;
+        }
+        .course-content strong {
+          font-weight: 600;
+        }
+        .course-content h2, .course-content h3, .course-content h4 {
+          margin-top: 1.5rem;
+          margin-bottom: 0.75rem;
+          font-weight: 600;
+        }
+        .course-content p {
+          margin-bottom: 1rem;
+          line-height: 1.6;
+        }
+        `}
+      </style>
+      <div dangerouslySetInnerHTML={{ __html: formattedContent.startsWith('<p') ? formattedContent : `<p class="mb-4">${formattedContent}</p>` }} />
+    </div>
   );
 };
 

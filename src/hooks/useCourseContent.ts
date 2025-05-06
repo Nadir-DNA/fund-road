@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 
 interface CourseContent {
   id: string;
@@ -23,7 +23,7 @@ export function useCourseContent(stepId: number, substepTitle: string | null) {
       setError(null);
       
       try {
-        console.log(`useCourseContent - Fetching for stepId: ${stepId}, substepTitle: ${substepTitle || 'main'}`);
+        console.log(`useCourseContent - Fetching for stepId: ${stepId}, substepTitle: ${substepTitle || 'main step'}`);
         
         // Basic validation
         if (!stepId || isNaN(stepId)) {
@@ -42,9 +42,6 @@ export function useCourseContent(stepId: number, substepTitle: string | null) {
         } else {
           query = query.is('substep_title', null);
         }
-        
-        // Optional filter for course content
-        // query = query.eq('resource_type', 'course');
         
         // Execute query
         const { data, error: supabaseError } = await query;

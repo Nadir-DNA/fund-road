@@ -1,9 +1,9 @@
 
 import { useState, useEffect } from "react";
 import { useCourseContent } from "@/hooks/useCourseContent";
-import CourseContentDisplay from "./CourseContentDisplay";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { supabase } from "@/integrations/supabase/client";
+import ResourceCard from "./ResourceCard";
 
 interface ResourcesListProps {
   stepId: number;
@@ -12,50 +12,54 @@ interface ResourcesListProps {
 }
 
 export default function ResourcesList({ stepId, substepTitle, stepTitle }: ResourcesListProps) {
-  const { data: resources, isLoading, error } = useCourseContent(stepId, substepTitle);
-  const [directResources, setDirectResources] = useState<any[]>([]);
-  const [directLoading, setDirectLoading] = useState(true);
+  const [resources, setResources] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  console.log(`ResourcesList - Rendering with stepId: ${stepId}, substepTitle: ${substepTitle || 'main'}`);
-  console.log(`ResourcesList - Resources available: ${resources?.length || 0}`);
-  
-  // Direct query for debugging
   useEffect(() => {
-    const fetchDirectly = async () => {
-      setDirectLoading(true);
+    const fetchResources = async () => {
+      setIsLoading(true);
+      
       try {
-        console.log(`ResourcesList - Direct query for stepId: ${stepId}, substepTitle: ${substepTitle || 'NULL'}`);
+        console.log(`ResourcesList - Fetching resources for stepId: ${stepId}, substepTitle: ${substepTitle || 'main'}`);
         
+        // Build query
         let query = supabase
           .from('entrepreneur_resources')
           .select('*')
           .eq('step_id', stepId);
-        
+          
+        // Filter by substep_title
         if (substepTitle) {
           query = query.eq('substep_title', substepTitle);
         } else {
           query = query.is('substep_title', null);
         }
         
-        const { data, error } = await query;
+        // Filter to exclude course type resources
+        query = query.neq('resource_type', 'course');
         
-        if (error) {
-          console.error("ResourcesList - Direct query error:", error);
-        } else {
-          console.log(`ResourcesList - Direct query results: ${data?.length || 0} items`, data);
-          setDirectResources(data || []);
+        // Execute query
+        const { data, error: supabaseError } = await query;
+        
+        if (supabaseError) {
+          throw new Error(supabaseError.message);
         }
+        
+        console.log(`ResourcesList - Found ${data?.length || 0} resources:`, data);
+        setResources(data || []);
       } catch (err) {
-        console.error("ResourcesList - Exception during direct query:", err);
+        console.error('Error fetching resources:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch resources');
       } finally {
-        setDirectLoading(false);
+        setIsLoading(false);
       }
     };
-    
-    fetchDirectly();
+
+    fetchResources();
   }, [stepId, substepTitle]);
-  
-  if (isLoading || directLoading) {
+
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
         <LoadingIndicator size="lg" />
@@ -71,76 +75,24 @@ export default function ResourcesList({ stepId, substepTitle, stepTitle }: Resou
     );
   }
 
-  if ((resources.length === 0) && (directResources.length === 0)) {
+  if (resources.length === 0) {
     return (
       <div className="py-8 text-center">
         <p className="text-gray-500">Aucune ressource disponible pour cette étape.</p>
-        <pre className="mt-4 text-sm text-left p-4 bg-gray-50 rounded overflow-auto">
-          Debug Info: {JSON.stringify({ 
-            stepId, 
-            substepTitle, 
-            queryDetails: { 
-              table: 'entrepreneur_resources',
-              filters: {
-                step_id: stepId,
-                resource_type: 'course',
-                substep_title: substepTitle || 'IS NULL'
-              }
-            },
-            clientInfo: {
-              // Remove reference to supabase.supabaseUrl
-              authMethod: supabase.auth.getSession() ? "Session Present" : "No Session"
-            }
-          }, null, 2)}
-        </pre>
       </div>
     );
   }
 
-  // Display resources from both methods
   return (
-    <div className="space-y-8">
-      {/* Resources from hook */}
-      {resources.length > 0 && (
-        <div className="border rounded-lg p-4 bg-slate-700/30">
-          <h3 className="text-lg font-medium mb-4">Ressources via Hook</h3>
-          {resources.map((resource) => (
-            <div key={resource.id} className="border-b last:border-0 pb-4 mb-4 last:mb-0 last:pb-0">
-              <h4 className="text-lg font-medium mb-2">{resource.title || 'Ressource sans titre'}</h4>
-              {resource.description && (
-                <p className="text-gray-600 mb-4">{resource.description}</p>
-              )}
-              {resource.course_content && (
-                <CourseContentDisplay 
-                  stepId={stepId}
-                  substepTitle={substepTitle}
-                  stepTitle={stepTitle || resource.title || ""}
-                  courseContent={resource.course_content}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-      
-      {/* Direct resources */}
-      {directResources.length > 0 && (
-        <div className="border rounded-lg p-4 mt-6 bg-slate-700/30">
-          <h3 className="text-lg font-medium mb-4">Ressources via Direct Query</h3>
-          {directResources.map((resource, idx) => (
-            <div key={idx} className="border-b last:border-0 pb-4 mb-4 last:mb-0 last:pb-0">
-              <h4 className="text-lg font-medium mb-2">{resource.title || 'Sans titre'}</h4>
-              {resource.description && (
-                <p className="text-gray-600 mb-4">{resource.description}</p>
-              )}
-              <div className="text-sm text-gray-500">
-                Type: {resource.resource_type || 'N/A'}, 
-                Component: {resource.component_name || 'N/A'}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {resources.map((resource) => (
+        <ResourceCard 
+          key={resource.id} 
+          resource={resource}
+          stepId={stepId}
+          substepTitle={substepTitle || ''}
+        />
+      ))}
     </div>
   );
 }

@@ -1,54 +1,67 @@
 
-import { Step } from "@/types/journey";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useState } from "react";
+import { Step, SubStep } from "@/types/journey";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { CheckCircle, Circle, ChevronLeft } from "lucide-react";
 
 interface StepHeaderProps {
   step: Step;
   stepId: number;
-  selectedSubStep: any;
+  selectedSubStep: SubStep | null;
   toggleStepCompletion: (stepId: number) => void;
 }
 
 export default function StepHeader({ 
   step, 
-  stepId,
+  stepId, 
   selectedSubStep,
-  toggleStepCompletion
+  toggleStepCompletion 
 }: StepHeaderProps) {
-  const navigate = useNavigate();
-
+  const [isCompleting, setIsCompleting] = useState(false);
+  
+  const handleToggleCompletion = async () => {
+    setIsCompleting(true);
+    await toggleStepCompletion(stepId);
+    setIsCompleting(false);
+  };
+  
   return (
-    <>
-      <Button 
-        variant="ghost" 
-        onClick={() => navigate('/roadmap')}
-        className="mb-4"
-      >
-        <ChevronLeft className="mr-2 h-4 w-4" /> Retour
-      </Button>
-      
-      <div className="mb-6 flex justify-between items-start">
+    <div className="mb-6">
+      <div className="flex justify-between items-start mb-4">
         <div>
-          <h1 className="text-2xl font-bold">{step.title}</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-2xl font-bold">
+            {step.title}
+            {selectedSubStep && (
+              <span className="text-muted-foreground ml-2">
+                &gt; {selectedSubStep.title}
+              </span>
+            )}
+          </h1>
+          <p className="text-muted-foreground mt-2">
             {selectedSubStep ? selectedSubStep.description : step.description}
           </p>
         </div>
-        <div className="flex items-center">
-          <Checkbox 
-            id={`step-complete-${stepId}`}
-            checked={step.isCompleted} 
-            onCheckedChange={() => toggleStepCompletion(stepId)}
-            className="mr-2"
-          />
-          <label htmlFor={`step-complete-${stepId}`} className="text-sm font-medium">
-            Marquer comme complété
-          </label>
-        </div>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-1 flex items-center gap-2"
+          onClick={handleToggleCompletion}
+          disabled={isCompleting}
+        >
+          {step.isCompleted ? (
+            <>
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <span>Terminé</span>
+            </>
+          ) : (
+            <>
+              <Circle className="h-4 w-4" />
+              <span>Marquer comme terminé</span>
+            </>
+          )}
+        </Button>
       </div>
-    </>
+    </div>
   );
 }

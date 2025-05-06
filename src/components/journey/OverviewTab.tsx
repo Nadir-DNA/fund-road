@@ -14,7 +14,6 @@ interface OverviewTabProps {
 
 export default function OverviewTab({ step, selectedSubStep, isLoading, courseContent }: OverviewTabProps) {
   console.log("OverviewTab - Contenu du cours:", courseContent ? `Disponible (longueur: ${courseContent.length})` : "Non disponible");
-  console.log("Est-ce que le contenu est vide après trim?", !courseContent?.trim());
   
   return (
     <div className="py-4 w-full">
@@ -42,29 +41,17 @@ export default function OverviewTab({ step, selectedSubStep, isLoading, courseCo
               <BookOpen className="h-12 w-12 text-muted-foreground/50 mb-4" />
               <h3 className="text-lg font-semibold mb-2">Contenu non disponible</h3>
               <p className="text-muted-foreground max-w-md">
-                Le contenu de ce cours n'est pas encore disponible. Voici les détails de l'étape en attendant :
+                Le contenu de ce cours n'est pas encore disponible.
               </p>
             </div>
           </Card>
           
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Description détaillée</h3>
-            <p className="text-muted-foreground text-sm sm:text-base">{step.detailedDescription}</p>
-          </div>
-          
-          {step.subSteps && step.subSteps.length > 0 ? (
+          {step.detailedDescription && (
             <div>
-              <h3 className="text-lg font-semibold mb-2">Sous-étapes</h3>
-              <div className="space-y-3">
-                {step.subSteps.map((subStep, i) => (
-                  <li key={i} className="p-3 sm:p-4 border rounded-lg list-none hover:border-primary/50 transition-colors bg-slate-700">
-                    <h4 className="font-medium text-sm sm:text-base">{subStep.title}</h4>
-                    <p className="text-muted-foreground mt-1 text-xs sm:text-sm">{subStep.description}</p>
-                  </li>
-                ))}
-              </div>
+              <h3 className="text-lg font-semibold mb-2">Description détaillée</h3>
+              <p className="text-muted-foreground text-sm sm:text-base">{step.detailedDescription}</p>
             </div>
-          ) : null}
+          )}
         </div>
       )}
     </div>
