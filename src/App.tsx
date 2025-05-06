@@ -3,8 +3,8 @@ import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import NotFound from "@/pages/NotFound";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
-import RoadmapPage from "@/pages/roadmap/RoadmapPage";
-import StepDetailPage from "@/pages/roadmap/StepDetailPage";
+import RoadmapPage from "@/pages/RoadmapPage";
+import StepDetailPage from "@/components/journey/step-detail/StepDetailPage";
 import { useAuth } from "@/hooks/useAuth";
 import { ToastIntegration } from "@/components/ToastIntegration";
 
@@ -39,11 +39,10 @@ function App() {
         {/* Auth page */}
         <Route path="/auth" element={<Auth />} />
         
-        {/* Roadmap with step detail side by side */}
-        <Route path="/roadmap" element={<RoadmapPage />}>
-          <Route path="step/:stepId" element={<StepDetailPage />} />
-          <Route path="step/:stepId/:substepTitle" element={<StepDetailPage />} />
-        </Route>
+        {/* Nouvelle structure de routes */}
+        <Route path="/roadmap" element={<RoadmapPage />} />
+        <Route path="/roadmap/step/:stepId" element={<StepDetailPage />} />
+        <Route path="/roadmap/step/:stepId/:substepTitle" element={<StepDetailPage />} />
         
         {/* Legacy compatibility route - using wrapper components */}
         <Route path="/step/:stepId" element={<StepRedirect />} />

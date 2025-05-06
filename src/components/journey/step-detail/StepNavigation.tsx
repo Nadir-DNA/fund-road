@@ -1,6 +1,6 @@
 
-import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { journeySteps } from "@/data/journeySteps";
 
 interface StepNavigationProps {

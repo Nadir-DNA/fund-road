@@ -92,11 +92,8 @@ export default function StepDetailPage() {
           isLoading={isLoadingCourse}
         />
         
-        <StepNavigation 
-          step={step} 
-          stepId={stepId}
-          substepTitle={substepTitle}
-        />
+        {/* Correction de l'erreur en passant seulement stepId au composant */}
+        <StepNavigation stepId={stepId} />
       </main>
       <Footer />
     </div>
