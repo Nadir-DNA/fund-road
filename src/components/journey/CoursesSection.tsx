@@ -17,12 +17,12 @@ export default function CoursesSection({ courses, stepId, substepTitle }: Course
       <div className="space-y-6">
         {courses.map(course => (
           <div key={course.id} className="bg-slate-700/30 rounded-lg p-6">
-            {course.course_content ? (
+            {course.courseContent ? (
               <CourseContentDisplay 
                 stepId={Number(stepId)} 
                 substepTitle={substepTitle || null}
                 stepTitle={course.title || ""} 
-                courseContent={course.course_content}
+                courseContent={course.courseContent}
               />
             ) : (
               <p>Ce cours n'a pas de contenu.</p>

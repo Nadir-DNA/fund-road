@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import StepNavigation from "@/components/journey/step-detail/StepNavigation";
@@ -15,7 +16,7 @@ export default function SubstepPage() {
   
   console.log("SubstepPage mounted with:", { stepId, substepTitle });
   
-  const { data, error, isLoading } = useSubstepResources(stepId, substepTitle);
+  const { data, error, isLoading, isFetching, refetch } = useSubstepResources(stepId, substepTitle);
 
   if (isLoading) {
     return (
@@ -27,7 +28,17 @@ export default function SubstepPage() {
   }
 
   if (error) {
-    return <ErrorDisplay message={(error as Error).message} />;
+    return (
+      <ErrorDisplay 
+        message={(error as Error).message} 
+        details={{ 
+          stepId, 
+          substepTitle, 
+          error: (error as Error).stack,
+          retry: () => refetch()
+        }} 
+      />
+    );
   }
 
   if (!data || data.length === 0) {
@@ -35,12 +46,20 @@ export default function SubstepPage() {
   }
 
   // Separate courses from other resources
-  const courses = data.filter(r => r.resource_type === "course");
-  const otherResources = data.filter(r => r.resource_type !== "course");
+  const courses = data.filter(r => r.type === "course");
+  const otherResources = data.filter(r => r.type !== "course");
 
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-2xl font-bold mb-8">{substepTitle}</h1>
+      
+      {/* Show loading indicator during background refetches */}
+      {isFetching && !isLoading && (
+        <div className="fixed top-4 right-4 bg-primary/10 rounded-md p-2 z-50 flex items-center">
+          <LoadingIndicator size="sm" />
+          <span className="ml-2 text-xs">Actualization...</span>
+        </div>
+      )}
 
       {/* Course Content Section */}
       <CoursesSection 
@@ -61,8 +80,20 @@ export default function SubstepPage() {
         <details className="mt-10 p-4 border rounded-lg">
           <summary className="cursor-pointer font-medium">Debug Info</summary>
           <pre className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded overflow-auto text-xs">
-            {JSON.stringify({ stepId, substepTitle, resourceCount: data.length }, null, 2)}
+            {JSON.stringify({ 
+              stepId, 
+              substepTitle, 
+              resourceCount: data.length,
+              courseCount: courses.length,
+              otherResourceCount: otherResources.length
+            }, null, 2)}
           </pre>
+          <button 
+            className="mt-2 px-3 py-1 bg-primary text-white text-xs rounded"
+            onClick={() => refetch()}
+          >
+            Refresh Resources
+          </button>
         </details>
       )}
 

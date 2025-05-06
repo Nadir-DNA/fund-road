@@ -22,9 +22,9 @@ const ResourceDisplay = ({ resource, stepId, substepTitle }: ResourceDisplayProp
         >
           Ouvrir la ressource externe
         </a>
-      ) : resource.component_name ? (
+      ) : resource.componentName ? (
         <DynamicResourceComponent 
-          componentName={resource.component_name} 
+          componentName={resource.componentName} 
           stepId={Number(stepId)} 
           substepTitle={substepTitle || ""}
         />
