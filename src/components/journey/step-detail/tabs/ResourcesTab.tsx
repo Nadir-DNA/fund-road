@@ -29,6 +29,8 @@ export default function ResourcesTab({
     const loadResources = () => {
       setIsLoading(true);
       try {
+        console.log(`Loading resources for step ${stepId}, substep ${substepTitle || 'main'}`);
+        
         const stepData = substepTitle
           ? step.subSteps?.find(s => s.title === substepTitle)
           : step;
@@ -37,19 +39,17 @@ export default function ResourcesTab({
         if (stepData) {
           const availableComponentNames = Object.keys(resourceComponentsMap);
           
-          // Create resource objects for all available components that match the step
+          // Create resource objects for components that match the step
           const componentResources: Resource[] = availableComponentNames
             .filter(compName => {
-              // Filter based on the mapping information you provided
-              // This is a simplified version, you'll need to enhance this logic
-              // based on your specific component mapping to steps
+              // Filter based on the mapping for this step/substep
               const isRelevant = isComponentRelevantForStep(compName, stepId, substepTitle);
               return isRelevant;
             })
             .map(componentName => ({
               id: `local-${componentName}`,
               title: formatComponentTitle(componentName),
-              description: `Ressource pour l'étape ${stepId}`,
+              description: `Ressource interactive pour l'étape ${stepId}`,
               componentName,
               type: 'interactive',
               status: 'available'
@@ -149,11 +149,12 @@ function isComponentRelevantForStep(
   stepId: number, 
   substepTitle: string | null
 ): boolean {
-  // This is a simplified mapping, you'll need to expand based on your structure
+  // Mapping based on your provided resource structure
   const mapping: Record<number, Record<string, string[]>> = {
     1: {
       "Identification des besoins ou problèmes": ["UserResearchNotebook"],
-      "Définition de l'opportunité": ["OpportunityDefinition", "MarketSizeEstimator", "CompetitiveAnalysisTable"]
+      "Définition de l'opportunité": ["OpportunityDefinition", "MarketSizeEstimator", "CompetitiveAnalysisTable"],
+      "Recherche utilisateur": ["UserResearchNotebook", "CustomerBehaviorNotes"]
     },
     2: {
       "Construction du problème-solution fit": ["ProblemSolutionCanvas", "PersonaBuilder"],
@@ -165,7 +166,7 @@ function isComponentRelevantForStep(
       "Validation du modèle économique": ["MonetizationTestGrid", "PaidOfferFeedback"]
     },
     4: {
-      "Définition du MVP": ["FeaturePrioritizationMatrix", "MvpSpecification"],
+      "Définition du MVP": ["MVPSelector", "FeaturePrioritizationMatrix", "MvpSpecification"],
       "Feuille de route produit": ["ProductRoadmapEditor"]
     },
     5: {
@@ -177,7 +178,15 @@ function isComponentRelevantForStep(
       "Contenu détaillé": ["BusinessPlanEditor"],
       "Annexes clés": ["FinancialTables", "SwotAnalysis", "GrowthProjection"]
     },
-    // Add more mappings based on your step structure
+    7: {
+      "Structure du pitch investisseur": ["PitchStoryTeller"],
+      "Design & narration": ["PitchStoryTeller"]
+    },
+    8: {
+      "Cartographie des sources": ["FundingMap"],
+      "Outils de levée": ["CapTableEditor", "DilutionSimulator", "TermSheetBuilder"],
+      "Stratégie d'approche": ["InvestorEmailScript", "InvestorObjectionPrep", "InvestorFollowUpPlan"]
+    }
   };
   
   // If no substep is specified, show all resources for the step
@@ -193,7 +202,20 @@ function isComponentRelevantForStep(
   
   // Check if the component is relevant for this specific substep
   const substepMapping = mapping[stepId]?.[substepTitle];
-  return substepMapping ? substepMapping.includes(componentName) : false;
+  if (substepMapping) {
+    return substepMapping.includes(componentName);
+  }
+  
+  // Fallback check if substep title doesn't match exactly
+  const stepMapping = mapping[stepId];
+  if (stepMapping) {
+    // Check all substeps for this step to find a match
+    return Object.values(stepMapping).some(components => 
+      components.includes(componentName)
+    );
+  }
+  
+  return false;
 }
 
 // Helper function to format component name to a readable title
@@ -205,6 +227,7 @@ function formatComponentTitle(componentName: string): string {
     "MarketSizeEstimator": "Estimation TAM / SAM / SOM",
     "CompetitiveAnalysisTable": "Analyse concurrentielle",
     "ProblemSolutionCanvas": "Canvas Problème / Solution",
+    "ProblemSolutionMatrix": "Matrice Problème / Solution",
     "PersonaBuilder": "Fiche Persona utilisateur",
     "UserFeedbackForm": "Fiche de retour utilisateur",
     "ExperimentSummary": "Synthèse des tests utilisateurs",
@@ -214,6 +237,7 @@ function formatComponentTitle(componentName: string): string {
     "MonetizationTestGrid": "Résultats de tests de monétisation",
     "PaidOfferFeedback": "Retour sur offre payante",
     "FeaturePrioritizationMatrix": "Matrice Impact / Effort",
+    "MVPSelector": "Sélecteur de MVP",
     "MvpSpecification": "Cahier des charges fonctionnel",
     "ProductRoadmapEditor": "Roadmap 6-12 mois",
     "LegalStatusSelector": "Assistant de choix de statut",
@@ -226,7 +250,18 @@ function formatComponentTitle(componentName: string): string {
     "FinancialTables": "Tableaux financiers",
     "SwotAnalysis": "SWOT",
     "GrowthProjection": "Projection de croissance",
-    // Ajoutez les autres mappings selon vos besoins
+    "FundingMap": "Cartographie des financements",
+    "CapTableEditor": "Éditeur de cap table",
+    "DilutionSimulator": "Simulateur de dilution",
+    "TermSheetBuilder": "Générateur de term sheet",
+    "PitchStoryTeller": "Storytelling de pitch",
+    "InvestorEmailScript": "Script d'email investisseur",
+    "InvestorObjectionPrep": "Préparation aux objections",
+    "InvestorFollowUpPlan": "Plan de suivi investisseur",
+    "IPSelfAssessment": "Auto-évaluation PI",
+    "IPProceduresChecklist": "Checklist procédures PI",
+    "IPStrategyCanvas": "Canvas stratégie PI",
+    "StartupToolPicker": "Sélecteur d'outils startup"
   };
   
   return titleMap[componentName] || componentName;

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import CourseContentDisplay from "../../CourseContentDisplay";
 
 interface OverviewTabProps {
   stepId: number;
@@ -49,7 +50,8 @@ export default function OverviewTab({
           console.log("Found course:", courses[0]);
           setCourseContent(courses[0].course_content || "");
         } else {
-          setCourseContent("Aucun contenu de cours disponible pour cette étape.");
+          console.log("No course content found");
+          setCourseContent("");
         }
       } catch (err) {
         console.error("Error fetching course content:", err);
@@ -88,7 +90,12 @@ export default function OverviewTab({
   
   return (
     <div className="prose prose-invert max-w-none">
-      <div dangerouslySetInnerHTML={{ __html: courseContent }} />
+      <CourseContentDisplay 
+        stepId={stepId}
+        substepTitle={substepTitle}
+        stepTitle={stepTitle}
+        courseContent={courseContent}
+      />
     </div>
   );
 }
