@@ -5,6 +5,7 @@ import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { resourceComponentsMap } from "../resourceComponentsMap";
 import { toast } from "@/components/ui/use-toast";
 import CourseContentDisplay from "../CourseContentDisplay";
+import { supabase } from "@/integrations/supabase/client";
 
 // Create a stable loading component to prevent re-renders
 const StableLoadingFallback = () => {
@@ -88,6 +89,39 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
   // Use a memoized key to prevent unnecessary re-renders
   const componentKey = `${componentName}-${stepId}-${substepTitle}-${subsubstepTitle || ''}`;
 
+  // Check if user is authenticated
+  const AuthenticatedResourceWrapper = ({ children }: { children: React.ReactNode }) => {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    
+    useEffect(() => {
+      const checkAuth = async () => {
+        const { data } = await supabase.auth.getSession();
+        setIsAuthenticated(!!data.session);
+        setIsLoading(false);
+      };
+      
+      checkAuth();
+    }, []);
+    
+    if (isLoading) {
+      return <StableLoadingFallback />;
+    }
+    
+    if (!isAuthenticated) {
+      return (
+        <div className="text-center p-8">
+          <p className="mb-4 text-amber-400">Vous devez être connecté pour accéder à cette ressource.</p>
+          <a href="/auth" className="text-primary underline">
+            Se connecter
+          </a>
+        </div>
+      );
+    }
+    
+    return <>{children}</>;
+  };
+
   // Return the component with a stable key and error boundary
   try {
     return (
@@ -97,11 +131,13 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
           id={`resource-container-${componentName}`}
           className="resource-component-wrapper"
         >
-          <Component 
-            stepId={stepId} 
-            substepTitle={substepTitle} 
-            subsubstepTitle={subsubstepTitle} 
-          />
+          <AuthenticatedResourceWrapper>
+            <Component 
+              stepId={stepId} 
+              substepTitle={substepTitle} 
+              subsubstepTitle={subsubstepTitle} 
+            />
+          </AuthenticatedResourceWrapper>
         </div>
       </Suspense>
     );

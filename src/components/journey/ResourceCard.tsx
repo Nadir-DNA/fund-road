@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpen, FileText, ExternalLink } from "lucide-react";
@@ -7,6 +7,7 @@ import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { toast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { buildResourceUrl, saveResourceReturnPath } from "@/utils/navigationUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ResourceCardProps {
   resource: any;
@@ -16,9 +17,22 @@ interface ResourceCardProps {
 
 export default function ResourceCard({ resource, stepId, substepTitle }: ResourceCardProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const navigate = useNavigate();
   
-  const handleResourceClick = () => {
+  // Check if the user is authenticated
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) {
+        setUserId(data.session.user.id);
+      }
+    };
+    
+    checkUser();
+  }, []);
+  
+  const handleResourceClick = async () => {
     if (isLoading) return;
     setIsLoading(true);
     
@@ -30,10 +44,61 @@ export default function ResourceCard({ resource, stepId, substepTitle }: Resourc
       return;
     }
 
+    // Check if user is authenticated
+    if (!userId) {
+      console.log("User is not authenticated");
+      toast({
+        title: "Connexion requise",
+        description: "Veuillez vous connecter pour accéder à cette ressource.",
+        variant: "destructive"
+      });
+      
+      // Save the current path for redirecting back after login
+      saveResourceReturnPath(window.location.pathname);
+      setTimeout(() => {
+        setIsLoading(false);
+        navigate("/auth");
+      }, 100);
+      return;
+    }
+
     // Check if this resource has a component to display
     if (resource.componentName) {
       console.log("Navigating to component resource:", resource.componentName);
       try {
+        // Record the resource access in user_resources if it doesn't exist yet
+        try {
+          // Check if the resource already exists for this user
+          const { data: existingResource } = await supabase
+            .from('user_resources')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('step_id', stepId)
+            .eq('substep_title', substepTitle)
+            .eq('resource_type', resource.resource_type || resource.type || 'resource')
+            .maybeSingle();
+            
+          // If the resource doesn't exist, create an initial entry
+          if (!existingResource) {
+            await supabase
+              .from('user_resources')
+              .insert({
+                user_id: userId,
+                step_id: stepId,
+                substep_title: substepTitle,
+                resource_type: resource.resource_type || resource.type || 'resource',
+                content: {}
+              });
+            
+            console.log("Created new user resource entry");
+          } else {
+            console.log("User resource entry already exists:", existingResource.id);
+          }
+        } catch (err) {
+          console.error("Error creating resource entry:", err);
+          // Continue even if this fails
+        }
+        
         // Save current path for potential return
         saveResourceReturnPath(window.location.pathname);
         

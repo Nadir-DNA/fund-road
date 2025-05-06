@@ -1,144 +1,136 @@
 
-import { useState, useEffect } from "react";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import AuthForm from "@/components/auth/AuthForm";
-import BetaTag from "@/components/common/BetaTag";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { useToast } from "@/components/ui/use-toast";
 import { getLastPath, clearLastPath } from "@/utils/navigationUtils";
 
 export default function Auth() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const emailParam = searchParams.get('email');
   const { toast } = useToast();
-  
-  // Set login mode based on URL parameter if available
-  useEffect(() => {
-    if (emailParam) {
-      setIsLogin(true);
-      toast({
-        title: "Vérification d'email",
-        description: "Veuillez vous connecter pour compléter la vérification de votre compte.",
-      });
-    }
-  }, [emailParam, toast]);
-  
-  useEffect(() => {
-    let mounted = true;
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
     
-    // Setup authentication state listener first, then check for existing session
-    const checkAuth = async () => {
-      try {
-        // Set up auth state listener
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (!mounted) return;
-          
-          console.log("Auth state change in Auth page:", event);
-          setIsAuthenticated(!!session);
-          
-          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-            if (session) {
-              console.log("Sign in detected, session found:", session.user.id);
-              // Get last visited page or default to "/"
-              const lastPath = getLastPath() || "/";
-              clearLastPath();
-              
-              setCheckingAuth(false);
-              
-              // Use setTimeout to ensure state updates before navigation
-              setTimeout(() => {
-                if (mounted) navigate(lastPath);
-              }, 100);
-            }
-          } else {
-            setCheckingAuth(false);
-          }
+    try {
+      if (isLogin) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
         });
         
-        // Then check for existing session
-        const { data: { session } } = await supabase.auth.getSession();
+        if (error) throw error;
         
-        if (!mounted) return;
+        toast({
+          title: "Connexion réussie",
+          description: "Bienvenue sur Fund Road!",
+        });
         
-        if (session) {
-          console.log("Existing session found in Auth page:", session.user.id);
-          setIsAuthenticated(true);
-          
-          // Get last visited page or default to "/"
-          const lastPath = getLastPath() || "/";
-          clearLastPath();
-          
-          // Use setTimeout to ensure state updates before navigation
-          setTimeout(() => {
-            if (mounted) navigate(lastPath);
-          }, 100);
+        // Check for return path and redirect
+        const returnPath = getLastPath();
+        clearLastPath();
+        
+        if (returnPath) {
+          navigate(returnPath);
         } else {
-          console.log("No session found in Auth page");
-          setCheckingAuth(false);
+          navigate("/roadmap");
         }
+      } else {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
         
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error("Error checking auth:", error);
-        if (mounted) {
-          setCheckingAuth(false);
-          toast({
-            title: "Erreur d'authentification",
-            description: "Un problème est survenu lors de la vérification de votre authentification",
-            variant: "destructive",
-          });
-        }
+        if (error) throw error;
+        
+        toast({
+          title: "Compte créé",
+          description: "Vérifiez votre email pour confirmer votre compte.",
+        });
       }
-    };
-    
-    checkAuth();
-    
-    return () => {
-      mounted = false;
-    };
-  }, [navigate, toast]);
-  
-  if (checkingAuth) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <LoadingIndicator size="lg" />
-          <p className="text-white/70">Vérification de l'authentification...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  if (isAuthenticated) {
-    return <Navigate to="/" />;
-  }
-  
+    } catch (error: any) {
+      console.error("Erreur:", error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-black text-white overflow-hidden relative">
-      <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.15),transparent_60%)]"></div>
-      <div className="absolute bottom-0 left-0 w-full h-full bg-[radial-gradient(circle_at_bottom_left,rgba(124,58,237,0.15),transparent_60%)]"></div>
-      
-      <BetaTag />
-      <Navbar />
-      
-      <main className="container mx-auto px-4 pt-32 pb-20 flex items-center justify-center">
-        <AuthForm 
-          isLogin={isLogin} 
-          onToggleMode={() => setIsLogin(!isLogin)}
-          initialEmail={emailParam || ""}
-        />
-      </main>
-      
-      <Footer />
+    <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>{isLogin ? "Connexion" : "Créer un compte"}</CardTitle>
+          <CardDescription>
+            {isLogin
+              ? "Connectez-vous pour accéder à votre compte"
+              : "Créez un compte pour commencer"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleAuth} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="votre@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Mot de passe</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+            </div>
+            
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <LoadingIndicator size="sm" />
+              ) : isLogin ? (
+                "Se connecter"
+              ) : (
+                "S'inscrire"
+              )}
+            </Button>
+            
+            <div className="text-center mt-4">
+              <Button
+                variant="link"
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+              >
+                {isLogin
+                  ? "Pas encore de compte ? S'inscrire"
+                  : "Déjà un compte ? Se connecter"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

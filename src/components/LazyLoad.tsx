@@ -35,7 +35,9 @@ export default function LazyLoad({
     if (priority) {
       console.log("LazyLoad: Priority mode - showing content immediately");
       setIsLoaded(true);
-      return;
+      return () => {
+        mountedRef.current = false;
+      };
     }
     
     // Only apply delay when not in priority mode
@@ -90,7 +92,7 @@ export default function LazyLoad({
   }, [isLoaded, priority]);
 
   return (
-    <div ref={componentRef} className={`w-full ${className}`} style={{ height: isLoaded ? 'auto' : height }}>
+    <div ref={componentRef} className={`w-full ${className}`} style={{ minHeight: isLoaded ? 'auto' : height }}>
       {!isLoaded ? (
         showLoader ? (
           <div className="flex items-center justify-center h-full">

@@ -1,51 +1,40 @@
 
-// Add this function to the existing file
+// Define return path storage keys
+const RESOURCE_RETURN_PATH_KEY = 'resourceReturnPath';
+const LAST_PATH_KEY = 'lastPath';
 
-export const isBrowser = () => typeof window !== 'undefined';
-
-export const saveResourceReturnPath = (path: string) => {
-  if (isBrowser()) {
-    localStorage.setItem('resourceReturnPath', path);
-    console.log(`Saved return path: ${path}`);
-  }
-};
-
-export const getResourceReturnPath = () => {
-  if (isBrowser()) {
-    return localStorage.getItem('resourceReturnPath');
-  }
-  return null;
-};
-
-export const clearResourceReturnPath = () => {
-  if (isBrowser()) {
-    localStorage.removeItem('resourceReturnPath');
-  }
-};
-
-export const buildResourceUrl = (stepId: number, substepTitle: string, resourceName: string) => {
+// Build a URL for resource access
+export const buildResourceUrl = (stepId: number, substepTitle: string, resourceComponentName: string): string => {
   const encodedSubstep = encodeURIComponent(substepTitle);
-  return `/step/${stepId}/${encodedSubstep}/resource/${resourceName}`;
+  return `/roadmap/step/${stepId}/${encodedSubstep}?resource=${resourceComponentName}`;
 };
 
-// Add the missing navigation utility functions
-export const saveCurrentPath = (path: string) => {
-  if (isBrowser()) {
-    localStorage.setItem('currentPath', path);
-    console.log(`Saved current path: ${path}`);
-  }
+// Save the path to return to after viewing a resource
+export const saveResourceReturnPath = (path: string): void => {
+  localStorage.setItem(RESOURCE_RETURN_PATH_KEY, path);
 };
 
-export const getLastPath = () => {
-  if (isBrowser()) {
-    return localStorage.getItem('currentPath') || '/';
-  }
-  return '/';
+// Get the resource return path
+export const getResourceReturnPath = (): string | null => {
+  return localStorage.getItem(RESOURCE_RETURN_PATH_KEY);
 };
 
-export const clearLastPath = () => {
-  if (isBrowser()) {
-    localStorage.removeItem('currentPath');
-    console.log('Cleared current path from storage');
-  }
+// Clear the resource return path
+export const clearResourceReturnPath = (): void => {
+  localStorage.removeItem(RESOURCE_RETURN_PATH_KEY);
+};
+
+// Save the current path for later return (e.g. after authentication)
+export const saveCurrentPath = (path: string): void => {
+  localStorage.setItem(LAST_PATH_KEY, path);
+};
+
+// Get the last saved path
+export const getLastPath = (): string | null => {
+  return localStorage.getItem(LAST_PATH_KEY);
+};
+
+// Clear the last saved path
+export const clearLastPath = (): void => {
+  localStorage.removeItem(LAST_PATH_KEY);
 };
