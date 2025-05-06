@@ -3,6 +3,11 @@
 const RESOURCE_RETURN_PATH_KEY = 'resourceReturnPath';
 const LAST_PATH_KEY = 'lastPath';
 
+// Check if code is running in browser environment
+export const isBrowser = (): boolean => {
+  return typeof window !== 'undefined';
+};
+
 // Build a URL for resource access
 export const buildResourceUrl = (stepId: number, substepTitle: string, resourceComponentName: string): string => {
   const encodedSubstep = encodeURIComponent(substepTitle);
