@@ -2,11 +2,13 @@
 import { renderResourceComponent } from "../utils/resourceRenderer";
 import { isBrowser } from "@/utils/navigationUtils";
 import { Resource } from "@/types/journey";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "@/components/ui/use-toast";
 import CourseContentDisplay from "../CourseContentDisplay";
 import LazyLoad from "@/components/LazyLoad";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 interface ResourceManagerContentProps {
   selectedResource: Resource | undefined;
@@ -23,9 +25,13 @@ export default function ResourceManagerContent({
 }: ResourceManagerContentProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [renderAttempts, setRenderAttempts] = useState(0);
+  const renderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
   
   // Effect to handle resource initialization
   useEffect(() => {
+    mountedRef.current = true;
     console.log("ResourceManagerContent: Resource changed or mounted", { 
       resource: selectedResource?.title, 
       componentName: selectedResource?.componentName || selectedResourceName
@@ -34,8 +40,15 @@ export default function ResourceManagerContent({
     setIsLoading(true);
     setError(null);
     
+    // Clear any existing timeout
+    if (renderTimeoutRef.current) {
+      clearTimeout(renderTimeoutRef.current);
+    }
+    
     // Short timer to ensure component is rendered
-    const timer = setTimeout(() => {
+    renderTimeoutRef.current = setTimeout(() => {
+      if (!mountedRef.current) return;
+      
       if (!selectedResource) {
         setError("Ressource non trouvée ou non disponible.");
         console.warn(`Resource not found: ${selectedResourceName} for step ${stepId}, substep ${selectedSubstepTitle}`);
@@ -49,16 +62,45 @@ export default function ResourceManagerContent({
       setIsLoading(false);
     }, 300);
     
+    // Set a safety timeout to prevent indefinite loading state
+    const safetyTimeout = setTimeout(() => {
+      if (isLoading && mountedRef.current) {
+        console.log("Safety timeout triggered - forcing loading to complete");
+        setIsLoading(false);
+      }
+    }, 5000);
+    
     return () => { 
-      clearTimeout(timer);
+      mountedRef.current = false;
+      if (renderTimeoutRef.current) {
+        clearTimeout(renderTimeoutRef.current);
+      }
+      clearTimeout(safetyTimeout);
     };
-  }, [selectedResource, selectedResourceName, stepId, selectedSubstepTitle]);
+  }, [selectedResource, selectedResourceName, stepId, selectedSubstepTitle, renderAttempts]);
+  
+  // Function to retry rendering
+  const handleRetry = () => {
+    console.log("Retrying resource render");
+    setRenderAttempts(prev => prev + 1);
+    setIsLoading(true);
+    setError(null);
+  };
   
   // If resource not found
   if (!selectedResource) {
     return (
       <div className="p-6 text-center border rounded-lg bg-muted/20">
         <p className="text-muted-foreground">{error || "Ressource non trouvée ou non disponible."}</p>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="mt-4"
+          onClick={handleRetry}
+        >
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Réessayer
+        </Button>
       </div>
     );
   }
@@ -102,11 +144,21 @@ export default function ResourceManagerContent({
     <div className="mt-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-medium">{selectedResource.title}</h3>
+        
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleRetry}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <RefreshCw className="h-4 w-4" />
+        </Button>
       </div>
       <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
-      {isBrowser() && (
+      
+      {isBrowser() ? (
         <div 
-          className="min-h-[400px] relative" 
+          className="min-h-[400px] relative border border-slate-700 rounded-lg p-4 bg-slate-800/30" 
           data-component-name={componentName}
         >
           <LazyLoad 
@@ -123,6 +175,10 @@ export default function ResourceManagerContent({
               selectedResource.subsubstepTitle
             )}
           </LazyLoad>
+        </div>
+      ) : (
+        <div className="p-6 text-center border rounded-lg">
+          <p className="text-muted-foreground">Les ressources interactives ne sont disponibles que dans un navigateur.</p>
         </div>
       )}
     </div>

@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useResourceDataLoader } from "./resource/useResourceDataLoader";
 import { useResourceFormState } from "./resource/useResourceFormState";
@@ -6,6 +5,9 @@ import { useResourceActions } from "./resource/useResourceActions";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ * Hook for managing resource data with resilience to network issues
+ */
 export const useResourceData = (
   stepId: number, 
   substepTitle: string,
@@ -19,7 +21,11 @@ export const useResourceData = (
   const firstLoadCompletedRef = useRef(false);
   const previousDataStringRef = useRef("");
   const manualSaveRequestedRef = useRef(false);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const formSubmittedRef = useRef(false);
+  
   const [userId, setUserId] = useState<string | null>(null);
+  const [showOfflineWarning, setShowOfflineWarning] = useState(false);
   
   // Initialize default values with memoization to prevent loops
   const initialValues = useMemo(() => defaultValues || {}, []);
@@ -27,9 +33,13 @@ export const useResourceData = (
   // Check authentication status
   useEffect(() => {
     const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session?.user) {
-        setUserId(data.session.user.id);
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session?.user) {
+          setUserId(data.session.user.id);
+        }
+      } catch (err) {
+        console.warn("Auth check failed:", err);
       }
     };
     
@@ -40,7 +50,8 @@ export const useResourceData = (
   const {
     formData,
     setFormData,
-    handleFormChange
+    handleFormChange,
+    triggerManualUpdate
   } = useResourceFormState(initialValues, (data) => {
     // Skip callbacks during initialization or loops
     if (!isInitializingRef.current && onDataSaved) {
@@ -60,6 +71,7 @@ export const useResourceData = (
   // Use the data loader hook
   const {
     isLoading,
+    isOfflineMode,
     resourceId,
     session,
     fetchSession,
@@ -72,12 +84,27 @@ export const useResourceData = (
     // Check if we really need to update (avoid unnecessary renders)
     if (JSON.stringify(loadedData) !== JSON.stringify(formData)) {
       setFormData(loadedData);
+      
+      // If we're in offline mode and this is the first load, show warning
+      if (loadedData.offlineMode && !showOfflineWarning) {
+        setShowOfflineWarning(true);
+        toast({
+          title: "Mode hors ligne",
+          description: "Vos données seront enregistrées localement et synchronisées ultérieurement",
+          variant: "warning"
+        });
+      }
     }
     
     // Delay the end of initialization to avoid loops
-    setTimeout(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    debounceTimerRef.current = setTimeout(() => {
       isInitializingRef.current = false;
       firstLoadCompletedRef.current = true;
+      debounceTimerRef.current = null;
     }, 500);
   });
 
@@ -94,22 +121,62 @@ export const useResourceData = (
     resourceId
   );
   
+  // If offline, save to localStorage
+  const saveOfflineData = (data: any) => {
+    try {
+      const offlineKey = `offline_resource_${stepId}_${substepTitle}_${resourceType}`;
+      localStorage.setItem(offlineKey, JSON.stringify(data));
+      console.log("Saved data to offline storage");
+      return true;
+    } catch (err) {
+      console.error("Failed to save offline:", err);
+      return false;
+    }
+  };
+  
   // Wrap the manual save handler to set our flag and enforce authentication
   const handleManualSave = async (session: any) => {
     console.log("Manual save requested");
+    formSubmittedRef.current = true;
     
-    if (!session) {
-      // Check for current session
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
+    if (isOfflineMode) {
+      const success = saveOfflineData(formData);
+      if (success) {
         toast({
-          title: "Authentification requise",
-          description: "Vous devez être connecté pour sauvegarder vos données.",
+          title: "Enregistré hors ligne",
+          description: "Vos données seront synchronisées quand la connexion sera rétablie",
+          variant: "default"
+        });
+        return true;
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Impossible d'enregistrer vos données hors ligne",
           variant: "destructive"
         });
         return false;
       }
-      session = data.session;
+    }
+    
+    if (!session) {
+      // Check for current session
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) {
+          toast({
+            title: "Authentification requise",
+            description: "Vous devez être connecté pour sauvegarder vos données.",
+            variant: "destructive"
+          });
+          return false;
+        }
+        session = data.session;
+      } catch (err) {
+        console.error("Failed to check auth:", err);
+        // Fall back to offline mode
+        setShowOfflineWarning(true);
+        return saveOfflineData(formData);
+      }
     }
     
     manualSaveRequestedRef.current = true;
@@ -149,7 +216,7 @@ export const useResourceData = (
   // Auto-save effect triggered when form data changes and user is authenticated
   useEffect(() => {
     // Skip during initialization
-    if (isInitializingRef.current || !userId || !session) return;
+    if (isInitializingRef.current || !userId) return;
     
     // Debounce to avoid too many saves
     const currentDataString = JSON.stringify(formData);
@@ -159,22 +226,41 @@ export const useResourceData = (
       
       console.log("Data changed, triggering auto-save");
       const saveTimeout = setTimeout(() => {
-        handleSave(session);
+        // If we're online and have a session, use the online save
+        if (!isOfflineMode && session) {
+          handleSave(session);
+        } 
+        // Otherwise save to local storage
+        else if (formData) {
+          saveOfflineData(formData);
+        }
+        
         previousDataStringRef.current = currentDataString;
       }, 2000); // 2 second debounce
       
       return () => clearTimeout(saveTimeout);
     }
-  }, [formData, session, userId]);
+  }, [formData, session, userId, isOfflineMode]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   return {
     formData,
     isLoading,
     isSaving,
+    isOfflineMode,
+    showOfflineWarning,
     handleFormChange,
     handleSave,
     handleManualSave,
-    setFormData,
+    setFormData: triggerManualUpdate,
     session,
     userId,
     retryLoading

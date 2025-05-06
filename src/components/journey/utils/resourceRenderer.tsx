@@ -15,8 +15,52 @@ const StableLoadingFallback = () => {
   );
 };
 
+// Create an error boundary component to catch rendering errors
+class ResourceErrorBoundary extends React.Component<
+  { children: React.ReactNode; componentName: string },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode; componentName: string }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error(`Error rendering component ${this.props.componentName}:`, error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="text-center p-4 text-destructive border border-destructive/40 rounded">
+          <p>Erreur lors du chargement du composant</p>
+          <pre className="text-xs mt-2 bg-slate-800 p-2 rounded overflow-auto max-h-[100px]">
+            {this.state.error?.message || "Erreur inconnue"}
+          </pre>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 export const renderResourceComponent = (componentName: string, stepId: number, substepTitle: string, subsubstepTitle?: string | null) => {
   console.log(`Rendering resource: ${componentName} for step ${stepId}, substep ${substepTitle}`);
+  
+  // Offline fallback - provide a minimal placeholder when proper rendering fails
+  const renderOfflinePlaceholder = () => (
+    <div className="p-6 border border-dashed border-slate-700 rounded-lg">
+      <h3 className="mb-4 text-base font-medium text-center">Ressource {componentName}</h3>
+      <p className="text-muted-foreground text-sm text-center">
+        Cette ressource sera disponible quand la connexion sera rétablie
+      </p>
+    </div>
+  );
   
   if (!componentName) {
     return (
@@ -26,7 +70,7 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
     );
   }
   
-  // Check if component exists in the map
+  // Check if component exists in the map with graceful fallback
   const Component = resourceComponentsMap[componentName];
   
   if (!Component) {
@@ -49,22 +93,24 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
   // Use a memoized key to prevent unnecessary re-renders
   const componentKey = `${componentName}-${stepId}-${substepTitle}-${subsubstepTitle || ''}`;
 
-  // Return the component with a stable key and suspense fallback
+  // Return the component with error boundary, stable key and suspense fallback
   try {
     return (
-      <Suspense fallback={<StableLoadingFallback />}>
-        <div 
-          key={componentKey} 
-          id={`resource-container-${componentName}`}
-          className="resource-component-wrapper"
-        >
-          <Component 
-            stepId={stepId} 
-            substepTitle={substepTitle} 
-            subsubstepTitle={subsubstepTitle} 
-          />
-        </div>
-      </Suspense>
+      <ResourceErrorBoundary componentName={componentName}>
+        <Suspense fallback={<StableLoadingFallback />}>
+          <div 
+            key={componentKey} 
+            id={`resource-container-${componentName}`}
+            className="resource-component-wrapper"
+          >
+            <Component 
+              stepId={stepId} 
+              substepTitle={substepTitle} 
+              subsubstepTitle={subsubstepTitle} 
+            />
+          </div>
+        </Suspense>
+      </ResourceErrorBoundary>
     );
   } catch (error) {
     console.error("Error rendering resource component:", error);
@@ -74,13 +120,7 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
       variant: "destructive"
     });
     
-    return (
-      <div className="text-center p-4 text-destructive border border-destructive/40 rounded">
-        <p>Erreur lors du chargement du composant: {componentName}</p>
-        <pre className="text-xs mt-2 bg-slate-800 p-2 rounded overflow-auto max-h-[200px]">
-          {error instanceof Error ? error.message : String(error)}
-        </pre>
-      </div>
-    );
+    // Return the offline fallback as last resort
+    return renderOfflinePlaceholder();
   }
 };
