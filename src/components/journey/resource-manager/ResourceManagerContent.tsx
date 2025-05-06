@@ -2,10 +2,11 @@
 import { renderResourceComponent } from "../utils/resourceRenderer";
 import { isBrowser } from "@/utils/navigationUtils";
 import { Resource } from "@/types/journey";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import CourseContentDisplay from "../CourseContentDisplay";
 import LazyLoad from "@/components/LazyLoad";
+import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 
 interface ResourceManagerContentProps {
   selectedResource: Resource | undefined;
@@ -22,8 +23,6 @@ export default function ResourceManagerContent({
 }: ResourceManagerContentProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isReady, setIsReady] = useState(false);
-  const componentId = useRef(`resource-${Math.random().toString(36).substring(7)}`);
   
   // Effect to handle resource initialization
   useEffect(() => {
@@ -48,17 +47,10 @@ export default function ResourceManagerContent({
         });
       }
       setIsLoading(false);
-      
-      // Additional delay to ensure component is fully loaded
-      setTimeout(() => {
-        setIsReady(true);
-        console.log("Resource manager content marked as ready");
-      }, 200);
     }, 300);
     
-    return () => {
+    return () => { 
       clearTimeout(timer);
-      console.log("ResourceManagerContent: Unmounting");
     };
   }, [selectedResource, selectedResourceName, stepId, selectedSubstepTitle]);
   
@@ -67,6 +59,16 @@ export default function ResourceManagerContent({
     return (
       <div className="p-6 text-center border rounded-lg bg-muted/20">
         <p className="text-muted-foreground">{error || "Ressource non trouvée ou non disponible."}</p>
+      </div>
+    );
+  }
+
+  // Display loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <LoadingIndicator size="md" />
+        <span className="ml-2">Chargement de la ressource...</span>
       </div>
     );
   }
@@ -105,7 +107,6 @@ export default function ResourceManagerContent({
       {isBrowser() && (
         <div 
           className="min-h-[400px] relative" 
-          id={`resource-wrapper-${componentId.current}`}
           data-component-name={componentName}
         >
           <LazyLoad 

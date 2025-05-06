@@ -7,6 +7,7 @@ import { renderResourceComponent } from "../utils/resourceRenderer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 interface ResourcesTabProps {
   stepId: number;
@@ -17,9 +18,9 @@ interface ResourcesTabProps {
 export default function ResourcesTab({ stepId, substepTitle, stepTitle }: ResourcesTabProps) {
   const [manualResources, setManualResources] = useState<any[]>([]);
   const [manualLoading, setManualLoading] = useState<boolean>(true);
-  const [diagnosticInfo, setDiagnosticInfo] = useState<any>(null);
   const [selectedResourceName, setSelectedResourceName] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Check authentication status
   useEffect(() => {
@@ -36,58 +37,57 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
     checkAuth();
   }, []);
 
-  // Manual fetch for debugging and displaying available resources
+  // Fetch resources for this specific step and substep
   useEffect(() => {
     const fetchResourcesManually = async () => {
       setManualLoading(true);
-      console.log("🔍 Manual Fetch Starting...", stepId, substepTitle);
+      setLoadError(null);
+      console.log("🔍 Fetching resources for:", { stepId, substepTitle });
       
       try {
-        let qb = supabase
+        let query = supabase
           .from("entrepreneur_resources")
           .select("*")
           .eq("step_id", stepId);
           
         if (substepTitle) {
-          qb = qb.eq("substep_title", substepTitle);
-          console.log(`⚙️ Query: entrepreneur_resources where step_id=${stepId} and substep_title=${substepTitle}`);
+          query = query.eq("substep_title", substepTitle);
+          console.log(`⚙️ Query: entrepreneur_resources where step_id=${stepId} and substep_title="${substepTitle}"`);
         } else {
-          qb = qb.is("substep_title", null);
+          query = query.is("substep_title", null);
           console.log(`⚙️ Query: entrepreneur_resources where step_id=${stepId} and substep_title IS NULL`);
         }
         
         // Execute query
-        const { data, error } = await qb;
+        const { data, error } = await query;
         
         if (error) {
-          console.error("❌ Error:", error);
-          setDiagnosticInfo({
-            type: "error",
-            message: error.message,
-            details: error
+          console.error("❌ Error fetching resources:", error);
+          setLoadError(error.message);
+          toast({
+            title: "Erreur de chargement",
+            description: "Impossible de récupérer les ressources",
+            variant: "destructive"
           });
         } else {
-          console.log("✅ Returned:", data);
+          console.log("✅ Resources found:", data?.length || 0, data);
           setManualResources(data || []);
-          setDiagnosticInfo({
-            type: "success",
-            count: data?.length || 0,
-            data: data
-          });
+          
+          if (!data || data.length === 0) {
+            console.log("No resources found for this step/substep");
+          }
         }
       } catch (err) {
         console.error("❌ Exception:", err);
-        setDiagnosticInfo({
-          type: "exception",
-          message: err instanceof Error ? err.message : "Unknown error",
-          error: err
-        });
+        setLoadError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setManualLoading(false);
       }
     };
     
-    fetchResourcesManually();
+    if (stepId) {
+      fetchResourcesManually();
+    }
   }, [stepId, substepTitle]);
 
   const handleResourceSelect = (resourceName: string) => {
@@ -135,7 +135,23 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
         onResourceSelect={handleResourceSelect}
       />
       
-      {/* Resource display from manual fetch */}
+      {/* Loading state */}
+      {manualLoading && (
+        <div className="flex items-center justify-center py-12">
+          <LoadingIndicator size="md" />
+          <span className="ml-2 text-muted-foreground">Chargement des ressources...</span>
+        </div>
+      )}
+      
+      {/* Error state */}
+      {loadError && (
+        <div className="mt-4 p-4 border border-destructive/20 bg-destructive/10 rounded-lg">
+          <p className="text-destructive font-medium">Erreur de chargement</p>
+          <p className="text-sm text-muted-foreground mt-1">{loadError}</p>
+        </div>
+      )}
+      
+      {/* Resources display from manual fetch */}
       {!manualLoading && manualResources.length > 0 && (
         <div className="mt-8 border-t pt-4">
           <h3 className="font-medium mb-4">Ressources directement disponibles</h3>
@@ -167,16 +183,8 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
         </div>
       )}
       
-      {/* Loading state */}
-      {manualLoading && (
-        <div className="flex items-center justify-center py-12">
-          <LoadingIndicator size="md" />
-          <span className="ml-2 text-muted-foreground">Chargement des ressources...</span>
-        </div>
-      )}
-      
       {/* Empty state */}
-      {!manualLoading && manualResources.length === 0 && (
+      {!manualLoading && manualResources.length === 0 && !loadError && (
         <div className="mt-6 p-6 border rounded-lg text-center">
           <p className="text-muted-foreground">
             Aucune ressource trouvée pour cette étape.

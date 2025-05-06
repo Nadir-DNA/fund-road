@@ -1,145 +1,160 @@
 
-import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, ExternalLink, FileText, BookOpenCheck } from "lucide-react";
+import { BookOpen, FileText, ExternalLink } from "lucide-react";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import { Resource } from "@/types/journey";
 import { toast } from "@/components/ui/use-toast";
-import { saveResourceReturnPath } from "@/utils/navigationUtils";
+import { useNavigate } from "react-router-dom";
+import { buildResourceUrl, saveResourceReturnPath } from "@/utils/navigationUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ResourceCardProps {
-  resource: Resource;
+  resource: any;
   stepId: number;
   substepTitle: string;
   subsubstepTitle?: string | null;
+  onClick?: () => void;
 }
 
-export default function ResourceCard({
-  resource,
-  stepId,
+export default function ResourceCard({ 
+  resource, 
+  stepId, 
   substepTitle,
-  subsubstepTitle
+  subsubstepTitle,
+  onClick 
 }: ResourceCardProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const navigate = useNavigate();
-  const isNavigatingRef = useRef(false);
-  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Clear any lingering timeouts on unmount
+  // Check if the user is authenticated
   useEffect(() => {
-    return () => {
-      if (clickTimeoutRef.current) {
-        clearTimeout(clickTimeoutRef.current);
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) {
+        setUserId(data.session.user.id);
       }
     };
+    
+    checkUser();
   }, []);
   
-  const handleResourceClick = () => {
-    // Prevent multiple clicks or navigation in progress
-    if (isNavigatingRef.current || isLoading) {
-      console.log("Navigation already in progress, ignoring click");
+  const handleResourceClick = async () => {
+    // If onClick callback provided, use that directly
+    if (onClick) {
+      onClick();
       return;
     }
     
-    // Set loading state and navigation lock
+    if (isLoading) return;
     setIsLoading(true);
-    isNavigatingRef.current = true;
     
-    console.log(`Resource clicked: ${resource.title}`);
-    
-    // Handle external URL resources
-    if (resource.url) {
-      console.log(`Opening external URL: ${resource.url}`);
-      window.open(resource.url, '_blank');
-      
-      // Reset loading state after a short delay
-      clickTimeoutRef.current = setTimeout(() => {
-        setIsLoading(false);
-        isNavigatingRef.current = false;
-      }, 300);
-      
+    // If there's a direct URL, open it
+    if (resource.file_url) {
+      console.log("Opening external resource:", resource.file_url);
+      window.open(resource.file_url, '_blank');
+      setTimeout(() => setIsLoading(false), 300);
       return;
     }
 
-    // Get component name from resource or fallback to type-based component
-    const componentName = resource.componentName || 
-      (resource.type === 'course' ? 'CourseContentDisplay' : undefined);
-    
-    if (componentName && stepId && substepTitle) {
+    // Check if user is authenticated for protected resources
+    if (!userId) {
+      console.log("User is not authenticated");
+      toast({
+        title: "Connexion requise",
+        description: "Veuillez vous connecter pour accéder à cette ressource.",
+        variant: "destructive"
+      });
+      
+      // Save the current path for redirecting back after login
+      saveResourceReturnPath(window.location.pathname);
+      setTimeout(() => {
+        setIsLoading(false);
+        navigate("/auth");
+      }, 100);
+      return;
+    }
+
+    // Check if this resource has a component to display
+    if (resource.componentName || resource.component_name) {
+      const componentName = resource.componentName || resource.component_name;
+      console.log("Navigating to component resource:", componentName);
       try {
-        console.log(`Navigating to component: ${componentName}`);
-        
-        // Save current path for back navigation
-        saveResourceReturnPath(window.location.pathname + window.location.search);
-        
-        // Make sure to encode the substep title for the URL
-        const encodedSubstep = encodeURIComponent(substepTitle);
-        const resourceUrl = `/step/${stepId}/${encodedSubstep}/resource/${componentName}`;
-        console.log("Navigating to resource:", resourceUrl);
-        
-        // For course resources, save content to localStorage
-        if (resource.type === 'course' && resource.courseContent) {
-          try {
-            localStorage.setItem('currentCourseContent', JSON.stringify({
-              stepId,
-              substepTitle,
-              title: resource.title,
-              content: resource.courseContent
-            }));
-            console.log("Course content saved to localStorage");
-          } catch (err) {
-            console.error("Failed to save course content to localStorage:", err);
+        // Record the resource access in user_resources if it doesn't exist yet
+        try {
+          // Check if the resource already exists for this user
+          const { data: existingResource } = await supabase
+            .from('user_resources')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('step_id', stepId)
+            .eq('substep_title', substepTitle)
+            .eq('resource_type', resource.resource_type || resource.type || 'resource')
+            .maybeSingle();
+            
+          // If the resource doesn't exist, create an initial entry
+          if (!existingResource) {
+            await supabase
+              .from('user_resources')
+              .insert({
+                user_id: userId,
+                step_id: stepId,
+                substep_title: substepTitle,
+                resource_type: resource.resource_type || resource.type || 'resource',
+                content: {}
+              });
+            
+            console.log("Created new user resource entry");
+          } else {
+            console.log("User resource entry already exists:", existingResource.id);
           }
+        } catch (err) {
+          console.error("Error creating resource entry:", err);
+          // Continue even if this fails
         }
         
-        // Navigate with a small delay to ensure state is updated
-        clickTimeoutRef.current = setTimeout(() => {
-          console.log(`Executing navigation to: ${resourceUrl}`);
+        // Save current path for potential return
+        saveResourceReturnPath(window.location.pathname);
+        
+        // Build the resource URL
+        const resourceUrl = buildResourceUrl(stepId, substepTitle, componentName);
+        
+        // Add a small delay to avoid race conditions
+        setTimeout(() => {
           navigate(resourceUrl);
-          
-          // Reset loading state and navigation flag after navigation
-          clickTimeoutRef.current = setTimeout(() => {
-            if (isNavigatingRef.current) {
-              setIsLoading(false);
-              isNavigatingRef.current = false;
-            }
-          }, 500);
+          // Reset loading state after navigating
+          setTimeout(() => setIsLoading(false), 200);
         }, 100);
-      } catch (err) {
-        console.error("Navigation error:", err);
+      } catch (error) {
+        console.error("Navigation error:", error);
         toast({
           title: "Erreur de navigation",
-          description: "Impossible d'accéder à cette ressource",
+          description: "Impossible d'accéder à cette ressource.",
           variant: "destructive"
         });
         setIsLoading(false);
-        isNavigatingRef.current = false;
       }
-    } else {
-      toast({
-        title: "Ressource non disponible",
-        description: "Cette ressource n'a pas de composant associé.",
-        variant: "destructive"
-      });
-      setIsLoading(false);
-      isNavigatingRef.current = false;
+      return;
     }
+    
+    // Fallback if neither URL nor component name is available
+    toast({
+      title: "Ressource non disponible",
+      description: "Cette ressource n'a pas de contenu associé.",
+      variant: "destructive"
+    });
+    
+    setIsLoading(false);
   };
 
   // Define the icon based on resource type
   const getResourceIcon = () => {
-    if (resource.type === 'course') {
-      return <BookOpenCheck className="h-3 w-3 mr-1" />;
-    }
-    switch(resource.componentName) {
-      case 'MarketSizeEstimator':
-        return <FileText className="h-3 w-3 mr-1 text-blue-400" />;
-      case 'OpportunityDefinition':
-        return <FileText className="h-3 w-3 mr-1 text-green-400" />;
-      case 'CompetitiveAnalysisTable':
-        return <FileText className="h-3 w-3 mr-1 text-amber-400" />;
+    switch(resource.resource_type || resource.type) {
+      case 'document':
+        return <FileText className="h-3 w-3 mr-1" />;
+      case 'course':
+        return <BookOpen className="h-3 w-3 mr-1" />;
       default:
         return <FileText className="h-3 w-3 mr-1" />;
     }
@@ -155,7 +170,7 @@ export default function ResourceCard({
       <CardContent className="py-2">
         <div className="flex items-center text-xs text-muted-foreground">
           {getResourceIcon()}
-          <span>{resource.type || 'resource'}</span>
+          <span>{resource.resource_type || resource.type || 'resource'}</span>
         </div>
       </CardContent>
       
@@ -165,20 +180,13 @@ export default function ResourceCard({
           size="sm"
           className="w-full"
           onClick={handleResourceClick}
-          disabled={isLoading || resource.status === 'coming-soon'}
+          disabled={isLoading}
         >
           {isLoading ? (
-            <>
-              <LoadingIndicator size="sm" className="mr-2" />
-              Chargement...
-            </>
-          ) : resource.url ? (
+            <LoadingIndicator size="sm" />
+          ) : resource.file_url ? (
             <>
               Voir <ExternalLink className="ml-1 h-3 w-3" />
-            </>
-          ) : resource.type === 'course' ? (
-            <>
-              <BookOpen className="mr-1 h-3 w-3" /> Ouvrir le cours
             </>
           ) : (
             "Ouvrir"

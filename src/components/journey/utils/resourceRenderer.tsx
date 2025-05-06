@@ -9,22 +9,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Create a stable loading component to prevent re-renders
 const StableLoadingFallback = () => {
-  const [mounted, setMounted] = useState(false);
-  
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setMounted(true);
-    }, 100);
-    
-    return () => {
-      clearTimeout(timeout);
-      console.log("Loading fallback unmounted");
-    };
-  }, []);
-  
   return (
     <div className="flex justify-center p-6 min-h-[200px] items-center">
       <LoadingIndicator size="md" />
+      <span className="ml-2 text-muted-foreground">Chargement de la ressource...</span>
     </div>
   );
 };
@@ -67,19 +55,22 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
   const Component = resourceComponentsMap[componentName];
   
   if (!Component) {
-    console.error(`Resource component not found: ${componentName}`);
+    console.error(`Resource component not found: ${componentName}`, resourceComponentsMap);
     toast({
-      title: "Resource error",
-      description: `The component "${componentName}" was not found in the resource map.`,
+      title: "Ressource indisponible",
+      description: `Le composant "${componentName}" n'a pas été trouvé`,
       variant: "destructive"
     });
     
     return (
-      <div className="text-center p-4 text-muted-foreground border border-red-400 rounded">
-        Resource unavailable: "{componentName}" is not a known component.
+      <div className="text-center p-4 text-muted-foreground border border-destructive/40 rounded">
+        <p className="mb-2">Ressource indisponible: "{componentName}"</p>
         <pre className="text-xs mt-2 bg-slate-800 p-2 rounded">
-          {`Component: ${componentName}\nStep: ${stepId}\nSubstep: ${substepTitle}`}
+          {`Composant: ${componentName}\nÉtape: ${stepId}\nSous-étape: ${substepTitle}`}
         </pre>
+        <p className="text-xs mt-4">
+          Composants disponibles: {Object.keys(resourceComponentsMap).join(', ')}
+        </p>
       </div>
     );
   }
@@ -96,9 +87,15 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
     
     useEffect(() => {
       const checkAuth = async () => {
-        const { data } = await supabase.auth.getSession();
-        setIsAuthenticated(!!data.session);
-        setIsLoading(false);
+        try {
+          const { data } = await supabase.auth.getSession();
+          setIsAuthenticated(!!data.session);
+        } catch (err) {
+          console.error("Auth check error:", err);
+          setIsAuthenticated(false);
+        } finally {
+          setIsLoading(false);
+        }
       };
       
       checkAuth();
@@ -144,14 +141,17 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
   } catch (error) {
     console.error("Error rendering resource component:", error);
     toast({
-      title: "Error",
-      description: "Failed to render the resource component",
+      title: "Erreur",
+      description: "Impossible de charger le composant de ressource",
       variant: "destructive"
     });
     
     return (
-      <div className="text-center p-4 text-red-400 border border-red-400 rounded">
-        Error rendering component: {componentName}
+      <div className="text-center p-4 text-destructive border border-destructive/40 rounded">
+        <p>Erreur lors du chargement du composant: {componentName}</p>
+        <pre className="text-xs mt-2 bg-slate-800 p-2 rounded overflow-auto max-h-[200px]">
+          {error instanceof Error ? error.message : String(error)}
+        </pre>
       </div>
     );
   }
