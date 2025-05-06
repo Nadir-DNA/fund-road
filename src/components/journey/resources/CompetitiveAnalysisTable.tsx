@@ -36,33 +36,75 @@ export default function CompetitiveAnalysisTable({ stepId, substepTitle }: Compe
   };
 
   const handleRemoveRow = (index: number) => {
+    if (formData.length <= 1) {
+      // Don't remove the last row
+      return;
+    }
+    
     const updated = [...formData];
     updated.splice(index, 1);
     setFormData(updated);
   };
 
-  // Handle the case when formData comes from the server and might not be an array
+  // Handle incoming data safely
   const handleDataSaved = (data: any) => {
     console.log("CompetitiveAnalysisTable - Data received:", data);
     
-    // If data is null or undefined, use default array
+    // Initialize with default value for empty data
+    const defaultCompetitor = { name: "", offer: "", positioning: "", price_level: "", weaknesses: "" };
+    
+    // Handle null or undefined data
     if (!data) {
       console.log("No data received, using default competitor structure");
-      setFormData([{ name: "", offer: "", positioning: "", price_level: "", weaknesses: "" }]);
+      setFormData([defaultCompetitor]);
       return;
     }
     
-    // Ensure data is an array
-    if (Array.isArray(data)) {
-      console.log("Data is already an array with length:", data.length);
-      setFormData(data.length > 0 ? data : [{ name: "", offer: "", positioning: "", price_level: "", weaknesses: "" }]);
-    } else if (data && typeof data === 'object') {
-      console.log("Data is an object, converting to array");
-      // If it's a single object, wrap in array
-      setFormData([data]);
-    } else {
+    try {
+      // Handle array data
+      if (Array.isArray(data)) {
+        console.log("Data is an array with length:", data.length);
+        // Use received array if it has items, otherwise use default
+        setFormData(data.length > 0 ? data : [defaultCompetitor]);
+        return;
+      }
+      
+      // Handle single object data - wrap in array
+      if (typeof data === 'object') {
+        console.log("Data is an object, converting to array");
+        setFormData([data]);
+        return;
+      }
+      
+      // Handle string data (possibly JSON)
+      if (typeof data === 'string') {
+        try {
+          const parsed = JSON.parse(data);
+          if (Array.isArray(parsed)) {
+            console.log("Parsed string data into array");
+            setFormData(parsed.length > 0 ? parsed : [defaultCompetitor]);
+          } else if (typeof parsed === 'object') {
+            console.log("Parsed string data into object, converting to array");
+            setFormData([parsed]);
+          } else {
+            console.log("Parsed string data is not valid for competitors");
+            setFormData([defaultCompetitor]);
+          }
+          return;
+        } catch (e) {
+          console.error("Failed to parse string data:", e);
+          setFormData([defaultCompetitor]);
+          return;
+        }
+      }
+      
+      // Fallback for unknown data formats
       console.log("Unrecognized data format, using default");
-      setFormData([{ name: "", offer: "", positioning: "", price_level: "", weaknesses: "" }]);
+      setFormData([defaultCompetitor]);
+      
+    } catch (error) {
+      console.error("Error processing competitor data:", error);
+      setFormData([defaultCompetitor]);
     }
   };
 
@@ -122,7 +164,7 @@ export default function CompetitiveAnalysisTable({ stepId, substepTitle }: Compe
                   />
                 </div>
               </div>
-              {index > 0 && (
+              {formData.length > 1 && (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -136,7 +178,13 @@ export default function CompetitiveAnalysisTable({ stepId, substepTitle }: Compe
           ))
         ) : (
           <div className="p-4 text-center">
-            <p>Chargement des données...</p>
+            <p>Erreur: format de données incorrect</p>
+            <Button 
+              className="mt-4" 
+              onClick={() => setFormData([{ name: "", offer: "", positioning: "", price_level: "", weaknesses: "" }])}
+            >
+              Réinitialiser
+            </Button>
           </div>
         )}
 
