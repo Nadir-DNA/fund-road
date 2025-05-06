@@ -10,6 +10,7 @@ import { useStepTabs } from "@/hooks/useStepTabs";
 import OverviewTab from "@/components/journey/step-detail/OverviewTab";
 import ResourcesTab from "@/components/journey/step-detail/ResourcesTab";
 import StepNavigation from "@/components/journey/step-detail/StepNavigation";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function StepDetailPage() {
   const { stepId: stepIdParam, substepTitle: substepTitleParam } = useParams();
@@ -21,6 +22,12 @@ export default function StepDetailPage() {
   const stepId = parseInt(stepIdParam || "1");
   const substepTitle = substepTitleParam ? decodeURIComponent(substepTitleParam) : null;
   
+  console.log("🔍 StepDetailPage - Loading with:", { 
+    stepId, 
+    substepTitle,
+    selectedResource
+  });
+  
   // Find the current step from the journey steps
   const step = journeySteps.find(s => s.id === stepId);
   const selectedSubStep = step?.subSteps?.find(s => s.title === substepTitle) || null;
@@ -28,26 +35,51 @@ export default function StepDetailPage() {
   // Get course content
   const { materials, isLoading: courseMaterialsLoading } = useCourseMaterials(stepId, substepTitle);
   
+  // Manual fetch for debugging
+  const [manualFetchData, setManualFetchData] = useState<any[]>([]);
+  const [manualFetchError, setManualFetchError] = useState<string | null>(null);
+  
   // Use our custom hook to manage tabs
   const { activeTab, handleTabChange } = useStepTabs(selectedResource);
 
-  console.log("🔍 StepDetailPage - Loading with:", { 
-    stepId, 
-    substepTitle,
-    activeTab,
-    foundMaterials: materials?.length || 0
-  });
-
+  // Manual fetch to debug data loading
   useEffect(() => {
-    // Check if we should show resources tab by default based on URL or localStorage
-    const showResources = localStorage.getItem('showResources') === 'true';
+    const fetchManually = async () => {
+      try {
+        console.log("🔍 Manual Fetch Starting...", stepId, substepTitle);
+        
+        let qb = supabase
+          .from('entrepreneur_resources')
+          .select('*')
+          .eq('step_id', stepId);
+          
+        // Filter by substep_title
+        if (substepTitle) {
+          qb = qb.eq('substep_title', substepTitle);
+          console.log("⚙️ Query: entrepreneur_resources where step_id=" + stepId + " and substep_title=" + substepTitle);
+        } else {
+          qb = qb.is('substep_title', null);
+          console.log("⚙️ Query: entrepreneur_resources where step_id=" + stepId + " and substep_title IS NULL");
+        }
+        
+        const { data, error } = await qb;
+        
+        console.log("✅ Returned:", data);
+        
+        if (error) {
+          console.error("✗ Error:", error);
+          setManualFetchError(error.message);
+        } else {
+          setManualFetchData(data || []);
+        }
+      } catch (err) {
+        console.error("Manual fetch error:", err);
+        setManualFetchError(String(err));
+      }
+    };
     
-    if (showResources) {
-      // Clear the localStorage flag
-      localStorage.removeItem('showResources');
-      setActiveTab("resources");
-    }
-  }, []);
+    fetchManually();
+  }, [stepId, substepTitle]);
 
   if (!step) {
     return (
@@ -100,6 +132,43 @@ export default function StepDetailPage() {
       </Tabs>
       
       <StepNavigation stepId={stepId} />
+      
+      {/* Debug section */}
+      {(materials?.length === 0 || manualFetchData.length === 0) && (
+        <div className="mt-8 p-4 border border-slate-700 rounded-md bg-slate-900">
+          <h3 className="text-lg font-medium mb-2">Debug Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h4 className="text-md font-medium mb-1">Materials from Hook:</h4>
+              <pre className="text-xs overflow-auto p-2 bg-slate-800 rounded h-40">
+                {JSON.stringify(materials || [], null, 2)}
+              </pre>
+            </div>
+            <div>
+              <h4 className="text-md font-medium mb-1">Manual Fetch Results:</h4>
+              {manualFetchError ? (
+                <p className="text-red-500">{manualFetchError}</p>
+              ) : (
+                <pre className="text-xs overflow-auto p-2 bg-slate-800 rounded h-40">
+                  {JSON.stringify(manualFetchData, null, 2)}
+                </pre>
+              )}
+            </div>
+            <div className="md:col-span-2">
+              <h4 className="text-md font-medium mb-1">Query Parameters:</h4>
+              <pre className="text-xs overflow-auto p-2 bg-slate-800 rounded">
+                {JSON.stringify({
+                  stepId,
+                  substepTitle,
+                  activeTab,
+                  selectedResource,
+                  path: window.location.pathname
+                }, null, 2)}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,3 @@
-
 import { useNavigate, useLocation } from "react-router-dom";
 import { journeySteps } from "@/data/journeySteps";
 import { useJourneyProgress } from "@/hooks/useJourneyProgress";
@@ -25,19 +24,26 @@ export default function JourneyTimeline() {
   }
 
   const handleStepClick = (stepId: number) => {
-    navigate(`/roadmap/step/${stepId}`);
+    const url = `/roadmap/step/${stepId}`;
+    console.log("navigate to", url);
+    navigate(url);
   };
 
   const handleSubStepClick = (stepId: number, substepTitle: string) => {
-    navigate(`/roadmap/step/${stepId}/${encodeURIComponent(substepTitle)}`);
+    const url = `/roadmap/step/${stepId}/${encodeURIComponent(substepTitle)}`;
+    console.log("navigate to", url);
+    navigate(url);
   };
 
   const handleResourceClick = (stepId: number, substepTitle: string | null, resourceName: string) => {
+    let url;
     if (substepTitle) {
-      navigate(`/roadmap/step/${stepId}/${encodeURIComponent(substepTitle)}?resource=${resourceName}`);
+      url = `/roadmap/step/${stepId}/${encodeURIComponent(substepTitle)}?resource=${resourceName}`;
     } else {
-      navigate(`/roadmap/step/${stepId}?resource=${resourceName}`);
+      url = `/roadmap/step/${stepId}?resource=${resourceName}`;
     }
+    console.log("navigate to resource", url);
+    navigate(url);
   };
 
   return (
