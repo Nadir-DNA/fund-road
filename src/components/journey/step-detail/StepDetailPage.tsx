@@ -93,7 +93,6 @@ export default function StepDetailPage() {
         />
         
         <StepNavigation 
-          step={step} 
           stepId={stepId}
           substepTitle={substepTitle}
         />
