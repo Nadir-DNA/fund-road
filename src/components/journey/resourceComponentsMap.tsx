@@ -2,9 +2,10 @@
 import { lazy } from "react";
 
 // Define the props interface that all resource components should have
-interface ResourceComponentProps {
+export interface ResourceComponentProps {
   stepId: number;
   substepTitle: string;
+  subsubstepTitle?: string | null;
 }
 
 // Using React.lazy for dynamic imports with proper typing
