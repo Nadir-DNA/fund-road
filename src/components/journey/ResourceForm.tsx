@@ -7,8 +7,8 @@ import FormSkeleton from "./resource-form/FormSkeleton";
 import SaveButton from "./resource-form/SaveButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
-import { saveLastPath } from "@/utils/navigationUtils";
+import { useNavigate, useLocation } from "react-router-dom";
+import { saveLastPath, saveLastSaveTime, markSaveFailed } from "@/utils/navigationUtils";
 
 interface ResourceFormProps {
   stepId: number;
@@ -37,6 +37,7 @@ export default function ResourceForm({
 }: ResourceFormProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Use ref for stable values to prevent loops
   const onDataSavedRef = useRef(onDataSaved);
@@ -81,6 +82,10 @@ export default function ResourceForm({
         // Normal update or manual save
         console.log("Calling onDataSaved from ResourceForm after validation");
         onDataSavedRef.current(data);
+        
+        // Record successful save
+        saveLastSaveTime();
+        
         // Reset manual save flag
         manualSaveTriggeredRef.current = false;
       } else {
@@ -94,6 +99,7 @@ export default function ResourceForm({
             if (onDataSavedRef.current) {
               console.log("Delayed first onDataSaved to prevent loops");
               onDataSavedRef.current(data);
+              saveLastSaveTime();
             }
           }, 500);
         } else {
@@ -124,9 +130,22 @@ export default function ResourceForm({
         
         // Only save if data actually changed since last save
         if (currentFormDataString !== lastSavedDataRef.current && currentFormDataString.length > 20) {
-          console.log("Data changed, triggering final save");
-          handleSave(session);
-          lastSavedDataRef.current = currentFormDataString;
+          console.log("Data changed, triggering final save before unmount");
+          try {
+            handleSave(session);
+            lastSavedDataRef.current = currentFormDataString;
+            saveLastSaveTime();
+            
+            // Show feedback to user
+            toast({
+              title: "Données sauvegardées",
+              description: "Vos modifications ont été enregistrées automatiquement",
+              duration: 3000
+            });
+          } catch (e) {
+            console.error("Error during final save:", e);
+            markSaveFailed();
+          }
         } else {
           console.log("No data changes detected, skipping final save");
         }
@@ -134,9 +153,9 @@ export default function ResourceForm({
         console.log("No session available for final save or save already triggered");
       }
     };
-  }, [handleSave, session, currentFormDataString]);
+  }, [handleSave, session, currentFormDataString, toast]);
 
-  // Handle manual save button click
+  // Handle manual save button click with better error handling
   const onSaveClick = useCallback(() => {
     console.log("Manual save button clicked");
     
@@ -149,7 +168,7 @@ export default function ResourceForm({
       });
       
       // Save current path for later redirection
-      saveLastPath(window.location.pathname);
+      saveLastPath(location.pathname + location.search);
       navigate("/auth");
       return;
     }
@@ -157,12 +176,23 @@ export default function ResourceForm({
     manualSaveTriggeredRef.current = true;
     if (session) {
       console.log("Session available for manual save");
-      handleManualSave(session);
-      lastSavedDataRef.current = currentFormDataString;
+      try {
+        handleManualSave(session);
+        lastSavedDataRef.current = currentFormDataString;
+      } catch (e) {
+        console.error("Error during manual save:", e);
+        markSaveFailed();
+        toast({
+          title: "Erreur de sauvegarde",
+          description: "Une erreur est survenue lors de l'enregistrement des données",
+          variant: "destructive"
+        });
+      }
     } else {
       console.log("No session available for manual save");
+      markSaveFailed();
     }
-  }, [session, handleManualSave, currentFormDataString, isAuthenticated, navigate]);
+  }, [session, handleManualSave, currentFormDataString, isAuthenticated, navigate, location, toast]);
 
   if (isLoading) {
     return <FormSkeleton />;

@@ -26,10 +26,10 @@ export default function Auth() {
     const lastPath = getLastPath();
     
     if (resourcePath) {
-      console.log("Found resource return path:", resourcePath);
+      console.log("Auth: Found resource return path:", resourcePath);
       setReturnPath(resourcePath);
     } else if (lastPath) {
-      console.log("Found last path:", lastPath);
+      console.log("Auth: Found last path:", lastPath);
       setReturnPath(lastPath);
     }
   }, []);
@@ -39,7 +39,7 @@ export default function Auth() {
     const checkAuth = async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        console.log("User already authenticated, redirecting");
+        console.log("Auth: User already authenticated, redirecting");
         handleRedirect();
       }
     };
@@ -49,14 +49,29 @@ export default function Auth() {
 
   const handleRedirect = () => {
     if (returnPath) {
-      console.log("Redirecting to:", returnPath);
-      navigate(returnPath);
-      // Clear stored paths after successful redirect
-      clearResourceReturnPath();
-      clearLastPath();
+      console.log("Auth: Redirecting to:", returnPath);
+      
+      // Add a small delay for better UX
+      setTimeout(() => {
+        navigate(returnPath || "/roadmap");
+        // Clear stored paths after successful redirect
+        clearResourceReturnPath();
+        clearLastPath();
+        
+        toast({
+          title: "Connexion réussie",
+          description: "Redirection vers votre dernière page...",
+          duration: 3000
+        });
+      }, 500);
     } else {
-      console.log("No return path found, redirecting to roadmap");
+      console.log("Auth: No return path found, redirecting to roadmap");
       navigate("/roadmap");
+      
+      toast({
+        title: "Connexion réussie",
+        description: "Bienvenue sur Fund Road!",
+      });
     }
   };
 
@@ -66,12 +81,14 @@ export default function Auth() {
     
     try {
       if (isLogin) {
+        console.log("Auth: Attempting login with email:", email);
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         
         if (error) throw error;
+        console.log("Auth: Login successful");
         
         toast({
           title: "Connexion réussie",
@@ -80,12 +97,14 @@ export default function Auth() {
         
         handleRedirect();
       } else {
+        console.log("Auth: Attempting signup with email:", email);
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
         });
         
         if (error) throw error;
+        console.log("Auth: Signup successful");
         
         toast({
           title: "Compte créé",
@@ -94,11 +113,12 @@ export default function Auth() {
         
         // Let's automatically log in the user if email confirmation is not required
         if (data.session) {
+          console.log("Auth: Auto-login after signup");
           handleRedirect();
         }
       }
     } catch (error: any) {
-      console.error("Erreur:", error);
+      console.error("Auth Error:", error);
       toast({
         title: "Erreur",
         description: error.message || "Une erreur est survenue",

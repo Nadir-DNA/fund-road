@@ -2,6 +2,8 @@
 // Define return path storage keys
 const RESOURCE_RETURN_PATH_KEY = 'resourceReturnPath';
 const LAST_PATH_KEY = 'lastPath';
+const LAST_SAVE_KEY = 'lastSaveTime';
+const SAVE_STATUS_KEY = 'saveStatus';
 
 // Check if code is running in browser environment
 export const isBrowser = (): boolean => {
@@ -61,4 +63,33 @@ export const clearLastPath = (): void => {
 // Add the missing function that's imported in SubStepItem.tsx
 export const saveCurrentPath = (path: string): void => {
   saveLastPath(path);
+};
+
+// Save time of last successful data save
+export const saveLastSaveTime = (): void => {
+  if (isBrowser()) {
+    const now = new Date().toISOString();
+    localStorage.setItem(LAST_SAVE_KEY, now);
+    localStorage.setItem(SAVE_STATUS_KEY, 'success');
+    console.log("Last save time recorded:", now);
+  }
+};
+
+// Get last save time
+export const getLastSaveTime = (): string | null => {
+  if (!isBrowser()) return null;
+  return localStorage.getItem(LAST_SAVE_KEY);
+};
+
+// Mark save as failed
+export const markSaveFailed = (): void => {
+  if (isBrowser()) {
+    localStorage.setItem(SAVE_STATUS_KEY, 'failed');
+  }
+};
+
+// Check if last save was successful
+export const wasSaveSuccessful = (): boolean => {
+  if (!isBrowser()) return false;
+  return localStorage.getItem(SAVE_STATUS_KEY) === 'success';
 };
