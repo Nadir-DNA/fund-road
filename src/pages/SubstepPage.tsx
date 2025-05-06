@@ -12,6 +12,7 @@ interface Resource {
   resource_type: string;
   course_content?: string;
   url?: string;
+  resource_url?: string;
   component_name?: string;
   title?: string;
 }
@@ -57,7 +58,7 @@ export default function SubstepPage() {
       
       const { data, error } = await supabase
         .from("entrepreneur_resources")
-        .select("id, course_content, url, component_name, resource_type, title")
+        .select("id, course_content, resource_url, component_name, resource_type, title")
         .eq("step_id", +stepId)
         .eq("substep_title", decodeURIComponent(substepTitle));
       
@@ -67,7 +68,7 @@ export default function SubstepPage() {
       }
       
       console.log(`Found ${data?.length || 0} resources:`, data);
-      return data as Resource[];
+      return (data || []).map(r => ({ ...r, url: r.resource_url })) as Resource[];
     }
   });
 
