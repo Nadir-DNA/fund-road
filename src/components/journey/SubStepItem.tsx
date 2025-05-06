@@ -6,7 +6,7 @@ import { CheckCircle2, ChevronRight, BookOpen } from "lucide-react";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { buildResourceUrl, saveCurrentPath } from "@/utils/navigationUtils";
 
@@ -20,6 +20,7 @@ interface SubStepItemProps {
 export default function SubStepItem({ subStep, stepId, onToggleCompletion, onClick }: SubStepItemProps) {
   const [loadingResource, setLoadingResource] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   
   const handleResourceClick = (e: React.MouseEvent, resourceComponent: string, resourceTitle: string) => {
     e.preventDefault();
@@ -31,7 +32,7 @@ export default function SubStepItem({ subStep, stepId, onToggleCompletion, onCli
     
     try {
       // Save current path before navigating
-      saveCurrentPath();
+      saveCurrentPath(location.pathname + location.search);
       
       const url = buildResourceUrl(stepId, subStep.title, resourceComponent);
       
