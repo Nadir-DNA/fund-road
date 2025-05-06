@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { resourceComponentsMap } from "../resourceComponentsMap";
 import { toast } from "@/components/ui/use-toast";
@@ -22,7 +22,7 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
       if (savedCourseData) {
         const { content, title } = JSON.parse(savedCourseData);
         return (
-          <Suspense fallback={<div className="flex justify-center p-4"><LoadingIndicator size="sm" /></div>}>
+          <Suspense fallback={<StableLoadingFallback />}>
             <CourseContentDisplay 
               stepId={stepId}
               substepTitle={substepTitle} 
@@ -55,10 +55,33 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
     );
   }
 
-  // More lightweight fallback with reduced timeout
+  // Use a stable loading fallback component to prevent re-renders
   return (
-    <Suspense fallback={<div className="flex justify-center p-4"><LoadingIndicator size="sm" /></div>}>
+    <Suspense fallback={<StableLoadingFallback />}>
       <Component stepId={stepId} substepTitle={substepTitle} subsubstepTitle={subsubstepTitle} />
     </Suspense>
+  );
+};
+
+// Create a stable loading component to prevent re-renders
+const StableLoadingFallback = () => {
+  const [isVisible, setIsVisible] = useState(true);
+  
+  // This will ensure the component doesn't unmount/remount repeatedly
+  useEffect(() => {
+    // This component will stay mounted until the actual component is ready
+    return () => {
+      console.log("Loading fallback unmounting as resource is ready");
+    };
+  }, []);
+  
+  if (!isVisible) {
+    return null;
+  }
+  
+  return (
+    <div className="flex justify-center p-6 min-h-[200px] items-center">
+      <LoadingIndicator size="md" />
+    </div>
   );
 };

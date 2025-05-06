@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,43 +24,64 @@ export default function ResourceCard({
 }: ResourceCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const isNavigatingRef = useRef(false);
   
   const handleResourceClick = () => {
+    if (isNavigatingRef.current) return; // Prevent multiple clicks
+    
     setIsLoading(true);
+    isNavigatingRef.current = true;
     
     if (resource.url) {
       window.open(resource.url, '_blank');
-      setTimeout(() => setIsLoading(false), 300);
+      setTimeout(() => {
+        setIsLoading(false);
+        isNavigatingRef.current = false;
+      }, 300);
       return;
     }
 
-    const componentName = resource.componentName || resource.type === 'course' ? 'CourseContentDisplay' : undefined;
+    const componentName = resource.componentName || (resource.type === 'course' ? 'CourseContentDisplay' : undefined);
     
     if (componentName) {
-      // Save current path for back navigation
-      saveResourceReturnPath(window.location.pathname + window.location.search);
-      
-      // Make sure to encode the substep title for the URL
-      const encodedSubstep = substepTitle ? `/${encodeURIComponent(substepTitle)}` : '';
-      const resourceUrl = `/step/${stepId}${encodedSubstep}/resource/${componentName}`;
-      console.log("Navigating to resource:", resourceUrl);
-      
-      // Add the resource itself to localStorage to ensure its data is available
-      if (resource.type === 'course' && resource.courseContent) {
-        try {
-          localStorage.setItem('currentCourseContent', JSON.stringify({
-            stepId,
-            substepTitle,
-            title: resource.title,
-            content: resource.courseContent
-          }));
-        } catch (err) {
-          console.error("Failed to save course content to localStorage:", err);
+      try {
+        // Save current path for back navigation
+        saveResourceReturnPath(window.location.pathname + window.location.search);
+        
+        // Make sure to encode the substep title for the URL
+        const encodedSubstep = substepTitle ? `/${encodeURIComponent(substepTitle)}` : '';
+        const resourceUrl = `/step/${stepId}${encodedSubstep}/resource/${componentName}`;
+        console.log("Navigating to resource:", resourceUrl);
+        
+        // Add the resource itself to localStorage to ensure its data is available
+        if (resource.type === 'course' && resource.courseContent) {
+          try {
+            localStorage.setItem('currentCourseContent', JSON.stringify({
+              stepId,
+              substepTitle,
+              title: resource.title,
+              content: resource.courseContent
+            }));
+          } catch (err) {
+            console.error("Failed to save course content to localStorage:", err);
+          }
         }
+        
+        navigate(resourceUrl);
+      } catch (err) {
+        console.error("Navigation error:", err);
+        toast({
+          title: "Erreur de navigation",
+          description: "Impossible d'accéder à cette ressource",
+          variant: "destructive"
+        });
+      } finally {
+        // Reset state after a delay
+        setTimeout(() => {
+          setIsLoading(false);
+          isNavigatingRef.current = false;
+        }, 500);
       }
-      
-      navigate(resourceUrl);
-      setTimeout(() => setIsLoading(false), 300);
     } else {
       toast({
         title: "Ressource non disponible",
@@ -68,6 +89,7 @@ export default function ResourceCard({
         variant: "destructive"
       });
       setIsLoading(false);
+      isNavigatingRef.current = false;
     }
   };
 
@@ -100,7 +122,7 @@ export default function ResourceCard({
           size="sm"
           className="w-full"
           onClick={handleResourceClick}
-          disabled={isLoading || resource.status === 'coming-soon'}
+          disabled={isLoading || resource.status === 'coming-soon' || isNavigatingRef.current}
         >
           {isLoading ? (
             <LoadingIndicator size="sm" />

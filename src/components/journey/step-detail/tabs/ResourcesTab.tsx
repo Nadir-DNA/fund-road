@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useRef } from "react";
 import { Step, Resource } from "@/types/journey";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import ResourceCard from "../ResourceCard";
@@ -23,9 +24,14 @@ export default function ResourcesTab({
   const [resources, setResources] = useState<Resource[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+  const initialLoadDone = useRef(false);
   
+  // Load resources only once on mount
   useEffect(() => {
+    if (initialLoadDone.current) return;
+    
     console.log(`Loading resources for step ${stepId}, substep ${substepTitle || 'main'}`);
+    setIsLoading(true);
     
     try {
       // Prioritize identification of resources
@@ -63,6 +69,8 @@ export default function ResourcesTab({
       } else {
         setResources([]);
       }
+      
+      initialLoadDone.current = true;
     } catch (error) {
       console.error("Error loading resources:", error);
       toast({
@@ -115,6 +123,7 @@ export default function ResourcesTab({
             priority={true} 
             showLoader={true}
             height={400}
+            delay={0}
           >
             {renderResourceComponent(
               selectedResource.componentName || "", 

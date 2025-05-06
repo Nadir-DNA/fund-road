@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 
@@ -17,24 +17,32 @@ export default function LazyLoad({
   height = 200, 
   className = "", 
   showLoader = false,
-  delay = 50, // Reduced default delay
-  priority = true // Set default to true for faster loading
+  delay = 0, // No delay by default
+  priority = true // Always prioritize loading by default
 }: LazyLoadProps) {
   const [isLoaded, setIsLoaded] = useState(priority);
-
+  const mountedRef = useRef(false);
+  
   useEffect(() => {
+    mountedRef.current = true;
+    
     // If priority is true, skip the delay
     if (priority) {
       setIsLoaded(true);
       return;
     }
     
-    // Minimal delay to avoid flashes
+    // Only apply delay when not in priority mode
     const timeout = setTimeout(() => {
-      setIsLoaded(true);
+      if (mountedRef.current) {
+        setIsLoaded(true);
+      }
     }, delay);
 
-    return () => clearTimeout(timeout);
+    return () => {
+      mountedRef.current = false;
+      clearTimeout(timeout);
+    };
   }, [delay, priority]);
 
   if (!isLoaded) {
@@ -42,7 +50,7 @@ export default function LazyLoad({
       <div className={`w-full ${className}`} style={{ height }}>
         {showLoader ? (
           <div className="flex items-center justify-center h-full">
-            <LoadingIndicator size="md" />
+            <LoadingIndicator size="sm" />
           </div>
         ) : (
           <Skeleton className="h-full w-full" />
