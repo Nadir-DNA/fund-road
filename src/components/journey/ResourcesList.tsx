@@ -24,12 +24,16 @@ export default function ResourcesList({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [hasSession, setHasSession] = useState<boolean | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Check authentication status
   useEffect(() => {
     const checkAuth = async () => {
       const { data } = await supabase.auth.getSession();
       setHasSession(!!data.session);
+      
+      // Log authentication status
+      console.log("ResourcesList: Auth check completed, user is", data.session ? "authenticated" : "not authenticated");
     };
     
     checkAuth();
@@ -51,8 +55,10 @@ export default function ResourcesList({
           .eq('step_id', stepId);
           
         if (substepTitle) {
+          console.log("Querying with substep:", substepTitle);
           query = query.eq('substep_title', substepTitle);
         } else {
+          console.log("Querying with NULL substep_title");
           query = query.is('substep_title', null);
         }
         
@@ -68,7 +74,37 @@ export default function ResourcesList({
           });
         } else {
           console.log(`Found ${data?.length || 0} resources:`, data);
-          setResources(data || []);
+          
+          // Hard-coded resources for step 1 and substep "Définition de l'opportunité"
+          if (stepId === 1 && substepTitle === "Définition de l'opportunité" && (!data || data.length === 0)) {
+            console.log("Adding hardcoded resources for step 1");
+            const hardcodedResources = [
+              {
+                id: 'opportunity-definition',
+                title: 'Synthèse qualitative',
+                description: 'Définissez votre opportunité entrepreneuriale',
+                component_name: 'OpportunityDefinition',
+                resource_type: 'interactive'
+              },
+              {
+                id: 'market-size-estimator',
+                title: 'Estimation de marché TAM/SAM/SOM',
+                description: 'Calculez la taille de votre marché adressable',
+                component_name: 'MarketSizeEstimator',
+                resource_type: 'interactive'
+              },
+              {
+                id: 'competitive-analysis-table',
+                title: 'Analyse concurrentielle',
+                description: 'Analysez vos concurrents pour identifier votre différenciation',
+                component_name: 'CompetitiveAnalysisTable',
+                resource_type: 'interactive'
+              }
+            ];
+            setResources(hardcodedResources);
+          } else {
+            setResources(data || []);
+          }
         }
       } catch (err) {
         console.error("Exception fetching resources:", err);
@@ -79,7 +115,13 @@ export default function ResourcesList({
     };
     
     fetchResources();
-  }, [stepId, substepTitle, toast]);
+  }, [stepId, substepTitle, toast, retryCount]);
+  
+  // Add a function to retry loading resources
+  const handleRetry = () => {
+    console.log("Retrying resource loading...");
+    setRetryCount(prev => prev + 1);
+  };
 
   if (isLoading) {
     return (
@@ -95,6 +137,12 @@ export default function ResourcesList({
       <div className="p-4 border border-destructive/20 bg-destructive/10 rounded-lg">
         <p className="text-destructive font-medium">Erreur</p>
         <p className="text-sm text-muted-foreground mt-1">{error}</p>
+        <button 
+          className="mt-4 px-4 py-2 text-sm bg-slate-700 rounded-md hover:bg-slate-600"
+          onClick={handleRetry}
+        >
+          Réessayer
+        </button>
       </div>
     );
   }
@@ -103,8 +151,17 @@ export default function ResourcesList({
     return (
       <div className="text-center py-6 border-t">
         <p className="text-muted-foreground">
-          Aucune ressource disponible.
+          Aucune ressource disponible pour cette étape.
         </p>
+        <p className="text-xs mt-2 text-muted-foreground/70">
+          Étape: {stepId}, {substepTitle ? `Sous-étape: ${substepTitle}` : "Étape principale"}
+        </p>
+        <button 
+          className="mt-4 px-4 py-2 text-sm bg-slate-700 rounded-md hover:bg-slate-600"
+          onClick={handleRetry}
+        >
+          Réessayer
+        </button>
       </div>
     );
   }
@@ -121,6 +178,7 @@ export default function ResourcesList({
             substepTitle={substepTitle || ''}
             onClick={() => {
               if (resource.component_name && onResourceSelect) {
+                console.log(`Selecting resource: ${resource.component_name}`);
                 onResourceSelect(resource.component_name);
               }
             }}

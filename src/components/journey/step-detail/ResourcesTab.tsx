@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import ResourcesList from "@/components/journey/ResourcesList";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
   const [selectedResourceName, setSelectedResourceName] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState<number>(0);
 
   // Check authentication status
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
       try {
         const { data } = await supabase.auth.getSession();
         setIsAuthenticated(!!data.session);
+        console.log("ResourcesTab: Auth check completed, user is", data.session ? "authenticated" : "not authenticated");
       } catch (err) {
         console.error("Auth check error:", err);
         setIsAuthenticated(false);
@@ -38,57 +40,87 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
   }, []);
 
   // Fetch resources for this specific step and substep
-  useEffect(() => {
-    const fetchResourcesManually = async () => {
-      setManualLoading(true);
-      setLoadError(null);
-      console.log("🔍 Fetching resources for:", { stepId, substepTitle });
-      
-      try {
-        let query = supabase
-          .from("entrepreneur_resources")
-          .select("*")
-          .eq("step_id", stepId);
-          
-        if (substepTitle) {
-          query = query.eq("substep_title", substepTitle);
-          console.log(`⚙️ Query: entrepreneur_resources where step_id=${stepId} and substep_title="${substepTitle}"`);
-        } else {
-          query = query.is("substep_title", null);
-          console.log(`⚙️ Query: entrepreneur_resources where step_id=${stepId} and substep_title IS NULL`);
-        }
-        
-        // Execute query
-        const { data, error } = await query;
-        
-        if (error) {
-          console.error("❌ Error fetching resources:", error);
-          setLoadError(error.message);
-          toast({
-            title: "Erreur de chargement",
-            description: "Impossible de récupérer les ressources",
-            variant: "destructive"
-          });
-        } else {
-          console.log("✅ Resources found:", data?.length || 0, data);
-          setManualResources(data || []);
-          
-          if (!data || data.length === 0) {
-            console.log("No resources found for this step/substep");
-          }
-        }
-      } catch (err) {
-        console.error("❌ Exception:", err);
-        setLoadError(err instanceof Error ? err.message : "Unknown error");
-      } finally {
-        setManualLoading(false);
-      }
-    };
+  const fetchResourcesManually = useCallback(async () => {
+    setManualLoading(true);
+    setLoadError(null);
+    console.log("🔍 Fetching resources for:", { stepId, substepTitle });
     
+    try {
+      let query = supabase
+        .from("entrepreneur_resources")
+        .select("*")
+        .eq("step_id", stepId);
+        
+      if (substepTitle) {
+        query = query.eq("substep_title", substepTitle);
+        console.log(`⚙️ Query: entrepreneur_resources where step_id=${stepId} and substep_title="${substepTitle}"`);
+      } else {
+        query = query.is("substep_title", null);
+        console.log(`⚙️ Query: entrepreneur_resources where step_id=${stepId} and substep_title IS NULL`);
+      }
+      
+      // Execute query
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error("❌ Error fetching resources:", error);
+        setLoadError(error.message);
+        toast({
+          title: "Erreur de chargement",
+          description: "Impossible de récupérer les ressources",
+          variant: "destructive"
+        });
+      } else {
+        console.log("✅ Resources found:", data?.length || 0);
+        
+        // If no resources returned for key section, add hardcoded ones
+        if (stepId === 1 && substepTitle === "Définition de l'opportunité" && (!data || data.length === 0)) {
+          console.log("Adding default resources for opportunity definition");
+          const defaultResources = [
+            {
+              id: 'opportunity-definition',
+              title: 'Synthèse qualitative',
+              description: 'Définissez votre opportunité entrepreneuriale',
+              component_name: 'OpportunityDefinition',
+              resource_type: 'interactive'
+            },
+            {
+              id: 'market-size-estimator',
+              title: 'Estimation de marché TAM/SAM/SOM',
+              description: 'Calculez la taille de votre marché adressable',
+              component_name: 'MarketSizeEstimator',
+              resource_type: 'interactive'
+            },
+            {
+              id: 'competitive-analysis-table',
+              title: 'Analyse concurrentielle',
+              description: 'Analysez vos concurrents pour identifier votre différenciation',
+              component_name: 'CompetitiveAnalysisTable',
+              resource_type: 'interactive'
+            }
+          ];
+          setManualResources(defaultResources);
+        } else {
+          setManualResources(data || []);
+        }
+        
+        if (!data || data.length === 0) {
+          console.log("No resources found for this step/substep in database");
+        }
+      }
+    } catch (err) {
+      console.error("❌ Exception:", err);
+      setLoadError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setManualLoading(false);
+    }
+  }, [stepId, substepTitle]);
+
+  useEffect(() => {
     if (stepId) {
       fetchResourcesManually();
     }
-  }, [stepId, substepTitle]);
+  }, [stepId, substepTitle, fetchResourcesManually, refreshKey]);
 
   const handleResourceSelect = (resourceName: string) => {
     setSelectedResourceName(resourceName);
@@ -97,6 +129,11 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
 
   const handleBackToList = () => {
     setSelectedResourceName(null);
+  };
+
+  const handleRetry = () => {
+    console.log("Retrying resource load...");
+    setRefreshKey(prev => prev + 1);
   };
 
   // Display selected resource or resource list
@@ -148,6 +185,13 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
         <div className="mt-4 p-4 border border-destructive/20 bg-destructive/10 rounded-lg">
           <p className="text-destructive font-medium">Erreur de chargement</p>
           <p className="text-sm text-muted-foreground mt-1">{loadError}</p>
+          <Button 
+            variant="outline"
+            className="mt-2"
+            onClick={handleRetry}
+          >
+            Réessayer
+          </Button>
         </div>
       )}
       
@@ -183,7 +227,7 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
         </div>
       )}
       
-      {/* Empty state */}
+      {/* Empty state with retry option */}
       {!manualLoading && manualResources.length === 0 && !loadError && (
         <div className="mt-6 p-6 border rounded-lg text-center">
           <p className="text-muted-foreground">
@@ -192,6 +236,13 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
           <p className="text-sm text-muted-foreground/70 mt-2">
             (Étape: {stepId}, {substepTitle ? `Sous-étape: ${substepTitle}` : "Étape principale"})
           </p>
+          <Button 
+            variant="outline"
+            className="mt-4"
+            onClick={handleRetry}
+          >
+            Réessayer le chargement
+          </Button>
         </div>
       )}
       

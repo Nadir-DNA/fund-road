@@ -56,6 +56,8 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
   
   if (!Component) {
     console.error(`Resource component not found: ${componentName}`, Object.keys(resourceComponentsMap));
+    console.log("Available components:", Object.keys(resourceComponentsMap).join(", "));
+    
     toast({
       title: "Ressource indisponible",
       description: `Le composant "${componentName}" n'a pas été trouvé`,
@@ -79,45 +81,6 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
 
   // Use a memoized key to prevent unnecessary re-renders
   const componentKey = `${componentName}-${stepId}-${substepTitle}-${subsubstepTitle || ''}`;
-
-  // Check if user is authenticated
-  const AuthenticatedResourceWrapper = ({ children }: { children: React.ReactNode }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-    
-    useEffect(() => {
-      const checkAuth = async () => {
-        try {
-          const { data } = await supabase.auth.getSession();
-          setIsAuthenticated(!!data.session);
-        } catch (err) {
-          console.error("Auth check error:", err);
-          setIsAuthenticated(false);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      
-      checkAuth();
-    }, []);
-    
-    if (isLoading) {
-      return <StableLoadingFallback />;
-    }
-    
-    if (!isAuthenticated) {
-      return (
-        <div className="text-center p-8">
-          <p className="mb-4 text-amber-400">Vous devez être connecté pour accéder à cette ressource.</p>
-          <a href="/auth" className="text-primary underline">
-            Se connecter
-          </a>
-        </div>
-      );
-    }
-    
-    return <>{children}</>;
-  };
 
   // Return the component with a stable key and error boundary
   try {

@@ -43,13 +43,27 @@ export default function CompetitiveAnalysisTable({ stepId, substepTitle }: Compe
 
   // Handle the case when formData comes from the server and might not be an array
   const handleDataSaved = (data: any) => {
-    // Ensure data is an array
-    const dataArray = Array.isArray(data) ? data : 
-      (data && typeof data === 'object') ? [data] : 
-      [{ name: "", offer: "", positioning: "", price_level: "", weaknesses: "" }];
+    console.log("CompetitiveAnalysisTable - Data received:", data);
     
-    console.log("Data received in CompetitiveAnalysisTable:", dataArray);
-    setFormData(dataArray);
+    // If data is null or undefined, use default array
+    if (!data) {
+      console.log("No data received, using default competitor structure");
+      setFormData([{ name: "", offer: "", positioning: "", price_level: "", weaknesses: "" }]);
+      return;
+    }
+    
+    // Ensure data is an array
+    if (Array.isArray(data)) {
+      console.log("Data is already an array with length:", data.length);
+      setFormData(data.length > 0 ? data : [{ name: "", offer: "", positioning: "", price_level: "", weaknesses: "" }]);
+    } else if (data && typeof data === 'object') {
+      console.log("Data is an object, converting to array");
+      // If it's a single object, wrap in array
+      setFormData([data]);
+    } else {
+      console.log("Unrecognized data format, using default");
+      setFormData([{ name: "", offer: "", positioning: "", price_level: "", weaknesses: "" }]);
+    }
   };
 
   return (
