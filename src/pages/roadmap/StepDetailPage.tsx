@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { journeySteps } from "@/data/journeySteps";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
@@ -16,6 +16,7 @@ export default function StepDetailPage() {
   const { stepId: stepIdParam, substepTitle: substepTitleParam } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const selectedResource = searchParams.get('resource');
   
   // Parse parameters
@@ -50,7 +51,7 @@ export default function StepDetailPage() {
       console.log("Clearing resource parameter after step navigation");
       navigate(location.pathname, { replace: true });
     }
-  }, [stepId, selectedResource, navigate]);
+  }, [stepId, selectedResource, navigate, location]);
 
   if (!step) {
     return (
