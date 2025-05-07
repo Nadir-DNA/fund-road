@@ -76,7 +76,7 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
   };
 
   return (
-    <div className="mt-8 flex justify-between items-center">
+    <div className="flex justify-between items-center">
       {stepId > 1 && (
         <Button 
           variant="outline" 

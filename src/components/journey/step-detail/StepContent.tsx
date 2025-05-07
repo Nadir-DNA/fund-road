@@ -27,6 +27,9 @@ export default function StepContent({
   const selectedResourceName = searchParams.get('resource');
   const { activeTab, handleTabChange } = useStepTabs(selectedResourceName || resourceName);
 
+  // Determine if we're viewing a resource
+  const isViewingResource = !!(selectedResourceName || resourceName);
+
   return (
     <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange} className="w-full">
       <TabsList className="grid w-full grid-cols-2 mb-2">

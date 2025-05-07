@@ -72,6 +72,9 @@ export default function StepDetailPage() {
     );
   }
 
+  // Determine if we're viewing a specific resource
+  const isViewingResource = !!selectedResource;
+
   return (
     <div className="bg-slate-800 rounded-lg p-6">
       <Button 
@@ -148,7 +151,12 @@ export default function StepDetailPage() {
         </TabsContent>
       </Tabs>
       
-      {/* Removed StepNavigation from here to avoid confusion with ResourceNavigation */}
+      {/* Only show step navigation when not viewing a resource */}
+      {!isViewingResource && (
+        <div className="mt-8 border-t border-slate-700 pt-6">
+          <StepNavigation stepId={stepId} />
+        </div>
+      )}
       
       {/* Debug section - maintain for troubleshooting */}
       <div className="mt-8 p-4 border border-slate-700 rounded-md bg-slate-900">
@@ -158,6 +166,7 @@ export default function StepDetailPage() {
             stepId,
             substepTitle,
             selectedResource,
+            isViewingResource,
             resourceLocationLabel,
             activeTab,
             componentKey,
