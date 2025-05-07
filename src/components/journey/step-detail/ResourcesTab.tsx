@@ -1,265 +1,166 @@
 
-import { useState, useEffect, useCallback } from "react";
-import ResourcesList from "@/components/journey/ResourcesList";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useResourceFetch } from "@/hooks/resource/useResourceFetch";
+import { useToast } from "@/components/ui/use-toast";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { supabase } from "@/integrations/supabase/client";
-import { renderResourceComponent } from "../utils/resourceRenderer";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { Resource } from "@/types/journey";
+import ResourcesBySubstep from "../resource-manager/ResourcesBySubstep";
+import ResourceManagerTabs from "../resource-manager/ResourceManagerTabs";
+import ResourceManagerContent from "../resource-manager/ResourceManagerContent";
 
 interface ResourcesTabProps {
   stepId: number;
   substepTitle: string | null;
-  stepTitle?: string;
+  stepTitle: string;
 }
 
-export default function ResourcesTab({ stepId, substepTitle, stepTitle }: ResourcesTabProps) {
-  const [manualResources, setManualResources] = useState<any[]>([]);
-  const [manualLoading, setManualLoading] = useState<boolean>(true);
-  const [selectedResourceName, setSelectedResourceName] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+export default function ResourcesTab({
+  stepId,
+  substepTitle,
+  stepTitle
+}: ResourcesTabProps) {
+  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const [hasSession, setHasSession] = useState<boolean | null>(null);
+  const [activeTabView, setActiveTabView] = useState("structured");
+  const [resources, setResources] = useState<Resource[]>([]);
   
-  console.log(`ResourcesTab mounted for step ${stepId}, substep ${substepTitle || 'main'}`);
+  const selectedResourceName = searchParams.get('resource');
 
   // Check authentication status
   useEffect(() => {
     const checkAuth = async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        setIsAuthenticated(!!data.session);
-      } catch (err) {
-        console.error("Auth check error:", err);
-        setIsAuthenticated(false);
-      }
+      const { data } = await supabase.auth.getSession();
+      setHasSession(!!data.session);
     };
     
     checkAuth();
   }, []);
 
-  // Fetch resources for this specific step and substep
-  // Important: This will run every time the component mounts (which is every step change)
-  const fetchResourcesManually = useCallback(async () => {
-    setManualLoading(true);
-    setLoadError(null);
-    console.log("🔍 Fetching resources for:", { stepId, substepTitle });
-    
-    try {
-      let query = supabase
-        .from("entrepreneur_resources")
-        .select("*")
-        .eq("step_id", stepId);
-        
-      if (substepTitle) {
-        query = query.eq("substep_title", substepTitle);
-        console.log(`⚙️ Query: entrepreneur_resources where step_id=${stepId} and substep_title="${substepTitle}"`);
-      } else {
-        query = query.is("substep_title", null);
-        console.log(`⚙️ Query: entrepreneur_resources where step_id=${stepId} and substep_title IS NULL`);
-      }
-      
-      // Execute query
-      const { data, error } = await query;
-      
-      if (error) {
-        console.error("❌ Error fetching resources:", error);
-        setLoadError(error.message);
-        toast({
-          title: "Erreur de chargement",
-          description: "Impossible de récupérer les ressources",
-          variant: "destructive"
-        });
-      } else {
-        console.log("✅ Resources found:", data?.length || 0);
-        
-        // Handle default resources for key sections
-        if (stepId === 1 && substepTitle === "Définition de l'opportunité" && (!data || data.length === 0)) {
-          console.log("Adding default resources for opportunity definition");
-          const defaultResources = [
-            {
-              id: 'opportunity-definition',
-              title: 'Synthèse qualitative',
-              description: 'Définissez votre opportunité entrepreneuriale',
-              component_name: 'OpportunityDefinition',
-              resource_type: 'interactive'
-            },
-            {
-              id: 'market-size-estimator',
-              title: 'Estimation de marché TAM/SAM/SOM',
-              description: 'Calculez la taille de votre marché adressable',
-              component_name: 'MarketSizeEstimator',
-              resource_type: 'interactive'
-            },
-            {
-              id: 'competitive-analysis-table',
-              title: 'Analyse concurrentielle',
-              description: 'Analysez vos concurrents pour identifier votre différenciation',
-              component_name: 'CompetitiveAnalysisTable',
-              resource_type: 'interactive'
-            }
-          ];
-          setManualResources(defaultResources);
-        } else {
-          setManualResources(data || []);
-        }
-        
-        if (!data || data.length === 0) {
-          console.log("No resources found for this step/substep in database");
-        }
-      }
-    } catch (err) {
-      console.error("❌ Exception:", err);
-      setLoadError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setManualLoading(false);
-    }
-  }, [stepId, substepTitle]);
+  // Dummy step object for useResourceFetch
+  const step = {
+    id: stepId,
+    title: stepTitle,
+    description: "",
+    resources: []
+  };
 
-  // Run the fetch on component mount and whenever step ID or substep changes
+  // Fetch resources with the hook
+  const resourceQuery = useResourceFetch(
+    step,
+    substepTitle || undefined,
+    null,
+    hasSession
+  );
+
+  // Update resources when query data changes
   useEffect(() => {
-    if (stepId) {
-      console.log(`ResourcesTab: Loading resources for step ${stepId}, substep ${substepTitle || 'main'}`);
-      fetchResourcesManually();
+    if (resourceQuery.data) {
+      setResources(resourceQuery.data);
     }
-  }, [stepId, substepTitle, fetchResourcesManually]);
+  }, [resourceQuery.data]);
 
-  const handleResourceSelect = (resourceName: string) => {
-    setSelectedResourceName(resourceName);
-    console.log(`Selected resource: ${resourceName}`);
-  };
+  // Find the selected resource
+  const selectedResource = resources.find(
+    r => r.componentName === selectedResourceName
+  );
 
-  const handleBackToList = () => {
-    setSelectedResourceName(null);
-  };
+  // Separate available and coming soon resources
+  const availableResources = resources.filter(r => r.status !== 'coming-soon');
+  const comingSoonResources = resources.filter(r => r.status === 'coming-soon');
 
-  const handleRetry = () => {
-    console.log("Retrying resource load...");
-    fetchResourcesManually();
-  };
-
-  // Display selected resource or resource list
-  if (selectedResourceName) {
+  // Loading state
+  if (resourceQuery.isLoading) {
     return (
-      <div>
-        <Button 
-          variant="ghost" 
-          className="mb-4 flex items-center"
-          onClick={handleBackToList}
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Retour aux ressources
-        </Button>
-        
-        <Card>
-          <CardContent className="p-6">
-            {renderResourceComponent(
-              selectedResourceName,
-              stepId,
-              substepTitle || '',
-              null
-            )}
-          </CardContent>
-        </Card>
+      <div className="py-12 flex justify-center">
+        <LoadingIndicator size="lg" />
       </div>
     );
   }
 
   return (
-    <div>
-      <ResourcesList 
-        stepId={stepId} 
-        substepTitle={substepTitle}
-        stepTitle={stepTitle}
-        onResourceSelect={handleResourceSelect}
-      />
-      
-      {/* Loading state */}
-      {manualLoading && (
-        <div className="flex items-center justify-center py-12">
-          <LoadingIndicator size="md" />
-          <span className="ml-2 text-muted-foreground">Chargement des ressources...</span>
-        </div>
-      )}
-      
-      {/* Error state */}
-      {loadError && (
-        <div className="mt-4 p-4 border border-destructive/20 bg-destructive/10 rounded-lg">
-          <p className="text-destructive font-medium">Erreur de chargement</p>
-          <p className="text-sm text-muted-foreground mt-1">{loadError}</p>
-          <Button 
-            variant="outline"
-            className="mt-2"
-            onClick={handleRetry}
-          >
-            Réessayer
-          </Button>
-        </div>
-      )}
-      
-      {/* Resources display from manual fetch */}
-      {!manualLoading && manualResources.length > 0 && (
-        <div className="mt-8 border-t pt-4">
-          <h3 className="font-medium mb-4">Ressources directement disponibles</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {manualResources.map((resource, idx) => (
-              <Card key={idx} 
-                className="hover:border-primary/50 transition-colors cursor-pointer"
-                onClick={() => resource.component_name && handleResourceSelect(resource.component_name)}
-              >
-                <CardContent className="p-4">
-                  <h4 className="font-medium">{resource.title || 'Sans titre'}</h4>
-                  <p className="text-sm text-muted-foreground mt-1">{resource.description || 'Pas de description'}</p>
-                  <div className="mt-2 flex gap-2">
-                    {resource.resource_type && (
-                      <span className="px-2 py-1 bg-slate-700 rounded text-xs">
-                        {resource.resource_type}
-                      </span>
-                    )}
-                    {resource.component_name && (
-                      <span className="px-2 py-1 bg-slate-800 text-primary rounded text-xs">
-                        {resource.component_name}
-                      </span>
-                    )}
-                  </div>
+    <div className="space-y-8">
+      <Tabs value={activeTabView} onValueChange={setActiveTabView} className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="structured">Par sous-étapes</TabsTrigger>
+          <TabsTrigger value="all">Toutes les ressources</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="structured">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-1">
+              <Card>
+                <CardContent className="pt-6">
+                  <ResourcesBySubstep 
+                    stepId={stepId}
+                    activeSubstepTitle={substepTitle}
+                  />
                 </CardContent>
               </Card>
-            ))}
+            </div>
+            
+            <div className="lg:col-span-2">
+              {selectedResourceName ? (
+                <ResourceManagerContent
+                  selectedResource={selectedResource}
+                  stepId={stepId}
+                  selectedSubstepTitle={substepTitle || ''}
+                  selectedResourceName={selectedResourceName}
+                />
+              ) : (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <p className="text-muted-foreground">
+                      Sélectionnez une ressource à gauche pour l'afficher ici
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
-        </div>
-      )}
-      
-      {/* Empty state with retry option */}
-      {!manualLoading && manualResources.length === 0 && !loadError && (
-        <div className="mt-6 p-6 border rounded-lg text-center">
-          <p className="text-muted-foreground">
-            Aucune ressource trouvée pour cette étape.
-          </p>
-          <p className="text-sm text-muted-foreground/70 mt-2">
-            (Étape: {stepId}, {substepTitle ? `Sous-étape: ${substepTitle}` : "Étape principale"})
-          </p>
-          <Button 
-            variant="outline"
-            className="mt-4"
-            onClick={handleRetry}
-          >
-            Réessayer le chargement
-          </Button>
-        </div>
-      )}
-      
-      {/* Authentication warning */}
-      {isAuthenticated === false && (
-        <div className="mt-6 p-4 border border-amber-500/20 rounded-lg bg-amber-500/10">
-          <p className="text-amber-400">
-            Connectez-vous pour accéder à toutes les ressources et enregistrer vos données.
-          </p>
-          <a href="/auth" className="text-primary underline text-sm mt-2 block">
-            Se connecter
-          </a>
-        </div>
-      )}
+        </TabsContent>
+        
+        <TabsContent value="all">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-1">
+              <Card>
+                <CardContent className="pt-6">
+                  <ResourceManagerTabs
+                    availableResources={availableResources}
+                    comingSoonResources={comingSoonResources}
+                    stepId={stepId}
+                    substepTitle={substepTitle || ''}
+                    selectedResourceName={selectedResourceName}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="lg:col-span-2">
+              {selectedResourceName ? (
+                <ResourceManagerContent
+                  selectedResource={selectedResource}
+                  stepId={stepId}
+                  selectedSubstepTitle={substepTitle || ''}
+                  selectedResourceName={selectedResourceName}
+                />
+              ) : (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <p className="text-muted-foreground">
+                      Sélectionnez une ressource à gauche pour l'afficher ici
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

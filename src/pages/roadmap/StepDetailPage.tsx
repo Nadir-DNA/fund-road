@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { journeySteps } from "@/data/journeySteps";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,6 @@ import { useStepTabs } from "@/hooks/useStepTabs";
 import OverviewTab from "@/components/journey/step-detail/OverviewTab";
 import ResourcesTab from "@/components/journey/step-detail/ResourcesTab";
 import StepNavigation from "@/components/journey/StepNavigation";
-import { supabase } from "@/integrations/supabase/client";
 
 export default function StepDetailPage() {
   const { stepId: stepIdParam, substepTitle: substepTitleParam } = useParams();
@@ -49,10 +48,13 @@ export default function StepDetailPage() {
   
   // Effect to clear URL parameters when component mounts
   useEffect(() => {
-    // If there's a resource parameter, clear it on new page load
-    // to avoid displaying a resource from a previous step
-    if (selectedResource) {
+    // If there's a resource parameter but we navigated to a new step or substep,
+    // clear it to avoid displaying a resource from a previous step
+    if (selectedResource && location.pathname !== sessionStorage.getItem('lastResourcePath')) {
       console.log("Checking if resource parameter should be cleared");
+      // Store current path for future comparison
+      sessionStorage.setItem('lastResourcePath', location.pathname);
+      // Navigate without the resource param
       navigate(location.pathname, { replace: true });
     }
   }, [location.pathname]);

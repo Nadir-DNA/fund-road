@@ -25,14 +25,17 @@ export const useStepTabs = (selectedResourceName: string | null = null) => {
       return;
     }
     
+    // If a resource is selected in the URL, make sure we're on the resources tab
+    if (selectedResourceName && activeTab !== "resources") {
+      console.log(`Setting activeTab to resources because resource ${selectedResourceName} is selected`);
+      setActiveTab("resources");
+      return;
+    }
+    
     // Normal tab handling from URL params
     if (tabFromUrl && tabFromUrl !== activeTab) {
       console.log(`Setting activeTab to ${tabFromUrl} from URL params`);
       setActiveTab(tabFromUrl);
-    } else if (selectedResourceName && activeTab !== "resources") {
-      // If a resource is selected but no tab is specified, switch to the resources tab
-      console.log(`Setting activeTab to resources because resource ${selectedResourceName} is selected`);
-      setActiveTab("resources");
     }
   }, [tabFromUrl, selectedResourceName, location, currentPath, activeTab]);
 
