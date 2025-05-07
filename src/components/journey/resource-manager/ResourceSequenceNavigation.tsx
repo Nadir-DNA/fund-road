@@ -7,6 +7,7 @@ import { buildResourceUrl } from "@/utils/navigationUtils";
 import { useState, useEffect } from "react";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { getSequentialResourceNavigation } from "@/utils/resourceHelpers";
+import { toast } from "@/components/ui/use-toast";
 
 interface ResourceSequenceNavigationProps {
   stepId: number;
@@ -40,6 +41,11 @@ export default function ResourceSequenceNavigation({
     const substepTitle = resource.subsubstepTitle || currentResource.subsubstepTitle;
     if (!substepTitle) {
       console.error("Cannot navigate: missing substep title", resource);
+      toast({
+        title: "Erreur de navigation",
+        description: "Impossible de naviguer vers cette ressource",
+        variant: "destructive"
+      });
       return;
     }
     

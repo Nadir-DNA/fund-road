@@ -2,7 +2,7 @@
 import React from 'react';
 import { Resource } from '@/types/journey';
 import CourseContentDisplay from '../CourseContentDisplay';
-import ResourceNavigation from './ResourceNavigation';
+import ResourceSequenceNavigation from './ResourceSequenceNavigation';
 import ResourceHeader from './ResourceHeader';
 
 interface CourseResourceDisplayProps {
@@ -32,6 +32,7 @@ export default function CourseResourceDisplay({
         title={selectedResource.title}
         description={selectedResource.description}
         resourceLocation={resourceLocationLabel}
+        onRetry={onRetry}
       />
       
       <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
@@ -43,13 +44,10 @@ export default function CourseResourceDisplay({
         />
       </div>
       
-      <ResourceNavigation
+      <ResourceSequenceNavigation
         stepId={stepId}
-        substepTitle={selectedSubstepTitle}
         currentResource={selectedResource}
-        allResources={allResources}
-        currentIndex={currentIndex}
-        totalResources={totalResources}
+        selectedResourceName={selectedResource.componentName || ''}
       />
     </div>
   );

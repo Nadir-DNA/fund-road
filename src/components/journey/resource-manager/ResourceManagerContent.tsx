@@ -6,7 +6,6 @@ import ResourceErrorDisplay from "./ResourceErrorDisplay";
 import ResourceLoadingState from "./ResourceLoadingState";
 import CourseResourceDisplay from "./CourseResourceDisplay";
 import InteractiveResourceDisplay from "./InteractiveResourceDisplay";
-import ResourceSequenceNavigation from "./ResourceSequenceNavigation";
 
 interface ResourceManagerContentProps {
   selectedResource: Resource | undefined;
@@ -129,27 +128,18 @@ export default function ResourceManagerContent({
   console.log(`Rendering resource component: ${componentName}`);
   
   return (
-    <>
-      <InteractiveResourceDisplay
-        selectedResource={selectedResource}
-        resourceLocationLabel={resourceLocationLabel}
-        stepId={stepId}
-        selectedSubstepTitle={selectedSubstepTitle}
-        selectedResourceName={selectedResourceName}
-        componentName={componentName}
-        allResources={allResources}
-        currentIndex={currentIndex}
-        totalResources={totalResources}
-        onRetry={handleRetry}
-        subsubstepTitle={selectedResource.subsubstepTitle}
-      />
-      
-      {/* Add the new sequence navigation component */}
-      <ResourceSequenceNavigation
-        stepId={stepId}
-        currentResource={selectedResource}
-        selectedResourceName={selectedResourceName}
-      />
-    </>
+    <InteractiveResourceDisplay
+      selectedResource={selectedResource}
+      resourceLocationLabel={resourceLocationLabel}
+      stepId={stepId}
+      selectedSubstepTitle={selectedSubstepTitle}
+      selectedResourceName={selectedResourceName}
+      componentName={componentName}
+      allResources={allResources}
+      currentIndex={currentIndex}
+      totalResources={totalResources}
+      onRetry={handleRetry}
+      subsubstepTitle={selectedResource.subsubstepTitle}
+    />
   );
 }

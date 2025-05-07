@@ -1,4 +1,3 @@
-
 import { Resource } from "@/types/journey";
 import { journeySteps } from "@/data/journeySteps";
 
@@ -174,7 +173,7 @@ export function getResourceLocationLabel(stepId: number, resourceName: string | 
   return "";
 }
 
-// NEW: Define the resource sequence mapping
+// Update: Define the resource sequence mapping with more detailed structure
 type ResourceSequenceMap = Record<number, Record<string, string[]>>;
 
 // Create a map of the logical sequence of resources across all steps and substeps
@@ -217,13 +216,15 @@ const resourceSequenceMap: ResourceSequenceMap = {
   }
 };
 
-// NEW: Function to get a flat, sequenced array of resource component names for a step
-export function getResourceSequence(stepId: number): string[] {
+// Updated: Get a flat, sequenced array of resource component names for a step
+// with their substep context preserved
+export function getResourceSequence(stepId: number): { name: string; substepTitle: string }[] {
   const mapping = resourceSequenceMap[stepId];
   if (!mapping) return [];
   
   // Flatten the substep resources into a single ordered array
-  const sequence: string[] = [];
+  // but keep track of which substep each resource belongs to
+  const sequence: { name: string; substepTitle: string }[] = [];
   
   // Get all substeps for this step
   const step = journeySteps.find(s => s.id === stepId);
@@ -235,14 +236,19 @@ export function getResourceSequence(stepId: number): string[] {
     const substepResources = mapping[substepTitle];
     
     if (substepResources) {
-      sequence.push(...substepResources);
+      substepResources.forEach(resourceName => {
+        sequence.push({ 
+          name: resourceName, 
+          substepTitle: substepTitle 
+        });
+      });
     }
   });
   
   return sequence;
 }
 
-// NEW: Get next and previous resources in the sequence
+// Updated: Get next and previous resources in the sequence with substep context
 export function getSequentialResourceNavigation(
   stepId: number, 
   currentResourceName: string | null
@@ -256,9 +262,9 @@ export function getSequentialResourceNavigation(
     return { previousResource: null, nextResource: null, currentIndex: -1, totalResources: 0 };
   }
   
-  // Get the ordered sequence for this step
+  // Get the ordered sequence for this step (with substep context)
   const sequence = getResourceSequence(stepId);
-  const currentIndex = sequence.indexOf(currentResourceName);
+  const currentIndex = sequence.findIndex(item => item.name === currentResourceName);
   
   // If current resource not in sequence
   if (currentIndex === -1) {
@@ -266,9 +272,9 @@ export function getSequentialResourceNavigation(
     return { previousResource: null, nextResource: null, currentIndex: -1, totalResources: sequence.length };
   }
   
-  // Get the previous and next resource component names
-  const prevResourceName = currentIndex > 0 ? sequence[currentIndex - 1] : null;
-  const nextResourceName = currentIndex < sequence.length - 1 ? sequence[currentIndex + 1] : null;
+  // Get the previous and next resource component names with their substep context
+  const prevResource = currentIndex > 0 ? sequence[currentIndex - 1] : null;
+  const nextResource = currentIndex < sequence.length - 1 ? sequence[currentIndex + 1] : null;
   
   // Find the actual resource objects
   const step = journeySteps.find(s => s.id === stepId);
@@ -276,44 +282,67 @@ export function getSequentialResourceNavigation(
     return { previousResource: null, nextResource: null, currentIndex, totalResources: sequence.length };
   }
   
-  // Helper to find resource in step structure
-  const findResourceInStep = (componentName: string | null): Resource | null => {
-    if (!componentName) return null;
+  // Helper to find resource in step structure with substep context
+  const findResourceInStep = (item: { name: string; substepTitle: string } | null): Resource | null => {
+    if (!item) return null;
     
-    // Check main step resources
-    if (step.resources) {
-      const mainResource = step.resources.find(r => r.componentName === componentName);
-      if (mainResource) return mainResource;
-    }
+    const { name: componentName, substepTitle } = item;
     
-    // Check substeps
+    // Check substeps to find the one with the matching title
     if (step.subSteps) {
-      for (const substep of step.subSteps) {
+      const substep = step.subSteps.find(s => s.title === substepTitle);
+      if (substep) {
+        // Check resources directly in the substep
         if (substep.resources) {
           const resource = substep.resources.find(r => r.componentName === componentName);
           if (resource) {
             // Add substep title for context
-            return { ...resource, subsubstepTitle: substep.title };
+            return { ...resource, subsubstepTitle: substepTitle };
           }
         }
         
-        // Check subsubsteps
+        // Check in subsubsteps of this substep
         if (substep.subSubSteps) {
           for (const subsubstep of substep.subSubSteps) {
             if (subsubstep.resources) {
               const resource = subsubstep.resources.find(r => r.componentName === componentName);
-              if (resource) return resource;
+              if (resource) {
+                // Include both substep and subsubstep titles for context
+                return { 
+                  ...resource, 
+                  subsubstepTitle: substepTitle 
+                };
+              }
             }
           }
         }
       }
     }
     
-    return null;
+    // Check main step resources as fallback
+    if (step.resources) {
+      const mainResource = step.resources.find(r => r.componentName === componentName);
+      if (mainResource) {
+        // Include the found substep title for navigation
+        return { ...mainResource, subsubstepTitle: substepTitle };
+      }
+    }
+    
+    // Create a minimal resource object when the actual resource is not found
+    // but we know its name and substep context
+    console.log(`Creating fallback resource for ${componentName} in ${substepTitle}`);
+    return {
+      id: `generated-${componentName}`,
+      title: componentName, // Use component name as fallback title
+      description: `Resource in ${substepTitle}`,
+      componentName: componentName,
+      type: 'interactive',
+      subsubstepTitle: substepTitle
+    };
   };
   
-  const previousResource = findResourceInStep(prevResourceName);
-  const nextResource = findResourceInStep(nextResourceName);
+  const previousResource = findResourceInStep(prevResource);
+  const nextResource = findResourceInStep(nextResource);
   
   return {
     previousResource,
