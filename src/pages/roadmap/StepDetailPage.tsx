@@ -9,7 +9,7 @@ import { useCourseMaterials } from "@/hooks/course/useCourseMaterials";
 import { useStepTabs } from "@/hooks/useStepTabs";
 import OverviewTab from "@/components/journey/step-detail/OverviewTab";
 import ResourcesTab from "@/components/journey/step-detail/ResourcesTab";
-import StepNavigation from "@/components/journey/step-detail/StepNavigation";
+import StepNavigation from "@/components/journey/StepNavigation"; // Updated import path
 import { supabase } from "@/integrations/supabase/client";
 
 export default function StepDetailPage() {

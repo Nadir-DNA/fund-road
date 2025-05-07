@@ -8,6 +8,7 @@ import OverviewTab from "./OverviewTab";
 import { Step, SubStep } from "@/types/journey";
 import { useSearchParams } from "react-router-dom";
 import { useStepTabs } from "@/hooks/useStepTabs";
+import StepNavigation from "@/components/journey/StepNavigation"; // Updated import path
 
 interface StepTabContentProps {
   stepId: number;

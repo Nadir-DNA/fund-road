@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { journeySteps } from "@/data/journeySteps";
@@ -7,7 +6,7 @@ import { useCourseContent } from "@/hooks/useCourseContent";
 import StepHeader from "@/components/journey/StepHeader";
 import StepTabContent from "@/components/journey/StepTabContent";
 import SubstepList from "@/components/journey/SubstepList";
-import StepNavigation from "@/components/journey/StepNavigation";
+import StepNavigation from "@/components/journey/StepNavigation"; // Updated import path
 
 export default function StepDetailPage() {
   const { stepId: stepIdParam, substepTitle: substepTitleParam } = useParams();

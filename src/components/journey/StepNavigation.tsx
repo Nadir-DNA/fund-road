@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { journeySteps } from "@/data/journeySteps";
 import { saveCurrentPath, saveLastPath } from "@/utils/navigationUtils";
 import { useToast } from "@/components/ui/use-toast";
-import { ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface StepNavigationProps {
@@ -23,6 +23,7 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
     if (isNavigating) return;
     
     setIsNavigating(true);
+    console.log(`Navigation demandée de l'étape ${stepId} vers l'étape ${targetStepId}`);
     
     try {
       // Vérifier l'authentification
@@ -48,9 +49,8 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
       
       // Sauvegarder le chemin actuel avant la navigation
       saveCurrentPath(location.pathname + location.search);
-      console.log("Navigation depuis l'étape", stepId, "vers l'étape", targetStepId);
       
-      // Construire explicitement l'URL cible pour éviter les problèmes de navigation
+      // Construire explicitement l'URL cible
       const targetUrl = `/roadmap/step/${targetStepId}`;
       
       // Afficher toast avant navigation
@@ -60,10 +60,11 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
         duration: 2000
       });
       
-      // Naviguer vers l'URL cible avec un léger délai
+      // Pour éviter les problèmes de navigation, utiliser un petit délai
+      // et l'option replace pour remplacer l'entrée actuelle dans l'historique
       setTimeout(() => {
-        // Naviguer avec l'option replace pour éviter l'empilement d'historique
         navigate(targetUrl, { replace: true });
+        console.log(`Navigation effectuée vers: ${targetUrl}`);
       }, 100);
     } catch (error) {
       console.error("Erreur lors de la navigation:", error);

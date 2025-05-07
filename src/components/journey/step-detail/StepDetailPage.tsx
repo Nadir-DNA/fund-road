@@ -7,7 +7,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import StepContent from "./StepContent";
-import StepNavigation from "./StepNavigation";
+import StepNavigation from "@/components/journey/StepNavigation"; // Updated import path
 
 export default function StepDetailPage() {
   const { stepId: stepIdParam, substepTitle: substepTitleParam, resource: resourceName } = useParams();
