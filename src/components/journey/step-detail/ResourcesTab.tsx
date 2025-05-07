@@ -27,46 +27,37 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
   const currentStepIdRef = useRef<number>(stepId);
   const location = useLocation();
 
-  // Force reset when component mounts with new stepId or when component's key changes
+  // IMPORTANT: Generate a unique key for the component based on stepId
+  // This will force the component to remount when the step changes
   useEffect(() => {
-    console.log(`ResourcesTab mounted/refreshed with stepId ${stepId}`);
+    // Log the initialization for debugging
+    console.log(`ResourcesTab mounted/refreshed with stepId ${stepId}, key ${refreshKey}`);
+    
+    // Set initial state on mount
     initialLoadDoneRef.current = false;
     setSelectedResourceName(null);
     currentStepIdRef.current = stepId;
+    setManualResources([]);
     
-    // Return cleanup function
+    // Clean up function for when component unmounts
     return () => {
       console.log(`ResourcesTab for stepId ${stepId} unmounting`);
     };
-  }, [refreshKey]); // Only run on mount or when refreshKey changes
+  }, [stepId, refreshKey]); // Depend on stepId and refreshKey
 
-  // Reset state when step ID changes
-  useEffect(() => {
-    if (currentStepIdRef.current !== stepId) {
-      console.log(`ResourcesTab: Step changed from ${currentStepIdRef.current} to ${stepId}, resetting state`);
-      currentStepIdRef.current = stepId;
-      initialLoadDoneRef.current = false;
-      setSelectedResourceName(null);
-      setManualResources([]);
-      setRefreshKey(prev => prev + 1);
-    }
-  }, [stepId]);
-
-  // Reset when navigation includes resetResource state
+  // Reset state when location contains resetResource
   useEffect(() => {
     if (location.state && (location.state as any).resetResource) {
-      console.log("ResourcesTab: Detected resetResource state, resetting component state");
+      console.log("ResourcesTab: Detected resetResource state, fully resetting component state");
+      
+      // Complete state reset
       initialLoadDoneRef.current = false;
       setSelectedResourceName(null);
       setManualResources([]);
-      setRefreshKey(prev => prev + 1);
+      setRefreshKey(prev => prev + 1); // Force remount with new key
       
-      // Clear the state to prevent repeated resets by creating a new history entry
-      // that preserves other state properties but removes resetResource
-      window.history.replaceState(
-        { ...location.state, resetResource: false },
-        document.title
-      );
+      // Log the navigation state for debugging
+      console.log("Navigation state:", location.state);
     }
   }, [location.state]);
 
@@ -88,94 +79,110 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
 
   // Fetch resources for this specific step and substep
   const fetchResourcesManually = useCallback(async () => {
-    // Skip if we already loaded resources for this step and nothing has changed
-    if (initialLoadDoneRef.current && currentStepIdRef.current === stepId) {
-      console.log(`ResourcesTab: Resources already loaded for step ${stepId}, skipping fetch`);
-      return;
+    // Force reload when step changes
+    if (currentStepIdRef.current !== stepId) {
+      console.log(`ResourcesTab: Step changed from ${currentStepIdRef.current} to ${stepId}, forcing reload`);
+      initialLoadDoneRef.current = false;
+      currentStepIdRef.current = stepId;
     }
     
-    setManualLoading(true);
-    setLoadError(null);
-    console.log("🔍 Fetching resources for:", { stepId, substepTitle });
-    
-    try {
-      let query = supabase
-        .from("entrepreneur_resources")
-        .select("*")
-        .eq("step_id", stepId);
-        
-      if (substepTitle) {
-        query = query.eq("substep_title", substepTitle);
-        console.log(`⚙️ Query: entrepreneur_resources where step_id=${stepId} and substep_title="${substepTitle}"`);
-      } else {
-        query = query.is("substep_title", null);
-        console.log(`⚙️ Query: entrepreneur_resources where step_id=${stepId} and substep_title IS NULL`);
-      }
+    // Always reload resources on a new step
+    if (!initialLoadDoneRef.current) {
+      setManualLoading(true);
+      setLoadError(null);
+      console.log("🔍 Fetching resources for:", { stepId, substepTitle });
       
-      // Execute query
-      const { data, error } = await query;
-      
-      if (error) {
-        console.error("❌ Error fetching resources:", error);
-        setLoadError(error.message);
-        toast({
-          title: "Erreur de chargement",
-          description: "Impossible de récupérer les ressources",
-          variant: "destructive"
-        });
-      } else {
-        console.log("✅ Resources found:", data?.length || 0);
-        
-        // If no resources returned for key section, add hardcoded ones
-        if (stepId === 1 && substepTitle === "Définition de l'opportunité" && (!data || data.length === 0)) {
-          console.log("Adding default resources for opportunity definition");
-          const defaultResources = [
-            {
-              id: 'opportunity-definition',
-              title: 'Synthèse qualitative',
-              description: 'Définissez votre opportunité entrepreneuriale',
-              component_name: 'OpportunityDefinition',
-              resource_type: 'interactive'
-            },
-            {
-              id: 'market-size-estimator',
-              title: 'Estimation de marché TAM/SAM/SOM',
-              description: 'Calculez la taille de votre marché adressable',
-              component_name: 'MarketSizeEstimator',
-              resource_type: 'interactive'
-            },
-            {
-              id: 'competitive-analysis-table',
-              title: 'Analyse concurrentielle',
-              description: 'Analysez vos concurrents pour identifier votre différenciation',
-              component_name: 'CompetitiveAnalysisTable',
-              resource_type: 'interactive'
-            }
-          ];
-          setManualResources(defaultResources);
+      try {
+        let query = supabase
+          .from("entrepreneur_resources")
+          .select("*")
+          .eq("step_id", stepId);
+          
+        if (substepTitle) {
+          query = query.eq("substep_title", substepTitle);
+          console.log(`⚙️ Query: entrepreneur_resources where step_id=${stepId} and substep_title="${substepTitle}"`);
         } else {
-          setManualResources(data || []);
+          query = query.is("substep_title", null);
+          console.log(`⚙️ Query: entrepreneur_resources where step_id=${stepId} and substep_title IS NULL`);
         }
         
-        if (!data || data.length === 0) {
-          console.log("No resources found for this step/substep in database");
-        }
+        // Execute query
+        const { data, error } = await query;
         
-        // Mark as loaded for this step
-        initialLoadDoneRef.current = true;
+        if (error) {
+          console.error("❌ Error fetching resources:", error);
+          setLoadError(error.message);
+          toast({
+            title: "Erreur de chargement",
+            description: "Impossible de récupérer les ressources",
+            variant: "destructive"
+          });
+        } else {
+          console.log("✅ Resources found:", data?.length || 0);
+          
+          // If no resources returned for key section, add hardcoded ones
+          if (stepId === 1 && substepTitle === "Définition de l'opportunité" && (!data || data.length === 0)) {
+            console.log("Adding default resources for opportunity definition");
+            const defaultResources = [
+              {
+                id: 'opportunity-definition',
+                title: 'Synthèse qualitative',
+                description: 'Définissez votre opportunité entrepreneuriale',
+                component_name: 'OpportunityDefinition',
+                resource_type: 'interactive'
+              },
+              {
+                id: 'market-size-estimator',
+                title: 'Estimation de marché TAM/SAM/SOM',
+                description: 'Calculez la taille de votre marché adressable',
+                component_name: 'MarketSizeEstimator',
+                resource_type: 'interactive'
+              },
+              {
+                id: 'competitive-analysis-table',
+                title: 'Analyse concurrentielle',
+                description: 'Analysez vos concurrents pour identifier votre différenciation',
+                component_name: 'CompetitiveAnalysisTable',
+                resource_type: 'interactive'
+              }
+            ];
+            setManualResources(defaultResources);
+          } else {
+            setManualResources(data || []);
+          }
+          
+          if (!data || data.length === 0) {
+            console.log("No resources found for this step/substep in database");
+          }
+          
+          // Mark as loaded for this step
+          initialLoadDoneRef.current = true;
+        }
+      } catch (err) {
+        console.error("❌ Exception:", err);
+        setLoadError(err instanceof Error ? err.message : "Unknown error");
+      } finally {
+        setManualLoading(false);
       }
-    } catch (err) {
-      console.error("❌ Exception:", err);
-      setLoadError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setManualLoading(false);
+    } else {
+      console.log(`ResourcesTab: Using cached resources for step ${stepId}, substep ${substepTitle || 'main'}`);
     }
   }, [stepId, substepTitle]);
 
+  // Effect to fetch resources when step ID changes
   useEffect(() => {
+    // Always force a reload when step ID changes
+    if (currentStepIdRef.current !== stepId) {
+      console.log(`Step changed from ${currentStepIdRef.current} to ${stepId}, resetting ResourcesTab state`);
+      initialLoadDoneRef.current = false;
+    }
+    
     if (stepId) {
       fetchResourcesManually();
     }
+    
+    // Update the current step ID ref
+    currentStepIdRef.current = stepId;
   }, [stepId, substepTitle, fetchResourcesManually, refreshKey]);
 
   const handleResourceSelect = (resourceName: string) => {

@@ -16,15 +16,7 @@ export const useStepTabs = (selectedResourceName: string | null) => {
   
   // Reset tab when path changes (indicating step change) or on resetResource in state
   useEffect(() => {
-    // Check for path change (different step)
-    if (location.pathname !== currentPath) {
-      console.log(`Path changed from ${currentPath} to ${location.pathname}, resetting to overview tab`);
-      setActiveTab("overview");
-      setCurrentPath(location.pathname);
-      return;
-    }
-    
-    // Check for navigation state that indicates step change
+    // Always check for the resetResource state first
     if (location.state && (location.state as any).resetResource) {
       const stateTimestamp = (location.state as any).timestamp || Date.now();
       
@@ -32,12 +24,22 @@ export const useStepTabs = (selectedResourceName: string | null) => {
       if (stateTimestamp > lastStateResetTimestamp.current) {
         console.log("Tab reset requested via navigation state with timestamp:", stateTimestamp);
         lastStateResetTimestamp.current = stateTimestamp;
+        
+        // Force reset to overview tab regardless of other conditions
         setActiveTab("overview");
         return;
       }
     }
     
-    // Normal tab handling from URL params
+    // Then check for path changes (different step)
+    if (location.pathname !== currentPath) {
+      console.log(`Path changed from ${currentPath} to ${location.pathname}, resetting to overview tab`);
+      setActiveTab("overview");
+      setCurrentPath(location.pathname);
+      return;
+    }
+    
+    // Normal tab handling from URL params only if we didn't already reset
     if (tabFromUrl && tabFromUrl !== activeTab) {
       console.log(`Setting activeTab to ${tabFromUrl} from URL params`);
       setActiveTab(tabFromUrl);

@@ -1,9 +1,9 @@
 
 import { useState } from "react";
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { journeySteps } from "@/data/journeySteps";
-import { saveCurrentPath, saveLastPath } from "@/utils/navigationUtils";
+import { saveCurrentPath } from "@/utils/navigationUtils";
 import { useToast } from "@/components/ui/use-toast";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,78 +15,76 @@ interface StepNavigationProps {
 export default function StepNavigation({ stepId }: StepNavigationProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [isNavigating, setIsNavigating] = useState(false);
   
   const handleNavigation = async (targetStepId: number) => {
-    // Éviter les doubles clics
+    // Prevent double clicks
     if (isNavigating) return;
     
     setIsNavigating(true);
-    console.log(`Navigation demandée de l'étape ${stepId} vers l'étape ${targetStepId}`);
+    console.log(`Navigation requested from step ${stepId} to step ${targetStepId}`);
     
     try {
-      // Vérifier l'authentification
+      // Check authentication
       const { data } = await supabase.auth.getSession();
       const isAuthenticated = !!data.session;
       
       if (!isAuthenticated) {
-        // Sauvegarder le chemin cible pour redirection après connexion
+        // Save target path for redirect after login
         const targetPath = `/roadmap/step/${targetStepId}`;
         saveLastPath(targetPath);
         
         toast({
-          title: "Authentification requise",
+          title: "Authentication requise",
           description: "Veuillez vous connecter pour accéder à cette étape",
           variant: "destructive",
           duration: 5000
         });
         
-        // Rediriger vers la page d'authentification
+        // Redirect to auth page
         setTimeout(() => navigate("/auth"), 500);
         return;
       }
       
-      // Sauvegarder le chemin actuel avant la navigation
+      // Save current path before navigation
       saveCurrentPath(location.pathname);
       
-      // Construire explicitement l'URL cible - sans conserver les paramètres de recherche
+      // Build the target URL - without preserving search parameters
       const targetUrl = `/roadmap/step/${targetStepId}`;
       
-      // Afficher toast avant navigation
+      // Show toast before navigation
       toast({
         title: `Navigation vers l'étape ${targetStepId}`,
         description: "Chargement de la nouvelle étape...",
         duration: 2000
       });
       
-      // Pour éviter les problèmes de navigation, utiliser un petit délai
-      // et l'option replace pour remplacer l'entrée actuelle dans l'historique
+      console.log(`Navigating to: ${targetUrl} with reset state and without preserving URL params`);
+      
+      // Add a small delay to ensure UI updates before navigation
       setTimeout(() => {
-        // Ajouter resetResource dans l'état pour forcer la réinitialisation des ressources
-        // Utiliser replace: true pour remplacer l'entrée actuelle dans l'historique
-        // et éviter une accumulation d'entrées dans l'historique
+        // Use replace: true to replace the current entry in history
+        // Add resetResource in state to force reinitialization
         navigate(targetUrl, { 
           replace: true, 
           state: { 
             resetResource: true, 
             fromStep: stepId, 
             toStep: targetStepId,
-            timestamp: Date.now() // Ajouter un timestamp pour garantir que l'état est unique
+            timestamp: Date.now() // Add timestamp to ensure state is unique
           } 
         });
-        console.log(`Navigation effectuée vers: ${targetUrl} avec état de réinitialisation`);
       }, 100);
     } catch (error) {
-      console.error("Erreur lors de la navigation:", error);
+      console.error("Navigation error:", error);
       toast({
         title: "Erreur de navigation",
         description: "Impossible d'accéder à l'étape demandée",
         variant: "destructive"
       });
     } finally {
-      // Réinitialiser l'état de navigation après un délai
+      // Reset navigation state after a delay
       setTimeout(() => setIsNavigating(false), 500);
     }
   };
@@ -121,4 +119,12 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
       )}
     </div>
   );
+}
+
+// Helper function to save last path
+function saveLastPath(path: string): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('lastPath', path);
+    console.log("Last path saved for redirection:", path);
+  }
 }
