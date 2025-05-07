@@ -23,14 +23,18 @@ export default function StepDetailPage() {
   const stepId = parseInt(stepIdParam || "1");
   const substepTitle = substepTitleParam ? decodeURIComponent(substepTitleParam) : null;
   
-  // Generate a unique component key based on stepId to force remount when step changes
-  const componentKey = `step-${stepId}-${Date.now()}`;
+  // Generate a unique component key based on stepId and page load time
+  // This forces components to remount when navigating
+  const pageLoadTime = new Date().getTime();
+  const componentKey = `step-${stepId}-${pageLoadTime}`;
   
   console.log("🔍 StepDetailPage - Loading with:", { 
     stepId, 
     substepTitle,
     selectedResource,
-    componentKey
+    componentKey,
+    pathname: location.pathname,
+    url: window.location.href
   });
   
   // Find the current step from the journey steps
@@ -43,15 +47,15 @@ export default function StepDetailPage() {
   // Use our custom hook to manage tabs
   const { activeTab, handleTabChange } = useStepTabs(selectedResource);
   
-  // Effect to clear the resource parameter when the component mounts with a new step
+  // Effect to clear URL parameters when component mounts
   useEffect(() => {
-    // If there's a resource parameter and we've just navigated to a new step,
-    // clear it to avoid displaying a resource from a previous step
-    if (selectedResource && location.state && (location.state as any).resetResource) {
-      console.log("Clearing resource parameter after step navigation");
+    // If there's a resource parameter, clear it on new page load
+    // to avoid displaying a resource from a previous step
+    if (selectedResource) {
+      console.log("Checking if resource parameter should be cleared");
       navigate(location.pathname, { replace: true });
     }
-  }, [stepId, selectedResource, navigate, location]);
+  }, [location.pathname]);
 
   if (!step) {
     return (
@@ -107,7 +111,7 @@ export default function StepDetailPage() {
       
       <StepNavigation stepId={stepId} />
       
-      {/* Debug section - remove in production */}
+      {/* Debug section - maintain for troubleshooting */}
       <div className="mt-8 p-4 border border-slate-700 rounded-md bg-slate-900">
         <h3 className="text-lg font-medium mb-2">Debug Information</h3>
         <pre className="text-xs overflow-auto p-2 bg-slate-800 rounded">
@@ -119,7 +123,8 @@ export default function StepDetailPage() {
             componentKey,
             path: window.location.pathname,
             search: window.location.search,
-            state: location.state ? JSON.stringify(location.state) : 'null'
+            url: window.location.href,
+            pageLoadTime
           }, null, 2)}
         </pre>
       </div>

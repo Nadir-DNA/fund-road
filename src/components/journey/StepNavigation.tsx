@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { journeySteps } from "@/data/journeySteps";
 import { saveCurrentPath } from "@/utils/navigationUtils";
@@ -14,7 +14,6 @@ interface StepNavigationProps {
 
 export default function StepNavigation({ stepId }: StepNavigationProps) {
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
   const [isNavigating, setIsNavigating] = useState(false);
   
@@ -48,9 +47,9 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
       }
       
       // Save current path before navigation
-      saveCurrentPath(location.pathname);
+      saveCurrentPath(window.location.pathname);
       
-      // Build the target URL - without preserving search parameters
+      // Build the target URL
       const targetUrl = `/roadmap/step/${targetStepId}`;
       
       // Show toast before navigation
@@ -60,22 +59,11 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
         duration: 2000
       });
       
-      console.log(`Navigating to: ${targetUrl} with reset state and without preserving URL params`);
+      console.log(`Navigating to: ${targetUrl} using direct URL change`);
       
-      // Add a small delay to ensure UI updates before navigation
-      setTimeout(() => {
-        // Use replace: true to replace the current entry in history
-        // Add resetResource in state to force reinitialization
-        navigate(targetUrl, { 
-          replace: true, 
-          state: { 
-            resetResource: true, 
-            fromStep: stepId, 
-            toStep: targetStepId,
-            timestamp: Date.now() // Add timestamp to ensure state is unique
-          } 
-        });
-      }, 100);
+      // Use direct URL change to force a complete page reload and state reset
+      // This is more reliable than React Router's navigate for complex state resets
+      window.location.href = targetUrl;
     } catch (error) {
       console.error("Navigation error:", error);
       toast({
@@ -83,9 +71,7 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
         description: "Impossible d'accéder à l'étape demandée",
         variant: "destructive"
       });
-    } finally {
-      // Reset navigation state after a delay
-      setTimeout(() => setIsNavigating(false), 500);
+      setIsNavigating(false);
     }
   };
 
