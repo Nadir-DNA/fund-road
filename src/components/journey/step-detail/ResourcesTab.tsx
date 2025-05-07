@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import ResourcesList from "@/components/journey/ResourcesList";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { useLocation } from "react-router-dom";
 
 interface ResourcesTabProps {
   stepId: number;
@@ -22,6 +22,38 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState<number>(0);
+  const initialLoadDoneRef = useRef(false);
+  const currentStepIdRef = useRef<number>(stepId);
+  const location = useLocation();
+
+  // Reset state when step ID changes
+  useEffect(() => {
+    if (currentStepIdRef.current !== stepId) {
+      console.log(`ResourcesTab: Step changed from ${currentStepIdRef.current} to ${stepId}, resetting state`);
+      currentStepIdRef.current = stepId;
+      initialLoadDoneRef.current = false;
+      setSelectedResourceName(null);
+      setManualResources([]);
+      setRefreshKey(prev => prev + 1);
+    }
+  }, [stepId]);
+
+  // Reset when navigation includes resetResource state
+  useEffect(() => {
+    if (location.state && (location.state as any).resetResource) {
+      console.log("ResourcesTab: Detected resetResource state, resetting component state");
+      initialLoadDoneRef.current = false;
+      setSelectedResourceName(null);
+      setManualResources([]);
+      setRefreshKey(prev => prev + 1);
+      
+      // Clear the state to prevent repeated resets
+      window.history.replaceState(
+        { ...location.state, resetResource: false },
+        document.title
+      );
+    }
+  }, [location]);
 
   // Check authentication status
   useEffect(() => {
@@ -41,6 +73,12 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
 
   // Fetch resources for this specific step and substep
   const fetchResourcesManually = useCallback(async () => {
+    // Skip if we already loaded resources for this step and nothing has changed
+    if (initialLoadDoneRef.current && currentStepIdRef.current === stepId) {
+      console.log("ResourcesTab: Resources already loaded for this step, skipping fetch");
+      return;
+    }
+    
     setManualLoading(true);
     setLoadError(null);
     console.log("🔍 Fetching resources for:", { stepId, substepTitle });
@@ -107,6 +145,9 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
         if (!data || data.length === 0) {
           console.log("No resources found for this step/substep in database");
         }
+        
+        // Mark as loaded for this step
+        initialLoadDoneRef.current = true;
       }
     } catch (err) {
       console.error("❌ Exception:", err);
@@ -133,6 +174,7 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
 
   const handleRetry = () => {
     console.log("Retrying resource load...");
+    initialLoadDoneRef.current = false;
     setRefreshKey(prev => prev + 1);
   };
 

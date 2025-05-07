@@ -48,9 +48,9 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
       }
       
       // Sauvegarder le chemin actuel avant la navigation
-      saveCurrentPath(location.pathname + location.search);
+      saveCurrentPath(location.pathname);
       
-      // Construire explicitement l'URL cible
+      // Construire explicitement l'URL cible - sans conserver les paramètres de recherche
       const targetUrl = `/roadmap/step/${targetStepId}`;
       
       // Afficher toast avant navigation
@@ -63,8 +63,12 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
       // Pour éviter les problèmes de navigation, utiliser un petit délai
       // et l'option replace pour remplacer l'entrée actuelle dans l'historique
       setTimeout(() => {
-        navigate(targetUrl, { replace: true });
-        console.log(`Navigation effectuée vers: ${targetUrl}`);
+        // Ajouter resetResource dans l'état pour forcer la réinitialisation des ressources
+        navigate(targetUrl, { 
+          replace: true, 
+          state: { resetResource: true, fromStep: stepId, toStep: targetStepId } 
+        });
+        console.log(`Navigation effectuée vers: ${targetUrl} avec état de réinitialisation`);
       }, 100);
     } catch (error) {
       console.error("Erreur lors de la navigation:", error);
