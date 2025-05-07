@@ -9,7 +9,6 @@ import { useCourseMaterials } from "@/hooks/course/useCourseMaterials";
 import { useStepTabs } from "@/hooks/useStepTabs";
 import OverviewTab from "@/components/journey/step-detail/OverviewTab";
 import ResourcesTab from "@/components/journey/step-detail/ResourcesTab";
-import StepNavigation from "@/components/journey/StepNavigation";
 import { getResourceLocationLabel } from "@/utils/resourceHelpers";
 import { Badge } from "@/components/ui/badge";
 
@@ -149,7 +148,7 @@ export default function StepDetailPage() {
         </TabsContent>
       </Tabs>
       
-      <StepNavigation stepId={stepId} />
+      {/* Removed StepNavigation from here to avoid confusion with ResourceNavigation */}
       
       {/* Debug section - maintain for troubleshooting */}
       <div className="mt-8 p-4 border border-slate-700 rounded-md bg-slate-900">
