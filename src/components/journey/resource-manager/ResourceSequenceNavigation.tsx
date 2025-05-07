@@ -76,7 +76,7 @@ export default function ResourceSequenceNavigation({
         size="sm"
         onClick={() => navigateToResource(previousResource)}
         disabled={!hasPrevious || isLoading}
-        className="w-32"
+        className="w-36"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Ressource précédente
@@ -95,7 +95,7 @@ export default function ResourceSequenceNavigation({
         size="sm"
         onClick={() => navigateToResource(nextResource)}
         disabled={!hasNext || isLoading}
-        className="w-32"
+        className="w-36"
       >
         Ressource suivante
         <ArrowRight className="ml-2 h-4 w-4" />

@@ -11,6 +11,7 @@ import OverviewTab from "@/components/journey/step-detail/OverviewTab";
 import ResourcesTab from "@/components/journey/step-detail/ResourcesTab";
 import { getResourceLocationLabel } from "@/utils/resourceHelpers";
 import { Badge } from "@/components/ui/badge";
+import StepNavigation from "@/components/journey/StepNavigation";
 
 export default function StepDetailPage() {
   const { stepId: stepIdParam, substepTitle: substepTitleParam } = useParams();

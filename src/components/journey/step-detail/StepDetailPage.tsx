@@ -7,7 +7,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import StepContent from "./StepContent";
-import StepNavigation from "@/components/journey/StepNavigation"; // Updated import path
+import StepNavigation from "@/components/journey/StepNavigation";
 
 export default function StepDetailPage() {
   const { stepId: stepIdParam, substepTitle: substepTitleParam, resource: resourceName } = useParams();
@@ -24,10 +24,14 @@ export default function StepDetailPage() {
   const step = journeySteps.find(s => s.id === stepId);
   const selectedSubStep = step?.subSteps?.find(s => s.title === substepTitle) || null;
   
+  // Determine if we're viewing a resource
+  const isViewingResource = !!(selectedResource || resourceName);
+  
   console.log("StepDetailPage - Loading with:", { 
     stepId, 
     substepTitle, 
-    resourceName: resourceName || selectedResource
+    resourceName: resourceName || selectedResource,
+    isViewingResource
   });
 
   if (!step) {
@@ -70,7 +74,12 @@ export default function StepDetailPage() {
           isLoading={isLoading}
         />
         
-        <StepNavigation stepId={stepId} />
+        {/* Only show step navigation when not viewing a resource */}
+        {!isViewingResource && (
+          <div className="mt-8 border-t border-slate-700 pt-6">
+            <StepNavigation stepId={stepId} />
+          </div>
+        )}
       </main>
       <Footer />
     </div>

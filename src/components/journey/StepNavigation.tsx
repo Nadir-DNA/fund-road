@@ -81,7 +81,7 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
         <Button 
           variant="outline" 
           onClick={() => handleNavigation(stepId - 1)}
-          className="flex items-center"
+          className="flex items-center w-36"
           disabled={isNavigating}
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
@@ -96,7 +96,7 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
       {stepId < journeySteps.length && (
         <Button
           onClick={() => handleNavigation(stepId + 1)}
-          className="ml-auto flex items-center"
+          className="ml-auto flex items-center w-36"
           disabled={isNavigating}
         >
           Étape suivante
