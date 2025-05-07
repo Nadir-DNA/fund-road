@@ -1,3 +1,4 @@
+
 import { Resource } from "@/types/journey";
 import { journeySteps } from "@/data/journeySteps";
 
@@ -216,7 +217,7 @@ const resourceSequenceMap: ResourceSequenceMap = {
   }
 };
 
-// Updated: Get a flat, sequenced array of resource component names for a step
+// Get a flat, sequenced array of resource component names for a step
 // with their substep context preserved
 export function getResourceSequence(stepId: number): { name: string; substepTitle: string }[] {
   const mapping = resourceSequenceMap[stepId];
@@ -248,7 +249,7 @@ export function getResourceSequence(stepId: number): { name: string; substepTitl
   return sequence;
 }
 
-// Updated: Get next and previous resources in the sequence with substep context
+// Get next and previous resources in the sequence with substep context
 export function getSequentialResourceNavigation(
   stepId: number, 
   currentResourceName: string | null
@@ -273,8 +274,8 @@ export function getSequentialResourceNavigation(
   }
   
   // Get the previous and next resource component names with their substep context
-  const prevResource = currentIndex > 0 ? sequence[currentIndex - 1] : null;
-  const nextResource = currentIndex < sequence.length - 1 ? sequence[currentIndex + 1] : null;
+  const prevResourceInfo = currentIndex > 0 ? sequence[currentIndex - 1] : null;
+  const nextResourceInfo = currentIndex < sequence.length - 1 ? sequence[currentIndex + 1] : null;
   
   // Find the actual resource objects
   const step = journeySteps.find(s => s.id === stepId);
@@ -341,8 +342,8 @@ export function getSequentialResourceNavigation(
     };
   };
   
-  const previousResource = findResourceInStep(prevResource);
-  const nextResource = findResourceInStep(nextResource);
+  const previousResource = findResourceInStep(prevResourceInfo);
+  const nextResource = findResourceInStep(nextResourceInfo);
   
   return {
     previousResource,
