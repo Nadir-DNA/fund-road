@@ -1,13 +1,13 @@
 
-import { Resource } from "@/types/journey";
-import CourseContentDisplay from "../CourseContentDisplay";
-import LazyLoad from "@/components/LazyLoad";
-import ResourceNavigation from "./ResourceNavigation";
-import ResourceHeader from "./ResourceHeader";
+import React from 'react';
+import { Resource } from '@/types/journey';
+import CourseContentDisplay from '../CourseContentDisplay';
+import ResourceNavigation from './ResourceNavigation';
+import ResourceHeader from './ResourceHeader';
 
 interface CourseResourceDisplayProps {
   selectedResource: Resource;
-  resourceLocationLabel: string | null;
+  resourceLocationLabel: string;
   stepId: number;
   selectedSubstepTitle: string;
   allResources: Resource[];
@@ -27,34 +27,30 @@ export default function CourseResourceDisplay({
   onRetry
 }: CourseResourceDisplayProps) {
   return (
-    <div className="mt-4">
-      <ResourceHeader 
-        selectedResource={selectedResource} 
-        resourceLocationLabel={resourceLocationLabel}
-        onRetry={onRetry}
+    <div className="space-y-4">
+      <ResourceHeader
+        title={selectedResource.title}
+        description={selectedResource.description}
+        resourceLocation={resourceLocationLabel}
       />
       
-      <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
-      
-      <LazyLoad priority={true} showLoader={true} height={400} delay={100}>
-        <CourseContentDisplay 
+      <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
+        <CourseContentDisplay
           stepId={stepId}
           substepTitle={selectedSubstepTitle}
           stepTitle={selectedResource.title}
-          courseContent={selectedResource.courseContent}
+          courseContent={selectedResource.courseContent || ''}
         />
-      </LazyLoad>
+      </div>
       
-      {totalResources > 1 && (
-        <ResourceNavigation 
-          stepId={stepId}
-          substepTitle={selectedSubstepTitle}
-          currentResource={selectedResource}
-          allResources={allResources}
-          currentIndex={currentIndex}
-          totalResources={totalResources}
-        />
-      )}
+      <ResourceNavigation
+        stepId={stepId}
+        substepTitle={selectedSubstepTitle}
+        currentResource={selectedResource}
+        allResources={allResources}
+        currentIndex={currentIndex}
+        totalResources={totalResources}
+      />
     </div>
   );
 }

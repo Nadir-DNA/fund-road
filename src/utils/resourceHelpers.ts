@@ -173,3 +173,152 @@ export function getResourceLocationLabel(stepId: number, resourceName: string | 
   
   return "";
 }
+
+// NEW: Define the resource sequence mapping
+type ResourceSequenceMap = Record<number, Record<string, string[]>>;
+
+// Create a map of the logical sequence of resources across all steps and substeps
+const resourceSequenceMap: ResourceSequenceMap = {
+  1: {
+    "Identification des besoins ou problèmes": ["UserResearchNotebook"],
+    "Définition de l'opportunité": ["OpportunityDefinition", "MarketSizeEstimator", "CompetitiveAnalysisTable"],
+    "Recherche utilisateur": ["UserResearchNotebook", "CustomerBehaviorNotes"]
+  },
+  2: {
+    "Construction du problème-solution fit": ["ProblemSolutionCanvas", "PersonaBuilder"],
+    "Tests préliminaires": ["UserFeedbackForm", "ExperimentSummary"]
+  },
+  3: {
+    "Création du Business Model Canvas": ["BusinessModelCanvas"],
+    "Étude de marché": ["MarketAnalysisGrid", "CustomerBehaviorNotes"],
+    "Validation du modèle économique": ["MonetizationTestGrid", "PaidOfferFeedback"]
+  },
+  4: {
+    "Définition du MVP": ["FeaturePrioritizationMatrix", "MvpSpecification"],
+    "Feuille de route produit": ["ProductRoadmapEditor"]
+  },
+  5: {
+    "Choix du statut juridique": ["LegalStatusSelector", "LegalStatusComparison"],
+    "Constitution de l'équipe fondatrice": ["CofounderProfile", "CofounderAlignment", "RecruitmentPlan"]
+  },
+  6: {
+    "Objectifs du Business Plan": ["BusinessPlanIntent"],
+    "Contenu détaillé": ["BusinessPlanEditor"],
+    "Annexes clés": ["FinancialTables", "SwotAnalysis", "GrowthProjection"]
+  },
+  7: {
+    "Structure du pitch investisseur": ["PitchStoryTeller"],
+    "Design & narration": ["PitchStoryTeller"]
+  },
+  8: {
+    "Cartographie des sources": ["FundingMap"],
+    "Outils de levée": ["CapTableEditor", "DilutionSimulator", "TermSheetBuilder"],
+    "Stratégie d'approche": ["InvestorEmailScript", "InvestorObjectionPrep", "InvestorFollowUpPlan"]
+  }
+};
+
+// NEW: Function to get a flat, sequenced array of resource component names for a step
+export function getResourceSequence(stepId: number): string[] {
+  const mapping = resourceSequenceMap[stepId];
+  if (!mapping) return [];
+  
+  // Flatten the substep resources into a single ordered array
+  const sequence: string[] = [];
+  
+  // Get all substeps for this step
+  const step = journeySteps.find(s => s.id === stepId);
+  if (!step?.subSteps) return [];
+  
+  // Process substeps in order
+  step.subSteps.forEach(substep => {
+    const substepTitle = substep.title;
+    const substepResources = mapping[substepTitle];
+    
+    if (substepResources) {
+      sequence.push(...substepResources);
+    }
+  });
+  
+  return sequence;
+}
+
+// NEW: Get next and previous resources in the sequence
+export function getSequentialResourceNavigation(
+  stepId: number, 
+  currentResourceName: string | null
+): { 
+  previousResource: Resource | null, 
+  nextResource: Resource | null, 
+  currentIndex: number, 
+  totalResources: number 
+} {
+  if (!currentResourceName) {
+    return { previousResource: null, nextResource: null, currentIndex: -1, totalResources: 0 };
+  }
+  
+  // Get the ordered sequence for this step
+  const sequence = getResourceSequence(stepId);
+  const currentIndex = sequence.indexOf(currentResourceName);
+  
+  // If current resource not in sequence
+  if (currentIndex === -1) {
+    console.log(`Resource ${currentResourceName} not found in sequence for step ${stepId}`);
+    return { previousResource: null, nextResource: null, currentIndex: -1, totalResources: sequence.length };
+  }
+  
+  // Get the previous and next resource component names
+  const prevResourceName = currentIndex > 0 ? sequence[currentIndex - 1] : null;
+  const nextResourceName = currentIndex < sequence.length - 1 ? sequence[currentIndex + 1] : null;
+  
+  // Find the actual resource objects
+  const step = journeySteps.find(s => s.id === stepId);
+  if (!step) {
+    return { previousResource: null, nextResource: null, currentIndex, totalResources: sequence.length };
+  }
+  
+  // Helper to find resource in step structure
+  const findResourceInStep = (componentName: string | null): Resource | null => {
+    if (!componentName) return null;
+    
+    // Check main step resources
+    if (step.resources) {
+      const mainResource = step.resources.find(r => r.componentName === componentName);
+      if (mainResource) return mainResource;
+    }
+    
+    // Check substeps
+    if (step.subSteps) {
+      for (const substep of step.subSteps) {
+        if (substep.resources) {
+          const resource = substep.resources.find(r => r.componentName === componentName);
+          if (resource) {
+            // Add substep title for context
+            return { ...resource, subsubstepTitle: substep.title };
+          }
+        }
+        
+        // Check subsubsteps
+        if (substep.subSubSteps) {
+          for (const subsubstep of substep.subSubSteps) {
+            if (subsubstep.resources) {
+              const resource = subsubstep.resources.find(r => r.componentName === componentName);
+              if (resource) return resource;
+            }
+          }
+        }
+      }
+    }
+    
+    return null;
+  };
+  
+  const previousResource = findResourceInStep(prevResourceName);
+  const nextResource = findResourceInStep(nextResourceName);
+  
+  return {
+    previousResource,
+    nextResource,
+    currentIndex,
+    totalResources: sequence.length
+  };
+}
