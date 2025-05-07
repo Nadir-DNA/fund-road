@@ -10,6 +10,8 @@ import { useStepTabs } from "@/hooks/useStepTabs";
 import OverviewTab from "@/components/journey/step-detail/OverviewTab";
 import ResourcesTab from "@/components/journey/step-detail/ResourcesTab";
 import StepNavigation from "@/components/journey/StepNavigation";
+import { getResourceLocationLabel } from "@/utils/resourceHelpers";
+import { Badge } from "@/components/ui/badge";
 
 export default function StepDetailPage() {
   const { stepId: stepIdParam, substepTitle: substepTitleParam } = useParams();
@@ -40,6 +42,10 @@ export default function StepDetailPage() {
   const step = journeySteps.find(s => s.id === stepId);
   const selectedSubStep = step?.subSteps?.find(s => s.title === substepTitle) || null;
 
+  // Get resource location label if a resource is selected
+  const resourceLocationLabel = selectedResource ? 
+    getResourceLocationLabel(stepId, selectedResource) : null;
+    
   // Get course content
   const { materials, isLoading: courseMaterialsLoading } = useCourseMaterials(stepId, substepTitle);
   
@@ -78,7 +84,39 @@ export default function StepDetailPage() {
       </Button>
       
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold">{step.title}</h1>
+        <div className="flex items-center mb-1">
+          <Badge variant="outline" className="text-xs font-mono mr-2">
+            Étape {stepId}
+          </Badge>
+          <h1 className="text-2xl md:text-3xl font-bold">{step.title}</h1>
+        </div>
+        
+        {selectedSubStep && (
+          <div className="flex items-center mt-2 mb-1">
+            <Badge 
+              variant="secondary" 
+              className="text-xs font-mono mr-2"
+            >
+              Sous-étape {step.subSteps?.indexOf(selectedSubStep) !== -1 ? 
+                `${stepId}.${step.subSteps.indexOf(selectedSubStep) + 1}` : 
+                `${stepId}.?`
+              }
+            </Badge>
+            <h2 className="text-lg font-semibold">{selectedSubStep.title}</h2>
+          </div>
+        )}
+        
+        {selectedResource && resourceLocationLabel && (
+          <div className="mt-2 flex items-center">
+            <Badge 
+              variant="secondary" 
+              className="bg-primary/20 hover:bg-primary/30 text-xs font-mono mr-2"
+            >
+              Ressource {resourceLocationLabel}
+            </Badge>
+          </div>
+        )}
+        
         <p className="text-muted-foreground mt-2">
           {selectedSubStep ? selectedSubStep.description : step.description}
         </p>
@@ -121,6 +159,7 @@ export default function StepDetailPage() {
             stepId,
             substepTitle,
             selectedResource,
+            resourceLocationLabel,
             activeTab,
             componentKey,
             path: window.location.pathname,

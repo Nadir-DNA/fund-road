@@ -9,6 +9,8 @@ import LazyLoad from "@/components/LazyLoad";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
+import ResourceNavigation from "./ResourceNavigation";
+import { getAllStepResources, getResourceNavigationInfo, getResourceLocationLabel } from "@/utils/resourceHelpers";
 
 interface ResourceManagerContentProps {
   selectedResource: Resource | undefined;
@@ -29,12 +31,22 @@ export default function ResourceManagerContent({
   const renderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
   
+  // Get navigation information
+  const { currentIndex, totalResources, allResources } = getResourceNavigationInfo(
+    stepId, 
+    selectedResourceName
+  );
+  
+  // Get resource location label
+  const resourceLocationLabel = getResourceLocationLabel(stepId, selectedResourceName);
+  
   // Effect to handle resource initialization
   useEffect(() => {
     mountedRef.current = true;
     console.log("ResourceManagerContent: Resource changed or mounted", { 
       resource: selectedResource?.title, 
-      componentName: selectedResource?.componentName || selectedResourceName
+      componentName: selectedResource?.componentName || selectedResourceName,
+      navigationInfo: { currentIndex, totalResources }
     });
     
     setIsLoading(true);
@@ -77,7 +89,7 @@ export default function ResourceManagerContent({
       }
       clearTimeout(safetyTimeout);
     };
-  }, [selectedResource, selectedResourceName, stepId, selectedSubstepTitle, renderAttempts]);
+  }, [selectedResource, selectedResourceName, stepId, selectedSubstepTitle, renderAttempts, currentIndex, totalResources]);
   
   // Function to retry rendering
   const handleRetry = () => {
@@ -121,8 +133,16 @@ export default function ResourceManagerContent({
     return (
       <div className="mt-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium">{selectedResource.title}</h3>
+          <div>
+            <div className="flex items-center">
+              <span className="text-xs font-mono text-muted-foreground mr-2">
+                {resourceLocationLabel}
+              </span>
+              <h3 className="text-lg font-medium">{selectedResource.title}</h3>
+            </div>
+          </div>
         </div>
+        
         <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
         <LazyLoad priority={true} showLoader={true} height={400} delay={100}>
           <CourseContentDisplay 
@@ -132,6 +152,17 @@ export default function ResourceManagerContent({
             courseContent={selectedResource.courseContent}
           />
         </LazyLoad>
+        
+        {totalResources > 1 && (
+          <ResourceNavigation 
+            stepId={stepId}
+            substepTitle={selectedSubstepTitle}
+            currentResource={selectedResource}
+            allResources={allResources}
+            currentIndex={currentIndex}
+            totalResources={totalResources}
+          />
+        )}
       </div>
     );
   }
@@ -143,7 +174,14 @@ export default function ResourceManagerContent({
   return (
     <div className="mt-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-medium">{selectedResource.title}</h3>
+        <div>
+          <div className="flex items-center">
+            <span className="text-xs font-mono text-muted-foreground mr-2">
+              {resourceLocationLabel}
+            </span>
+            <h3 className="text-lg font-medium">{selectedResource.title}</h3>
+          </div>
+        </div>
         
         <Button 
           variant="ghost" 
@@ -154,6 +192,7 @@ export default function ResourceManagerContent({
           <RefreshCw className="h-4 w-4" />
         </Button>
       </div>
+      
       <p className="text-muted-foreground mb-6 text-sm">{selectedResource.description}</p>
       
       {isBrowser() ? (
@@ -180,6 +219,17 @@ export default function ResourceManagerContent({
         <div className="p-6 text-center border rounded-lg">
           <p className="text-muted-foreground">Les ressources interactives ne sont disponibles que dans un navigateur.</p>
         </div>
+      )}
+      
+      {totalResources > 1 && (
+        <ResourceNavigation 
+          stepId={stepId}
+          substepTitle={selectedSubstepTitle}
+          currentResource={selectedResource}
+          allResources={allResources}
+          currentIndex={currentIndex}
+          totalResources={totalResources}
+        />
       )}
     </div>
   );

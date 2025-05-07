@@ -66,6 +66,11 @@ export default function ResourcesBySubstep({ stepId, activeSubstepTitle }: Resou
     }
   };
 
+  // Calculate indices for substeps and resources
+  const getResourceNumberLabel = (substepIndex: number, resourceIndex: number) => {
+    return `${stepId}.${substepIndex + 1}.${resourceIndex + 1}`;
+  };
+
   if (!currentStep) {
     return <div className="text-center p-4 text-muted-foreground">Étape non trouvée</div>;
   }
@@ -80,15 +85,15 @@ export default function ResourcesBySubstep({ stepId, activeSubstepTitle }: Resou
         onValueChange={setExpandedSubsteps}
         className="space-y-2"
       >
-        {substeps.map((substep, index) => (
+        {substeps.map((substep, substepIndex) => (
           <AccordionItem 
-            key={`substep-${index}`} 
+            key={`substep-${substepIndex}`} 
             value={substep.title}
             className="border border-slate-700 rounded-lg bg-slate-800/50 overflow-hidden"
           >
             <AccordionTrigger className="px-4 py-3 hover:bg-slate-700/50">
               <div className="flex items-center">
-                <span className="font-medium">{substep.title}</span>
+                <span className="font-medium">{stepId}.{substepIndex + 1} {substep.title}</span>
                 {substep.resources && substep.resources.length > 0 && (
                   <Badge variant="secondary" className="ml-2">
                     {substep.resources.length}
@@ -106,13 +111,19 @@ export default function ResourcesBySubstep({ stepId, activeSubstepTitle }: Resou
                 <div className="space-y-3">
                   {substep.resources
                     .filter(resource => resource.componentName && resource.status !== 'coming-soon')
-                    .map((resource, idx) => (
+                    .map((resource, resourceIdx) => (
                       <Card 
-                        key={`resource-${idx}`} 
+                        key={`resource-${resourceIdx}`} 
                         className={`p-3 flex items-center justify-between border-slate-600 
                           ${selectedResource === resource.componentName ? 'border-primary ring-1 ring-primary' : 'hover:border-slate-500'}`}
                       >
                         <div className="flex items-center">
+                          <Badge 
+                            variant="outline" 
+                            className="mr-2 px-1.5 py-0 text-xs font-mono" 
+                          >
+                            {getResourceNumberLabel(substepIndex, resourceIdx)}
+                          </Badge>
                           <BookOpen className="h-4 w-4 mr-2 text-muted-foreground" />
                           <span className="text-sm">{resource.title}</span>
                         </div>
@@ -150,7 +161,9 @@ export default function ResourcesBySubstep({ stepId, activeSubstepTitle }: Resou
                   <div className="space-y-3 pl-2 border-l border-slate-700">
                     {substep.subSubSteps.map((subsubstep, ssIdx) => (
                       <div key={`subsubstep-${ssIdx}`} className="pt-2">
-                        <div className="text-sm font-medium mb-1">{subsubstep.title}</div>
+                        <div className="text-sm font-medium mb-1">
+                          {stepId}.{substepIndex + 1}.{ssIdx + 1} {subsubstep.title}
+                        </div>
                         <div className="text-xs text-muted-foreground mb-2">{subsubstep.description}</div>
                         
                         {subsubstep.resources && subsubstep.resources.length > 0 ? (
@@ -164,6 +177,12 @@ export default function ResourcesBySubstep({ stepId, activeSubstepTitle }: Resou
                                     ${selectedResource === resource.componentName ? 'border-primary ring-1 ring-primary' : 'hover:border-slate-500'}`}
                                 >
                                   <div className="flex items-center">
+                                    <Badge 
+                                      variant="outline" 
+                                      className="mr-2 px-1.5 py-0 text-xs font-mono"
+                                    >
+                                      {`${stepId}.${substepIndex + 1}.${ssIdx + 1}.${rIdx + 1}`}
+                                    </Badge>
                                     <Book className="h-3 w-3 mr-2 text-muted-foreground" />
                                     <span className="text-xs">{resource.title}</span>
                                   </div>
