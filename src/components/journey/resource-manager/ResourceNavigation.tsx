@@ -38,6 +38,7 @@ export default function ResourceNavigation({
     if (!targetResource?.componentName) return;
     
     setIsLoading(true);
+    console.log(`Navigating to resource ${resourceIndex + 1}/${totalResources}: ${targetResource.componentName}`);
     
     const url = buildResourceUrl(
       stepId, 
@@ -68,7 +69,7 @@ export default function ResourceNavigation({
         {isLoading ? (
           <LoadingIndicator size="sm" />
         ) : (
-          <>Ressource {currentIndex + 1}/{totalResources}</>
+          <>Ressource {currentIndex + 1}/{totalResources} - {substepTitle}</>
         )}
       </div>
       

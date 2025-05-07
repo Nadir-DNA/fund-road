@@ -26,10 +26,11 @@ export default function ResourceManagerContent({
   const renderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
   
-  // Get navigation information
+  // Get navigation information - passing substepTitle to filter properly
   const { currentIndex, totalResources, allResources } = getResourceNavigationInfo(
     stepId, 
-    selectedResourceName
+    selectedResourceName,
+    selectedSubstepTitle
   );
   
   // Get resource location label
@@ -41,7 +42,8 @@ export default function ResourceManagerContent({
     console.log("ResourceManagerContent: Resource changed or mounted", { 
       resource: selectedResource?.title, 
       componentName: selectedResource?.componentName || selectedResourceName,
-      navigationInfo: { currentIndex, totalResources }
+      navigationInfo: { currentIndex, totalResources },
+      context: { stepId, substep: selectedSubstepTitle }
     });
     
     setIsLoading(true);

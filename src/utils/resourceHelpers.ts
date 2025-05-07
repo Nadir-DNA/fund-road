@@ -39,20 +39,24 @@ export function resourceTypeToComponentName(resourceType: string): string {
 }
 
 // Get all resources for a step, including from substeps and subsubsteps
-export function getAllStepResources(stepId: number): Resource[] {
+// Modified to filter by substepTitle when provided
+export function getAllStepResources(stepId: number, substepTitle?: string | null): Resource[] {
   const step = journeySteps.find(s => s.id === stepId);
   if (!step) return [];
   
-  let allResources: Resource[] = [...(step.resources || [])];
+  let allResources: Resource[] = [];
   
-  // Add resources from substeps
-  if (step.subSteps && step.subSteps.length > 0) {
-    step.subSteps.forEach(substep => {
+  // If substepTitle is provided, only get resources for that substep
+  if (substepTitle) {
+    // Find the specific substep
+    const substep = step.subSteps?.find(sub => sub.title === substepTitle);
+    if (substep) {
+      // Add resources from this substep
       if (substep.resources) {
         allResources = [...allResources, ...substep.resources];
       }
       
-      // Add resources from subsubsteps
+      // Add resources from subsubsteps of this substep
       if (substep.subSubSteps && substep.subSubSteps.length > 0) {
         substep.subSubSteps.forEach(subsubstep => {
           if (subsubstep.resources) {
@@ -60,7 +64,32 @@ export function getAllStepResources(stepId: number): Resource[] {
           }
         });
       }
-    });
+    }
+  } 
+  // If no substepTitle, get all resources from the step
+  else {
+    // Add resources from the main step
+    if (step.resources) {
+      allResources = [...allResources, ...step.resources];
+    }
+    
+    // Add resources from all substeps
+    if (step.subSteps && step.subSteps.length > 0) {
+      step.subSteps.forEach(substep => {
+        if (substep.resources) {
+          allResources = [...allResources, ...substep.resources];
+        }
+        
+        // Add resources from subsubsteps
+        if (substep.subSubSteps && substep.subSubSteps.length > 0) {
+          substep.subSubSteps.forEach(subsubstep => {
+            if (subsubstep.resources) {
+              allResources = [...allResources, ...subsubstep.resources];
+            }
+          });
+        }
+      });
+    }
   }
   
   // Remove duplicates by componentName
@@ -74,19 +103,23 @@ export function getAllStepResources(stepId: number): Resource[] {
     return acc;
   }, []);
   
+  console.log(`getAllStepResources: Found ${uniqueResources.length} resources for step ${stepId} ${substepTitle ? `and substep ${substepTitle}` : ''}`);
   return uniqueResources;
 }
 
-// Get resource index and total count
+// Get resource index and total count - Updated to support substep filtering
 export function getResourceNavigationInfo(
   stepId: number, 
-  currentResourceName: string | null
+  currentResourceName: string | null,
+  substepTitle?: string | null
 ): { currentIndex: number, totalResources: number, allResources: Resource[] } {
-  const allResources = getAllStepResources(stepId);
+  // Get resources filtered by substep if provided
+  const allResources = getAllStepResources(stepId, substepTitle);
   const currentIndex = currentResourceName 
     ? allResources.findIndex(r => r.componentName === currentResourceName)
     : -1;
   
+  console.log(`getResourceNavigationInfo: Found ${allResources.length} resources, current index: ${currentIndex}`);
   return {
     currentIndex: currentIndex !== -1 ? currentIndex : 0,
     totalResources: allResources.length,
