@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { journeySteps } from "@/data/journeySteps";
 import { saveCurrentPath, saveLastPath } from "@/utils/navigationUtils";
@@ -15,6 +15,7 @@ interface StepNavigationProps {
 export default function StepNavigation({ stepId }: StepNavigationProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [isNavigating, setIsNavigating] = useState(false);
   
@@ -64,9 +65,16 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
       // et l'option replace pour remplacer l'entrée actuelle dans l'historique
       setTimeout(() => {
         // Ajouter resetResource dans l'état pour forcer la réinitialisation des ressources
+        // Utiliser replace: true pour remplacer l'entrée actuelle dans l'historique
+        // et éviter une accumulation d'entrées dans l'historique
         navigate(targetUrl, { 
           replace: true, 
-          state: { resetResource: true, fromStep: stepId, toStep: targetStepId } 
+          state: { 
+            resetResource: true, 
+            fromStep: stepId, 
+            toStep: targetStepId,
+            timestamp: Date.now() // Ajouter un timestamp pour garantir que l'état est unique
+          } 
         });
         console.log(`Navigation effectuée vers: ${targetUrl} avec état de réinitialisation`);
       }, 100);

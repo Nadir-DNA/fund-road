@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import ResourcesList from "@/components/journey/ResourcesList";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
@@ -26,6 +27,19 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
   const currentStepIdRef = useRef<number>(stepId);
   const location = useLocation();
 
+  // Force reset when component mounts with new stepId or when component's key changes
+  useEffect(() => {
+    console.log(`ResourcesTab mounted/refreshed with stepId ${stepId}`);
+    initialLoadDoneRef.current = false;
+    setSelectedResourceName(null);
+    currentStepIdRef.current = stepId;
+    
+    // Return cleanup function
+    return () => {
+      console.log(`ResourcesTab for stepId ${stepId} unmounting`);
+    };
+  }, [refreshKey]); // Only run on mount or when refreshKey changes
+
   // Reset state when step ID changes
   useEffect(() => {
     if (currentStepIdRef.current !== stepId) {
@@ -47,13 +61,14 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
       setManualResources([]);
       setRefreshKey(prev => prev + 1);
       
-      // Clear the state to prevent repeated resets
+      // Clear the state to prevent repeated resets by creating a new history entry
+      // that preserves other state properties but removes resetResource
       window.history.replaceState(
         { ...location.state, resetResource: false },
         document.title
       );
     }
-  }, [location]);
+  }, [location.state]);
 
   // Check authentication status
   useEffect(() => {
@@ -75,7 +90,7 @@ export default function ResourcesTab({ stepId, substepTitle, stepTitle }: Resour
   const fetchResourcesManually = useCallback(async () => {
     // Skip if we already loaded resources for this step and nothing has changed
     if (initialLoadDoneRef.current && currentStepIdRef.current === stepId) {
-      console.log("ResourcesTab: Resources already loaded for this step, skipping fetch");
+      console.log(`ResourcesTab: Resources already loaded for step ${stepId}, skipping fetch`);
       return;
     }
     
