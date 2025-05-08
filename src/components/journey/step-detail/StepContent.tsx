@@ -13,6 +13,7 @@ interface StepContentProps {
   substepTitle: string | null;
   resourceName?: string | null;
   isLoading?: boolean;
+  isViewingResource?: boolean; // Add this prop
 }
 
 export default function StepContent({ 
@@ -22,13 +23,21 @@ export default function StepContent({
   substepTitle,
   resourceName,
   isLoading = false,
+  isViewingResource = false, // Set default to false
 }: StepContentProps) {
   const [searchParams] = useSearchParams();
   const selectedResourceName = searchParams.get('resource');
   const { activeTab, handleTabChange } = useStepTabs(selectedResourceName || resourceName);
 
-  // Determine if we're viewing a resource
-  const isViewingResource = !!(selectedResourceName || resourceName);
+  // Double check if we're viewing a resource - both from props and URL params
+  const definitelyViewingResource = isViewingResource || Boolean(selectedResourceName || resourceName);
+
+  console.log("StepContent - Resource view state:", {
+    isViewingResource,
+    selectedResourceName,
+    resourceName,
+    definitelyViewingResource
+  });
 
   return (
     <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange} className="w-full">
@@ -55,6 +64,7 @@ export default function StepContent({
             stepId={stepId}
             substepTitle={substepTitle}
             selectedResourceName={resourceName || selectedResourceName}
+            isViewingResource={definitelyViewingResource} // Pass the definite flag
           />
         </div>
       </TabsContent>

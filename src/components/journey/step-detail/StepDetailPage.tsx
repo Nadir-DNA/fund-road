@@ -24,14 +24,14 @@ export default function StepDetailPage() {
   const step = journeySteps.find(s => s.id === stepId);
   const selectedSubStep = step?.subSteps?.find(s => s.title === substepTitle) || null;
   
-  // Determine if we're viewing a resource
-  const isViewingResource = !!(selectedResource || resourceName);
+  // Determine if we're viewing a resource - force it to be a boolean to avoid ambiguity
+  const isViewingResource = Boolean(selectedResource || resourceName);
   
   console.log("StepDetailPage - Loading with:", { 
     stepId, 
     substepTitle, 
     resourceName: resourceName || selectedResource,
-    isViewingResource
+    isViewingResource // Log this value to confirm it's working
   });
 
   if (!step) {
@@ -72,9 +72,10 @@ export default function StepDetailPage() {
           substepTitle={substepTitle}
           resourceName={resourceName || selectedResource}
           isLoading={isLoading}
+          isViewingResource={isViewingResource} // Pass this prop explicitly
         />
         
-        {/* Only show step navigation when not viewing a resource */}
+        {/* Only show step navigation when NOT viewing a resource */}
         {!isViewingResource && (
           <div className="mt-8 border-t border-slate-700 pt-6">
             <StepNavigation stepId={stepId} />
