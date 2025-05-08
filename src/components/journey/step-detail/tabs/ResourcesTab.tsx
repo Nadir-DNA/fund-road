@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Resource, Step } from "@/types/journey";
-import ResourceCard from "../ResourceCard";
 import { getStepResources, getAllStepResources, getResourceLocationLabel } from "@/utils/resourceHelpers";
 import { useSearchParams } from "react-router-dom";
 import ResourceManagerContent from "../../resource-manager/ResourceManagerContent";
+import ResourceCard from "../../resource-manager/ResourceCard";
 
 interface ResourcesTabProps {
   step: Step;

@@ -13,12 +13,14 @@ interface ResourceSequenceNavigationProps {
   stepId: number;
   currentResource: Resource;
   selectedResourceName: string;
+  substepTitle: string;
 }
 
 export default function ResourceSequenceNavigation({
   stepId,
   currentResource,
-  selectedResourceName
+  selectedResourceName,
+  substepTitle
 }: ResourceSequenceNavigationProps) {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -34,12 +36,24 @@ export default function ResourceSequenceNavigation({
   const hasPrevious = previousResource !== null;
   const hasNext = nextResource !== null;
   
+  console.log("ResourceSequenceNavigation:", {
+    resourceName: selectedResourceName,
+    stepId,
+    substepTitle,
+    hasPrevious,
+    hasNext,
+    currentIndex,
+    totalResources,
+    previousResource: previousResource?.title,
+    nextResource: nextResource?.title
+  });
+  
   const navigateToResource = (resource: Resource | null) => {
     if (isLoading || !resource?.componentName) return;
     
     // Get the substep title either from the resource or its parent
-    const substepTitle = resource.subsubstepTitle || currentResource.subsubstepTitle;
-    if (!substepTitle) {
+    const navSubstepTitle = resource.subsubstepTitle || substepTitle;
+    if (!navSubstepTitle) {
       console.error("Cannot navigate: missing substep title", resource);
       toast({
         title: "Erreur de navigation",
@@ -50,11 +64,11 @@ export default function ResourceSequenceNavigation({
     }
     
     setIsLoading(true);
-    console.log(`Navigating to resource: ${resource.componentName} in ${substepTitle}`);
+    console.log(`Navigating to resource: ${resource.componentName} in ${navSubstepTitle}`);
     
     const url = buildResourceUrl(
       stepId, 
-      substepTitle, 
+      navSubstepTitle, 
       resource.componentName
     );
     
