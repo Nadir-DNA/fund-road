@@ -33,7 +33,6 @@ export default function LazyLoad({
     
     // If priority is true, show content immediately
     if (priority) {
-      console.log("LazyLoad: Priority mode - showing content immediately");
       setIsLoaded(true);
       return () => {
         mountedRef.current = false;
@@ -42,16 +41,13 @@ export default function LazyLoad({
     
     // Only apply delay when not in priority mode
     if (!isLoaded && delay > 0) {
-      console.log(`LazyLoad: Setting up delay of ${delay}ms`);
       timeoutRef.current = window.setTimeout(() => {
         if (mountedRef.current) {
-          console.log("LazyLoad: Timeout completed, showing content");
           setIsLoaded(true);
         }
       }, delay);
     } else if (!isLoaded) {
       // No delay but still need to set loaded
-      console.log("LazyLoad: No delay specified, showing content immediately");
       setIsLoaded(true);
     }
 
@@ -59,7 +55,6 @@ export default function LazyLoad({
     return () => {
       mountedRef.current = false;
       if (timeoutRef.current !== null) {
-        console.log("LazyLoad: Clearing timeout during cleanup");
         clearTimeout(timeoutRef.current);
       }
     };
@@ -73,10 +68,8 @@ export default function LazyLoad({
       (entries) => {
         if (entries[0].isIntersecting && mountedRef.current) {
           setIsVisible(true);
-          console.log("LazyLoad: Component is now visible in viewport");
           
           if (!isLoaded && mountedRef.current) {
-            console.log("LazyLoad: Loading content due to visibility");
             setIsLoaded(true);
           }
         }
