@@ -4,7 +4,6 @@ import { Resource } from "@/types/journey";
 import { getResourceNavigationInfo, getResourceLocationLabel } from "@/utils/resourceHelpers";
 import ResourceErrorDisplay from "./ResourceErrorDisplay";
 import ResourceLoadingState from "./ResourceLoadingState";
-import CourseResourceDisplay from "./CourseResourceDisplay";
 import InteractiveResourceDisplay from "./InteractiveResourceDisplay";
 
 interface ResourceManagerContentProps {
@@ -106,27 +105,7 @@ export default function ResourceManagerContent({
     return <ResourceLoadingState />;
   }
 
-  // Special handling for course content
-  if (selectedResource.type === 'course' && selectedResource.courseContent) {
-    console.log("Rendering course content resource:", selectedResource.title);
-    return (
-      <CourseResourceDisplay
-        selectedResource={selectedResource}
-        resourceLocationLabel={resourceLocationLabel}
-        stepId={stepId}
-        selectedSubstepTitle={selectedSubstepTitle}
-        allResources={allResources}
-        currentIndex={currentIndex}
-        totalResources={totalResources}
-        onRetry={handleRetry}
-      />
-    );
-  }
-  
-  // Default rendering for other resource types
-  const componentName = selectedResource.componentName || selectedResourceName;
-  console.log(`Rendering resource component: ${componentName}`);
-  
+  // Render resource content based on type (handle course type specially)
   return (
     <InteractiveResourceDisplay
       selectedResource={selectedResource}
@@ -134,7 +113,7 @@ export default function ResourceManagerContent({
       stepId={stepId}
       selectedSubstepTitle={selectedSubstepTitle}
       selectedResourceName={selectedResourceName}
-      componentName={componentName}
+      componentName={selectedResource.componentName || selectedResourceName}
       allResources={allResources}
       currentIndex={currentIndex}
       totalResources={totalResources}

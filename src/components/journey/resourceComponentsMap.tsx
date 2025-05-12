@@ -61,5 +61,8 @@ export const resourceComponentsMap: Record<string, React.LazyExoticComponent<Rea
   "InvestorEmailScript": lazy(() => import("./resources/InvestorEmailScript")),
   "InvestorObjectionPrep": lazy(() => import("./resources/InvestorObjectionPrep")),
   "InvestorFollowUpPlan": lazy(() => import("./resources/InvestorFollowUpPlan")),
-  "StartupToolPicker": lazy(() => import("./resources/StartupToolPicker"))
+  "StartupToolPicker": lazy(() => import("./resources/StartupToolPicker")),
+  
+  // Course content display
+  "CourseContentDisplay": lazy(() => import("./resources/CourseContentDisplay"))
 };
