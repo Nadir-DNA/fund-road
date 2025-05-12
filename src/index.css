@@ -83,6 +83,14 @@
   .button-gradient {
     @apply bg-gradient-to-r from-primary to-accent hover:brightness-110 transition-all;
   }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .animate-slide-in {
+    animation: slideIn 0.4s ease-out;
+  }
 }
 
 /* Custom styles for task cards */
@@ -110,4 +118,68 @@
 
 .animate-float {
   animation: float 4s ease-in-out infinite;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Course content specific styles */
+.prose pre {
+  background-color: rgb(30, 41, 59);
+  border-radius: 0.375rem;
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+.prose code {
+  color: rgb(248, 250, 252);
+  background-color: rgba(30, 41, 59, 0.5);
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.25rem;
+  font-size: 0.875rem;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.prose th, .prose td {
+  border: 1px solid rgb(71, 85, 105);
+  padding: 0.5rem 0.75rem;
+}
+
+.prose th {
+  background-color: rgba(71, 85, 105, 0.3);
+  font-weight: 600;
+}
+
+.prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.375rem;
+}
+
+.prose blockquote {
+  border-left: 4px solid rgb(56, 189, 248);
+  padding-left: 1rem;
+  font-style: italic;
+  color: rgb(148, 163, 184);
 }

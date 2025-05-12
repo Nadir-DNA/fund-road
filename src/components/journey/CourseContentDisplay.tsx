@@ -1,79 +1,115 @@
 
-import React, { useMemo } from "react";
+import React, { lazy, Suspense, useMemo } from "react";
+import { toast } from "@/hooks/use-toast";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Card, CardContent } from "@/components/ui/card";
+import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
+import LazyLoad from "@/components/LazyLoad";
 
 interface CourseContentDisplayProps {
   stepId: number;
   substepTitle: string | null;
   stepTitle: string;
-  courseContent: string;
+  courseContent?: string;
 }
 
-const CourseContentDisplay = ({ stepId, substepTitle, stepTitle, courseContent }: CourseContentDisplayProps) => {
-  // Memoize the formatted content to prevent unnecessary re-rendering
-  const formattedContent = useMemo(() => {
-    if (!courseContent) return "";
-    
-    // Process sections with proper headings and formatting
-    return courseContent
-      // Convert markdown-style headings to HTML headings
-      .replace(/^# (.*?)$/gm, '<h2 class="text-xl font-bold mt-6 mb-3">$1</h2>')
-      .replace(/^## (.*?)$/gm, '<h3 class="text-lg font-semibold mt-5 mb-2">$1</h3>')
-      .replace(/^### (.*?)$/gm, '<h4 class="text-base font-medium mt-4 mb-1">$1</h4>')
-      
-      // Process numbered lists with proper formatting
-      .replace(/(\d+\.)\s+(.*?)$/gm, '<div class="list-item"><span class="list-number">$1</span> $2</div>')
-      
-      // Process bullet points
-      .replace(/^\* (.*?)$/gm, '<div class="bullet-item">• $1</div>')
-      
-      // Process bold text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      
-      // Process italics
-      .replace(/\_(.*?)\_/g, '<em>$1</em>')
-      
-      // Handle paragraphs and line breaks
-      .replace(/\n\n/g, '</p><p class="mb-4">')
-      
-      // Clean up any leftover newlines that aren't part of lists
-      .replace(/\n(?!<div class)/g, '<br>');
-  }, [courseContent]);
+// Define types for markdown components
+interface CodeProps {
+  node?: any;
+  inline?: boolean;
+  className?: string;
+  children?: React.ReactNode;
+}
+
+// Enhanced markdown renderer with optimized components
+const EnhancedMarkdown = ({ content }: { content: string }) => {
+  // Memoize the markdown content to prevent unnecessary re-renders
+  const memoizedContent = useMemo(() => content, [content]);
+  
+  if (!content) {
+    return <p className="text-muted-foreground text-center">Contenu non disponible</p>;
+  }
 
   return (
-    <div className="prose prose-sm max-w-none course-content">
-      <style>
-        {`
-        .course-content .list-item {
-          margin-bottom: 0.75rem;
-          line-height: 1.5;
-        }
-        .course-content .list-number {
-          font-weight: 600;
-          margin-right: 0.25rem;
-        }
-        .course-content .bullet-item {
-          margin-bottom: 0.75rem;
-          line-height: 1.5;
-          padding-left: 0.5rem;
-        }
-        .course-content strong {
-          font-weight: 600;
-        }
-        .course-content h2, .course-content h3, .course-content h4 {
-          margin-top: 1.5rem;
-          margin-bottom: 0.75rem;
-          font-weight: 600;
-        }
-        .course-content p {
-          margin-bottom: 1rem;
-          line-height: 1.6;
-        }
-        `}
-      </style>
-      <div dangerouslySetInnerHTML={{ __html: formattedContent.startsWith('<p') ? formattedContent : `<p class="mb-4">${formattedContent}</p>` }} />
-    </div>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      className="prose prose-invert max-w-none"
+      components={{
+        h1: ({ node, ...props }) => <h1 className="text-2xl font-bold my-4" {...props} />,
+        h2: ({ node, ...props }) => <h2 className="text-xl font-bold my-3" {...props} />,
+        h3: ({ node, ...props }) => <h3 className="text-lg font-bold my-2" {...props} />,
+        p: ({ node, ...props }) => <p className="my-2" {...props} />,
+        ul: ({ node, ...props }) => <ul className="list-disc pl-5 my-2" {...props} />,
+        ol: ({ node, ...props }) => <ol className="list-decimal pl-5 my-2" {...props} />,
+        li: ({ node, ...props }) => <li className="my-1" {...props} />,
+        a: ({ node, ...props }) => <a className="text-primary hover:underline" {...props} target="_blank" rel="noopener noreferrer" />,
+        blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary pl-4 italic my-3" {...props} />,
+        code: ({ node, inline, className, children, ...props }: CodeProps) => 
+          inline ? 
+            <code className="bg-slate-700 px-1 rounded text-sm" {...props}>{children}</code> : 
+            <pre className="bg-slate-700 p-3 rounded my-3 overflow-auto">
+              <code className="text-sm" {...props}>{children}</code>
+            </pre>,
+        table: ({ node, ...props }) => <div className="overflow-x-auto my-4"><table className="w-full border-collapse" {...props} /></div>,
+        thead: ({ node, ...props }) => <thead className="bg-slate-700/50" {...props} />,
+        th: ({ node, ...props }) => <th className="border border-slate-600 px-4 py-2 text-left" {...props} />,
+        td: ({ node, ...props }) => <td className="border border-slate-600 px-4 py-2" {...props} />,
+        img: ({ node, ...props }) => <img className="max-w-full h-auto rounded-md my-4" {...props} alt={props.alt || 'Image'} />
+      }}
+    >
+      {memoizedContent}
+    </ReactMarkdown>
   );
 };
 
-// Use React.memo to prevent unnecessary re-renders
-export default React.memo(CourseContentDisplay);
+// Lazy-loaded markdown component with Suspense fallback
+const LazyMarkdown = lazy(() => import("../ui/LazyMarkdown").then(module => ({ default: () => <EnhancedMarkdown content={module.content} /> })));
+
+export default function CourseContentDisplay({ 
+  stepId, 
+  substepTitle, 
+  stepTitle,
+  courseContent = ""
+}: CourseContentDisplayProps) {
+  console.log(`CourseContentDisplay - Rendering for step ${stepId}, substep: ${substepTitle || 'main'}, content length: ${courseContent?.length || 0}`);
+
+  // Alert if content is missing
+  React.useEffect(() => {
+    if (!courseContent?.trim()) {
+      console.warn(`CourseContentDisplay - No content for step ${stepId}, ${substepTitle || stepTitle}`);
+    }
+  }, [courseContent, stepId, substepTitle, stepTitle]);
+
+  // If no content is provided, show placeholder
+  if (!courseContent || courseContent.trim().length === 0) {
+    return (
+      <Card className="w-full bg-slate-800/50 border-slate-700">
+        <CardContent className="p-6">
+          <div className="text-center py-6">
+            <p className="text-muted-foreground">
+              Le contenu du cours n'est pas disponible pour le moment.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="w-full bg-slate-800/50 border-slate-700">
+      <CardContent className="p-6">
+        <LazyLoad height={300} priority={true} className="prose prose-invert max-w-none">
+          <Suspense fallback={
+            <div className="flex items-center justify-center p-6">
+              <LoadingIndicator size="sm" />
+              <span className="ml-2 text-muted-foreground">Chargement du contenu...</span>
+            </div>
+          }>
+            <EnhancedMarkdown content={courseContent} />
+          </Suspense>
+        </LazyLoad>
+      </CardContent>
+    </Card>
+  );
+}

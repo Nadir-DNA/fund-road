@@ -4,6 +4,7 @@ import CourseContentDisplay from "./CourseContentDisplay";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { BookOpen } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface OverviewTabProps {
   step: Step;

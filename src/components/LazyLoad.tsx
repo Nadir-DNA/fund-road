@@ -85,7 +85,11 @@ export default function LazyLoad({
   }, [isLoaded, priority]);
 
   return (
-    <div ref={componentRef} className={`w-full ${className}`} style={{ minHeight: isLoaded ? 'auto' : height }}>
+    <div 
+      ref={componentRef} 
+      className={`w-full transition-all duration-300 ${className}`} 
+      style={{ minHeight: isLoaded ? 'auto' : height }}
+    >
       {!isLoaded ? (
         showLoader ? (
           <div className="flex items-center justify-center h-full">
@@ -95,7 +99,7 @@ export default function LazyLoad({
           <Skeleton className="h-full w-full" />
         )
       ) : (
-        <div className="lazy-loaded-content">{children}</div>
+        <div className="lazy-loaded-content animate-fade-in">{children}</div>
       )}
     </div>
   );
