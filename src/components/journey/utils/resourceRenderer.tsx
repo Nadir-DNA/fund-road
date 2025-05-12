@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { resourceComponentsMap, ResourceComponentProps } from "../resourceComponentsMap";
 import { toast } from "@/components/ui/use-toast";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
 // Create a stable loading component to prevent re-renders
 const StableLoadingFallback = () => {
@@ -179,15 +180,15 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
             id={`resource-container-${componentName}`}
             className="resource-component-wrapper"
           >
-            <React.Suspense fallback={<StableLoadingFallback />}>
-              <React.ErrorBoundary fallback={<ErrorFallbackComponent componentName={componentName} />}>
+            <Suspense fallback={<StableLoadingFallback />}>
+              <ErrorBoundary fallback={<ErrorFallbackComponent componentName={componentName} />}>
                 <Component 
                   stepId={stepId} 
                   substepTitle={substepTitle} 
                   subsubstepTitle={subsubstepTitle}
                 />
-              </React.ErrorBoundary>
-            </React.Suspense>
+              </ErrorBoundary>
+            </Suspense>
           </div>
         </Suspense>
       </ResourceErrorBoundary>
