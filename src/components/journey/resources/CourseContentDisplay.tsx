@@ -10,6 +10,14 @@ interface CourseContentDisplayProps extends ResourceComponentProps {
   stepTitle?: string;
 }
 
+// Define a more specific type for the code component props
+interface CodeProps {
+  node: any;
+  inline?: boolean;
+  className?: string;
+  children?: React.ReactNode;
+}
+
 export default function CourseContentDisplay({ 
   stepId, 
   substepTitle, 
@@ -43,7 +51,7 @@ export default function CourseContentDisplay({
               li: ({ node, ...props }) => <li className="my-1" {...props} />,
               a: ({ node, ...props }) => <a className="text-primary hover:underline" {...props} target="_blank" rel="noopener noreferrer" />,
               blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary pl-4 italic my-3" {...props} />,
-              code: ({ node, inline, ...props }) => 
+              code: ({ node, inline, ...props }: CodeProps) => 
                 inline ? 
                   <code className="bg-slate-700 px-1 rounded text-sm" {...props} /> : 
                   <pre className="bg-slate-700 p-3 rounded my-3 overflow-auto"><code {...props} /></pre>
