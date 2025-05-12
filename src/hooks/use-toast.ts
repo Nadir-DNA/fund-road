@@ -1,3 +1,4 @@
+
 import { toast as sonnerToast } from "sonner";
 import * as React from "react";
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
@@ -48,6 +49,10 @@ type Action =
 interface State {
   toasts: ToasterToast[];
 }
+
+const initialState: State = {
+  toasts: [],
+};
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
@@ -131,7 +136,7 @@ type ToasterProps = {
 
 const listeners: Array<(state: State) => void> = [];
 
-let memoryState: State = { toasts: [] };
+let memoryState: State = initialState;
 
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action);

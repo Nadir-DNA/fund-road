@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 
 // Shadcn/ui Toaster component
 export function Toaster() {
-  const { toasts } = useToast();
+  const { toasts = [] } = useToast();
 
   return (
     <ToastProvider>
