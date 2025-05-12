@@ -6,6 +6,7 @@ export interface ResourceComponentProps {
   stepId: number;
   substepTitle: string;
   subsubstepTitle?: string | null;
+  resourceType?: string; // Add this property to support the prop being passed
 }
 
 // Using React.lazy for dynamic imports with proper typing

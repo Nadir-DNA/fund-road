@@ -2,7 +2,7 @@
 import React from "react";
 import { Suspense } from "react";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import { resourceComponentsMap } from "../resourceComponentsMap";
+import { resourceComponentsMap, ResourceComponentProps } from "../resourceComponentsMap";
 import { toast } from "@/components/ui/use-toast";
 
 // Create a stable loading component to prevent re-renders
@@ -168,7 +168,8 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
             <Component 
               stepId={stepId} 
               substepTitle={substepTitle} 
-              subsubstepTitle={subsubstepTitle} 
+              subsubstepTitle={subsubstepTitle}
+              // Don't pass resourceType here as it's not needed in renderResourceComponent 
             />
           </div>
         </Suspense>

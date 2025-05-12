@@ -38,7 +38,7 @@ export default function InteractiveResourceDisplay({
   subsubstepTitle
 }: InteractiveResourceDisplayProps) {
   const navigate = useNavigate();
-  const [isNavigatingBack, setIsNavigatingBack] = useState(false);
+  const [isNavigatingBack, setIsNavigatingBack] = useState<boolean>(false);
   
   // Get the component to render
   const ResourceComponent = getResourceComponentByName(componentName);
@@ -60,6 +60,7 @@ export default function InteractiveResourceDisplay({
     console.log(`Navigating back to: ${returnPath}`);
     setTimeout(() => {
       navigate(returnPath);
+      setTimeout(() => setIsNavigatingBack(false), 300);
     }, 100);
   };
   
