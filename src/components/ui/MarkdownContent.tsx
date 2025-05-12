@@ -42,23 +42,9 @@ export default function MarkdownContent({ content }: { content: string }) {
   
   return (
     <div className="markdown-content">
-      <style jsx>{`
-        .markdown-content .list-item {
-          margin-bottom: 0.75rem;
-          line-height: 1.5;
-        }
-        .markdown-content .list-number {
-          font-weight: 600;
-          margin-right: 0.25rem;
-        }
-        .markdown-content .bullet-item {
-          margin-bottom: 0.75rem;
-          line-height: 1.5;
-          padding-left: 0.5rem;
-        }
-      `}</style>
+      {/* Replace the style jsx element with CSS classes from index.css */}
       <div 
-        className="prose prose-invert max-w-none"
+        className="prose prose-invert max-w-none markdown-styles"
         dangerouslySetInnerHTML={{ 
           __html: processedContent.startsWith('<p') ? 
             processedContent : 
