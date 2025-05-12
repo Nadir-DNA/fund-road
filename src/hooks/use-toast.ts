@@ -1,5 +1,6 @@
-
 import { toast as sonnerToast } from "sonner";
+import { useToast as useShadcnToast } from "@/components/ui/toast";
+import { useState, useCallback } from "react";
 
 type ToastProps = {
   title: string;
@@ -8,6 +9,7 @@ type ToastProps = {
   duration?: number;
 };
 
+// Basic toast function for direct usage
 export const toast = ({
   title,
   description,
@@ -26,6 +28,14 @@ export const toast = ({
   });
 };
 
+// Extended hook with toast list management for shadcn/ui toast
 export const useToast = () => {
-  return { toast };
+  // We keep the compatibility with shadcn toast for components that need it
+  const shadcnToast = useShadcnToast();
+  
+  // Return a combined object with both the direct toast function and shadcn toast methods
+  return { 
+    toast,
+    ...shadcnToast // This includes the toasts array needed by the Toaster component
+  };
 };

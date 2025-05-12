@@ -1,6 +1,11 @@
 
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster, SonnerToasterProvider } from "@/components/ui/toaster";
 
 export function ToastIntegration() {
-  return <Toaster />;
+  return (
+    <>
+      <Toaster />
+      <SonnerToasterProvider />
+    </>
+  );
 }
