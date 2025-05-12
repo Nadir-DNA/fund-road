@@ -1,6 +1,5 @@
 
 import { Toaster as SonnerToaster } from "sonner";
-import { useToast } from "@/hooks/use-toast";
 import {
   Toast,
   ToastClose,
@@ -9,10 +8,11 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
 
 // Shadcn/ui Toaster component
 export function Toaster() {
-  const { toasts = [] } = useToast();
+  const { toasts } = useToast();
 
   return (
     <ToastProvider>
