@@ -7,12 +7,14 @@ import { Card, CardContent } from '@/components/ui/card';
 
 interface CourseContentDisplayProps extends ResourceComponentProps {
   courseContent?: string;
+  stepTitle?: string;
 }
 
 export default function CourseContentDisplay({ 
   stepId, 
   substepTitle, 
-  courseContent 
+  courseContent,
+  stepTitle
 }: CourseContentDisplayProps) {
   // If no content is provided, show placeholder
   if (!courseContent) {
