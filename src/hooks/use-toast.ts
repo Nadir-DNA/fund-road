@@ -1,6 +1,6 @@
 import { toast as sonnerToast } from "sonner";
 import { useToast as useShadcnToast } from "@/components/ui/toast";
-import { useState, useCallback } from "react";
+import { useState } from "react";
 
 type ToastProps = {
   title: string;
@@ -33,9 +33,15 @@ export const useToast = () => {
   // We keep the compatibility with shadcn toast for components that need it
   const shadcnToast = useShadcnToast();
   
+  // Create a safe version of the toast object with default empty arrays
+  const safeToast = {
+    ...shadcnToast,
+    toasts: shadcnToast?.toasts || []
+  };
+  
   // Return a combined object with both the direct toast function and shadcn toast methods
   return { 
     toast,
-    ...shadcnToast // This includes the toasts array needed by the Toaster component
+    ...safeToast
   };
 };
