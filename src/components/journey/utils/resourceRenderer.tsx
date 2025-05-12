@@ -69,6 +69,11 @@ const ComponentNotFoundFallback = ({ componentName, stepId, substepTitle }: {
   );
 };
 
+// Export this function so it can be imported in InteractiveResourceDisplay.tsx
+export const getResourceComponentByName = (componentName: string) => {
+  return resourceComponentsMap[componentName];
+};
+
 export const renderResourceComponent = (componentName: string, stepId: number, substepTitle: string, subsubstepTitle?: string | null) => {
   console.log(`Rendering resource: ${componentName} for step ${stepId}, substep ${substepTitle}`);
   

@@ -48,6 +48,7 @@ export default function CourseResourceDisplay({
         stepId={stepId}
         currentResource={selectedResource}
         selectedResourceName={selectedResource.componentName || ''}
+        substepTitle={selectedSubstepTitle}
       />
     </div>
   );
