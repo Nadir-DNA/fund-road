@@ -5,6 +5,8 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
 import { initializeApp } from "./utils/initializeApp";
+import { LanguageProvider } from "./context/LanguageContext";
+import { ThemeProvider } from "./components/ThemeProvider";
 
 // Initialiser les fonctionnalités de l'application
 initializeApp();
@@ -12,7 +14,11 @@ initializeApp();
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <ThemeProvider>
+        <LanguageProvider>
+          <App />
+        </LanguageProvider>
+      </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>
 );
