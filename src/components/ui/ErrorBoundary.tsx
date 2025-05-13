@@ -1,75 +1,95 @@
-
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { Component, ReactNode } from "react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 
-interface Props {
+interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
-  onReset?: () => void;
 }
 
-interface State {
+interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
+  errorInfo: React.ErrorInfo | null;
 }
 
-class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
       hasError: false,
       error: null,
+      errorInfo: null
     };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
+    // Update state so the next render will show the fallback UI
     return {
       hasError: true,
-      error,
+      error
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+    // Log the error to console
     console.error("Error caught by ErrorBoundary:", error, errorInfo);
+    this.setState({
+      error,
+      errorInfo
+    });
   }
 
-  resetErrorBoundary = (): void => {
-    this.props.onReset?.();
+  handleRetry = (): void => {
+    // Reset the error boundary state to trigger a re-render
     this.setState({
       hasError: false,
       error: null,
+      errorInfo: null
     });
   };
 
-  render(): ReactNode {
-    if (this.state.hasError) {
-      if (this.props.fallback) {
-        return this.props.fallback;
+  render() {
+    const { hasError, error } = this.state;
+    const { children, fallback } = this.props;
+
+    if (hasError) {
+      // If a custom fallback is provided, use it
+      if (fallback) {
+        return fallback;
       }
 
+      // Otherwise render our default error UI
       return (
-        <Alert variant="destructive" className="my-4">
-          <AlertTitle>Une erreur s'est produite</AlertTitle>
-          <AlertDescription className="space-y-2">
-            <p className="text-sm">
-              {this.state.error?.message || "Une erreur inattendue s'est produite."}
-            </p>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={this.resetErrorBoundary} 
-              className="mt-2"
-            >
-              <RefreshCw className="h-3 w-3 mr-1" /> Réessayer
-            </Button>
+        <Alert variant="destructive" className="p-6">
+          <AlertTitle>Une erreur est survenue</AlertTitle>
+          <AlertDescription>
+            <div className="mt-2">
+              <p className="text-sm font-medium">
+                {error?.message || "Une erreur inattendue s'est produite."}
+              </p>
+              
+              <pre className="mt-4 p-2 bg-slate-800 rounded-md text-xs overflow-auto max-h-32">
+                {error?.stack?.split("\n").slice(0, 3).join("\n") || "Aucun détail disponible"}
+              </pre>
+              
+              <Button 
+                className="mt-4"
+                variant="outline"
+                onClick={this.handleRetry}
+              >
+                <RefreshCw className="h-3 w-3 mr-2" />
+                Réessayer
+              </Button>
+            </div>
           </AlertDescription>
         </Alert>
       );
     }
 
-    return this.props.children;
+    // If there's no error, render children normally
+    return children;
   }
 }
 

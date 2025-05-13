@@ -1,9 +1,12 @@
+
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useResourceDataLoader } from "./resource/useResourceDataLoader";
 import { useResourceFormState } from "./resource/useResourceFormState";
 import { useResourceActions } from "./resource/useResourceActions";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { saveLastSaveTime } from "@/utils/navigationUtils";
 
 /**
  * Hook for managing resource data with resilience to network issues
@@ -23,12 +26,22 @@ export const useResourceData = (
   const manualSaveRequestedRef = useRef(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const formSubmittedRef = useRef(false);
+  const lastSaveAttemptRef = useRef(new Date());
+  const navigate = useNavigate();
   
   const [userId, setUserId] = useState<string | null>(null);
   const [showOfflineWarning, setShowOfflineWarning] = useState(false);
+  const [lastSaveStatus, setLastSaveStatus] = useState<'success' | 'error' | 'pending' | null>(null);
+  const [attempts, setAttempts] = useState(0);
   
   // Initialize default values with memoization to prevent loops
   const initialValues = useMemo(() => defaultValues || {}, []);
+
+  // Manuellement augmenter les tentatives pour forcer une mise à jour
+  const retryLoading = () => {
+    console.log("Forçage d'une nouvelle tentative de chargement");
+    setAttempts(prev => prev + 1);
+  };
   
   // Check authentication status
   useEffect(() => {
@@ -36,15 +49,18 @@ export const useResourceData = (
       try {
         const { data } = await supabase.auth.getSession();
         if (data.session?.user) {
+          console.log("Utilisateur authentifié:", data.session.user.id);
           setUserId(data.session.user.id);
+        } else {
+          console.log("Aucun utilisateur authentifié");
         }
       } catch (err) {
-        console.warn("Auth check failed:", err);
+        console.warn("Erreur vérification auth:", err);
       }
     };
     
     checkAuth();
-  }, []);
+  }, [attempts]);
   
   // Use the form state management hook with protection against loops
   const {
@@ -59,7 +75,7 @@ export const useResourceData = (
       const currentDataString = JSON.stringify(data);
       if ((manualSaveRequestedRef.current || currentDataString !== previousDataStringRef.current) && 
           firstLoadCompletedRef.current) {
-        console.log("Data changed after initialization, calling onDataSaved");
+        console.log("Données modifiées après initialisation, appel de onDataSaved");
         previousDataStringRef.current = currentDataString;
         onDataSaved(data);
         // Reset the manual save flag
@@ -75,11 +91,11 @@ export const useResourceData = (
     resourceId,
     session,
     fetchSession,
-    retryLoading
+    retryLoading: loaderRetry
   } = useResourceDataLoader(stepId, substepTitle, resourceType, (loadedData) => {
     // Avoid cascade triggers during initial loading
     isInitializingRef.current = true;
-    console.log("Data loaded from resourceDataLoader:", loadedData);
+    console.log("Données chargées depuis resourceDataLoader:", loadedData);
     
     // Check if we really need to update (avoid unnecessary renders)
     if (JSON.stringify(loadedData) !== JSON.stringify(formData)) {
@@ -106,7 +122,7 @@ export const useResourceData = (
       firstLoadCompletedRef.current = true;
       debounceTimerRef.current = null;
     }, 500);
-  });
+  }, attempts);
 
   // Use the resource actions hook with manual save tracking
   const {
@@ -125,21 +141,44 @@ export const useResourceData = (
   const saveOfflineData = (data: any) => {
     try {
       const offlineKey = `offline_resource_${stepId}_${substepTitle}_${resourceType}`;
-      localStorage.setItem(offlineKey, JSON.stringify(data));
-      console.log("Saved data to offline storage");
+      const dataToSave = {
+        ...data,
+        _lastSaved: new Date().toISOString(),
+        _offlineSaved: true
+      };
+      
+      localStorage.setItem(offlineKey, JSON.stringify(dataToSave));
+      console.log("Données sauvegardées hors ligne:", dataToSave);
+      setLastSaveStatus('success');
+      saveLastSaveTime();
       return true;
     } catch (err) {
-      console.error("Failed to save offline:", err);
+      console.error("Échec sauvegarde hors ligne:", err);
+      setLastSaveStatus('error');
+      return false;
+    }
+  };
+
+  // Vérifier si les données ont changé récemment
+  const hasDataChanged = () => {
+    try {
+      const currentDataString = JSON.stringify(formData || {});
+      return currentDataString !== previousDataStringRef.current && 
+             currentDataString.length > 20; // Ignorer les données vides/minimes
+    } catch (e) {
       return false;
     }
   };
   
   // Wrap the manual save handler to set our flag and enforce authentication
   const handleManualSave = async (session: any) => {
-    console.log("Manual save requested");
+    console.log("Sauvegarde manuelle demandée");
+    lastSaveAttemptRef.current = new Date();
     formSubmittedRef.current = true;
+    setLastSaveStatus('pending');
     
     if (isOfflineMode) {
+      console.log("Mode hors ligne actif, sauvegarde locale");
       const success = saveOfflineData(formData);
       if (success) {
         toast({
@@ -161,27 +200,82 @@ export const useResourceData = (
     if (!session) {
       // Check for current session
       try {
+        console.log("Tentative de récupération de session");
         const { data } = await supabase.auth.getSession();
         if (!data.session) {
+          console.warn("Aucune session trouvée, authentification requise");
           toast({
             title: "Authentification requise",
             description: "Vous devez être connecté pour sauvegarder vos données.",
             variant: "destructive"
           });
+          
+          // Sauvegarde temporaire en local avant redirection
+          saveOfflineData({
+            ...formData,
+            _pendingAuth: true,
+            _authRedirectTime: new Date().toISOString()
+          });
+          
+          setTimeout(() => navigate("/auth"), 1500);
           return false;
         }
+        console.log("Session récupérée avec succès");
         session = data.session;
       } catch (err) {
-        console.error("Failed to check auth:", err);
-        // Fall back to offline mode
+        console.error("Échec vérification auth:", err);
+        
+        // Passé en mode hors ligne en cas d'erreur
         setShowOfflineWarning(true);
         return saveOfflineData(formData);
       }
     }
     
     manualSaveRequestedRef.current = true;
-    return originalHandleManualSave(session);
+    const saveResult = await originalHandleManualSave(session);
+    
+    if (saveResult) {
+      setLastSaveStatus('success');
+      saveLastSaveTime();
+      previousDataStringRef.current = JSON.stringify(formData || {});
+      toast({
+        title: "Enregistrement réussi",
+        description: "Vos données ont été sauvegardées avec succès",
+        variant: "default"
+      });
+    } else {
+      setLastSaveStatus('error');
+      toast({
+        title: "Échec de l'enregistrement",
+        description: "Une erreur est survenue lors de la sauvegarde",
+        variant: "destructive"
+      });
+    }
+    
+    return saveResult;
   };
+
+  // Add periodic auto-save for safety
+  useEffect(() => {
+    const autoSaveInterval = setInterval(() => {
+      // Only auto-save if data has changed and we're not in initialization
+      if (!isInitializingRef.current && 
+          hasDataChanged() && 
+          !isSaving && 
+          firstLoadCompletedRef.current && 
+          (session || isOfflineMode)) {
+            
+        console.log("Auto-sauvegarde périodique");
+        if (isOfflineMode) {
+          saveOfflineData(formData);
+        } else if (session) {
+          handleSave(session);
+        }
+      }
+    }, 60000); // Auto-save toutes les 60 secondes si nécessaire
+    
+    return () => clearInterval(autoSaveInterval);
+  }, [formData, session, isOfflineMode, isSaving]);
 
   // Initial values effect - run ONCE in a controlled way
   useEffect(() => {
@@ -194,7 +288,7 @@ export const useResourceData = (
       !isInitializingRef.current &&
       firstLoadCompletedRef.current
     ) {
-      console.log("Initial values setup complete, safe to call onDataSaved once with delay");
+      console.log("Configuration initiale terminée, appel sécurisé de onDataSaved");
       
       // Delay to avoid initialization cascades
       setTimeout(() => {
@@ -205,7 +299,7 @@ export const useResourceData = (
           const initialDataString = JSON.stringify(initialValues);
           if (initialDataString !== previousDataStringRef.current && initialDataString.length > 10) {
             previousDataStringRef.current = initialDataString;
-            console.log("First and only initial onDataSaved call");
+            console.log("Premier et unique appel initial onDataSaved");
             onDataSaved(initialValues);
           }
         }
@@ -224,14 +318,16 @@ export const useResourceData = (
         currentDataString.length > 20 &&
         firstLoadCompletedRef.current) {
       
-      console.log("Data changed, triggering auto-save");
+      console.log("Données modifiées, auto-sauvegarde programmée");
       const saveTimeout = setTimeout(() => {
         // If we're online and have a session, use the online save
         if (!isOfflineMode && session) {
+          console.log("Auto-sauvegarde en ligne");
           handleSave(session);
         } 
         // Otherwise save to local storage
         else if (formData) {
+          console.log("Auto-sauvegarde hors ligne");
           saveOfflineData(formData);
         }
         
@@ -257,12 +353,16 @@ export const useResourceData = (
     isSaving,
     isOfflineMode,
     showOfflineWarning,
+    lastSaveStatus,
     handleFormChange,
     handleSave,
     handleManualSave,
     setFormData: triggerManualUpdate,
     session,
     userId,
-    retryLoading
+    retryLoading: () => {
+      loaderRetry();
+      retryLoading();
+    }
   };
 };

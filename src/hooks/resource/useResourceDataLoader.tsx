@@ -1,347 +1,198 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
 import { useResourceSession } from "./useResourceSession";
-import { saveLastPath } from "@/utils/navigationUtils";
-
-const STORAGE_KEY_PREFIX = 'offline_resource_';
-const AUTH_TIMEOUT = 4000; // Augmenté de 2s à 4s
-const FETCH_TIMEOUT = 5000; // Augmenté de 3s à 5s
+import { useNetworkStatus } from "../useNetworkStatus";
 
 /**
- * Hook pour charger les données de ressource à partir de la base de données, du modèle ou du cache hors ligne
+ * Hook to load resource data with offline support and error handling
  */
 export const useResourceDataLoader = (
-  stepId: number,
+  stepId: number, 
   substepTitle: string,
   resourceType: string,
-  onDataLoaded?: (data: any) => void
+  onDataLoaded: (data: any) => void,
+  forceRefreshCount: number = 0
 ) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [resourceId, setResourceId] = useState<string | null>(null);
-  const [loadAttempts, setLoadAttempts] = useState(0);
-  const [showAuthRedirection, setShowAuthRedirection] = useState(false);
+  const [loadError, setLoadError] = useState<Error | null>(null);
+  const [lastLoadTime, setLastLoadTime] = useState<Date | null>(null);
+  
   const { session, fetchSession } = useResourceSession();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const failedAttemptsRef = useRef(0);
-  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isMountedRef = useRef(true);
-  const authCheckCompletedRef = useRef(false);
-  
-  // Vérifier le cache hors ligne
-  const getOfflineCache = useCallback(() => {
+  const { isOnline, isSupabaseConnected, checkSupabaseConnection } = useNetworkStatus();
+
+  // Fonction pour charger les données depuis le stockage local
+  const loadFromLocalStorage = useCallback(() => {
     try {
-      const storageKey = `${STORAGE_KEY_PREFIX}${stepId}_${substepTitle}_${resourceType}`;
-      const cachedData = localStorage.getItem(storageKey);
-      if (cachedData) {
-        return JSON.parse(cachedData);
+      const offlineKey = `offline_resource_${stepId}_${substepTitle}_${resourceType}`;
+      const storedData = localStorage.getItem(offlineKey);
+      
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        console.log("Données chargées depuis localStorage:", parsedData);
+        
+        // Marquer les données comme étant en mode hors ligne
+        onDataLoaded({
+          ...parsedData,
+          offlineMode: true,
+          _offlineLoadTime: new Date().toISOString()
+        });
+        
+        setIsOfflineMode(true);
+        return true;
       }
-    } catch (err) {
-      console.warn("Erreur de lecture du cache hors ligne:", err);
-    }
-    return null;
-  }, [stepId, substepTitle, resourceType]);
-  
-  // Enregistrer dans le cache hors ligne
-  const saveToOfflineCache = useCallback((data: any) => {
-    try {
-      const storageKey = `${STORAGE_KEY_PREFIX}${stepId}_${substepTitle}_${resourceType}`;
-      localStorage.setItem(storageKey, JSON.stringify(data));
-      console.log("Données sauvegardées dans le cache hors ligne");
-      return true;
-    } catch (err) {
-      console.warn("Échec de l'enregistrement hors ligne:", err);
+      
+      return false;
+    } catch (error) {
+      console.error("Erreur lors du chargement des données locales:", error);
       return false;
     }
-  }, [stepId, substepTitle, resourceType]);
+  }, [stepId, substepTitle, resourceType, onDataLoaded]);
 
-  // Fonction pour rediriger vers la page d'authentification
-  const redirectToAuth = useCallback(() => {
-    if (showAuthRedirection) return;
+  // Fonction pour vérifier le mode hors ligne
+  const checkOfflineMode = useCallback(async () => {
+    // Vérifier la connectivité au début
+    if (!isOnline) {
+      console.log("Appareil hors ligne, passage en mode hors ligne");
+      setIsOfflineMode(true);
+      return true;
+    }
     
-    console.log("Authentification nécessaire pour accéder aux ressources");
-    setShowAuthRedirection(true);
+    // Si en ligne, vérifier si Supabase est accessible
+    const isConnected = await checkSupabaseConnection();
+    if (!isConnected) {
+      console.log("Supabase inaccessible, passage en mode hors ligne");
+      setIsOfflineMode(true);
+      return true;
+    }
     
-    // Sauvegarde du chemin actuel pour redirection après connexion
-    saveLastPath(window.location.pathname + window.location.search);
-    
-    toast({
-      title: "Authentification requise",
-      description: "Veuillez vous connecter pour accéder à vos ressources.",
-      variant: "destructive",
-      duration: 5000
-    });
-    
-    // Attendre un peu pour que le toast soit visible
-    setTimeout(() => navigate('/auth'), 1000);
-  }, [navigate, toast, showAuthRedirection]);
-
-  // Fonction de chargement des données avec mémorisation
-  const loadResourceData = useCallback(async () => {
-    // État de chargement initial - TOUJOURS vrai au départ
+    // Tout fonctionne normalement
+    return false;
+  }, [isOnline, checkSupabaseConnection]);
+  
+  // Fonction pour charger les données de ressource
+  const loadResourceData = useCallback(async (currentSession: any = null) => {
+    setLoadError(null);
     setIsLoading(true);
-    console.log(`[Tentative ${loadAttempts + 1}] Chargement des données pour: stepId=${stepId}, substep=${substepTitle}, type=${resourceType}`);
-    
-    // Timeout de sécurité pour forcer la sortie de l'état de chargement après 5 secondes maximum
-    if (loadingTimeoutRef.current) {
-      clearTimeout(loadingTimeoutRef.current);
-    }
-    
-    loadingTimeoutRef.current = setTimeout(() => {
-      if (isMountedRef.current) {
-        console.log("⚠️ Timeout de sécurité déclenché - forçage de la fin du chargement");
-        setIsLoading(false);
-        
-        // Passer en mode hors ligne après le timeout
-        setIsOfflineMode(true);
-        
-        // Utiliser le cache hors ligne ou les valeurs par défaut
-        const offlineData = getOfflineCache() || { initialized: true, offlineMode: true };
-        if (onDataLoaded) {
-          onDataLoaded(offlineData);
-        }
-      }
-    }, 5000); // Augmenté de 3s à 5s
-    
-    // Vérifier d'abord le cache hors ligne en cas de problèmes de connexion
-    const offlineData = getOfflineCache();
-    if (offlineData) {
-      console.log("Données trouvées dans le cache hors ligne, utilisation pendant la tentative de connexion");
-      // Retourner immédiatement les données en cache mais ne pas quitter l'état de chargement
-      if (onDataLoaded) {
-        onDataLoaded(offlineData);
-      }
-    }
-    
+
     try {
-      // Obtenir la session actuelle - mais limiter le temps d'attente
-      let currentSession = null;
-      try {
-        currentSession = session || await Promise.race([
-          fetchSession().catch(() => null),
-          new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout d'authentification")), AUTH_TIMEOUT))
-        ]);
-      } catch (err) {
-        console.warn("Échec de récupération de la session (timeout ou erreur):", err);
-        // Continuer avec une session nulle, utilisera le mode hors ligne
+      const isOffline = await checkOfflineMode();
+      
+      // Si nous sommes hors ligne, charger depuis le stockage local
+      if (isOffline) {
+        const loadedLocally = loadFromLocalStorage();
+        if (!loadedLocally) {
+          console.log("Aucune donnée locale disponible pour", stepId, substepTitle, resourceType);
+          // Initialiser avec des données vides en mode hors ligne
+          onDataLoaded({ offlineMode: true, _newResource: true });
+        }
+        
+        setIsLoading(false);
+        return;
       }
       
+      // Si nous sommes en ligne, essayer d'obtenir une session si aucune n'est fournie
       if (!currentSession) {
-        console.log("Aucune session d'authentification trouvée pour le chargement des données de ressource");
-        failedAttemptsRef.current++;
-        
-        // Si aucune session après deux tentatives, rediriger vers l'authentification
-        if (failedAttemptsRef.current >= 2 && !authCheckCompletedRef.current) {
-          authCheckCompletedRef.current = true;
-          redirectToAuth();
-          return { content: null, resourceId: null };
-        }
-        
-        // Passer en mode hors ligne
-        setIsOfflineMode(true);
-        console.log("Passage en mode hors ligne en raison de problèmes d'authentification");
-        
-        // Utiliser le cache hors ligne ou les valeurs par défaut
-        const fallbackData = offlineData || { initialized: true, offlineMode: true };
-        if (onDataLoaded) {
-          onDataLoaded(fallbackData);
-        }
-        
-        setIsLoading(false);
-        return { content: fallbackData, resourceId: null };
-      }
-      
-      // Si nous avons une session, essayer de récupérer les données avec un court timeout
-      if (currentSession) {
         try {
-          // Essayer de récupérer la ressource utilisateur avec un timeout
-          const fetchPromise = new Promise(async (resolve, reject) => {
-            try {
-              const { data: userResources, error: userResourceError } = await supabase
-                .from('user_resources')
-                .select('*')
-                .eq('user_id', currentSession.user.id)
-                .eq('step_id', stepId)
-                .eq('substep_title', substepTitle)
-                .eq('resource_type', resourceType);
-                
-              if (userResourceError) {
-                reject(userResourceError);
-                return;
-              }
-              resolve(userResources);
-            } catch (err) {
-              reject(err);
-            }
-          });
+          const { data } = await supabase.auth.getSession();
+          currentSession = data?.session;
           
-          // Ajouter un timeout à la récupération - augmenté de 2s à 5s
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error("Requête expirée")), FETCH_TIMEOUT);
-          });
-          
-          // Faire course entre la récupération et le timeout
-          const userResources = await Promise.race([fetchPromise, timeoutPromise])
-            .catch(err => {
-              console.error("Erreur ou timeout lors de la récupération des ressources:", err);
-              failedAttemptsRef.current++;
-              return null;
-            });
-
-          if (userResources && Array.isArray(userResources) && userResources.length > 0) {
-            // Trier par updated_at dans l'ordre décroissant pour obtenir le plus récent
-            const mostRecent = userResources.sort((a, b) => 
-              new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-            )[0];
-            
-            const content = mostRecent.content || {};
-            console.log("Ressource utilisateur trouvée:", mostRecent.id);
-            setResourceId(mostRecent.id);
-            
-            // Sauvegarder dans le cache hors ligne pour une utilisation future
-            saveToOfflineCache(content);
-            
-            if (loadingTimeoutRef.current) {
-              clearTimeout(loadingTimeoutRef.current);
-              loadingTimeoutRef.current = null;
-            }
-            
+          if (!currentSession) {
+            console.warn("Non authentifié, passage en mode hors ligne");
+            setIsOfflineMode(true);
+            loadFromLocalStorage();
             setIsLoading(false);
-            setIsOfflineMode(false); // S'assurer que le mode hors ligne est désactivé
-            
-            if (onDataLoaded) {
-              onDataLoaded(content);
-            }
-            
-            return { content, resourceId: mostRecent.id };
+            return;
           }
-        } catch (err) {
-          console.error("Erreur lors de la récupération des ressources utilisateur:", err);
+        } catch (authError) {
+          console.error("Erreur lors de la récupération de session:", authError);
+          setIsOfflineMode(true);
+          loadFromLocalStorage();
+          setIsLoading(false);
+          return;
         }
       }
-
-      // Si aucune ressource utilisateur trouvée, utiliser les données hors ligne ou par défaut
-      const defaultContent = offlineData || { initialized: true, offlineMode: true };
       
-      // Sauvegarder le contenu par défaut dans le cache pour une utilisation future
-      saveToOfflineCache(defaultContent);
+      // Maintenant, nous avons une session, essayons de charger les données
+      console.log("Chargement des données pour", { stepId, substepTitle, resourceType });
       
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-        loadingTimeoutRef.current = null;
+      const { data: resources, error } = await supabase
+        .from('user_resources')
+        .select('*')
+        .eq('user_id', currentSession.user.id)
+        .eq('step_id', stepId)
+        .eq('substep_title', substepTitle)
+        .eq('resource_type', resourceType)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Erreur lors du chargement des données:", error);
+        throw new Error(`Erreur de chargement: ${error.message}`);
       }
       
-      setIsLoading(false);
+      console.log("Données chargées depuis Supabase:", resources);
+      
+      if (resources) {
+        setResourceId(resources.id);
+        onDataLoaded(resources.content || {});
+      } else {
+        // Aucune ressource trouvée, initialiser avec des données vides
+        setResourceId(null);
+        onDataLoaded({});
+      }
+      
+      // Stocker également une copie locale pour le mode hors ligne
+      const offlineKey = `offline_resource_${stepId}_${substepTitle}_${resourceType}`;
+      localStorage.setItem(offlineKey, JSON.stringify(resources?.content || {}));
+      
+      // Bien indiquer que nous sommes en ligne
+      setIsOfflineMode(false);
+      
+    } catch (error: any) {
+      console.error("Erreur lors du chargement des données:", error);
+      setLoadError(error);
+      
+      // En cas d'erreur, essayer le mode hors ligne
+      const loadedLocally = loadFromLocalStorage();
+      if (!loadedLocally) {
+        // Si nous n'avons pas de données locales non plus, initialiser avec des données vides
+        onDataLoaded({ offlineMode: true, _error: error.message });
+      }
+      
       setIsOfflineMode(true);
-      
-      if (onDataLoaded) {
-        onDataLoaded(defaultContent);
-      }
-      
-      return { content: defaultContent, resourceId: null };
-      
-    } catch (error) {
-      console.error("Erreur de chargement des données de ressource:", error);
-      
-      // Passer immédiatement en mode hors ligne après un échec
-      setIsOfflineMode(true);
-      
-      const fallbackData = offlineData || { initialized: true, offlineMode: true };
-      
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-        loadingTimeoutRef.current = null;
-      }
-      
+    } finally {
       setIsLoading(false);
-      
-      if (onDataLoaded) {
-        onDataLoaded(fallbackData);
-      }
-      
-      return { content: fallbackData, resourceId: null };
+      setLastLoadTime(new Date());
     }
-  }, [
-    stepId, 
-    substepTitle, 
-    resourceType, 
-    session, 
-    fetchSession, 
-    toast, 
-    loadAttempts, 
-    onDataLoaded, 
-    getOfflineCache, 
-    saveToOfflineCache,
-    isOfflineMode,
-    redirectToAuth
-  ]);
+  }, [stepId, substepTitle, resourceType, onDataLoaded, checkOfflineMode, loadFromLocalStorage]);
 
-  // Effet pour charger les données de ressource au montage ou lorsque des paramètres clés changent
+  // Charger les données lors du montage ou lorsque la session change
   useEffect(() => {
-    isMountedRef.current = true;
-    
-    // Toujours commencer avec l'état de chargement
-    setIsLoading(true);
-    console.log("Début du chargement des données de ressource...");
-    
-    // Définir un timeout de sécurité pour le chargement initial
-    const loadTimeout = setTimeout(() => {
-      // Si toujours en chargement après le timeout, utiliser le mode hors ligne
-      if (isMountedRef.current && isLoading) {
-        console.log("Timeout de chargement initial, forçage du mode hors ligne");
-        setIsOfflineMode(true);
-        setIsLoading(false);
-        const cachedData = getOfflineCache() || { initialized: true, offlineMode: true };
-        if (onDataLoaded) {
-          onDataLoaded(cachedData);
-        }
-      }
-    }, 5000); // Augmenté de 3s à 5s
-    
-    loadResourceData().then((result) => {
-      if (!isMountedRef.current) return;
-      
-      if (result && result.content && onDataLoaded) {
-        onDataLoaded(result.content);
-        if (result.resourceId) {
-          setResourceId(result.resourceId);
-        }
-      }
-      
-      // S'assurer que le chargement est défini sur false même s'il y a une erreur
-      setIsLoading(false);
-    });
-    
-    return () => { 
-      isMountedRef.current = false;
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-      }
-      clearTimeout(loadTimeout);
-    };
-  }, [stepId, substepTitle, resourceType, loadResourceData, loadAttempts, getOfflineCache, onDataLoaded]);
+    console.log("Initialisation du chargement des données, session:", !!session);
+    loadResourceData(session);
+  }, [session, stepId, substepTitle, resourceType, forceRefreshCount]);
 
-  // Ajouter une fonction pour réessayer le chargement
-  const retryLoading = useCallback(() => {
-    console.log("Réessai manuel du chargement des données");
+  // Fonction pour réessayer manuellement le chargement
+  const retryLoading = useCallback(async () => {
+    console.log("Tentative de rechargement des données");
+    // Réinitialiser l'état hors ligne avant de réessayer
     setIsOfflineMode(false);
-    failedAttemptsRef.current = 0;
-    authCheckCompletedRef.current = false;
-    setLoadAttempts(prevAttempts => prevAttempts + 1);
-  }, []);
+    
+    // Rafraîchir d'abord la session
+    const freshSession = await fetchSession();
+    loadResourceData(freshSession);
+  }, [fetchSession, loadResourceData]);
 
   return {
     isLoading,
     isOfflineMode,
     resourceId,
-    setResourceId,
     session,
     fetchSession,
     retryLoading,
-    redirectToAuth
+    loadError,
+    lastLoadTime
   };
 };
