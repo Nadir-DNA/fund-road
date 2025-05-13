@@ -10,6 +10,7 @@ import DashboardSection from '@/components/home/DashboardSection';
 import ResourceCard from '@/components/ResourceCard';
 import { Button } from '@/components/ui/button';
 import { FileText, Shield, Rocket } from 'lucide-react';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 export default function Index() {
   const [isCookieConsentVisible, setIsCookieConsentVisible] = useState(false);
@@ -26,11 +27,17 @@ export default function Index() {
   
   return (
     <div className="min-h-screen bg-black text-white">
-      <Navbar />
+      <ErrorBoundary>
+        <Navbar />
+      </ErrorBoundary>
       
-      <HeroSection />
+      <ErrorBoundary>
+        <HeroSection />
+      </ErrorBoundary>
       
-      <RoadmapSection />
+      <ErrorBoundary>
+        <RoadmapSection />
+      </ErrorBoundary>
       
       <section className="py-16 bg-black">
         <div className="container mx-auto px-4">
@@ -77,11 +84,17 @@ export default function Index() {
         </div>
       </section>
       
-      <FeaturesSection />
+      <ErrorBoundary>
+        <FeaturesSection />
+      </ErrorBoundary>
       
-      <DashboardSection />
+      <ErrorBoundary>
+        <DashboardSection />
+      </ErrorBoundary>
       
-      <Footer />
+      <ErrorBoundary>
+        <Footer />
+      </ErrorBoundary>
     </div>
   );
 }

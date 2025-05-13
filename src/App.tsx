@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import NotFound from "@/pages/NotFound";
 import Index from "@/pages/Index";
@@ -8,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { ToastIntegration } from "@/components/ToastIntegration";
 import Financing from "@/pages/Financing";
 import AuthGuard from "@/components/auth/AuthGuard";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
 // Custom wrapper components for redirects that need URL parameters
 function StepRedirect() {
@@ -32,7 +34,7 @@ function App() {
   }
 
   return (
-    <>
+    <ErrorBoundary>
       <Routes>
         {/* Home page - Accessible sans authentification */}
         <Route path="/" element={<Index />} />
@@ -74,7 +76,7 @@ function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
       <ToastIntegration />
-    </>
+    </ErrorBoundary>
   );
 }
 
