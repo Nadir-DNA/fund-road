@@ -281,6 +281,7 @@ export type Database = {
           content: Json
           created_at: string | null
           id: string
+          original_substep_title: string | null
           resource_type: string
           step_id: number
           substep_title: string
@@ -291,6 +292,7 @@ export type Database = {
           content?: Json
           created_at?: string | null
           id?: string
+          original_substep_title?: string | null
           resource_type: string
           step_id: number
           substep_title: string
@@ -301,6 +303,7 @@ export type Database = {
           content?: Json
           created_at?: string | null
           id?: string
+          original_substep_title?: string | null
           resource_type?: string
           step_id?: number
           substep_title?: string

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { BookOpen, FileText, ExternalLink } from "lucide-react";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { buildResourceUrl, saveResourceReturnPath } from "@/utils/navigationUtils";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,18 +63,22 @@ export default function ResourceCard({ resource, stepId, substepTitle }: Resourc
     }
 
     // Check if this resource has a component to display
-    if (resource.componentName) {
-      console.log("Navigating to component resource:", resource.componentName);
+    if (resource.componentName || resource.component_name) {
+      const componentName = resource.componentName || resource.component_name;
+      console.log("Navigating to component resource:", componentName);
       try {
         // Record the resource access in user_resources if it doesn't exist yet
         try {
+          // Utiliser la correspondance de nom de sous-étape correcte selon l'étape
+          const normalizedSubstepTitle = getNormalizedSubstepTitle(stepId, substepTitle);
+          
           // Check if the resource already exists for this user
           const { data: existingResource } = await supabase
             .from('user_resources')
             .select('id')
             .eq('user_id', userId)
             .eq('step_id', stepId)
-            .eq('substep_title', substepTitle)
+            .eq('substep_title', normalizedSubstepTitle)
             .eq('resource_type', resource.resource_type || resource.type || 'resource')
             .maybeSingle();
             
@@ -85,7 +89,7 @@ export default function ResourceCard({ resource, stepId, substepTitle }: Resourc
               .insert({
                 user_id: userId,
                 step_id: stepId,
-                substep_title: substepTitle,
+                substep_title: normalizedSubstepTitle,
                 resource_type: resource.resource_type || resource.type || 'resource',
                 content: {}
               });
@@ -103,7 +107,7 @@ export default function ResourceCard({ resource, stepId, substepTitle }: Resourc
         saveResourceReturnPath(window.location.pathname);
         
         // Build the resource URL
-        const resourceUrl = buildResourceUrl(stepId, substepTitle, resource.componentName);
+        const resourceUrl = buildResourceUrl(stepId, substepTitle, componentName);
         
         // Add a small delay to avoid race conditions
         setTimeout(() => {
@@ -132,6 +136,24 @@ export default function ResourceCard({ resource, stepId, substepTitle }: Resourc
     
     setIsLoading(false);
   };
+
+  // Function to normalize step titles according to conceptionStep.ts
+  function getNormalizedSubstepTitle(stepId: number, title: string): string {
+    // Pour l'étape 2 (Conception)
+    if (stepId === 2) {
+      // Map potential variations to canonical titles
+      if (title === '_persona' || title === '_problemSolution' || title === '_empathy' || 
+          title.includes('proposition') || title.includes('valeur')) {
+        return 'Proposition de valeur';
+      } else if (title === '_mvp' || title === '_productStrategy' || title === '_roadmap' || 
+                title.includes('stratégie') || title.includes('produit')) {
+        return 'Stratégie produit';
+      }
+    }
+    
+    // Default: return the original title
+    return title;
+  }
 
   // Define the icon based on resource type
   const getResourceIcon = () => {
