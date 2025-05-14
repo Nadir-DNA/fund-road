@@ -8,11 +8,13 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast";
-import { useToast } from "@/hooks/use-toast";
+import { useToast as useHookToast } from "@/hooks/use-toast";
+import { useState, useCallback, useEffect } from "react";
+import { ToastContext } from "@/components/ui/use-toast";
 
 // Shadcn/ui Toaster component
 export function Toaster() {
-  const { toasts = [] } = useToast();
+  const { toasts = [] } = useHookToast();
 
   return (
     <ToastProvider>
