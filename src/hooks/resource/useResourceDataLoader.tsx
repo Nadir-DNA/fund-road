@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useResourceSession } from "./useResourceSession";
 import { useNetworkStatus } from "../useNetworkStatus";
+import { toast } from "@/components/ui/use-toast";
 
 /**
  * Hook to load resource data with offline support and error handling
@@ -118,6 +119,8 @@ export const useResourceDataLoader = (
       // Maintenant, nous avons une session, essayons de charger les données
       console.log("Chargement des données pour", { stepId, substepTitle, resourceType });
       
+      // Modification clé : utiliser order + limit(1) au lieu de maybeSingle
+      // pour garantir que nous obtenons toujours un seul résultat (le plus récent)
       const { data: resources, error } = await supabase
         .from('user_resources')
         .select('*')
@@ -125,34 +128,49 @@ export const useResourceDataLoader = (
         .eq('step_id', stepId)
         .eq('substep_title', substepTitle)
         .eq('resource_type', resourceType)
-        .maybeSingle();
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();  // Utilisez single() car limit(1) garantit un seul résultat
       
       if (error) {
-        console.error("Erreur lors du chargement des données:", error);
-        throw new Error(`Erreur de chargement: ${error.message}`);
-      }
-      
-      console.log("Données chargées depuis Supabase:", resources);
-      
-      if (resources) {
+        // Vérification spécifique pour l'erreur "aucune ligne trouvée"
+        if (error.code === 'PGRST116') {
+          console.log("Aucune ressource trouvée, initialisation avec des données vides");
+          setResourceId(null);
+          onDataLoaded({});
+          
+          // Puisque c'est normal de ne pas trouver de ressource (première fois),
+          // ne pas passer en mode hors ligne
+          setIsOfflineMode(false);
+          
+        } else {
+          console.error("Erreur lors du chargement des données:", error);
+          throw new Error(`Erreur de chargement: ${error.message}`);
+        }
+      } else if (resources) {
+        // Ressource trouvée avec succès
+        console.log("Données chargées depuis Supabase:", resources);
         setResourceId(resources.id);
         onDataLoaded(resources.content || {});
-      } else {
-        // Aucune ressource trouvée, initialiser avec des données vides
-        setResourceId(null);
-        onDataLoaded({});
+        
+        // Stocker également une copie locale pour le mode hors ligne
+        const offlineKey = `offline_resource_${stepId}_${substepTitle}_${resourceType}`;
+        localStorage.setItem(offlineKey, JSON.stringify(resources.content || {}));
+        
+        // Bien indiquer que nous sommes en ligne
+        setIsOfflineMode(false);
       }
-      
-      // Stocker également une copie locale pour le mode hors ligne
-      const offlineKey = `offline_resource_${stepId}_${substepTitle}_${resourceType}`;
-      localStorage.setItem(offlineKey, JSON.stringify(resources?.content || {}));
-      
-      // Bien indiquer que nous sommes en ligne
-      setIsOfflineMode(false);
       
     } catch (error: any) {
       console.error("Erreur lors du chargement des données:", error);
       setLoadError(error);
+      
+      // Ajouter une notification pour informer l'utilisateur du problème
+      toast({
+        title: "Problème de chargement des données",
+        description: "Passage en mode hors ligne temporaire. Vos modifications seront sauvegardées localement.",
+        variant: "destructive"
+      });
       
       // En cas d'erreur, essayer le mode hors ligne
       const loadedLocally = loadFromLocalStorage();

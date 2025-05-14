@@ -1,4 +1,3 @@
-
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -199,25 +198,50 @@ export function useResourceSave({
       } else {
         // Créer une nouvelle ressource
         console.log("Création d'une nouvelle ressource avec user_id:", session.user.id);
-        // S'assurer que tous les champs requis sont présents
-        const resourceData = {
-          user_id: session.user.id,
-          step_id: stepId,
-          substep_title: substepTitle,
-          resource_type: resourceType,
-          content: formData,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
         
-        console.log("Données de ressource à insérer:", resourceData);
-        
-        result = await supabase
+        // Vérifier d'abord si une ressource existe déjà pour éviter les doublons
+        // même si la contrainte d'unicité est en place, c'est plus propre
+        const { data: existingResource } = await supabase
           .from('user_resources')
-          .insert(resourceData)
-          .select();
+          .select('id')
+          .eq('user_id', session.user.id)
+          .eq('step_id', stepId)
+          .eq('substep_title', substepTitle)
+          .eq('resource_type', resourceType)
+          .maybeSingle();
           
-        console.log("Résultat de l'insertion:", result);
+        if (existingResource) {
+          console.log("Une ressource existe déjà, mise à jour au lieu de création");
+          
+          result = await supabase
+            .from('user_resources')
+            .update({
+              content: formData,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingResource.id)
+            .select();
+        } else {
+          // S'assurer que tous les champs requis sont présents
+          const resourceData = {
+            user_id: session.user.id,
+            step_id: stepId,
+            substep_title: substepTitle,
+            resource_type: resourceType,
+            content: formData,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          
+          console.log("Données de ressource à insérer:", resourceData);
+          
+          result = await supabase
+            .from('user_resources')
+            .insert(resourceData)
+            .select();
+            
+          console.log("Résultat de l'insertion:", result);
+        }
       }
       
       const { error, data } = result;

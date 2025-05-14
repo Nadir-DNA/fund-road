@@ -47,14 +47,16 @@ export async function synchronizeOfflineData() {
           // Vérifier si la ressource existe déjà
           const { data: existingResource, error: checkError } = await supabase
             .from('user_resources')
-            .select('id')
+            .select('id, updated_at')
             .eq('user_id', userId)
             .eq('step_id', stepId)
             .eq('substep_title', substepTitle)
             .eq('resource_type', resourceType)
+            .order('updated_at', { ascending: false })
+            .limit(1)
             .maybeSingle();
             
-          if (checkError) {
+          if (checkError && checkError.code !== 'PGRST116') {
             console.error("Erreur lors de la vérification de la ressource:", checkError);
             errorCount++;
             continue;
