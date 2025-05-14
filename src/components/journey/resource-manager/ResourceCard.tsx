@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { BookOpen, FileText, ExternalLink } from "lucide-react";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { buildResourceUrl, saveResourceReturnPath } from "@/utils/navigationUtils";
 import { supabase } from "@/integrations/supabase/client";

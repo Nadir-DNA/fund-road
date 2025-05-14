@@ -1,6 +1,9 @@
 
 import { Toast, ToastActionElement, ToastProps } from "@/components/ui/toast";
-import { useToast as useToastInternal } from "@/components/ui/use-toast";
+import {
+  useToast as useToastOriginal,
+  type ToastActionType
+} from "@/components/ui/use-toast";
 
 type ToasterToast = ToastProps & {
   id: string;
@@ -9,8 +12,7 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement;
 };
 
-export const useToast = useToastInternal;
-
-export const toast = useToastInternal().toast;
+export const useToast = useToastOriginal;
+export const toast = useToastOriginal().toast;
 
 export type { ToasterToast };
