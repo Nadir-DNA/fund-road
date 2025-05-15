@@ -83,34 +83,47 @@ export default function ResourceCard({
       try {
         // Record the resource access in user_resources if it doesn't exist yet
         try {
-          // Check if the resource already exists for this user
-          const { data: existingResource } = await supabase
+          // Normalize substep title to ensure consistent storage and retrieval
+          const normalizedSubstepTitle = getNormalizedSubstepTitle(stepId, substepTitle);
+          console.log(`Original substep title: "${substepTitle}", Normalized: "${normalizedSubstepTitle}"`);
+          
+          // Check if the resource already exists for this user - with improved query
+          const { data: existingResource, error } = await supabase
             .from('user_resources')
             .select('id')
             .eq('user_id', userId)
             .eq('step_id', stepId)
-            .eq('substep_title', substepTitle)
+            .eq('substep_title', normalizedSubstepTitle)
             .eq('resource_type', resource.resource_type || resource.type || 'resource')
             .maybeSingle();
+          
+          if (error && error.code !== 'PGRST116') {
+            console.error("Error checking for existing resource:", error);
+          }
             
           // If the resource doesn't exist, create an initial entry
           if (!existingResource) {
-            await supabase
+            const { data: insertData, error: insertError } = await supabase
               .from('user_resources')
               .insert({
                 user_id: userId,
                 step_id: stepId,
-                substep_title: substepTitle,
+                substep_title: normalizedSubstepTitle, 
                 resource_type: resource.resource_type || resource.type || 'resource',
-                content: {}
+                content: {},
+                original_substep_title: substepTitle // Store original for reference
               });
             
-            console.log("Created new user resource entry");
+            if (insertError) {
+              console.error("Error creating resource entry:", insertError);
+            } else {
+              console.log("Created new user resource entry for:", normalizedSubstepTitle);
+            }
           } else {
             console.log("User resource entry already exists:", existingResource.id);
           }
         } catch (err) {
-          console.error("Error creating resource entry:", err);
+          console.error("Error handling resource entry:", err);
           // Continue even if this fails
         }
         
@@ -119,6 +132,7 @@ export default function ResourceCard({
         
         // Build the resource URL
         const resourceUrl = buildResourceUrl(stepId, substepTitle, componentName);
+        console.log("Navigating to resource URL:", resourceUrl);
         
         // Add a small delay to avoid race conditions
         setTimeout(() => {
@@ -159,6 +173,60 @@ export default function ResourceCard({
         return <FileText className="h-3 w-3 mr-1" />;
     }
   };
+  
+  // Enhanced function to normalize step titles with detailed logging
+  function getNormalizedSubstepTitle(stepId: number, title: string): string {
+    console.log(`Normalizing title for step ${stepId}: "${title}"`);
+    
+    // For Step 1 (Recherche) 
+    if (stepId === 1) {
+      if (title.includes('_user_research') || title.includes('Recherche utilisateur')) {
+        console.log(`Step 1: Normalizing "${title}" to "Recherche utilisateur"`);
+        return "Recherche utilisateur";
+      }
+      
+      if (title.includes('opportunité') || title.includes('_competitive')) {
+        console.log(`Step 1: Normalizing "${title}" to "Définition de l'opportunité"`);
+        return "Définition de l'opportunité";
+      }
+    }
+    
+    // For Step 2 (Conception)
+    if (stepId === 2) {
+      // Map potential variations to canonical titles
+      if (title === '_persona' || title === '_problemSolution' || title === '_empathy' || 
+          title.includes('proposition') || title.includes('valeur')) {
+        console.log(`Step 2: Normalizing "${title}" to "Proposition de valeur"`);
+        return 'Proposition de valeur';
+      } 
+      else if (title === '_mvp' || title === '_productStrategy' || title === '_roadmap' || 
+                title.includes('stratégie') || title.includes('produit')) {
+        console.log(`Step 2: Normalizing "${title}" to "Stratégie produit"`);
+        return 'Stratégie produit';
+      }
+      else if (title.includes('_user_research') || title.includes('utilisateur')) {
+        console.log(`Step 2: Normalizing "${title}" to "Recherche utilisateur"`);
+        return 'Recherche utilisateur';
+      }
+      else if (title.includes('_competitive') || title.includes('concurrentielle')) {
+        console.log(`Step 2: Normalizing "${title}" to "Analyse concurrentielle"`);
+        return 'Analyse concurrentielle';
+      }
+    }
+    
+    // For Step 3 (Développement)
+    if (stepId === 3) {
+      if (title.includes('_user_research') || title.includes('utilisateur')) {
+        console.log(`Step 3: Normalizing "${title}" to "Tests utilisateurs"`);
+        return 'Tests utilisateurs';
+      }
+    }
+    
+    // Default: strip any leading underscores
+    const cleanedTitle = title.startsWith('_') ? title.substring(1) : title;
+    console.log(`No specific normalization applied, cleaned: "${cleanedTitle}"`);
+    return cleanedTitle;
+  }
 
   return (
     <Card className="group transition-all duration-200 border hover:border-primary/50">

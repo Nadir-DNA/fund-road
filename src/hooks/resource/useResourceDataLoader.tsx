@@ -3,7 +3,52 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useResourceSession } from "./useResourceSession";
 import { useNetworkStatus } from "../useNetworkStatus";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
+
+function getNormalizedSubstepTitle(stepId: number, title: string): string {
+  console.log(`ResourceDataLoader: normalizing title for step ${stepId}: "${title}"`);
+  
+  // Pour l'étape 1 (Recherche)
+  if (stepId === 1) {
+    if (title.includes('_user_research') || title.includes('Recherche utilisateur')) {
+      return "Recherche utilisateur";
+    }
+    
+    if (title.includes('opportunité') || title.includes('_competitive')) {
+      return "Définition de l'opportunité";
+    }
+  }
+  
+  // Pour l'étape 2 (Conception)
+  if (stepId === 2) {
+    // Map potential variations to canonical titles
+    if (title === '_persona' || title === '_problemSolution' || title === '_empathy' || 
+        title.includes('proposition') || title.includes('valeur')) {
+      return 'Proposition de valeur';
+    } 
+    else if (title === '_mvp' || title === '_productStrategy' || title === '_roadmap' || 
+              title.includes('stratégie') || title.includes('produit')) {
+      return 'Stratégie produit';
+    }
+    else if (title.includes('_user_research') || title.includes('utilisateur')) {
+      return 'Recherche utilisateur';
+    }
+    else if (title.includes('_competitive') || title.includes('concurrentielle')) {
+      return 'Analyse concurrentielle';
+    }
+  }
+  
+  // Pour l'étape 3 (Développement)
+  if (stepId === 3) {
+    if (title.includes('_user_research') || title.includes('utilisateur')) {
+      return 'Tests utilisateurs';
+    }
+  }
+  
+  // Default: strip any leading underscores
+  const cleanedTitle = title.startsWith('_') ? title.substring(1) : title;
+  return cleanedTitle;
+}
 
 /**
  * Hook to load resource data with offline support and error handling
@@ -24,25 +69,33 @@ export const useResourceDataLoader = (
   const { session, fetchSession } = useResourceSession();
   const { isOnline, isSupabaseConnected, checkSupabaseConnection } = useNetworkStatus();
 
+  // Normalize substepTitle
+  const normalizedSubstepTitle = getNormalizedSubstepTitle(stepId, substepTitle);
+
   // Fonction pour charger les données depuis le stockage local
   const loadFromLocalStorage = useCallback(() => {
     try {
-      const offlineKey = `offline_resource_${stepId}_${substepTitle}_${resourceType}`;
+      const offlineKey = `offline_resource_${stepId}_${normalizedSubstepTitle}_${resourceType}`;
       const storedData = localStorage.getItem(offlineKey);
       
       if (storedData) {
-        const parsedData = JSON.parse(storedData);
-        console.log("Données chargées depuis localStorage:", parsedData);
-        
-        // Marquer les données comme étant en mode hors ligne
-        onDataLoaded({
-          ...parsedData,
-          offlineMode: true,
-          _offlineLoadTime: new Date().toISOString()
-        });
-        
-        setIsOfflineMode(true);
-        return true;
+        try {
+          const parsedData = JSON.parse(storedData);
+          console.log("Données chargées depuis localStorage:", parsedData);
+          
+          // Marquer les données comme étant en mode hors ligne
+          onDataLoaded({
+            ...parsedData,
+            offlineMode: true,
+            _offlineLoadTime: new Date().toISOString()
+          });
+          
+          setIsOfflineMode(true);
+          return true;
+        } catch (parseError) {
+          console.error("Erreur d'analyse JSON lors du chargement local:", parseError);
+          return false;
+        }
       }
       
       return false;
@@ -50,7 +103,7 @@ export const useResourceDataLoader = (
       console.error("Erreur lors du chargement des données locales:", error);
       return false;
     }
-  }, [stepId, substepTitle, resourceType, onDataLoaded]);
+  }, [stepId, normalizedSubstepTitle, resourceType, onDataLoaded]);
 
   // Fonction pour vérifier le mode hors ligne
   const checkOfflineMode = useCallback(async () => {
@@ -79,13 +132,14 @@ export const useResourceDataLoader = (
     setIsLoading(true);
 
     try {
+      console.log(`ResourceDataLoader: Loading data for stepId=${stepId}, substepTitle=${substepTitle}, normalizedTitle=${normalizedSubstepTitle}, resourceType=${resourceType}`);
       const isOffline = await checkOfflineMode();
       
       // Si nous sommes hors ligne, charger depuis le stockage local
       if (isOffline) {
         const loadedLocally = loadFromLocalStorage();
         if (!loadedLocally) {
-          console.log("Aucune donnée locale disponible pour", stepId, substepTitle, resourceType);
+          console.log("Aucune donnée locale disponible pour", stepId, normalizedSubstepTitle, resourceType);
           // Initialiser avec des données vides en mode hors ligne
           onDataLoaded({ offlineMode: true, _newResource: true });
         }
@@ -117,11 +171,39 @@ export const useResourceDataLoader = (
       }
       
       // Maintenant, nous avons une session, essayons de charger les données
-      console.log("Chargement des données pour", { stepId, substepTitle, resourceType });
+      console.log("Chargement des données pour", { stepId, normalizedSubstepTitle, resourceType });
       
-      // Modification clé : utiliser order + limit(1) au lieu de maybeSingle
-      // pour garantir que nous obtenons toujours un seul résultat (le plus récent)
-      const { data: resources, error } = await supabase
+      // Premier essai: recherche exacte avec le titre normalisé
+      console.log("Try #1: Trying exact match with normalized title:", normalizedSubstepTitle);
+      const { data: exactMatch, error: exactError } = await supabase
+        .from('user_resources')
+        .select('*')
+        .eq('user_id', currentSession.user.id)
+        .eq('step_id', stepId)
+        .eq('substep_title', normalizedSubstepTitle)
+        .eq('resource_type', resourceType)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+        
+      if (exactMatch) {
+        console.log("Found exact match with normalized title:", exactMatch);
+        setResourceId(exactMatch.id);
+        onDataLoaded(exactMatch.content || {});
+        
+        // Stocker également une copie locale pour le mode hors ligne
+        const offlineKey = `offline_resource_${stepId}_${normalizedSubstepTitle}_${resourceType}`;
+        localStorage.setItem(offlineKey, JSON.stringify(exactMatch.content || {}));
+        
+        // Bien indiquer que nous sommes en ligne
+        setIsOfflineMode(false);
+        setIsLoading(false);
+        return;
+      }
+            
+      // Deuxième essai: essayons avec le titre original (non normalisé)
+      console.log("Try #2: Trying with original title:", substepTitle);
+      const { data: originalMatch, error: originalError } = await supabase
         .from('user_resources')
         .select('*')
         .eq('user_id', currentSession.user.id)
@@ -130,36 +212,108 @@ export const useResourceDataLoader = (
         .eq('resource_type', resourceType)
         .order('updated_at', { ascending: false })
         .limit(1)
-        .single();  // Utilisez single() car limit(1) garantit un seul résultat
-      
-      if (error) {
-        // Vérification spécifique pour l'erreur "aucune ligne trouvée"
-        if (error.code === 'PGRST116') {
-          console.log("Aucune ressource trouvée, initialisation avec des données vides");
-          setResourceId(null);
-          onDataLoaded({});
-          
-          // Puisque c'est normal de ne pas trouver de ressource (première fois),
-          // ne pas passer en mode hors ligne
-          setIsOfflineMode(false);
-          
-        } else {
-          console.error("Erreur lors du chargement des données:", error);
-          throw new Error(`Erreur de chargement: ${error.message}`);
-        }
-      } else if (resources) {
-        // Ressource trouvée avec succès
-        console.log("Données chargées depuis Supabase:", resources);
-        setResourceId(resources.id);
-        onDataLoaded(resources.content || {});
+        .maybeSingle();
+        
+      if (originalMatch) {
+        console.log("Found match with original title:", originalMatch);
+        setResourceId(originalMatch.id);
+        onDataLoaded(originalMatch.content || {});
         
         // Stocker également une copie locale pour le mode hors ligne
-        const offlineKey = `offline_resource_${stepId}_${substepTitle}_${resourceType}`;
-        localStorage.setItem(offlineKey, JSON.stringify(resources.content || {}));
+        const offlineKey = `offline_resource_${stepId}_${normalizedSubstepTitle}_${resourceType}`;
+        localStorage.setItem(offlineKey, JSON.stringify(originalMatch.content || {}));
         
         // Bien indiquer que nous sommes en ligne
         setIsOfflineMode(false);
+        setIsLoading(false);
+        return;
       }
+      
+      // Troisième essai: recherche flexible par original_substep_title
+      console.log("Try #3: Trying with original_substep_title field:", substepTitle);
+      const { data: flexMatch, error: flexError } = await supabase
+        .from('user_resources')
+        .select('*')
+        .eq('user_id', currentSession.user.id)
+        .eq('step_id', stepId)
+        .eq('original_substep_title', substepTitle)
+        .eq('resource_type', resourceType)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+        
+      if (flexMatch) {
+        console.log("Found match using original_substep_title:", flexMatch);
+        setResourceId(flexMatch.id);
+        onDataLoaded(flexMatch.content || {});
+        
+        // Stocker également une copie locale pour le mode hors ligne
+        const offlineKey = `offline_resource_${stepId}_${normalizedSubstepTitle}_${resourceType}`;
+        localStorage.setItem(offlineKey, JSON.stringify(flexMatch.content || {}));
+        
+        // Bien indiquer que nous sommes en ligne
+        setIsOfflineMode(false);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Quatrième essai: recherche très large juste par step_id et type
+      console.log("Try #4: Broad search by step_id and type only");
+      const { data: broadMatches, error: broadError } = await supabase
+        .from('user_resources')
+        .select('*')
+        .eq('user_id', currentSession.user.id)
+        .eq('step_id', stepId)
+        .eq('resource_type', resourceType)
+        .order('updated_at', { ascending: false })
+        .limit(5); // Get a few to check
+        
+      if (broadMatches && broadMatches.length > 0) {
+        console.log("Found broad matches:", broadMatches);
+        
+        // Log all found substep titles for debugging
+        console.log("Found substep titles:", broadMatches.map(m => m.substep_title));
+        
+        // Try to find a fuzzy match
+        const fuzzyMatch = broadMatches.find(m => 
+          m.substep_title.includes(substepTitle) || 
+          (substepTitle && substepTitle.includes(m.substep_title)) ||
+          m.substep_title.toLowerCase() === normalizedSubstepTitle.toLowerCase()
+        );
+        
+        if (fuzzyMatch) {
+          console.log("Found fuzzy match:", fuzzyMatch);
+          setResourceId(fuzzyMatch.id);
+          onDataLoaded(fuzzyMatch.content || {});
+          
+          // Store offline copy
+          const offlineKey = `offline_resource_${stepId}_${normalizedSubstepTitle}_${resourceType}`;
+          localStorage.setItem(offlineKey, JSON.stringify(fuzzyMatch.content || {}));
+          
+          setIsOfflineMode(false);
+          setIsLoading(false);
+          return;
+        }
+        
+        // If all else fails, just use the most recent one
+        const mostRecent = broadMatches[0];
+        console.log("No fuzzy match, using most recent:", mostRecent);
+        setResourceId(mostRecent.id);
+        onDataLoaded(mostRecent.content || {});
+        
+        // Store offline copy
+        const offlineKey = `offline_resource_${stepId}_${normalizedSubstepTitle}_${resourceType}`;
+        localStorage.setItem(offlineKey, JSON.stringify(mostRecent.content || {}));
+        
+        setIsOfflineMode(false);
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log("No resource found after all attempts, initializing with empty data");
+      setResourceId(null);
+      onDataLoaded({});
+      setIsOfflineMode(false);
       
     } catch (error: any) {
       console.error("Erreur lors du chargement des données:", error);
@@ -184,7 +338,7 @@ export const useResourceDataLoader = (
       setIsLoading(false);
       setLastLoadTime(new Date());
     }
-  }, [stepId, substepTitle, resourceType, onDataLoaded, checkOfflineMode, loadFromLocalStorage]);
+  }, [stepId, substepTitle, normalizedSubstepTitle, resourceType, onDataLoaded, checkOfflineMode, loadFromLocalStorage]);
 
   // Charger les données lors du montage ou lorsque la session change
   useEffect(() => {

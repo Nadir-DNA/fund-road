@@ -36,6 +36,12 @@ export default function ResourceCard({ resource, stepId, substepTitle }: Resourc
     if (isLoading) return;
     setIsLoading(true);
     
+    console.log("ResourceCard: handleResourceClick", {
+      resourceTitle: resource.title,
+      stepId,
+      substepTitle
+    });
+    
     // If there's a direct URL, open it
     if (resource.file_url) {
       console.log("Opening external resource:", resource.file_url);
@@ -69,11 +75,12 @@ export default function ResourceCard({ resource, stepId, substepTitle }: Resourc
       try {
         // Record the resource access in user_resources if it doesn't exist yet
         try {
-          // Utiliser la correspondance de nom de sous-étape correcte selon l'étape
+          // Normalize substep title for consistent storage and retrieval
           const normalizedSubstepTitle = getNormalizedSubstepTitle(stepId, substepTitle);
+          console.log(`Original substep title: "${substepTitle}", Normalized: "${normalizedSubstepTitle}"`);
           
           // Check if the resource already exists for this user
-          const { data: existingResource } = await supabase
+          const { data: existingResource, error } = await supabase
             .from('user_resources')
             .select('id')
             .eq('user_id', userId)
@@ -81,20 +88,29 @@ export default function ResourceCard({ resource, stepId, substepTitle }: Resourc
             .eq('substep_title', normalizedSubstepTitle)
             .eq('resource_type', resource.resource_type || resource.type || 'resource')
             .maybeSingle();
+          
+          if (error && error.code !== 'PGRST116') {
+            console.error("Error checking for existing resource:", error);
+          }
             
           // If the resource doesn't exist, create an initial entry
           if (!existingResource) {
-            await supabase
+            const { data: insertData, error: insertError } = await supabase
               .from('user_resources')
               .insert({
                 user_id: userId,
                 step_id: stepId,
                 substep_title: normalizedSubstepTitle,
                 resource_type: resource.resource_type || resource.type || 'resource',
-                content: {}
+                content: {},
+                original_substep_title: substepTitle // Store original for reference
               });
             
-            console.log("Created new user resource entry");
+            if (insertError) {
+              console.error("Error creating resource entry:", insertError);
+            } else {
+              console.log("Created new user resource entry for:", normalizedSubstepTitle);
+            }
           } else {
             console.log("User resource entry already exists:", existingResource.id);
           }
@@ -108,6 +124,7 @@ export default function ResourceCard({ resource, stepId, substepTitle }: Resourc
         
         // Build the resource URL
         const resourceUrl = buildResourceUrl(stepId, substepTitle, componentName);
+        console.log("Navigating to resource URL:", resourceUrl);
         
         // Add a small delay to avoid race conditions
         setTimeout(() => {
@@ -139,20 +156,49 @@ export default function ResourceCard({ resource, stepId, substepTitle }: Resourc
 
   // Function to normalize step titles according to conceptionStep.ts
   function getNormalizedSubstepTitle(stepId: number, title: string): string {
+    console.log(`Normalizing title for step ${stepId}: "${title}"`);
+    
+    // Pour l'étape 1 (Recherche)
+    if (stepId === 1) {
+      if (title.includes('_user_research') || title.includes('Recherche utilisateur')) {
+        return "Recherche utilisateur";
+      }
+      
+      if (title.includes('opportunité') || title.includes('_competitive')) {
+        return "Définition de l'opportunité";
+      }
+    }
+    
     // Pour l'étape 2 (Conception)
     if (stepId === 2) {
       // Map potential variations to canonical titles
       if (title === '_persona' || title === '_problemSolution' || title === '_empathy' || 
           title.includes('proposition') || title.includes('valeur')) {
         return 'Proposition de valeur';
-      } else if (title === '_mvp' || title === '_productStrategy' || title === '_roadmap' || 
+      } 
+      else if (title === '_mvp' || title === '_productStrategy' || title === '_roadmap' || 
                 title.includes('stratégie') || title.includes('produit')) {
         return 'Stratégie produit';
       }
+      else if (title.includes('_user_research') || title.includes('utilisateur')) {
+        return 'Recherche utilisateur';
+      }
+      else if (title.includes('_competitive') || title.includes('concurrentielle')) {
+        return 'Analyse concurrentielle';
+      }
     }
     
-    // Default: return the original title
-    return title;
+    // Pour l'étape 3 (Développement)
+    if (stepId === 3) {
+      if (title.includes('_user_research') || title.includes('utilisateur')) {
+        return 'Tests utilisateurs';
+      }
+    }
+    
+    // Default: strip any leading underscores
+    const cleanedTitle = title.startsWith('_') ? title.substring(1) : title;
+    console.log(`No specific normalization applied, cleaned: "${cleanedTitle}"`);
+    return cleanedTitle;
   }
 
   // Define the icon based on resource type
