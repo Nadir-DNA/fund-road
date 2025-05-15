@@ -1,13 +1,12 @@
 
 // Simple toast context without circular dependencies
 import * as React from "react"
-import { ToastActionElement } from "./toast"
 
 export type ToastProps = {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
-  action?: ToastActionElement
+  action?: React.ReactElement
   variant?: "default" | "destructive" | "success"
   duration?: number
 }
@@ -42,7 +41,7 @@ export function useToast() {
 }
 
 // Export type for action elements
-export type ToastActionType = React.ComponentPropsWithoutRef<typeof ToastActionElement>
+export type ToastActionType = React.ComponentPropsWithoutRef<"button">
 
 // Standalone implementation for use outside context (will be replaced by context in runtime)
 export const toast = (props: Omit<ToasterToast, "id">) => {
