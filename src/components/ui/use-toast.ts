@@ -1,25 +1,55 @@
 
-import * as ToastPrimitives from "@radix-ui/react-toast";
-import { createContext, useContext } from "react";
+// Simple toast context without circular dependencies
+import * as React from "react"
+import { ToastActionElement } from "./toast"
 
-// Define the action type that was being imported before
-export type ToastActionType = React.ComponentPropsWithoutRef<typeof ToastPrimitives.Action>;
-
-// Create a context to store toast functions
-export const ToastContext = createContext<{
-  toast: (props: any) => void;
-}>({
-  toast: () => {}, // Default no-op function
-});
-
-// Export the useToast hook that can be used by other components
-export function useToast() {
-  const context = useContext(ToastContext);
-  return context;
+export type ToastProps = {
+  id: string
+  title?: React.ReactNode
+  description?: React.ReactNode
+  action?: ToastActionElement
+  variant?: "default" | "destructive" | "success"
+  duration?: number
 }
 
-// Export a standalone toast function for convenience
-export const toast = (props: any) => {
-  // This will be properly defined in the toaster component
-  console.warn("Toast called outside of ToastProvider context");
-};
+type ToasterToast = ToastProps
+
+const TOAST_LIMIT = 10
+const TOAST_REMOVE_DELAY = 1000
+
+type ToasterToastState = {
+  toasts: ToasterToast[]
+}
+
+// Create the context with type safety
+export const ToastContext = React.createContext<{
+  toast: (props: Omit<ToasterToast, "id">) => void
+  dismiss: (toastId: string) => void
+}>({
+  toast: () => {}, // Default no-op function
+  dismiss: () => {}, // Default no-op function
+})
+
+// Hook to use toast context
+export function useToast() {
+  const context = React.useContext(ToastContext)
+  
+  if (!context) {
+    throw new Error("useToast must be used within a ToastProvider")
+  }
+  
+  return context
+}
+
+// Export type for action elements
+export type ToastActionType = React.ComponentPropsWithoutRef<typeof ToastActionElement>
+
+// Standalone implementation for use outside context (will be replaced by context in runtime)
+export const toast = (props: Omit<ToasterToast, "id">) => {
+  const context = React.useContext(ToastContext)
+  if (context) {
+    return context.toast(props)
+  } else {
+    console.warn("Toast called outside of ToastProvider context")
+  }
+}

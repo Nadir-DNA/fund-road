@@ -1,5 +1,4 @@
 
-import { Toaster as SonnerToaster } from "sonner";
 import {
   Toast,
   ToastClose,
@@ -8,17 +7,17 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast";
-import { useToast as useHookToast } from "@/hooks/use-toast";
-import { useState, useCallback, useEffect } from "react";
-import { ToastContext } from "@/components/ui/use-toast";
+import { ToastProps } from "@/components/ui/use-toast";
 
-// Shadcn/ui Toaster component
-export function Toaster() {
-  const { toasts = [] } = useHookToast();
+// Simplified Toaster component that doesn't depend on hooks
+interface ToasterProps {
+  toasts: ToastProps[]
+}
 
+export function Toaster({ toasts }: ToasterProps) {
   return (
     <ToastProvider>
-      {Array.isArray(toasts) && toasts.map(function ({ id, title, description, action, ...props }) {
+      {toasts.map(function ({ id, title, description, action, ...props }) {
         return (
           <Toast key={id} {...props}>
             <div className="grid gap-1">
@@ -30,14 +29,9 @@ export function Toaster() {
             {action}
             <ToastClose />
           </Toast>
-        )
+        );
       })}
       <ToastViewport />
     </ToastProvider>
-  )
-}
-
-// Export a separate Sonner toaster for the fast toasts
-export function SonnerToasterProvider() {
-  return <SonnerToaster position="top-right" closeButton />;
+  );
 }

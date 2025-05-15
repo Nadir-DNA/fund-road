@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { BookOpen, FileText, ExternalLink } from "lucide-react";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { buildResourceUrl, saveResourceReturnPath } from "@/utils/navigationUtils";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeSubstepTitle } from "@/utils/normalizeSubstepTitle";
 
 interface ResourceCardProps {
   resource: any;
@@ -19,6 +20,7 @@ export default function ResourceCard({ resource, stepId, substepTitle }: Resourc
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   // Check if the user is authenticated
   useEffect(() => {
@@ -75,8 +77,8 @@ export default function ResourceCard({ resource, stepId, substepTitle }: Resourc
       try {
         // Record the resource access in user_resources if it doesn't exist yet
         try {
-          // Normalize substep title for consistent storage and retrieval
-          const normalizedSubstepTitle = getNormalizedSubstepTitle(stepId, substepTitle);
+          // Normalize substep title using our utility function
+          const normalizedSubstepTitle = normalizeSubstepTitle(stepId, substepTitle);
           console.log(`Original substep title: "${substepTitle}", Normalized: "${normalizedSubstepTitle}"`);
           
           // Check if the resource already exists for this user
@@ -153,53 +155,6 @@ export default function ResourceCard({ resource, stepId, substepTitle }: Resourc
     
     setIsLoading(false);
   };
-
-  // Function to normalize step titles according to conceptionStep.ts
-  function getNormalizedSubstepTitle(stepId: number, title: string): string {
-    console.log(`Normalizing title for step ${stepId}: "${title}"`);
-    
-    // Pour l'étape 1 (Recherche)
-    if (stepId === 1) {
-      if (title.includes('_user_research') || title.includes('Recherche utilisateur')) {
-        return "Recherche utilisateur";
-      }
-      
-      if (title.includes('opportunité') || title.includes('_competitive')) {
-        return "Définition de l'opportunité";
-      }
-    }
-    
-    // Pour l'étape 2 (Conception)
-    if (stepId === 2) {
-      // Map potential variations to canonical titles
-      if (title === '_persona' || title === '_problemSolution' || title === '_empathy' || 
-          title.includes('proposition') || title.includes('valeur')) {
-        return 'Proposition de valeur';
-      } 
-      else if (title === '_mvp' || title === '_productStrategy' || title === '_roadmap' || 
-                title.includes('stratégie') || title.includes('produit')) {
-        return 'Stratégie produit';
-      }
-      else if (title.includes('_user_research') || title.includes('utilisateur')) {
-        return 'Recherche utilisateur';
-      }
-      else if (title.includes('_competitive') || title.includes('concurrentielle')) {
-        return 'Analyse concurrentielle';
-      }
-    }
-    
-    // Pour l'étape 3 (Développement)
-    if (stepId === 3) {
-      if (title.includes('_user_research') || title.includes('utilisateur')) {
-        return 'Tests utilisateurs';
-      }
-    }
-    
-    // Default: strip any leading underscores
-    const cleanedTitle = title.startsWith('_') ? title.substring(1) : title;
-    console.log(`No specific normalization applied, cleaned: "${cleanedTitle}"`);
-    return cleanedTitle;
-  }
 
   // Define the icon based on resource type
   const getResourceIcon = () => {

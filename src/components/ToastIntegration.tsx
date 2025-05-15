@@ -1,15 +1,14 @@
 
-import { Toaster, SonnerToasterProvider } from "@/components/ui/toaster";
+import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { ToastContext } from "@/components/ui/use-toast";
 
 export function ToastIntegration() {
-  const { toast: hookToast } = useToast();
+  const { toast, dismiss, toasts } = useToast();
 
   return (
-    <ToastContext.Provider value={{ toast: hookToast }}>
-      <Toaster />
-      <SonnerToasterProvider />
+    <ToastContext.Provider value={{ toast, dismiss }}>
+      <Toaster toasts={toasts} />
     </ToastContext.Provider>
   );
 }

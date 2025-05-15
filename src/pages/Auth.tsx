@@ -16,35 +16,60 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [returnPath, setReturnPath] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   // Check if there's a return path when the component mounts
   useEffect(() => {
-    // Check for return paths in order of priority
-    const resourcePath = getResourceReturnPath();
-    const lastPath = getLastPath();
+    const checkReturnPaths = () => {
+      // Check for return paths in order of priority
+      const resourcePath = getResourceReturnPath();
+      const lastPath = getLastPath();
+      
+      if (resourcePath) {
+        console.log("Auth: Found resource return path:", resourcePath);
+        setReturnPath(resourcePath);
+      } else if (lastPath) {
+        console.log("Auth: Found last path:", lastPath);
+        setReturnPath(lastPath);
+      }
+    };
     
-    if (resourcePath) {
-      console.log("Auth: Found resource return path:", resourcePath);
-      setReturnPath(resourcePath);
-    } else if (lastPath) {
-      console.log("Auth: Found last path:", lastPath);
-      setReturnPath(lastPath);
-    }
+    checkReturnPaths();
   }, []);
   
   // Check if user is already logged in
   useEffect(() => {
     const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        console.log("Auth: User already authenticated, redirecting");
-        handleRedirect();
+      try {
+        const { data } = await supabase.auth.getSession();
+        
+        setAuthChecked(true);
+        
+        if (data.session) {
+          console.log("Auth: User already authenticated, redirecting");
+          handleRedirect();
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+        setAuthChecked(true);
       }
     };
     
     checkAuth();
+    
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        console.log("Auth: Auth state changed - user signed in, redirecting");
+        handleRedirect();
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleRedirect = () => {
@@ -95,7 +120,7 @@ export default function Auth() {
           description: "Bienvenue sur Fund Road!",
         });
         
-        handleRedirect();
+        // Will be redirected by the auth state change listener
       } else {
         console.log("Auth: Attempting signup with email:", email);
         const { data, error } = await supabase.auth.signUp({
@@ -114,7 +139,7 @@ export default function Auth() {
         // Let's automatically log in the user if email confirmation is not required
         if (data.session) {
           console.log("Auth: Auto-login after signup");
-          handleRedirect();
+          // Will be redirected by the auth state change listener
         }
       }
     } catch (error: any) {
@@ -128,6 +153,16 @@ export default function Auth() {
       setIsLoading(false);
     }
   };
+
+  // If still checking auth, show loading indicator
+  if (!authChecked) {
+    return (
+      <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
+        <LoadingIndicator size="lg" />
+        <span className="ml-2">Vérification de l'authentification...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
