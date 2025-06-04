@@ -172,9 +172,15 @@ export function useSimpleResourceData({
   // Fixed form change handling with proper type checking
   const handleFormChange = useCallback((field: string, value: any) => {
     setFormData((prev) => {
-      // Ensure prev is always treated as an object with proper type checking
-      const currentData: Record<string, any> = (prev !== null && typeof prev === 'object' && !Array.isArray(prev)) ? prev as Record<string, any> : {};
-      const newData = { ...currentData, [field]: value };
+      // Create a safe object to spread from
+      const safeCurrentData: Record<string, any> = {};
+      
+      // Only copy properties if prev is a valid object
+      if (prev !== null && typeof prev === 'object' && !Array.isArray(prev)) {
+        Object.assign(safeCurrentData, prev);
+      }
+      
+      const newData = { ...safeCurrentData, [field]: value };
       
       // Sauvegarde automatique après un délai
       if (isInitializedRef.current) {
