@@ -9,17 +9,14 @@ import { exportToFile } from "./exportUtils";
 interface ExportPanelProps {
   formData: any;
   resourceType: string;
-  isExporting: boolean;
-  setIsExporting: (isExporting: boolean) => void;
 }
 
-export default function ExportPanel({ 
-  formData, 
-  resourceType,
-  isExporting,
-  setIsExporting 
+export default function ExportPanel({
+  formData,
+  resourceType
 }: ExportPanelProps) {
   const [format, setFormat] = useState<"pdf" | "docx" | "xlsx">("pdf");
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = () => {
     setIsExporting(true);

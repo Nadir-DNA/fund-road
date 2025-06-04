@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/components/ui/use-toast";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import SaveButton from "./resource-form/SaveButton";
+import ExportPanel from "./resource-form/ExportPanel";
 import { useResourceData } from "@/hooks/useResourceData";
 import { supabase } from "@/integrations/supabase/client";
 import { saveLastSaveTime, wasSaveSuccessful } from "@/utils/navigationUtils";
@@ -43,6 +44,7 @@ export default function ResourceForm({
   const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(null);
   const [forceShowContent, setForceShowContent] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Use the resource data hook to handle loading/saving with improved offline support
   const {
@@ -239,15 +241,24 @@ export default function ResourceForm({
           <>
             <div className="mb-6">{children}</div>
             <div className="flex justify-between items-center mt-8">
-              <SaveButton 
-                isSaving={isSaving} 
+              <SaveButton
+                isSaving={isSaving}
                 handleSave={handleSaveClick}
-                isAuthenticated={isAuthenticated || isOfflineMode} 
+                isAuthenticated={isAuthenticated || isOfflineMode}
                 isOfflineMode={isOfflineMode}
                 lastSaveStatus={lastSaveStatus}
                 onRetryConnection={handleReconnect}
               />
-              {exportPanel && <div className="ml-4">{exportPanel}</div>}
+              <div className="ml-4">
+                {exportPanel ? (
+                  exportPanel
+                ) : (
+                  <ExportPanel
+                    formData={formData}
+                    resourceType={resourceType}
+                  />
+                )}
+              </div>
             </div>
           </>
         )}

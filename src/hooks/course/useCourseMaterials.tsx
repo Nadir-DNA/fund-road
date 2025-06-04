@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { normalizeSubstepTitle } from "@/utils/normalizeSubstepTitle";
 
 /**
  * Hook pour récupérer les matériels de cours depuis Supabase
@@ -12,15 +13,20 @@ export const useCourseMaterials = (stepId: number, substepTitle: string | null, 
     queryFn: async () => {
       try {
         console.log(`Fetching course materials for stepId: ${stepId}, substepTitle: ${substepTitle || 'main'}, subsubstepTitle: ${subsubstepTitle || 'none'}`);
-        
+
+        const normalizedTitle = substepTitle ? normalizeSubstepTitle(stepId, substepTitle) : null;
+        if (normalizedTitle) {
+          console.log(`Normalized substep title: "${normalizedTitle}"`);
+        }
+
         let query = supabase
           .from('entrepreneur_resources')
           .select('*')
           .eq('step_id', stepId);
-        
+
         // Properly handle null substep_title
-        if (substepTitle) {
-          query = query.eq('substep_title', substepTitle);
+        if (normalizedTitle) {
+          query = query.eq('substep_title', normalizedTitle);
         } else {
           // For main step, look for NULL substep_title values
           query = query.is('substep_title', null);
