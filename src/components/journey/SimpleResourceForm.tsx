@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import { Save, CheckCircle, AlertCircle, Wifi, WifiOff } from "lucide-react";
+import { Save, CheckCircle, AlertCircle, Wifi, WifiOff, Clock } from "lucide-react";
 import { useSimpleResourceData } from "@/hooks/resource/useSimpleResourceData";
 
 interface SimpleResourceFormProps {
@@ -42,13 +42,19 @@ export default function SimpleResourceForm({
     substepTitle,
     resourceType,
     defaultValues,
-    onDataSaved
+    onDataSaved: (data) => {
+      console.log('Données sauvegardées via SimpleResourceForm:', data);
+      if (onDataSaved) {
+        onDataSaved(data);
+      }
+    }
   });
 
   const getSaveButtonText = () => {
     if (isSaving) return "Sauvegarde...";
     if (lastSaveStatus === 'success') return "Sauvegardé";
     if (lastSaveStatus === 'error') return "Réessayer";
+    if (lastSaveStatus === 'pending') return "En cours...";
     return "Sauvegarder";
   };
 
@@ -56,12 +62,14 @@ export default function SimpleResourceForm({
     if (isSaving) return <LoadingIndicator size="sm" />;
     if (lastSaveStatus === 'success') return <CheckCircle className="h-4 w-4" />;
     if (lastSaveStatus === 'error') return <AlertCircle className="h-4 w-4" />;
+    if (lastSaveStatus === 'pending') return <Clock className="h-4 w-4" />;
     return <Save className="h-4 w-4" />;
   };
 
   const getSaveButtonVariant = () => {
     if (lastSaveStatus === 'success') return 'default';
     if (lastSaveStatus === 'error') return 'destructive';
+    if (lastSaveStatus === 'pending') return 'secondary';
     return 'default';
   };
 
@@ -99,7 +107,7 @@ export default function SimpleResourceForm({
           </div>
         </div>
         
-        {/* Statut de sauvegarde */}
+        {/* Statut de sauvegarde amélioré */}
         {lastSaveStatus === 'success' && (
           <Alert variant="default" className="mt-4 border-green-500/20 bg-green-50/10">
             <CheckCircle className="h-4 w-4 text-green-500" />
@@ -110,11 +118,21 @@ export default function SimpleResourceForm({
           </Alert>
         )}
         
+        {lastSaveStatus === 'pending' && (
+          <Alert variant="default" className="mt-4 border-blue-500/20 bg-blue-50/10">
+            <Clock className="h-4 w-4 text-blue-500" />
+            <AlertDescription className="text-blue-700">
+              Sauvegarde en cours...
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {lastSaveStatus === 'error' && (
           <Alert variant="destructive" className="mt-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               Erreur lors de la sauvegarde. Vos données sont conservées localement.
+              {isAuthenticated && " Cliquez sur 'Réessayer' pour sauvegarder en ligne."}
             </AlertDescription>
           </Alert>
         )}

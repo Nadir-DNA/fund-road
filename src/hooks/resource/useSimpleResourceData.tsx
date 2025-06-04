@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useReliableSave } from './useReliableSave';
@@ -26,6 +27,7 @@ export function useSimpleResourceData({
   const [resourceId, setResourceId] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const isInitializedRef = useRef(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const {
     save,
@@ -38,6 +40,7 @@ export function useSimpleResourceData({
     substepTitle,
     resourceType,
     onSuccess: (data) => {
+      console.log('Sauvegarde réussie, mise à jour du resourceId:', data.id);
       setResourceId(data.id);
       if (onDataSaved) {
         onDataSaved(data);
@@ -175,27 +178,51 @@ export function useSimpleResourceData({
     }
   }, [isAuthenticated, loadData]);
 
-  // Fixed form change handling with safe object creation
+  // Sauvegarde automatique améliorée avec debouncing intelligent
   const handleFormChange = useCallback((field: string, value: any) => {
     setFormData((prev) => {
       // Use safe object merge utility
       const newData = safeObjectMerge(prev, { [field]: value });
       
-      // Sauvegarde automatique après un délai
+      // Nettoyer le timeout précédent
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      
+      // Sauvegarde automatique après un délai court
       if (isInitializedRef.current) {
-        setTimeout(() => {
+        console.log('Programmation sauvegarde automatique pour le champ:', field);
+        saveTimeoutRef.current = setTimeout(() => {
+          console.log('Déclenchement sauvegarde automatique');
           save(newData, resourceId, { priority: 'normal' });
-        }, 2000);
+        }, 500); // Réduit à 500ms pour une meilleure réactivité
       }
       
       return newData;
     });
   }, [save, resourceId]);
 
-  // Sauvegarde manuelle
+  // Sauvegarde manuelle immédiate
   const handleManualSave = useCallback(async () => {
+    console.log('Sauvegarde manuelle déclenchée');
+    
+    // Annuler toute sauvegarde automatique en cours
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+    
     await saveManual(formData, resourceId);
   }, [saveManual, formData, resourceId]);
+
+  // Nettoyage des timeouts
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     formData,
