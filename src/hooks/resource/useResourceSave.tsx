@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { saveLastPath, saveResourceReturnPath } from "@/utils/navigationUtils";
+import { normalizeSubstepTitle } from "@/utils/normalizeSubstepTitle";
 
 interface SaveOptions {
   formData: any;
@@ -25,6 +26,7 @@ export function useResourceSave({
 }: SaveOptions) {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const normalizedSubstepTitle = normalizeSubstepTitle(stepId, substepTitle);
   const lastSavedContentRef = useRef('');
   const toastShownRef = useRef(false);
   const saveTimeoutRef = useRef<any>(null);
@@ -189,7 +191,9 @@ export function useResourceSave({
           .from('user_resources')
           .update({
             content: formData,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            substep_title: normalizedSubstepTitle,
+            original_substep_title: substepTitle
           })
           .eq('id', resourceId)
           .select();
@@ -206,7 +210,7 @@ export function useResourceSave({
           .select('id')
           .eq('user_id', session.user.id)
           .eq('step_id', stepId)
-          .eq('substep_title', substepTitle)
+          .eq('substep_title', normalizedSubstepTitle)
           .eq('resource_type', resourceType)
           .maybeSingle();
           
@@ -217,7 +221,9 @@ export function useResourceSave({
             .from('user_resources')
             .update({
               content: formData,
-              updated_at: new Date().toISOString()
+              updated_at: new Date().toISOString(),
+              substep_title: normalizedSubstepTitle,
+              original_substep_title: substepTitle
             })
             .eq('id', existingResource.id)
             .select();
@@ -226,7 +232,8 @@ export function useResourceSave({
           const resourceData = {
             user_id: session.user.id,
             step_id: stepId,
-            substep_title: substepTitle,
+            substep_title: normalizedSubstepTitle,
+            original_substep_title: substepTitle,
             resource_type: resourceType,
             content: formData,
             created_at: new Date().toISOString(),

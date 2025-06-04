@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { normalizeSubstepTitle } from "@/utils/normalizeSubstepTitle";
 
 interface FetchOptions {
   stepId: number;
@@ -23,11 +24,12 @@ export function useResourceDataFetch({
   setIsLoading,
 }: FetchOptions) {
   const { toast } = useToast();
+  const normalizedSubstepTitle = normalizeSubstepTitle(stepId, substepTitle);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      console.log(`Fetching data for: stepId=${stepId}, substep=${substepTitle}, type=${resourceType}`);
+      console.log(`Fetching data for: stepId=${stepId}, substep=${substepTitle}, normalized=${normalizedSubstepTitle}, type=${resourceType}`);
       
       try {
         // Check for session
@@ -48,7 +50,7 @@ export function useResourceDataFetch({
           .select('*')
           .eq('user_id', session.user.id)
           .eq('step_id', stepId)
-          .eq('substep_title', substepTitle)
+          .eq('substep_title', normalizedSubstepTitle)
           .eq('resource_type', resourceType);
           
         if (userResourceError) {
@@ -81,7 +83,7 @@ export function useResourceDataFetch({
           .from('entrepreneur_resources')
           .select('*')
           .eq('step_id', stepId)
-          .eq('substep_title', substepTitle)
+          .eq('substep_title', normalizedSubstepTitle)
           .eq('resource_type', resourceType)
           .limit(1);
           
@@ -129,5 +131,5 @@ export function useResourceDataFetch({
 
     fetchData();
     // eslint-disable-next-line
-  }, [stepId, substepTitle, resourceType]);
+  }, [stepId, substepTitle, normalizedSubstepTitle, resourceType]);
 }
