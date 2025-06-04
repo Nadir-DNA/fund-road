@@ -173,7 +173,9 @@ export function useSimpleResourceData({
   // Gestion des changements de formulaire
   const handleFormChange = useCallback((field: string, value: any) => {
     setFormData(prev => {
-      const newData = { ...prev, [field]: value };
+      // Ensure prev is an object before spreading
+      const prevData = prev && typeof prev === 'object' ? prev : {};
+      const newData = { ...prevData, [field]: value };
       
       // Sauvegarde automatique après un délai
       if (isInitializedRef.current) {
