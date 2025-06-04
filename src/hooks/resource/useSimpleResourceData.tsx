@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useReliableSave } from './useReliableSave';
@@ -180,6 +179,8 @@ export function useSimpleResourceData({
 
   // Sauvegarde automatique améliorée avec debouncing intelligent
   const handleFormChange = useCallback((field: string, value: any) => {
+    console.log(`Changement de champ détecté: ${field} =`, value);
+    
     setFormData((prev) => {
       // Use safe object merge utility
       const newData = safeObjectMerge(prev, { [field]: value });

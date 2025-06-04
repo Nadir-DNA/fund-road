@@ -8,7 +8,7 @@ import { Save, CheckCircle, AlertCircle, Wifi, WifiOff, Clock } from "lucide-rea
 import { useSimpleResourceData } from "@/hooks/resource/useSimpleResourceData";
 
 interface SimpleResourceFormProps {
-  children: ReactNode;
+  children: ReactNode | ((props: { formData: any }) => ReactNode);
   stepId: number;
   substepTitle: string;
   resourceType: string;
@@ -36,6 +36,7 @@ export default function SimpleResourceForm({
     isSaving,
     isAuthenticated,
     lastSaveStatus,
+    handleFormChange,
     handleManualSave
   } = useSimpleResourceData({
     stepId,
@@ -149,7 +150,13 @@ export default function SimpleResourceForm({
       
       <CardContent>
         <div className="mb-6">
-          {React.cloneElement(children as React.ReactElement, { formData })}
+          {typeof children === 'function' 
+            ? children({ formData })
+            : React.cloneElement(children as React.ReactElement, { 
+                formData, 
+                handleFormChange 
+              })
+          }
         </div>
         
         <div className="flex justify-between items-center mt-8">
