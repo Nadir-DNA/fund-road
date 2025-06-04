@@ -4,7 +4,6 @@ import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import ExportPanel from "../resource-form/ExportPanel";
 
 interface GrowthProjectionProps {
   stepId: number;
@@ -18,7 +17,6 @@ export default function GrowthProjection({ stepId, substepTitle }: GrowthProject
     team_scaling: "",
     product_scaling: ""
   });
-  const [isExporting, setIsExporting] = useState(false);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -33,14 +31,6 @@ export default function GrowthProjection({ stepId, substepTitle }: GrowthProject
       description="Indiquez vos étapes clés, ambitions de croissance et structuration à venir."
       formData={formData}
       onDataSaved={data => setFormData(data)}
-      exportPanel={
-        <ExportPanel 
-          formData={formData}
-          resourceType="growth_projection"
-          isExporting={isExporting}
-          setIsExporting={setIsExporting}
-        />
-      }
     >
       <div className="space-y-6">
         <Card className="p-5"><Label>Jalons clés (milestones)</Label>

@@ -4,7 +4,6 @@ import ResourceForm from "../ResourceForm";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import ExportPanel from "../resource-form/ExportPanel";
 
 interface LegalStatusComparisonProps {
   stepId: number;
@@ -18,7 +17,6 @@ export default function LegalStatusComparison({ stepId, substepTitle }: LegalSta
     micro: "",
     conclusion: ""
   });
-  const [isExporting, setIsExporting] = useState(false);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -33,14 +31,6 @@ export default function LegalStatusComparison({ stepId, substepTitle }: LegalSta
       description="Comparez les avantages et inconvénients des principaux statuts en fonction de votre situation."
       formData={formData}
       onDataSaved={data => setFormData(data)}
-      exportPanel={
-        <ExportPanel 
-          formData={formData}
-          resourceType="legal_status_comparison"
-          isExporting={isExporting}
-          setIsExporting={setIsExporting}
-        />
-      }
     >
       <div className="space-y-6">
         <Card className="p-5"><Label>SAS</Label>

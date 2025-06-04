@@ -5,18 +5,24 @@ import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CourseMaterial } from "./types";
+import { normalizeSubstepTitle } from "@/utils/normalizeSubstepTitle";
 
 export const useCourseMaterialsQuery = (stepId: number, substepTitle: string | null, subsubstepTitle?: string | null) => {
   const [materials, setMaterials] = useState<CourseMaterial[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+
   const { data: courseMaterials, isLoading, error, refetch } = useQuery({
     queryKey: ['courseMaterials', stepId, substepTitle, subsubstepTitle],
     queryFn: async () => {
       try {
         console.log(`Récupération des matériaux pour l'étape: ${stepId}, sous-étape: ${substepTitle || 'étape principale'}, sous-sous-étape: ${subsubstepTitle || 'aucune'}`);
-        
+
+        const normalizedTitle = substepTitle ? normalizeSubstepTitle(stepId, substepTitle) : null;
+        if (normalizedTitle) {
+          console.log(`Titre de sous-étape normalisé : "${normalizedTitle}"`);
+        }
+
         const { data: session } = await supabase.auth.getSession();
         
         if (!session?.session) {
@@ -36,9 +42,9 @@ export const useCourseMaterialsQuery = (stepId: number, substepTitle: string | n
         filters.push(`step_id.eq.${stepId}`);
         
         // Filter by substep_title
-        if (substepTitle) {
-          filters.push(`substep_title.eq.${substepTitle}`);
-          console.log(`Filtrage par sous-étape: "${substepTitle}"`);
+        if (normalizedTitle) {
+          filters.push(`substep_title.eq.${normalizedTitle}`);
+          console.log(`Filtrage par sous-étape: "${normalizedTitle}"`);
         } else {
           filters.push(`substep_title.is.null`);
           console.log("Filtrage pour l'étape principale (substep_title IS NULL)");
@@ -52,9 +58,9 @@ export const useCourseMaterialsQuery = (stepId: number, substepTitle: string | n
         
         // Apply all filters
         query = query.eq('step_id', stepId);
-        
-        if (substepTitle) {
-          query = query.eq('substep_title', substepTitle);
+
+        if (normalizedTitle) {
+          query = query.eq('substep_title', normalizedTitle);
         } else {
           query = query.is('substep_title', null);
         }

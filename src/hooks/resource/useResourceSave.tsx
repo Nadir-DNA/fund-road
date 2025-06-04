@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { saveLastPath, saveResourceReturnPath } from "@/utils/navigationUtils";
+import { normalizeSubstepTitle } from "@/utils/normalizeSubstepTitle";
 
 interface SaveOptions {
   formData: any;
@@ -148,6 +149,10 @@ export function useResourceSave({
       }
     }
     
+    // Normaliser le titre de sous-étape avant toute requête
+    const normalizedSubstepTitle = normalizeSubstepTitle(stepId, substepTitle);
+    console.log(`Titre de sous-étape normalisé : "${normalizedSubstepTitle}"`);
+
     // Ne pas sauvegarder pendant l'initialisation
     if (!initialSaveCompletedRef.current) {
       console.log("Protection de sauvegarde initiale activée, marquée comme terminée");
@@ -206,7 +211,7 @@ export function useResourceSave({
           .select('id')
           .eq('user_id', session.user.id)
           .eq('step_id', stepId)
-          .eq('substep_title', substepTitle)
+          .eq('substep_title', normalizedSubstepTitle)
           .eq('resource_type', resourceType)
           .maybeSingle();
           
@@ -226,7 +231,7 @@ export function useResourceSave({
           const resourceData = {
             user_id: session.user.id,
             step_id: stepId,
-            substep_title: substepTitle,
+            substep_title: normalizedSubstepTitle,
             resource_type: resourceType,
             content: formData,
             created_at: new Date().toISOString(),
