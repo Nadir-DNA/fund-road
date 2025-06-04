@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useReliableSave } from './useReliableSave';
@@ -172,9 +171,9 @@ export function useSimpleResourceData({
 
   // Fixed form change handling with proper type checking
   const handleFormChange = useCallback((field: string, value: any) => {
-    setFormData((prev: any) => {
-      // Ensure prev is always treated as an object
-      const currentData = prev !== null && typeof prev === 'object' && !Array.isArray(prev) ? prev : {};
+    setFormData((prev) => {
+      // Ensure prev is always treated as an object with proper type checking
+      const currentData: Record<string, any> = (prev !== null && typeof prev === 'object' && !Array.isArray(prev)) ? prev as Record<string, any> : {};
       const newData = { ...currentData, [field]: value };
       
       // Sauvegarde automatique après un délai
