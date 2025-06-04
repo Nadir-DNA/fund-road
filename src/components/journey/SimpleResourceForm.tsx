@@ -132,7 +132,7 @@ export default function SimpleResourceForm({
       <CardContent>
         <div className="mb-6">
           {React.cloneElement(children as React.ReactElement, { formData })}
-        div>
+        </div>
         
         <div className="flex justify-between items-center mt-8">
           <Button
