@@ -170,12 +170,12 @@ export function useSimpleResourceData({
     }
   }, [isAuthenticated, loadData]);
 
-  // Gestion des changements de formulaire
+  // Fixed form change handling with proper type checking
   const handleFormChange = useCallback((field: string, value: any) => {
-    setFormData(prev => {
-      // Ensure prev is an object before spreading
-      const prevData = prev && typeof prev === 'object' ? prev : {};
-      const newData = { ...prevData, [field]: value };
+    setFormData((prev: any) => {
+      // Ensure prev is always treated as an object
+      const currentData = prev !== null && typeof prev === 'object' && !Array.isArray(prev) ? prev : {};
+      const newData = { ...currentData, [field]: value };
       
       // Sauvegarde automatique après un délai
       if (isInitializedRef.current) {
