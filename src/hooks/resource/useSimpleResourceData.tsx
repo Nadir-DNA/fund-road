@@ -2,14 +2,15 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useReliableSave } from './useReliableSave';
 import { normalizeSubstepTitle, getPossibleTitles } from "@/utils/substepNormalization";
+import { safeObjectMerge, isValidObject } from "@/utils/objectUtils";
 
 interface SimpleResourceDataOptions {
   stepId: number;
   substepTitle: string;
   resourceType: string;
-  defaultValues?: any;
-  onDataLoaded?: (data: any) => void;
-  onDataSaved?: (data: any) => void;
+  defaultValues?: Record<string, any>;
+  onDataLoaded?: (data: Record<string, any>) => void;
+  onDataSaved?: (data: Record<string, any>) => void;
 }
 
 export function useSimpleResourceData({
@@ -20,7 +21,7 @@ export function useSimpleResourceData({
   onDataLoaded,
   onDataSaved
 }: SimpleResourceDataOptions) {
-  const [formData, setFormData] = useState(defaultValues);
+  const [formData, setFormData] = useState<Record<string, any>>(defaultValues);
   const [isLoading, setIsLoading] = useState(true);
   const [resourceId, setResourceId] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -115,8 +116,9 @@ export function useSimpleResourceData({
         if (sessionData?.session) {
           const userResource = await findUserResource(sessionData.session.user.id);
           
-          if (userResource) {
-            loadedData = { ...defaultValues, ...userResource.content };
+          if (userResource && isValidObject(userResource.content)) {
+            // Safe merge using utility function
+            loadedData = safeObjectMerge(defaultValues, userResource.content);
             foundResourceId = userResource.id;
             console.log('Données chargées depuis la base:', userResource.id);
           }
@@ -126,8 +128,9 @@ export function useSimpleResourceData({
       // Si pas de données en base, essayer le local
       if (!foundResourceId) {
         const localData = loadFromLocal();
-        if (localData?.data) {
-          loadedData = { ...defaultValues, ...localData.data };
+        if (localData?.data && isValidObject(localData.data)) {
+          // Safe merge using utility function
+          loadedData = safeObjectMerge(defaultValues, localData.data);
           console.log('Données chargées depuis le local');
         }
       }
@@ -144,7 +147,10 @@ export function useSimpleResourceData({
       
       // En cas d'erreur, utiliser les données locales ou par défaut
       const localData = loadFromLocal();
-      setFormData(localData?.data || defaultValues);
+      const fallbackData = localData?.data && isValidObject(localData.data) 
+        ? safeObjectMerge(defaultValues, localData.data)
+        : defaultValues;
+      setFormData(fallbackData);
     } finally {
       setIsLoading(false);
       isInitializedRef.current = true;
@@ -169,21 +175,11 @@ export function useSimpleResourceData({
     }
   }, [isAuthenticated, loadData]);
 
-  // Fixed form change handling with proper object creation
+  // Fixed form change handling with safe object creation
   const handleFormChange = useCallback((field: string, value: any) => {
     setFormData((prev) => {
-      // Create new data object without spread operator
-      const newData: Record<string, any> = {};
-      
-      // Copy existing properties if prev is a valid object
-      if (prev !== null && typeof prev === 'object' && !Array.isArray(prev)) {
-        Object.keys(prev).forEach(key => {
-          newData[key] = (prev as Record<string, any>)[key];
-        });
-      }
-      
-      // Add the new field
-      newData[field] = value;
+      // Use safe object merge utility
+      const newData = safeObjectMerge(prev, { [field]: value });
       
       // Sauvegarde automatique après un délai
       if (isInitializedRef.current) {
