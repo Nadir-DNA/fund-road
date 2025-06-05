@@ -58,42 +58,26 @@ export default function AuthForm({ isLogin, onToggleMode, initialEmail = "" }: A
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin + '/auth'
+            emailRedirectTo: `${window.location.origin}/confirm`
           }
         });
         
         if (error) throw error;
         
-        console.log("Signup successful, sending verification email");
-        // Send custom verification email
-        try {
-          const response = await fetch('https://lhvuoorzmjjnaasahmyw.supabase.co/functions/v1/send-email-verification', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email,
-              confirmation_url: `${window.location.origin}/auth?email=${encodeURIComponent(email)}`
-            })
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to send verification email');
-          }
-          
+        console.log("Signup successful:", data);
+        
+        if (data.user && !data.session) {
+          // Email confirmation required
           toast({
             title: "Inscription réussie",
             description: "Veuillez vérifier votre email pour confirmer votre compte",
           });
-          
           onToggleMode();
-        } catch (emailError) {
-          console.error("Erreur d'envoi d'email:", emailError);
+        } else if (data.session) {
+          // User is immediately logged in (email confirmation disabled)
           toast({
-            title: "Problème d'envoi d'email",
-            description: "L'inscription a réussi mais nous n'avons pas pu envoyer l'email de vérification",
-            variant: "destructive",
+            title: "Inscription réussie",
+            description: "Bienvenue sur Fund Road !",
           });
         }
       }
@@ -116,7 +100,7 @@ export default function AuthForm({ isLogin, onToggleMode, initialEmail = "" }: A
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}`
+          redirectTo: `${window.location.origin}/roadmap`
         }
       });
       

@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import NotFound from "@/pages/NotFound";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
+import Confirm from "@/pages/Confirm";
 import RoadmapPage from "@/pages/roadmap/RoadmapPage";
 import StepDetailPage from "@/components/journey/step-detail/StepDetailPage";
 import { useAuth } from "@/hooks/useAuth";
@@ -41,6 +42,9 @@ function App() {
         
         {/* Auth page - Accessible sans authentification */}
         <Route path="/auth" element={<Auth />} />
+        
+        {/* Confirmation page - Accessible sans authentification */}
+        <Route path="/confirm" element={<Confirm />} />
         
         {/* Toutes les pages du roadmap nécessitent une authentification */}
         <Route path="/roadmap" element={

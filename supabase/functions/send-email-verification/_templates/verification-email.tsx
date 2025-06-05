@@ -17,11 +17,13 @@ import * as React from 'npm:react@18.3.1'
 interface EmailVerificationProps {
   confirmationUrl: string;
   userEmail: string;
+  token?: string;
 }
 
 export const VerificationEmail = ({
   confirmationUrl,
   userEmail,
+  token,
 }: EmailVerificationProps) => (
   <Html>
     <Head />
@@ -42,20 +44,31 @@ export const VerificationEmail = ({
           Bonjour,
         </Text>
         <Text style={text}>
-          Merci de vous être inscrit sur Fund Road. Pour finaliser votre inscription, veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous :
+          Merci de vous être inscrit sur Fund Road ! Pour finaliser votre inscription et accéder à votre roadmap d'entrepreneuriat, veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous :
         </Text>
         <Section style={buttonContainer}>
           <Link href={confirmationUrl} style={buttonLink}>
-            Vérifier mon email
+            Confirmer mon email
           </Link>
         </Section>
+        {token && (
+          <>
+            <Text style={text}>
+              Vous pouvez également utiliser ce code de confirmation temporaire :
+            </Text>
+            <Text style={code}>{token}</Text>
+          </>
+        )}
         <Text style={text}>
           Si le bouton ne fonctionne pas, vous pouvez également copier et coller ce lien dans votre navigateur :
         </Text>
         <Text style={link}>{confirmationUrl}</Text>
         <Hr style={hr} />
         <Text style={footer}>
-          Si vous n'avez pas créé de compte sur Fund Road, vous pouvez ignorer cet email.
+          Une fois votre email confirmé, vous serez automatiquement redirigé vers votre tableau de bord Fund Road.
+        </Text>
+        <Text style={footer}>
+          Si vous n'avez pas créé de compte sur Fund Road, vous pouvez ignorer cet email en toute sécurité.
         </Text>
         <Text style={footer}>
           Cet email a été envoyé à {userEmail}
@@ -125,6 +138,22 @@ const buttonLink = {
   textAlign: 'center' as const,
   textDecoration: 'none',
   width: '200px',
+  padding: '12px 24px',
+}
+
+const code = {
+  display: 'inline-block',
+  padding: '16px 4.5%',
+  width: '90.5%',
+  backgroundColor: '#f4f4f4',
+  borderRadius: '5px',
+  border: '1px solid #eee',
+  color: '#333',
+  fontFamily: 'monospace',
+  fontSize: '18px',
+  textAlign: 'center' as const,
+  letterSpacing: '2px',
+  margin: '16px 0',
 }
 
 const link = {

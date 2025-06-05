@@ -14,7 +14,9 @@ const corsHeaders = {
 
 interface EmailVerificationRequest {
   email: string;
-  confirmation_url: string;
+  token_hash: string;
+  token: string;
+  redirect_to?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -23,13 +25,18 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, confirmation_url }: EmailVerificationRequest = await req.json();
+    const { email, token_hash, token, redirect_to }: EmailVerificationRequest = await req.json();
+
+    // Construire l'URL de confirmation Supabase
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const confirmationUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=signup&redirect_to=${encodeURIComponent(redirect_to || 'https://fund-road.com/confirm')}`;
 
     // Render the React email template
     const html = await renderAsync(
       React.createElement(VerificationEmail, {
-        confirmationUrl: confirmation_url,
+        confirmationUrl: confirmationUrl,
         userEmail: email,
+        token: token
       })
     );
 
