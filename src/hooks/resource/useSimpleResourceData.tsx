@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useReliableSave } from './useReliableSave';
@@ -39,29 +40,43 @@ export function useSimpleResourceData({
     substepTitle,
     resourceType,
     onSuccess: (data) => {
-      console.log('Sauvegarde réussie, mise à jour du resourceId:', data.id);
+      console.log('useSimpleResourceData: Sauvegarde réussie, resourceId:', data.id);
       setResourceId(data.id);
       if (onDataSaved) {
         onDataSaved(data);
       }
+    },
+    onError: (error) => {
+      console.error('useSimpleResourceData: Erreur de sauvegarde:', error);
     }
   });
 
-  // Vérification d'authentification simple
+  // Vérification d'authentification améliorée avec retry
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
-        setIsAuthenticated(!!data.session);
+        console.log('useSimpleResourceData: Vérification de l\'authentification...');
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.warn('useSimpleResourceData: Erreur session:', error);
+          setIsAuthenticated(false);
+          return;
+        }
+        
+        const isAuth = !!data.session;
+        console.log('useSimpleResourceData: État authentification:', isAuth);
+        setIsAuthenticated(isAuth);
         
         // Écouter les changements d'authentification
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           (event, session) => {
+            console.log('useSimpleResourceData: Changement auth:', event, !!session);
             setIsAuthenticated(!!session);
             
             // Si connexion réussie, essayer de synchroniser
             if (event === 'SIGNED_IN' && session) {
-              console.log('Utilisateur connecté, synchronisation des données');
+              console.log('useSimpleResourceData: Connexion détectée, synchronisation...');
               syncLocalData();
             }
           }
@@ -69,7 +84,7 @@ export function useSimpleResourceData({
         
         return () => subscription.unsubscribe();
       } catch (error) {
-        console.warn('Erreur vérification auth:', error);
+        console.error('useSimpleResourceData: Erreur vérification auth:', error);
         setIsAuthenticated(false);
       }
     };
@@ -77,9 +92,10 @@ export function useSimpleResourceData({
     checkAuth();
   }, []);
 
-  // Recherche de ressources existantes
+  // Recherche de ressources existantes améliorée
   const findUserResource = useCallback(async (userId: string) => {
     const possibleTitles = getPossibleTitles(stepId, substepTitle);
+    console.log('useSimpleResourceData: Recherche ressource avec titres:', possibleTitles);
     
     for (const title of possibleTitles) {
       try {
@@ -95,17 +111,21 @@ export function useSimpleResourceData({
           .maybeSingle();
           
         if (!error && data) {
+          console.log('useSimpleResourceData: Ressource trouvée:', data.id, 'avec titre:', title);
           return data;
         }
       } catch (err) {
+        console.warn('useSimpleResourceData: Erreur recherche titre:', title, err);
         continue;
       }
     }
+    console.log('useSimpleResourceData: Aucune ressource trouvée');
     return null;
   }, [stepId, substepTitle, resourceType]);
 
-  // Chargement des données
+  // Chargement des données amélioré
   const loadData = useCallback(async () => {
+    console.log('useSimpleResourceData: Début chargement données...');
     setIsLoading(true);
     
     try {
@@ -114,29 +134,30 @@ export function useSimpleResourceData({
       
       // Si authentifié, essayer de charger depuis la base
       if (isAuthenticated) {
+        console.log('useSimpleResourceData: Chargement depuis la base...');
         const { data: sessionData } = await supabase.auth.getSession();
         if (sessionData?.session) {
           const userResource = await findUserResource(sessionData.session.user.id);
           
           if (userResource && isValidObject(userResource.content)) {
-            // Safe merge using utility function
             loadedData = safeObjectMerge(defaultValues, userResource.content);
             foundResourceId = userResource.id;
-            console.log('Données chargées depuis la base:', userResource.id);
+            console.log('useSimpleResourceData: Données chargées depuis la base:', userResource.id);
           }
         }
       }
       
       // Si pas de données en base, essayer le local
       if (!foundResourceId) {
+        console.log('useSimpleResourceData: Tentative chargement local...');
         const localData = loadFromLocal();
         if (localData?.data && isValidObject(localData.data)) {
-          // Safe merge using utility function
           loadedData = safeObjectMerge(defaultValues, localData.data);
-          console.log('Données chargées depuis le local');
+          console.log('useSimpleResourceData: Données chargées depuis le local');
         }
       }
       
+      console.log('useSimpleResourceData: Données finales chargées:', Object.keys(loadedData));
       setFormData(loadedData);
       setResourceId(foundResourceId);
       
@@ -145,7 +166,7 @@ export function useSimpleResourceData({
       }
       
     } catch (error) {
-      console.error('Erreur chargement données:', error);
+      console.error('useSimpleResourceData: Erreur chargement données:', error);
       
       // En cas d'erreur, utiliser les données locales ou par défaut
       const localData = loadFromLocal();
@@ -165,7 +186,7 @@ export function useSimpleResourceData({
     
     const localData = loadFromLocal();
     if (localData?.data) {
-      console.log('Synchronisation des données locales');
+      console.log('useSimpleResourceData: Synchronisation des données locales');
       await save(localData.data, resourceId, { priority: 'high' });
     }
   }, [isAuthenticated, loadFromLocal, save, resourceId]);
@@ -177,12 +198,11 @@ export function useSimpleResourceData({
     }
   }, [isAuthenticated, loadData]);
 
-  // Sauvegarde automatique améliorée avec debouncing intelligent
+  // Sauvegarde automatique avec debouncing intelligent
   const handleFormChange = useCallback((field: string, value: any) => {
-    console.log(`Changement de champ détecté: ${field} =`, value);
+    console.log(`useSimpleResourceData: Changement de champ détecté: ${field} =`, value);
     
     setFormData((prev) => {
-      // Use safe object merge utility
       const newData = safeObjectMerge(prev, { [field]: value });
       
       // Nettoyer le timeout précédent
@@ -192,11 +212,11 @@ export function useSimpleResourceData({
       
       // Sauvegarde automatique après un délai court
       if (isInitializedRef.current) {
-        console.log('Programmation sauvegarde automatique pour le champ:', field);
+        console.log('useSimpleResourceData: Programmation sauvegarde automatique pour:', field);
         saveTimeoutRef.current = setTimeout(() => {
-          console.log('Déclenchement sauvegarde automatique');
+          console.log('useSimpleResourceData: Déclenchement sauvegarde automatique');
           save(newData, resourceId, { priority: 'normal' });
-        }, 500); // Réduit à 500ms pour une meilleure réactivité
+        }, 1000); // Délai réduit pour une meilleure réactivité
       }
       
       return newData;
@@ -205,7 +225,7 @@ export function useSimpleResourceData({
 
   // Sauvegarde manuelle immédiate
   const handleManualSave = useCallback(async () => {
-    console.log('Sauvegarde manuelle déclenchée');
+    console.log('useSimpleResourceData: Sauvegarde manuelle déclenchée');
     
     // Annuler toute sauvegarde automatique en cours
     if (saveTimeoutRef.current) {

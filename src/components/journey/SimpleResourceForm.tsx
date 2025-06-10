@@ -1,5 +1,5 @@
 
-import React, { ReactNode } from "react";
+import React, { ReactNode, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -8,7 +8,7 @@ import { Save, CheckCircle, AlertCircle, Wifi, WifiOff, Clock } from "lucide-rea
 import { useSimpleResourceData } from "@/hooks/resource/useSimpleResourceData";
 
 interface SimpleResourceFormProps {
-  children: ReactNode | ((props: { formData: any }) => ReactNode);
+  children: ReactNode | ((props: { formData: any; handleFormChange: (field: string, value: any) => void }) => ReactNode);
   stepId: number;
   substepTitle: string;
   resourceType: string;
@@ -50,6 +50,12 @@ export default function SimpleResourceForm({
       }
     }
   });
+
+  // Wrapper pour gérer les changements de champs avec débogage
+  const handleFieldChange = useCallback((field: string, value: any) => {
+    console.log(`SimpleResourceForm: Changement détecté pour ${field}:`, value);
+    handleFormChange(field, value);
+  }, [handleFormChange]);
 
   const getSaveButtonText = () => {
     if (isSaving) return "Sauvegarde...";
@@ -151,10 +157,10 @@ export default function SimpleResourceForm({
       <CardContent>
         <div className="mb-6">
           {typeof children === 'function' 
-            ? children({ formData })
+            ? children({ formData, handleFormChange: handleFieldChange })
             : React.cloneElement(children as React.ReactElement, { 
                 formData, 
-                handleFormChange 
+                handleFormChange: handleFieldChange 
               })
           }
         </div>

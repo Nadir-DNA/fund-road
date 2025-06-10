@@ -19,25 +19,12 @@ interface FormData {
 }
 
 export default function CustomerBehaviorNotes({ stepId, substepTitle }: CustomerBehaviorNotesProps) {
-  const [localFormData, setLocalFormData] = useState<FormData>({
+  const defaultValues: FormData = {
     typical_behavior: "",
     channels_used: "",
     decision_criteria: "",
     loyalty_drivers: "",
     blocking_factors: ""
-  });
-
-  const handleChange = (field: keyof FormData, value: string) => {
-    console.log(`CustomerBehaviorNotes: Mise à jour du champ ${field}:`, value);
-    setLocalFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  // Fonction pour mettre à jour les données du formulaire parent
-  const handleFormDataUpdate = (formData: FormData) => {
-    console.log('CustomerBehaviorNotes: Mise à jour des données du formulaire parent:', formData);
-    if (formData && typeof formData === 'object') {
-      setLocalFormData(formData);
-    }
   };
 
   return (
@@ -47,10 +34,9 @@ export default function CustomerBehaviorNotes({ stepId, substepTitle }: Customer
       resourceType="customer_behavior_notes"
       title="Analyse comportementale client"
       description="Comprenez comment vos clients cibles se comportent aujourd'hui face à leur problème ou besoin."
-      defaultValues={localFormData}
-      onDataSaved={handleFormDataUpdate}
+      defaultValues={defaultValues}
     >
-      {({ formData }: { formData: FormData }) => (
+      {({ formData, handleFormChange }: { formData: FormData; handleFormChange: (field: string, value: any) => void }) => (
         <div className="space-y-6">
           <Card className="p-5">
             <Label>Comportement type actuel</Label>
@@ -58,7 +44,10 @@ export default function CustomerBehaviorNotes({ stepId, substepTitle }: Customer
               placeholder="Comment gèrent-ils actuellement le problème ?"
               className="min-h-[100px]"
               value={formData?.typical_behavior || ""}
-              onChange={(e) => handleChange("typical_behavior", e.target.value)}
+              onChange={(e) => {
+                console.log('CustomerBehaviorNotes: Mise à jour typical_behavior:', e.target.value);
+                handleFormChange("typical_behavior", e.target.value);
+              }}
             />
           </Card>
           
@@ -68,7 +57,10 @@ export default function CustomerBehaviorNotes({ stepId, substepTitle }: Customer
               placeholder="Sites web, forums, réseaux sociaux, bouche à oreille, etc."
               className="min-h-[100px]"
               value={formData?.channels_used || ""}
-              onChange={(e) => handleChange("channels_used", e.target.value)}
+              onChange={(e) => {
+                console.log('CustomerBehaviorNotes: Mise à jour channels_used:', e.target.value);
+                handleFormChange("channels_used", e.target.value);
+              }}
             />
           </Card>
           
@@ -78,7 +70,10 @@ export default function CustomerBehaviorNotes({ stepId, substepTitle }: Customer
               placeholder="Sur quoi basent-ils leur choix ? Prix ? Simplicité ? Réputation ?"
               className="min-h-[100px]"
               value={formData?.decision_criteria || ""}
-              onChange={(e) => handleChange("decision_criteria", e.target.value)}
+              onChange={(e) => {
+                console.log('CustomerBehaviorNotes: Mise à jour decision_criteria:', e.target.value);
+                handleFormChange("decision_criteria", e.target.value);
+              }}
             />
           </Card>
           
@@ -88,7 +83,10 @@ export default function CustomerBehaviorNotes({ stepId, substepTitle }: Customer
               placeholder="Qu'est-ce qui les ferait rester sur une solution ?"
               className="min-h-[100px]"
               value={formData?.loyalty_drivers || ""}
-              onChange={(e) => handleChange("loyalty_drivers", e.target.value)}
+              onChange={(e) => {
+                console.log('CustomerBehaviorNotes: Mise à jour loyalty_drivers:', e.target.value);
+                handleFormChange("loyalty_drivers", e.target.value);
+              }}
             />
           </Card>
           
@@ -98,7 +96,10 @@ export default function CustomerBehaviorNotes({ stepId, substepTitle }: Customer
               placeholder="Quels obstacles les empêchent de changer ?"
               className="min-h-[100px]"
               value={formData?.blocking_factors || ""}
-              onChange={(e) => handleChange("blocking_factors", e.target.value)}
+              onChange={(e) => {
+                console.log('CustomerBehaviorNotes: Mise à jour blocking_factors:', e.target.value);
+                handleFormChange("blocking_factors", e.target.value);
+              }}
             />
           </Card>
         </div>

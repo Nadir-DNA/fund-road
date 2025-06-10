@@ -37,7 +37,7 @@ export function useReliableSave({
   const isProcessingQueueRef = useRef(false);
   const processQueueTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Sauvegarde locale systématique
+  // Sauvegarde locale systématique améliorée
   const saveToLocal = useCallback((data: any, metadata: any = {}) => {
     try {
       const localKey = `resource_${stepId}_${substepTitle}_${resourceType}`;
@@ -54,10 +54,10 @@ export function useReliableSave({
       };
       
       localStorage.setItem(localKey, JSON.stringify(saveData));
-      console.log(`Données sauvegardées localement: ${localKey}`);
+      console.log(`useReliableSave: Données sauvegardées localement: ${localKey}`);
       return true;
     } catch (error) {
-      console.error('Erreur sauvegarde locale:', error);
+      console.error('useReliableSave: Erreur sauvegarde locale:', error);
       return false;
     }
   }, [stepId, substepTitle, resourceType]);
@@ -69,34 +69,49 @@ export function useReliableSave({
       const saved = localStorage.getItem(localKey);
       if (saved) {
         const parsed = JSON.parse(saved);
-        console.log(`Données récupérées localement: ${localKey}`);
+        console.log(`useReliableSave: Données récupérées localement: ${localKey}`);
         return parsed;
       }
     } catch (error) {
-      console.error('Erreur récupération locale:', error);
+      console.error('useReliableSave: Erreur récupération locale:', error);
     }
     return null;
   }, [stepId, substepTitle, resourceType]);
 
-  // Vérification de session avec retry
-  const getValidSession = useCallback(async () => {
-    try {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error('Erreur session:', error);
+  // Vérification de session avec retry améliorée
+  const getValidSession = useCallback(async (retries = 3) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        console.log(`useReliableSave: Tentative ${i + 1} de récupération de session`);
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error(`useReliableSave: Erreur session tentative ${i + 1}:`, error);
+          if (i === retries - 1) return null;
+          await new Promise(resolve => setTimeout(resolve, 500 * (i + 1))); // Délai progressif
+          continue;
+        }
+        
+        if (data.session) {
+          console.log('useReliableSave: Session valide récupérée');
+          return data.session;
+        }
+        
+        console.log('useReliableSave: Aucune session active');
         return null;
+      } catch (error) {
+        console.error(`useReliableSave: Exception session tentative ${i + 1}:`, error);
+        if (i === retries - 1) return null;
+        await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)));
       }
-      return data.session;
-    } catch (error) {
-      console.error('Exception session:', error);
-      return null;
     }
+    return null;
   }, []);
 
   // Recherche flexible de ressources existantes
   const findExistingResource = useCallback(async (userId: string) => {
     const possibleTitles = getPossibleTitles(stepId, substepTitle);
-    console.log('Recherche ressource avec titres possibles:', possibleTitles);
+    console.log('useReliableSave: Recherche ressource avec titres possibles:', possibleTitles);
     
     for (const title of possibleTitles) {
       try {
@@ -112,31 +127,33 @@ export function useReliableSave({
           .maybeSingle();
           
         if (error && error.code !== 'PGRST116') {
-          console.warn(`Erreur recherche avec titre "${title}":`, error);
+          console.warn(`useReliableSave: Erreur recherche avec titre "${title}":`, error);
           continue;
         }
         
         if (data) {
-          console.log(`Ressource trouvée avec titre "${title}":`, data.id);
+          console.log(`useReliableSave: Ressource trouvée avec titre "${title}":`, data.id);
           return data;
         }
       } catch (err) {
-        console.warn(`Exception recherche avec titre "${title}":`, err);
+        console.warn(`useReliableSave: Exception recherche avec titre "${title}":`, err);
         continue;
       }
     }
     
-    console.log('Aucune ressource existante trouvée');
+    console.log('useReliableSave: Aucune ressource existante trouvée');
     return null;
   }, [stepId, substepTitle, resourceType]);
 
   // Sauvegarde en base de données améliorée
   const saveToDatabase = useCallback(async (formData: any, resourceId?: string | null) => {
     try {
-      // Vérifier la session avant chaque sauvegarde
+      console.log('useReliableSave: Début sauvegarde en base...');
+      
+      // Vérifier la session avant chaque sauvegarde avec retry
       const session = await getValidSession();
       if (!session) {
-        throw new Error('Pas de session active');
+        throw new Error('Pas de session active après retry');
       }
 
       const userId = session.user.id;
@@ -146,7 +163,7 @@ export function useReliableSave({
       
       if (resourceId) {
         // Mise à jour existante
-        console.log('Mise à jour ressource existante:', resourceId);
+        console.log('useReliableSave: Mise à jour ressource existante:', resourceId);
         result = await supabase
           .from('user_resources')
           .update({
@@ -164,7 +181,7 @@ export function useReliableSave({
         
         if (existingResource) {
           // Mettre à jour la ressource existante
-          console.log('Mise à jour ressource trouvée:', existingResource.id);
+          console.log('useReliableSave: Mise à jour ressource trouvée:', existingResource.id);
           result = await supabase
             .from('user_resources')
             .update({
@@ -178,7 +195,7 @@ export function useReliableSave({
             .single();
         } else {
           // Créer une nouvelle ressource
-          console.log('Création nouvelle ressource');
+          console.log('useReliableSave: Création nouvelle ressource');
           result = await supabase
             .from('user_resources')
             .insert({
@@ -200,10 +217,10 @@ export function useReliableSave({
         throw result.error;
       }
       
-      console.log('Sauvegarde base de données réussie:', result.data.id);
+      console.log('useReliableSave: Sauvegarde base de données réussie:', result.data.id);
       return result.data;
     } catch (error) {
-      console.error('Erreur sauvegarde base de données:', error);
+      console.error('useReliableSave: Erreur sauvegarde base de données:', error);
       throw error;
     }
   }, [stepId, substepTitle, resourceType, getValidSession, findExistingResource]);
@@ -222,7 +239,7 @@ export function useReliableSave({
     };
     
     saveQueueRef.current.push(queueItem);
-    console.log('Ajouté à la queue de sauvegarde:', queueItem.id, 'Queue length:', saveQueueRef.current.length);
+    console.log('useReliableSave: Ajouté à la queue de sauvegarde:', queueItem.id, 'Queue length:', saveQueueRef.current.length);
     
     // Démarrer le traitement immédiatement
     processQueue();
@@ -234,7 +251,7 @@ export function useReliableSave({
       return;
     }
     
-    console.log('Début traitement queue, items:', saveQueueRef.current.length);
+    console.log('useReliableSave: Début traitement queue, items:', saveQueueRef.current.length);
     isProcessingQueueRef.current = true;
     
     try {
@@ -248,7 +265,7 @@ export function useReliableSave({
         const item = saveQueueRef.current[0];
         
         try {
-          console.log(`Traitement queue: ${item.id}, tentative ${item.attempts + 1}`);
+          console.log(`useReliableSave: Traitement queue: ${item.id}, tentative ${item.attempts + 1}`);
           
           const savedData = await saveToDatabase(item.formData, item.resourceId);
           
@@ -260,17 +277,17 @@ export function useReliableSave({
           }
           
           setLastSaveStatus('success');
-          console.log('Item traité avec succès:', item.id);
+          console.log('useReliableSave: Item traité avec succès:', item.id);
           
         } catch (error) {
           item.attempts++;
           item.lastAttempt = new Date();
           
-          console.error(`Erreur traitement item ${item.id}, tentative ${item.attempts}:`, error);
+          console.error(`useReliableSave: Erreur traitement item ${item.id}, tentative ${item.attempts}:`, error);
           
           // Si trop de tentatives, abandonner
           if (item.attempts >= 3) {
-            console.error(`Abandon après ${item.attempts} tentatives:`, error);
+            console.error(`useReliableSave: Abandon après ${item.attempts} tentatives:`, error);
             saveQueueRef.current.shift();
             
             if (onError) {
@@ -280,7 +297,7 @@ export function useReliableSave({
             setLastSaveStatus('error');
           } else {
             // Réessayer plus tard
-            console.log(`Réessaiera plus tard, tentative ${item.attempts}/3`);
+            console.log(`useReliableSave: Réessaiera plus tard, tentative ${item.attempts}/3`);
             break;
           }
         }
@@ -290,11 +307,11 @@ export function useReliableSave({
       
       // Si des éléments restent, programmer un nouveau traitement
       if (saveQueueRef.current.length > 0) {
-        console.log('Items restants dans la queue, programmation nouveau traitement');
+        console.log('useReliableSave: Items restants dans la queue, programmation nouveau traitement');
         if (processQueueTimeoutRef.current) {
           clearTimeout(processQueueTimeoutRef.current);
         }
-        processQueueTimeoutRef.current = setTimeout(processQueue, 1000); // Réduit à 1 seconde
+        processQueueTimeoutRef.current = setTimeout(processQueue, 2000);
       }
     }
   }, [saveToDatabase, onSuccess, onError]);
@@ -303,7 +320,7 @@ export function useReliableSave({
   const save = useCallback(async (formData: any, resourceId?: string | null, options: { priority?: 'high' | 'normal' | 'low', immediate?: boolean } = {}) => {
     const { priority = 'normal', immediate = false } = options;
     
-    console.log('Démarrage sauvegarde:', { immediate, priority, resourceId });
+    console.log('useReliableSave: Démarrage sauvegarde:', { immediate, priority, resourceId });
     setIsSaving(true);
     setLastSaveStatus('pending');
     
@@ -319,9 +336,9 @@ export function useReliableSave({
           if (onSuccess) {
             onSuccess(result);
           }
-          console.log('Sauvegarde immédiate réussie');
+          console.log('useReliableSave: Sauvegarde immédiate réussie');
         } catch (error) {
-          console.warn('Sauvegarde immédiate échouée, ajout à la queue:', error);
+          console.warn('useReliableSave: Sauvegarde immédiate échouée, ajout à la queue:', error);
           addToSaveQueue(formData, resourceId, 'high');
         }
       } else {
@@ -330,7 +347,7 @@ export function useReliableSave({
       }
       
     } catch (error) {
-      console.error('Erreur générale de sauvegarde:', error);
+      console.error('useReliableSave: Erreur générale de sauvegarde:', error);
       setLastSaveStatus('error');
       if (onError) {
         onError(error);
@@ -342,7 +359,7 @@ export function useReliableSave({
 
   // Sauvegarde manuelle (priorité haute, immédiate)
   const saveManual = useCallback(async (formData: any, resourceId?: string | null) => {
-    console.log('Sauvegarde manuelle déclenchée');
+    console.log('useReliableSave: Sauvegarde manuelle déclenchée');
     await save(formData, resourceId, { priority: 'high', immediate: true });
     
     toast({
