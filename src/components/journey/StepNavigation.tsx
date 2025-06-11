@@ -59,11 +59,11 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
         duration: 2000
       });
       
-      console.log(`Navigating to: ${targetUrl} using direct URL change`);
+      console.log(`Navigating to: ${targetUrl}`);
       
-      // Use direct URL change to force a complete page reload and state reset
-      // This is more reliable than React Router's navigate for complex state resets
-      window.location.href = targetUrl;
+      // Use React Router navigate for smoother transitions
+      navigate(targetUrl, { replace: false });
+      
     } catch (error) {
       console.error("Navigation error:", error);
       toast({
@@ -71,35 +71,42 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
         description: "Impossible d'accéder à l'étape demandée",
         variant: "destructive"
       });
-      setIsNavigating(false);
+    } finally {
+      // Reset loading state after navigation attempt
+      setTimeout(() => setIsNavigating(false), 1000);
     }
   };
 
   return (
-    <div className="flex justify-between items-center">
+    <div className="flex justify-between items-center p-4 bg-slate-50/50 rounded-lg">
       {stepId > 1 && (
         <Button 
           variant="outline" 
           onClick={() => handleNavigation(stepId - 1)}
-          className="flex items-center w-36"
+          className="flex items-center w-40 transition-all duration-200 hover:scale-105"
           disabled={isNavigating}
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
-          Étape précédente
+          {isNavigating ? "Chargement..." : "Étape précédente"}
         </Button>
       )}
       
-      <div className="text-sm text-muted-foreground mx-auto">
-        Étape {stepId}/{journeySteps.length}
+      <div className="text-sm text-muted-foreground mx-auto flex items-center gap-2">
+        <span className="bg-primary/10 px-3 py-1 rounded-full font-medium">
+          Étape {stepId}/{journeySteps.length}
+        </span>
+        {isNavigating && (
+          <span className="text-xs opacity-70">Navigation en cours...</span>
+        )}
       </div>
       
       {stepId < journeySteps.length && (
         <Button
           onClick={() => handleNavigation(stepId + 1)}
-          className="ml-auto flex items-center w-36"
+          className="ml-auto flex items-center w-40 transition-all duration-200 hover:scale-105"
           disabled={isNavigating}
         >
-          Étape suivante
+          {isNavigating ? "Chargement..." : "Étape suivante"}
           <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       )}
