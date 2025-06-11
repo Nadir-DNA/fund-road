@@ -25,6 +25,7 @@ export default function ResourceSequenceNavigation({
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   
+  // Get navigation information with improved error handling
   const { 
     previousResource, 
     nextResource, 
@@ -54,8 +55,14 @@ export default function ResourceSequenceNavigation({
     setIsLoading(true);
     
     try {
-      // Get the substep title either from the resource or its parent
-      const navSubstepTitle = resource.subsubstepTitle || substepTitle;
+      // Build the navigation URL with better error handling
+      let navSubstepTitle = substepTitle;
+      
+      // If the resource has a specific subsubstep, use it
+      if (resource.subsubstepTitle) {
+        navSubstepTitle = resource.subsubstepTitle;
+      }
+      
       if (!navSubstepTitle) {
         console.error("Cannot navigate: missing substep title", resource);
         toast({
@@ -74,8 +81,8 @@ export default function ResourceSequenceNavigation({
         resource.componentName
       );
       
-      // Use navigate instead of direct URL change for smoother transitions
-      navigate(url);
+      // Use navigate with replace: false for proper history management
+      navigate(url, { replace: false });
       
       // Show success message
       toast({
@@ -102,7 +109,7 @@ export default function ResourceSequenceNavigation({
     setIsLoading(false);
   }, [selectedResourceName]);
   
-  // Keyboard navigation
+  // Keyboard navigation with improved handling
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
       if (event.ctrlKey || event.metaKey) {
@@ -120,8 +127,13 @@ export default function ResourceSequenceNavigation({
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [hasPrevious, hasNext, previousResource, nextResource, isLoading]);
   
+  // Don't render if no navigation is possible
+  if (!hasPrevious && !hasNext) {
+    return null;
+  }
+  
   return (
-    <div className="flex items-center justify-between p-4 border-t border-slate-700 mt-6 pt-4 bg-slate-50/50 rounded-lg">
+    <div className="flex items-center justify-between p-4 border-t border-slate-200 mt-6 pt-4 bg-slate-50/50 rounded-lg">
       <Button
         variant="outline"
         size="sm"

@@ -51,7 +51,7 @@ export function useSimpleResourceData({
     }
   });
 
-  // Vérification d'authentification améliorée avec retry
+  // Vérification d'authentification améliorée
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -74,7 +74,6 @@ export function useSimpleResourceData({
             console.log('useSimpleResourceData: Changement auth:', event, !!session);
             setIsAuthenticated(!!session);
             
-            // Si connexion réussie, essayer de synchroniser
             if (event === 'SIGNED_IN' && session) {
               console.log('useSimpleResourceData: Connexion détectée, synchronisation...');
               syncLocalData();
@@ -92,7 +91,7 @@ export function useSimpleResourceData({
     checkAuth();
   }, []);
 
-  // Recherche de ressources existantes améliorée
+  // Recherche de ressources existantes
   const findUserResource = useCallback(async (userId: string) => {
     const possibleTitles = getPossibleTitles(stepId, substepTitle);
     console.log('useSimpleResourceData: Recherche ressource avec titres:', possibleTitles);
@@ -123,7 +122,7 @@ export function useSimpleResourceData({
     return null;
   }, [stepId, substepTitle, resourceType]);
 
-  // Chargement des données amélioré
+  // Chargement des données avec gestion améliorée des arrays et objets
   const loadData = useCallback(async () => {
     console.log('useSimpleResourceData: Début chargement données...');
     setIsLoading(true);
@@ -140,7 +139,26 @@ export function useSimpleResourceData({
           const userResource = await findUserResource(sessionData.session.user.id);
           
           if (userResource && isValidObject(userResource.content)) {
-            loadedData = safeObjectMerge(defaultValues, userResource.content);
+            // Traitement spécial pour les arrays et objets complexes
+            const content = userResource.content;
+            
+            // Gestion des différents formats de données
+            if (Array.isArray(content)) {
+              loadedData = content;
+            } else if (typeof content === 'object' && content !== null) {
+              // Merger intelligemment avec les valeurs par défaut
+              loadedData = safeObjectMerge(defaultValues, content);
+              
+              // Gestion spéciale pour les ressources avec arrays
+              Object.keys(content).forEach(key => {
+                if (Array.isArray(content[key])) {
+                  loadedData[key] = content[key];
+                }
+              });
+            } else {
+              loadedData = safeObjectMerge(defaultValues, content);
+            }
+            
             foundResourceId = userResource.id;
             console.log('useSimpleResourceData: Données chargées depuis la base:', userResource.id);
           }
@@ -152,12 +170,24 @@ export function useSimpleResourceData({
         console.log('useSimpleResourceData: Tentative chargement local...');
         const localData = loadFromLocal();
         if (localData?.data && isValidObject(localData.data)) {
-          loadedData = safeObjectMerge(defaultValues, localData.data);
+          // Même logique pour les données locales
+          if (Array.isArray(localData.data)) {
+            loadedData = localData.data;
+          } else if (typeof localData.data === 'object') {
+            loadedData = safeObjectMerge(defaultValues, localData.data);
+            
+            // Préserver les arrays
+            Object.keys(localData.data).forEach(key => {
+              if (Array.isArray(localData.data[key])) {
+                loadedData[key] = localData.data[key];
+              }
+            });
+          }
           console.log('useSimpleResourceData: Données chargées depuis le local');
         }
       }
       
-      console.log('useSimpleResourceData: Données finales chargées:', Object.keys(loadedData));
+      console.log('useSimpleResourceData: Données finales chargées:', loadedData);
       setFormData(loadedData);
       setResourceId(foundResourceId);
       
@@ -168,10 +198,9 @@ export function useSimpleResourceData({
     } catch (error) {
       console.error('useSimpleResourceData: Erreur chargement données:', error);
       
-      // En cas d'erreur, utiliser les données locales ou par défaut
       const localData = loadFromLocal();
       const fallbackData = localData?.data && isValidObject(localData.data) 
-        ? safeObjectMerge(defaultValues, localData.data)
+        ? (Array.isArray(localData.data) ? localData.data : safeObjectMerge(defaultValues, localData.data))
         : defaultValues;
       setFormData(fallbackData);
     } finally {
@@ -198,36 +227,46 @@ export function useSimpleResourceData({
     }
   }, [isAuthenticated, loadData]);
 
-  // Sauvegarde automatique avec debouncing intelligent
+  // Sauvegarde automatique améliorée avec gestion des types complexes
   const handleFormChange = useCallback((field: string, value: any) => {
     console.log(`useSimpleResourceData: Changement de champ détecté: ${field} =`, value);
     
     setFormData((prev) => {
-      const newData = safeObjectMerge(prev, { [field]: value });
+      let newData;
+      
+      // Gestion spéciale pour les arrays (ressources comme MonetizationTestGrid)
+      if (Array.isArray(value)) {
+        newData = value;
+      } else if (Array.isArray(prev)) {
+        // Si les données précédentes sont un array, on les remplace complètement
+        newData = value;
+      } else {
+        // Cas standard d'objet
+        newData = safeObjectMerge(prev, { [field]: value });
+      }
       
       // Nettoyer le timeout précédent
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
       
-      // Sauvegarde automatique après un délai court
+      // Sauvegarde automatique
       if (isInitializedRef.current) {
         console.log('useSimpleResourceData: Programmation sauvegarde automatique pour:', field);
         saveTimeoutRef.current = setTimeout(() => {
           console.log('useSimpleResourceData: Déclenchement sauvegarde automatique');
           save(newData, resourceId, { priority: 'normal' });
-        }, 1000); // Délai réduit pour une meilleure réactivité
+        }, 800); // Délai optimisé
       }
       
       return newData;
     });
   }, [save, resourceId]);
 
-  // Sauvegarde manuelle immédiate
+  // Sauvegarde manuelle
   const handleManualSave = useCallback(async () => {
     console.log('useSimpleResourceData: Sauvegarde manuelle déclenchée');
     
-    // Annuler toute sauvegarde automatique en cours
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = null;
@@ -236,7 +275,7 @@ export function useSimpleResourceData({
     await saveManual(formData, resourceId);
   }, [saveManual, formData, resourceId]);
 
-  // Nettoyage des timeouts
+  // Nettoyage
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
@@ -255,6 +294,6 @@ export function useSimpleResourceData({
     handleFormChange,
     handleManualSave,
     syncLocalData,
-    queueLength: 0 // Pour compatibilité
+    queueLength: 0
   };
 }

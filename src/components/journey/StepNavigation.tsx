@@ -18,7 +18,6 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
   const [isNavigating, setIsNavigating] = useState(false);
   
   const handleNavigation = async (targetStepId: number) => {
-    // Prevent double clicks
     if (isNavigating) return;
     
     setIsNavigating(true);
@@ -30,7 +29,6 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
       const isAuthenticated = !!data.session;
       
       if (!isAuthenticated) {
-        // Save target path for redirect after login
         const targetPath = `/roadmap/step/${targetStepId}`;
         saveLastPath(targetPath);
         
@@ -41,7 +39,6 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
           duration: 5000
         });
         
-        // Redirect to auth page
         setTimeout(() => navigate("/auth"), 500);
         return;
       }
@@ -49,10 +46,8 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
       // Save current path before navigation
       saveCurrentPath(window.location.pathname);
       
-      // Build the target URL
       const targetUrl = `/roadmap/step/${targetStepId}`;
       
-      // Show toast before navigation
       toast({
         title: `Navigation vers l'étape ${targetStepId}`,
         description: "Chargement de la nouvelle étape...",
@@ -60,8 +55,6 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
       });
       
       console.log(`Navigating to: ${targetUrl}`);
-      
-      // Use React Router navigate for smoother transitions
       navigate(targetUrl, { replace: false });
       
     } catch (error) {
@@ -72,14 +65,16 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
         variant: "destructive"
       });
     } finally {
-      // Reset loading state after navigation attempt
       setTimeout(() => setIsNavigating(false), 1000);
     }
   };
 
+  const canNavigatePrevious = stepId > 1;
+  const canNavigateNext = stepId < journeySteps.length;
+
   return (
     <div className="flex justify-between items-center p-4 bg-slate-50/50 rounded-lg">
-      {stepId > 1 && (
+      {canNavigatePrevious ? (
         <Button 
           variant="outline" 
           onClick={() => handleNavigation(stepId - 1)}
@@ -89,6 +84,8 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
           <ChevronLeft className="h-4 w-4 mr-1" />
           {isNavigating ? "Chargement..." : "Étape précédente"}
         </Button>
+      ) : (
+        <div className="w-40" />
       )}
       
       <div className="text-sm text-muted-foreground mx-auto flex items-center gap-2">
@@ -100,7 +97,7 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
         )}
       </div>
       
-      {stepId < journeySteps.length && (
+      {canNavigateNext ? (
         <Button
           onClick={() => handleNavigation(stepId + 1)}
           className="ml-auto flex items-center w-40 transition-all duration-200 hover:scale-105"
@@ -109,12 +106,13 @@ export default function StepNavigation({ stepId }: StepNavigationProps) {
           {isNavigating ? "Chargement..." : "Étape suivante"}
           <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
+      ) : (
+        <div className="w-40" />
       )}
     </div>
   );
 }
 
-// Helper function to save last path
 function saveLastPath(path: string): void {
   if (typeof window !== 'undefined') {
     localStorage.setItem('lastPath', path);
