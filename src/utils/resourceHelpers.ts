@@ -39,7 +39,7 @@ export function resourceTypeToComponentName(resourceType: string): string {
 }
 
 // Get all resources for a step, including from substeps and subsubsteps
-// Modified to filter by substepTitle when provided
+// Modified to filter by substepTitle when provided and exclude course materials
 export function getAllStepResources(stepId: number, substepTitle?: string | null): Resource[] {
   const step = journeySteps.find(s => s.id === stepId);
   if (!step) return [];
@@ -92,8 +92,13 @@ export function getAllStepResources(stepId: number, substepTitle?: string | null
     }
   }
   
+  // Filter out course materials as they are handled separately
+  const nonCourseResources = allResources.filter(resource => 
+    resource.type !== 'course' && resource.type !== 'cours'
+  );
+  
   // Remove duplicates by componentName
-  const uniqueResources = allResources.reduce((acc: Resource[], current) => {
+  const uniqueResources = nonCourseResources.reduce((acc: Resource[], current) => {
     const isDuplicate = acc.find(item => 
       item.componentName === current.componentName && current.componentName !== undefined
     );
@@ -103,7 +108,7 @@ export function getAllStepResources(stepId: number, substepTitle?: string | null
     return acc;
   }, []);
   
-  console.log(`getAllStepResources: Found ${uniqueResources.length} resources for step ${stepId} ${substepTitle ? `and substep ${substepTitle}` : ''}`);
+  console.log(`getAllStepResources: Found ${uniqueResources.length} non-course resources for step ${stepId} ${substepTitle ? `and substep ${substepTitle}` : ''}`);
   return uniqueResources;
 }
 
