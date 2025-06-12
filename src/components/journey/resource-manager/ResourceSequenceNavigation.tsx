@@ -55,31 +55,24 @@ export default function ResourceSequenceNavigation({
     setIsLoading(true);
     
     try {
-      // Build the navigation URL with better error handling
-      let navSubstepTitle = substepTitle;
+      console.log(`Navigating to resource: ${resource.componentName}`);
+      
+      // For navigation between resources, we need to find which substep contains the target resource
+      // We'll use the current substepTitle as a starting point, but may need to find the correct one
+      let targetSubstepTitle = substepTitle;
       
       // If the resource has a specific subsubstep, use it
       if (resource.subsubstepTitle) {
-        navSubstepTitle = resource.subsubstepTitle;
+        targetSubstepTitle = resource.subsubstepTitle;
       }
-      
-      if (!navSubstepTitle) {
-        console.error("Cannot navigate: missing substep title", resource);
-        toast({
-          title: "Erreur de navigation",
-          description: "Impossible de naviguer vers cette ressource",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      console.log(`Navigating to resource: ${resource.componentName} in ${navSubstepTitle}`);
       
       const url = buildResourceUrl(
         stepId, 
-        navSubstepTitle, 
+        targetSubstepTitle, 
         resource.componentName
       );
+      
+      console.log(`Navigation URL: ${url}`);
       
       // Use navigate with replace: false for proper history management
       navigate(url, { replace: false });
@@ -127,11 +120,7 @@ export default function ResourceSequenceNavigation({
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [hasPrevious, hasNext, previousResource, nextResource, isLoading]);
   
-  // Don't render if no navigation is possible
-  if (!hasPrevious && !hasNext) {
-    return null;
-  }
-  
+  // Always render the navigation component, even if no navigation is available
   return (
     <div className="flex items-center justify-between p-4 border-t border-slate-200 mt-6 pt-4 bg-slate-50/50 rounded-lg">
       <Button
@@ -152,10 +141,10 @@ export default function ResourceSequenceNavigation({
         ) : (
           <>
             <span className="bg-primary/10 px-2 py-1 rounded">
-              {currentIndex + 1}/{totalResources}
+              {totalResources > 0 ? `${currentIndex + 1}/${totalResources}` : "0/0"}
             </span>
             <span className="text-xs opacity-70">
-              Ctrl+← / Ctrl+→ pour naviguer
+              {totalResources > 1 ? "Ctrl+← / Ctrl+→ pour naviguer" : "Seule ressource"}
             </span>
           </>
         )}
