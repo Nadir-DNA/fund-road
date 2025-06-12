@@ -8,9 +8,9 @@ import { useToast } from "@/components/ui/use-toast";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { supabase } from "@/integrations/supabase/client";
 import { Resource } from "@/types/journey";
-import ResourcesBySubstep from "../resource-manager/ResourcesBySubstep";
-import ResourceManagerTabs from "../resource-manager/ResourceManagerTabs";
-import ResourceManagerContent from "../resource-manager/ResourceManagerContent";
+import ResourcesBySubstep from "../../resource-manager/ResourcesBySubstep";
+import ResourceManagerTabs from "../../resource-manager/ResourceManagerTabs";
+import ResourceManagerContent from "../../resource-manager/ResourceManagerContent";
 
 interface ResourcesTabProps {
   stepId: number;

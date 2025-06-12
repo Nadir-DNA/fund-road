@@ -46,11 +46,10 @@ export default function ResourceManager({
     checkSession();
   }, []);
 
-  // Use customized hook to get materials for step, substep, and subsubstep
+  // Use customized hook to get materials for step and substep only (not subsubstep)
   const { materials, isLoading: isMaterialsLoading, error: materialsError } = useCourseMaterials(
     step.id,
-    selectedSubstepTitle || null,
-    selectedSubSubstepTitle
+    selectedSubstepTitle || null
   );
 
   // Log for debugging
