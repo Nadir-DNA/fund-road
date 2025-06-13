@@ -1,175 +1,82 @@
-
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { Resource, Step } from "@/types/journey";
+import { getStepResources, getAllStepResources, getResourceLocationLabel } from "@/utils/resourceHelpers";
 import { useSearchParams } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useResourceFetch } from "@/hooks/resource/useResourceFetch";
-import { useToast } from "@/components/ui/use-toast";
-import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import { supabase } from "@/integrations/supabase/client";
-import { Resource } from "@/types/journey";
-import ResourcesBySubstep from "../../resource-manager/ResourcesBySubstep";
-import ResourceManagerTabs from "../../resource-manager/ResourceManagerTabs";
 import ResourceManagerContent from "../../resource-manager/ResourceManagerContent";
+import ResourceCard from "../../resource-manager/ResourceCard";
 
 interface ResourcesTabProps {
+  step: Step;
   stepId: number;
   substepTitle: string | null;
-  stepTitle: string;
+  selectedResourceName: string | null;
+  isViewingResource?: boolean;
 }
 
 export default function ResourcesTab({
+  step,
   stepId,
   substepTitle,
-  stepTitle
+  selectedResourceName,
+  isViewingResource = false
 }: ResourcesTabProps) {
-  const { toast } = useToast();
   const [searchParams] = useSearchParams();
-  const [hasSession, setHasSession] = useState<boolean | null>(null);
-  const [activeTabView, setActiveTabView] = useState("structured");
-  const [resources, setResources] = useState<Resource[]>([]);
+  const resourceParam = searchParams.get("resource");
   
-  const selectedResourceName = searchParams.get('resource');
+  // Multiple sources of truth for the resource name
+  const definiteResourceName = selectedResourceName || resourceParam;
+  
+  // Definitely viewing a resource if prop is true or if resource name is available
+  const definitelyViewingResource = isViewingResource || !!definiteResourceName;
+  
+  console.log("ResourcesTab:", {
+    stepId,
+    substepTitle,
+    selectedResourceName,
+    resourceParam,
+    definiteResourceName,
+    isViewingResource: isViewingResource, 
+    definitelyViewingResource
+  });
 
-  // Check authentication status
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      setHasSession(!!data.session);
-    };
+  // If viewing a specific resource, show its content
+  if (definitelyViewingResource && definiteResourceName) {
+    const resources = getAllStepResources(stepId, substepTitle);
+    const selectedResource = resources.find(r => r.componentName === definiteResourceName);
     
-    checkAuth();
-  }, []);
-
-  // Dummy step object for useResourceFetch
-  const step = {
-    id: stepId,
-    title: stepTitle,
-    description: "",
-    resources: []
-  };
-
-  // Fetch resources with the hook
-  const resourceQuery = useResourceFetch(
-    step,
-    substepTitle || undefined,
-    null,
-    hasSession
-  );
-
-  // Update resources when query data changes
-  useEffect(() => {
-    if (resourceQuery.data) {
-      // Filter out course resources as they are displayed in the Overview tab
-      const nonCourseResources = resourceQuery.data.filter(r => r.type !== 'course' && r.type !== 'cours');
-      setResources(nonCourseResources);
-      
-      console.log("ResourcesTab - Filtered resources:", {
-        total: resourceQuery.data.length,
-        nonCourse: nonCourseResources.length,
-        stepId,
-        substepTitle
-      });
-    }
-  }, [resourceQuery.data]);
-
-  // Find the selected resource
-  const selectedResource = resources.find(
-    r => r.componentName === selectedResourceName
-  );
-
-  // Separate available and coming soon resources
-  const availableResources = resources.filter(r => r.status !== 'coming-soon');
-  const comingSoonResources = resources.filter(r => r.status === 'coming-soon');
-
-  // Loading state
-  if (resourceQuery.isLoading) {
     return (
-      <div className="py-12 flex justify-center">
-        <LoadingIndicator size="lg" />
-      </div>
+      <ResourceManagerContent
+        selectedResource={selectedResource}
+        stepId={stepId}
+        selectedSubstepTitle={substepTitle || ""}
+        selectedResourceName={definiteResourceName}
+      />
     );
   }
 
+  // Otherwise, show all available resources
+  const resources = substepTitle 
+    ? getStepResources(step, substepTitle) 
+    : getAllStepResources(stepId);
+
   return (
-    <div className="space-y-8">
-      <Tabs value={activeTabView} onValueChange={setActiveTabView} className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="structured">Par sous-étapes</TabsTrigger>
-          <TabsTrigger value="all">Toutes les ressources</TabsTrigger>
-        </TabsList>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {resources.map((resource, index) => (
+          <ResourceCard 
+            key={resource.id || `resource-${index}`}
+            resource={resource}
+            stepId={stepId}
+            substepTitle={substepTitle || ''}
+          />
+        ))}
         
-        <TabsContent value="structured">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
-              <Card>
-                <CardContent className="pt-6">
-                  <ResourcesBySubstep 
-                    stepId={stepId}
-                    activeSubstepTitle={substepTitle}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="lg:col-span-2">
-              {selectedResourceName ? (
-                <ResourceManagerContent
-                  selectedResource={selectedResource}
-                  stepId={stepId}
-                  selectedSubstepTitle={substepTitle || ''}
-                  selectedResourceName={selectedResourceName}
-                />
-              ) : (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <p className="text-muted-foreground">
-                      Sélectionnez une ressource à gauche pour l'afficher ici
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+        {resources.length === 0 && (
+          <div className="col-span-full text-center p-8 border border-dashed border-slate-700 rounded-lg">
+            <p className="text-muted-foreground">Aucune ressource disponible pour cette étape.</p>
           </div>
-        </TabsContent>
-        
-        <TabsContent value="all">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
-              <Card>
-                <CardContent className="pt-6">
-                  <ResourceManagerTabs
-                    availableResources={availableResources}
-                    comingSoonResources={comingSoonResources}
-                    stepId={stepId}
-                    substepTitle={substepTitle || ''}
-                    selectedResourceName={selectedResourceName}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="lg:col-span-2">
-              {selectedResourceName ? (
-                <ResourceManagerContent
-                  selectedResource={selectedResource}
-                  stepId={stepId}
-                  selectedSubstepTitle={substepTitle || ''}
-                  selectedResourceName={selectedResourceName}
-                />
-              ) : (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <p className="text-muted-foreground">
-                      Sélectionnez une ressource à gauche pour l'afficher ici
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
     </div>
   );
 }

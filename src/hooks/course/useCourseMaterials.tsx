@@ -1,97 +1,65 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 
-interface CourseMaterial {
-  id: string;
-  title: string;
-  course_content: string;
-  resource_type: string;
-  substep_title: string;
-  step_id: number;
-}
-
-export const useCourseMaterials = (stepId: number, substepTitle?: string | null) => {
-  const [materials, setMaterials] = useState<CourseMaterial[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchCourseMaterials = async () => {
+/**
+ * Hook pour récupérer les matériels de cours depuis Supabase
+ */
+export const useCourseMaterials = (stepId: number, substepTitle: string | null, subsubstepTitle?: string | null) => {
+  const query = useQuery({
+    queryKey: ['course-materials', stepId, substepTitle, subsubstepTitle],
+    queryFn: async () => {
       try {
-        setIsLoading(true);
-        setError(null);
-
+        console.log(`Fetching course materials for stepId: ${stepId}, substepTitle: ${substepTitle || 'main'}, subsubstepTitle: ${subsubstepTitle || 'none'}`);
+        
         let query = supabase
           .from('entrepreneur_resources')
           .select('*')
-          .eq('resource_type', 'course')
           .eq('step_id', stepId);
-
-        // If substepTitle is provided, filter by it
+        
+        // Properly handle null substep_title
         if (substepTitle) {
           query = query.eq('substep_title', substepTitle);
+        } else {
+          // For main step, look for NULL substep_title values
+          query = query.is('substep_title', null);
         }
-
-        const { data, error: queryError } = await query.order('substep_index');
-
-        if (queryError) {
-          console.error('Error fetching course materials:', queryError);
-          setError(queryError.message);
-          return;
+        
+        // Add subsubstepTitle filter if provided
+        if (subsubstepTitle) {
+          query = query.eq('subsubstep_title', subsubstepTitle);
         }
-
-        console.log(`Course materials found for step ${stepId}${substepTitle ? `, substep ${substepTitle}` : ''}:`, data);
-        setMaterials(data || []);
+        
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error("Error fetching course materials:", error);
+          throw error;
+        }
+        
+        console.log(`Found ${data?.length || 0} materials for step ${stepId}:`, data);
+        return data || [];
       } catch (err) {
-        console.error('Unexpected error fetching course materials:', err);
-        setError('Une erreur inattendue est survenue');
-      } finally {
-        setIsLoading(false);
+        console.error("Failed to fetch course materials:", err);
+        toast({
+          title: "Erreur de chargement",
+          description: "Impossible de récupérer les matériaux de cours",
+          variant: "destructive"
+        });
+        return [];
       }
-    };
+    },
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    // Force refetch when stepId or substepTitle changes
+    enabled: stepId > 0,
+  });
 
-    fetchCourseMaterials();
-  }, [stepId, substepTitle]);
-
-  // Helper function to check if course content is available
-  const hasCourseContent = materials.length > 0 && materials.some(m => m.course_content && m.course_content.trim() !== '');
-  
-  // Helper function to get placeholder content when no course is available
-  const getPlaceholderContent = () => {
-    return {
-      id: 'placeholder',
-      title: 'Cours bientôt disponible',
-      course_content: `# Cours bientôt disponible
-
-## Contenu en préparation
-
-Le contenu pédagogique pour cette étape est actuellement en cours de préparation par notre équipe.
-
-### Ce que vous pouvez faire en attendant :
-
-1. **Explorez les ressources** disponibles dans l'onglet "Ressources"
-2. **Consultez la documentation** des outils recommandés
-3. **Rejoignez notre communauté** pour échanger avec d'autres entrepreneurs
-4. **Pratiquez** avec les exercices suggérés dans les autres sections
-
-### Notification
-
-Vous serez automatiquement notifié dès que ce contenu sera disponible.
-
----
-
-*Notre équipe pédagogique travaille activement à la création de contenus de qualité pour vous accompagner dans votre parcours entrepreneurial.*`,
-      resource_type: 'course',
-      substep_title: substepTitle || '',
-      step_id: stepId
-    };
-  };
-
+  // Return a structured object with materials property
   return {
-    materials: hasCourseContent ? materials : [getPlaceholderContent()],
-    isLoading,
-    error,
-    hasCourseContent
+    materials: query.data || [],
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch
   };
 };

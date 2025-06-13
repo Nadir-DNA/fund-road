@@ -1,6 +1,6 @@
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Step, SubStep } from "@/types/journey";
+import { Step, SubStep, Resource } from "@/types/journey";
 import { useStepTabs } from "@/hooks/useStepTabs";
 import { useSearchParams } from "react-router-dom";
 import OverviewTab from "./tabs/OverviewTab";
@@ -13,7 +13,7 @@ interface StepContentProps {
   substepTitle: string | null;
   resourceName: string | null;
   isLoading?: boolean;
-  isViewingResource: boolean;
+  isViewingResource: boolean; // Ce n'est plus optionnel pour éviter l'ambiguïté
 }
 
 export default function StepContent({ 
@@ -33,8 +33,7 @@ export default function StepContent({
     stepId,
     substepTitle,
     resourceName: selectedResourceName,
-    isViewingResource,
-    activeTab
+    isViewingResource
   });
 
   return (
@@ -58,9 +57,11 @@ export default function StepContent({
       <TabsContent value="resources" className="py-4">
         <div className="bg-slate-800 p-4 rounded-lg">
           <ResourcesTab 
+            step={step} 
             stepId={stepId}
             substepTitle={substepTitle}
-            stepTitle={step.title}
+            selectedResourceName={selectedResourceName}
+            isViewingResource={isViewingResource}
           />
         </div>
       </TabsContent>
