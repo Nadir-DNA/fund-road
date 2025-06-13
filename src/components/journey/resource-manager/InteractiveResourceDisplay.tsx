@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getResourceComponentByName } from "../utils/resourceRenderer";
 import ResourceSequenceNavigation from "./ResourceSequenceNavigation";
+import CourseSection from "./CourseSection";
 import { saveResourceReturnPath, getResourceReturnPath, clearResourceReturnPath } from "@/utils/navigationUtils";
 
 interface InteractiveResourceDisplayProps {
@@ -66,6 +67,14 @@ export default function InteractiveResourceDisplay({
   
   return (
     <div className="space-y-6">
+      {/* Course Section - Integrated above the resource */}
+      <CourseSection 
+        stepId={stepId}
+        substepTitle={effectiveSubstepTitle}
+        resourceTitle={selectedResource.title}
+      />
+      
+      {/* Resource Card */}
       <Card>
         <CardHeader className="p-4 border-b">
           <div className="flex justify-between items-center">
@@ -114,7 +123,7 @@ export default function InteractiveResourceDisplay({
         </CardContent>
       </Card>
       
-      {/* Toujours afficher la navigation entre ressources */}
+      {/* Resource Navigation */}
       <ResourceSequenceNavigation
         stepId={stepId}
         currentResource={selectedResource}
