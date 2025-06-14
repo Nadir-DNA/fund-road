@@ -1,32 +1,34 @@
-
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
-
 export default function HeroSection() {
-  const { t } = useLanguage();
+  const {
+    t
+  } = useLanguage();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: {
+          session
+        }
+      } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
     };
-    
     checkAuth();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: {
+        subscription
+      }
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setIsAuthenticated(!!session);
     });
-    
     return () => subscription.unsubscribe();
   }, []);
-  
-  return (
-    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-black to-slate-800 overflow-hidden">
+  return <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-black to-slate-800 overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/20 rounded-full filter blur-3xl animate-pulse"></div>
@@ -105,8 +107,8 @@ export default function HeroSection() {
               <div className="text-sm text-white/60">Entrepreneurs accompagnés</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-accent">€2M+</div>
-              <div className="text-sm text-white/60">Fonds levés</div>
+              <div className="text-3xl font-bold text-accent">3</div>
+              <div className="text-sm text-white/60">artenai</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-primary">95%</div>
@@ -126,6 +128,5 @@ export default function HeroSection() {
           <div className="w-1 h-3 bg-white/60 rounded-full mt-2 animate-pulse"></div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 }
