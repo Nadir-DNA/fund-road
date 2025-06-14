@@ -17,6 +17,22 @@ interface ResourcesBySubstepProps {
   activeSubstepTitle: string | null;
 }
 
+// Helper function to safely access resource properties
+const getResourceSubstepTitle = (resource: any): string => {
+  return resource.subsubstepTitle || resource.substepTitle || 'main';
+};
+
+// Helper function to get the target substep for navigation
+const getNavigationSubstepTitle = (resource: any, activeSubstepTitle: string | null): string => {
+  if (resource.subsubstepTitle) {
+    return resource.subsubstepTitle;
+  }
+  if (resource.substepTitle) {
+    return resource.substepTitle;
+  }
+  return activeSubstepTitle || 'main';
+};
+
 export default function ResourcesBySubstep({
   stepId,
   activeSubstepTitle
@@ -47,9 +63,9 @@ export default function ResourcesBySubstep({
     hasSession
   );
 
-  // Group resources by substep
+  // Group resources by substep with safe property access
   const resourcesBySubstep = resources.reduce((acc, resource) => {
-    const substepKey = resource.subsubstepTitle || resource.substepTitle || 'main';
+    const substepKey = getResourceSubstepTitle(resource);
     if (!acc[substepKey]) {
       acc[substepKey] = [];
     }
@@ -75,10 +91,13 @@ export default function ResourcesBySubstep({
     // Save current path for potential return
     saveResourceReturnPath(window.location.pathname);
     
+    // Get the correct substep title for navigation
+    const targetSubstepTitle = getNavigationSubstepTitle(resource, activeSubstepTitle);
+    
     // Build the resource URL
     const resourceUrl = buildResourceUrl(
       stepId, 
-      resource.subsubstepTitle || resource.substepTitle || activeSubstepTitle, 
+      targetSubstepTitle, 
       resource.componentName
     );
     
@@ -98,7 +117,8 @@ export default function ResourcesBySubstep({
   };
 
   const getResourceIcon = (resource: any) => {
-    switch(resource.resource_type || resource.type) {
+    const resourceType = resource.resource_type || resource.type;
+    switch(resourceType) {
       case 'course':
         return <BookOpen className="h-4 w-4 text-blue-500" />;
       case 'document':
@@ -175,7 +195,7 @@ export default function ResourcesBySubstep({
                 <div className="space-y-2">
                   {substepResources.map((resource, index) => (
                     <Button
-                      key={`${resource.id}-${index}`}
+                      key={`${resource.id || resource.componentName}-${index}`}
                       variant={selectedResourceName === resource.componentName ? "default" : "ghost"}
                       className={`w-full justify-start h-auto p-3 text-left transition-all duration-200 ${
                         selectedResourceName === resource.componentName
