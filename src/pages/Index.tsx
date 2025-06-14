@@ -7,6 +7,7 @@ import HeroSection from '@/components/home/HeroSection';
 import RoadmapSection from '@/components/home/RoadmapSection';
 import FeaturesSection from '@/components/home/FeaturesSection';
 import DashboardSection from '@/components/home/DashboardSection';
+import NewsletterSection from '@/components/home/NewsletterSection';
 import ResourceCard from '@/components/ResourceCard';
 import { Button } from '@/components/ui/button';
 import { FileText, Shield, Rocket, ArrowRight, CheckCircle } from 'lucide-react';
@@ -166,6 +167,10 @@ export default function Index() {
       
       <ErrorBoundary>
         <DashboardSection />
+      </ErrorBoundary>
+      
+      <ErrorBoundary>
+        <NewsletterSection />
       </ErrorBoundary>
       
       <ErrorBoundary>
