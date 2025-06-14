@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react";
 import { Resource } from "@/types/journey";
 import { buildResourceUrl } from "@/utils/navigationUtils";
 import { useState, useEffect } from "react";
@@ -122,45 +122,77 @@ export default function ResourceSequenceNavigation({
   
   // Always render the navigation component, even if no navigation is available
   return (
-    <div className="flex items-center justify-between p-4 border-t border-slate-200 mt-6 pt-4 bg-slate-50/50 rounded-lg">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => navigateToResource(previousResource)}
-        disabled={!hasPrevious || isLoading}
-        className="w-40 transition-all duration-200 hover:scale-105"
-        title={previousResource ? `Aller à ${previousResource.title}` : "Aucune ressource précédente"}
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        {isLoading ? "Chargement..." : "Ressource précédente"}
-      </Button>
-      
-      <div className="text-sm font-mono text-muted-foreground flex items-center gap-2">
-        {isLoading ? (
-          <LoadingIndicator size="sm" />
-        ) : (
-          <>
-            <span className="bg-primary/10 px-2 py-1 rounded">
-              {totalResources > 0 ? `${currentIndex + 1}/${totalResources}` : "0/0"}
+    <div className="sticky bottom-0 bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 border-t border-slate-600 rounded-lg shadow-lg">
+      <div className="flex items-center justify-between p-6">
+        <Button
+          variant={hasPrevious ? "default" : "ghost"}
+          size="lg"
+          onClick={() => navigateToResource(previousResource)}
+          disabled={!hasPrevious || isLoading}
+          className={`min-w-[160px] transition-all duration-300 hover:scale-105 ${
+            hasPrevious 
+              ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md" 
+              : "opacity-50 cursor-not-allowed"
+          }`}
+          title={previousResource ? `Aller à ${previousResource.title}` : "Aucune ressource précédente"}
+        >
+          {isLoading ? (
+            <LoadingIndicator size="sm" />
+          ) : (
+            <>
+              <ArrowLeft className="mr-2 h-5 w-5" />
+              Précédent
+            </>
+          )}
+        </Button>
+        
+        <div className="flex flex-col items-center gap-2">
+          <div className="bg-slate-900/70 px-4 py-2 rounded-full border border-slate-600">
+            <span className="text-sm font-semibold text-slate-200">
+              {totalResources > 0 ? `${currentIndex + 1} / ${totalResources}` : "0 / 0"}
             </span>
-            <span className="text-xs opacity-70">
-              {totalResources > 1 ? "Ctrl+← / Ctrl+→ pour naviguer" : "Seule ressource"}
-            </span>
-          </>
-        )}
+          </div>
+          {totalResources > 1 && (
+            <div className="text-xs text-slate-400 bg-slate-800/50 px-3 py-1 rounded-full border border-slate-700">
+              <kbd className="font-mono">Ctrl</kbd> + <kbd className="font-mono">←</kbd> / <kbd className="font-mono">→</kbd> pour naviguer
+            </div>
+          )}
+        </div>
+        
+        <Button
+          variant={hasNext ? "default" : "ghost"}
+          size="lg"
+          onClick={() => navigateToResource(nextResource)}
+          disabled={!hasNext || isLoading}
+          className={`min-w-[160px] transition-all duration-300 hover:scale-105 ${
+            hasNext 
+              ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-md" 
+              : "opacity-50 cursor-not-allowed"
+          }`}
+          title={nextResource ? `Aller à ${nextResource.title}` : "Aucune ressource suivante"}
+        >
+          {isLoading ? (
+            <LoadingIndicator size="sm" />
+          ) : (
+            <>
+              Suivant
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </>
+          )}
+        </Button>
       </div>
       
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => navigateToResource(nextResource)}
-        disabled={!hasNext || isLoading}
-        className="w-40 transition-all duration-200 hover:scale-105"
-        title={nextResource ? `Aller à ${nextResource.title}` : "Aucune ressource suivante"}
-      >
-        {isLoading ? "Chargement..." : "Ressource suivante"}
-        <ArrowRight className="ml-2 h-4 w-4" />
-      </Button>
+      {/* Progress bar */}
+      {totalResources > 1 && (
+        <div className="px-6 pb-4">
+          <div className="w-full bg-slate-800 rounded-full h-2 border border-slate-600">
+            <div 
+              className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${((currentIndex + 1) / totalResources) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
