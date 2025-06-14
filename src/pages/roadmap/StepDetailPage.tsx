@@ -5,7 +5,7 @@ import { journeySteps } from "@/data/journeySteps";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useCourseMaterials } from "@/hooks/course/useCourseMaterials";
+import { useUnifiedCourseMaterials } from "@/hooks/course/useUnifiedCourseMaterials";
 import { useStepTabs } from "@/hooks/useStepTabs";
 import OverviewTab from "@/components/journey/step-detail/OverviewTab";
 import ResourcesTab from "@/components/journey/step-detail/ResourcesTab";
@@ -46,8 +46,10 @@ export default function StepDetailPage() {
   const resourceLocationLabel = selectedResource ? 
     getResourceLocationLabel(stepId, selectedResource) : null;
     
-  // Get course content
-  const { materials, isLoading: courseMaterialsLoading } = useCourseMaterials(stepId, substepTitle);
+  // Get course content using unified hook
+  const { data: materials, isLoading: courseMaterialsLoading } = useUnifiedCourseMaterials(stepId, substepTitle);
+  
+  console.log(`📊 StepDetailPage - Unified materials: ${materials?.length || 0}`);
   
   // Use our custom hook to manage tabs
   const { activeTab, handleTabChange } = useStepTabs(selectedResource);
@@ -171,6 +173,7 @@ export default function StepDetailPage() {
             resourceLocationLabel,
             activeTab,
             componentKey,
+            materialsCount: materials?.length || 0,
             path: window.location.pathname,
             search: window.location.search,
             url: window.location.href,

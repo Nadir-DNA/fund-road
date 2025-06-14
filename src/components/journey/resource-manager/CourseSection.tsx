@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { LazyMarkdown } from "@/components/ui/LazyMarkdown";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import { useResourceCourse } from "@/hooks/course/useResourceCourse";
+import { useUnifiedCourseMaterials } from "@/hooks/course/useUnifiedCourseMaterials";
 
 interface CourseSectionProps {
   stepId: number;
@@ -17,12 +17,12 @@ interface CourseSectionProps {
 
 export default function CourseSection({ stepId, substepTitle, resourceTitle }: CourseSectionProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { data: course, isLoading, error } = useResourceCourse(stepId, substepTitle);
+  const { data: materials, isLoading, error } = useUnifiedCourseMaterials(stepId, substepTitle);
 
-  // Don't render if no course content
-  if (!isLoading && !course?.course_content) {
-    return null;
-  }
+  // Find course content in materials
+  const course = materials?.find(m => m.resource_type === 'course');
+
+  console.log(`📚 CourseSection - Step ${stepId}, Substep: ${substepTitle || 'main'}, Course found: ${!!course}`);
 
   return (
     <Card className="mb-6 border-primary/20 bg-primary/5">
@@ -63,6 +63,9 @@ export default function CourseSection({ stepId, substepTitle, resourceTitle }: C
             ) : error ? (
               <div className="text-center py-6 text-destructive">
                 <p>Erreur lors du chargement du cours</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Étape {stepId} - {substepTitle || 'Étape principale'}
+                </p>
               </div>
             ) : course?.course_content ? (
               <div className="prose prose-invert max-w-none">
@@ -71,7 +74,13 @@ export default function CourseSection({ stepId, substepTitle, resourceTitle }: C
             ) : (
               <div className="text-center py-6 text-muted-foreground">
                 <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>Le contenu du cours sera disponible prochainement</p>
+                <p className="font-medium">Contenu du cours en préparation</p>
+                <p className="text-sm mt-1">
+                  Le contenu pour "{substepTitle || resourceTitle}" sera disponible prochainement
+                </p>
+                <p className="text-xs mt-2 text-muted-foreground/70">
+                  Étape {stepId} - {substepTitle || 'Étape principale'}
+                </p>
               </div>
             )}
           </CardContent>

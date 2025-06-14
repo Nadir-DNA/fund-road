@@ -1,8 +1,6 @@
 
-import { useState, useEffect } from "react";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { useUnifiedCourseMaterials } from "@/hooks/course/useUnifiedCourseMaterials";
 import CourseContentDisplay from "../../CourseContentDisplay";
 
 interface OverviewTabProps {
@@ -16,59 +14,18 @@ export default function OverviewTab({
   stepId,
   substepTitle,
   stepTitle,
-  isLoading 
+  isLoading: propIsLoading 
 }: OverviewTabProps) {
-  const [courseContent, setCourseContent] = useState<string>("");
-  const [courseLoading, setCourseLoading] = useState(true);
+  const { data: materials, isLoading: courseMaterialsLoading, error } = useUnifiedCourseMaterials(stepId, substepTitle);
   
-  // Fetch course content from Supabase
-  useEffect(() => {
-    const fetchCourseContent = async () => {
-      setCourseLoading(true);
-      try {
-        console.log(`Fetching course for step ${stepId} and substep ${substepTitle || 'main'}`);
-        
-        let query = supabase
-          .from('entrepreneur_resources')
-          .select('*')
-          .eq('step_id', stepId)
-          .eq('resource_type', 'course');
-          
-        if (substepTitle) {
-          query = query.eq('substep_title', substepTitle);
-        } else {
-          query = query.is('substep_title', null);
-        }
-        
-        const { data: courses, error } = await query;
-        
-        if (error) {
-          throw new Error(error.message);
-        }
-        
-        if (courses && courses.length > 0) {
-          console.log("Found course:", courses[0]);
-          setCourseContent(courses[0].course_content || "");
-        } else {
-          console.log("No course content found");
-          setCourseContent("");
-        }
-      } catch (err) {
-        console.error("Error fetching course content:", err);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger le contenu du cours",
-          variant: "destructive"
-        });
-      } finally {
-        setCourseLoading(false);
-      }
-    };
-    
-    fetchCourseContent();
-  }, [stepId, substepTitle]);
+  console.log(`📖 OverviewTab - Step ${stepId}, Substep: ${substepTitle || 'main'}, Materials: ${materials?.length || 0}`);
   
-  if (isLoading || courseLoading) {
+  // Find course content in materials
+  const courseContent = materials?.find(m => m.resource_type === 'course')?.course_content || "";
+  
+  const isLoading = propIsLoading || courseMaterialsLoading;
+  
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <LoadingIndicator size="lg" />
@@ -77,12 +34,29 @@ export default function OverviewTab({
     );
   }
   
-  if (!courseContent) {
+  if (error) {
     return (
       <div className="text-center py-8">
-        <h3 className="text-lg font-medium mb-2">Aucun cours disponible</h3>
+        <h3 className="text-lg font-medium mb-2 text-destructive">Erreur de chargement</h3>
+        <p className="text-muted-foreground">
+          Impossible de charger le contenu du cours pour cette section.
+        </p>
+        <p className="text-xs mt-2 text-muted-foreground/70">
+          Étape {stepId} - {substepTitle || 'Étape principale'}
+        </p>
+      </div>
+    );
+  }
+  
+  if (!courseContent || courseContent.trim() === "") {
+    return (
+      <div className="text-center py-8">
+        <h3 className="text-lg font-medium mb-2">Contenu en préparation</h3>
         <p className="text-muted-foreground">
           Le contenu du cours pour cette section sera disponible prochainement.
+        </p>
+        <p className="text-xs mt-2 text-muted-foreground/70">
+          Étape {stepId} - {substepTitle || 'Étape principale'}
         </p>
       </div>
     );

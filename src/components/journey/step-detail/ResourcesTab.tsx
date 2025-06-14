@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useResourceFetch } from "@/hooks/resource/useResourceFetch";
+import { useUnifiedCourseMaterials } from "@/hooks/course/useUnifiedCourseMaterials";
 import { useToast } from "@/components/ui/use-toast";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +31,8 @@ export default function ResourcesTab({
   const [resources, setResources] = useState<Resource[]>([]);
   
   const selectedResourceName = searchParams.get('resource');
+  
+  console.log(`🔧 ResourcesTab - Step ${stepId}, Substep: ${substepTitle || 'main'}, Resource: ${selectedResourceName || 'none'}`);
 
   // Check authentication status
   useEffect(() => {
@@ -40,6 +43,9 @@ export default function ResourcesTab({
     
     checkAuth();
   }, []);
+
+  // Use unified course materials hook for consistency
+  const { data: courseMaterials, isLoading: courseMaterialsLoading } = useUnifiedCourseMaterials(stepId, substepTitle);
 
   // Dummy step object for useResourceFetch
   const step = {
@@ -60,6 +66,7 @@ export default function ResourcesTab({
   // Update resources when query data changes
   useEffect(() => {
     if (resourceQuery.data) {
+      console.log(`📋 ResourcesTab - Found ${resourceQuery.data.length} resources`);
       setResources(resourceQuery.data);
     }
   }, [resourceQuery.data]);
@@ -74,7 +81,7 @@ export default function ResourcesTab({
   const comingSoonResources = resources.filter(r => r.status === 'coming-soon');
 
   // Loading state
-  if (resourceQuery.isLoading) {
+  if (resourceQuery.isLoading || courseMaterialsLoading) {
     return (
       <div className="py-12 flex justify-center">
         <LoadingIndicator size="lg" />
