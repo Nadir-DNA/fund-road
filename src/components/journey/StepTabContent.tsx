@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import ResourcesList from "@/components/journey/ResourcesList";
 import CourseContentDisplay from "@/components/journey/CourseContentDisplay";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import OverviewTab from "./OverviewTab";
+import OverviewTab from "./step-detail/tabs/OverviewTab";
 import { Step, SubStep } from "@/types/journey";
 import { useSearchParams } from "react-router-dom";
 import { useStepTabs } from "@/hooks/useStepTabs";
@@ -68,10 +68,10 @@ export default function StepTabContent({
           </div>
         ) : (
           <OverviewTab
-            step={mockStep}
-            selectedSubStep={mockSubStep}
+            stepId={stepId}
+            substepTitle={substepTitle}
+            stepTitle={stepTitle}
             isLoading={false}
-            courseContent={courseContent}
           />
         )}
       </TabsContent>

@@ -2,7 +2,7 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Step, SubStep } from "@/types/journey";
 import ResourceManager from "../ResourceManager";
-import OverviewTab from "../OverviewTab";
+import OverviewTab from "./tabs/OverviewTab";
 import { useStepTabs } from "@/hooks/useStepTabs";
 import { useSearchParams } from "react-router-dom";
 
@@ -34,10 +34,10 @@ export default function StepDetailContent({
       
       <TabsContent value="overview">
         <OverviewTab 
-          step={step} 
-          selectedSubStep={selectedSubStep} 
+          stepId={step.id}
+          substepTitle={selectedSubStep?.title || null}
+          stepTitle={step.title}
           isLoading={isLoading}
-          courseContent={courseContent}
         />
       </TabsContent>
       
