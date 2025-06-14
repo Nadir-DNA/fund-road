@@ -103,12 +103,12 @@ export default function HeroSection() {
           {/* Stats */}
           <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl mx-auto animate-fade-in delay-700">
             <div className="text-center">
-              <div className="text-3xl font-bold text-primary">500+</div>
+              <div className="text-3xl font-bold text-primary">7</div>
               <div className="text-sm text-white/60">Entrepreneurs accompagnés</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-accent">3</div>
-              <div className="text-sm text-white/60">artenai</div>
+              <div className="text-sm text-white/60">Partenaires clés</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-primary">95%</div>
