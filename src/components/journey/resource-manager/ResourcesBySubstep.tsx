@@ -33,6 +33,17 @@ const getNavigationSubstepTitle = (resource: any, activeSubstepTitle: string | n
   return activeSubstepTitle || 'main';
 };
 
+// Helper function to ensure resource has required properties
+const normalizeResource = (resource: any) => {
+  return {
+    ...resource,
+    id: resource.id || `resource-${Math.random().toString(36).substring(7)}`,
+    type: resource.type || resource.resource_type || 'resource',
+    componentName: resource.componentName || resource.component_name,
+    status: resource.status || 'available'
+  };
+};
+
 export default function ResourcesBySubstep({
   stepId,
   activeSubstepTitle
@@ -65,13 +76,14 @@ export default function ResourcesBySubstep({
 
   // Group resources by substep with safe property access
   const resourcesBySubstep = resources.reduce((acc, resource) => {
-    const substepKey = getResourceSubstepTitle(resource);
+    const normalizedResource = normalizeResource(resource);
+    const substepKey = getResourceSubstepTitle(normalizedResource);
     if (!acc[substepKey]) {
       acc[substepKey] = [];
     }
-    acc[substepKey].push(resource);
+    acc[substepKey].push(normalizedResource);
     return acc;
-  }, {} as Record<string, typeof resources>);
+  }, {} as Record<string, any[]>);
 
   // Auto-open the active substep section
   useEffect(() => {
@@ -83,22 +95,24 @@ export default function ResourcesBySubstep({
   }, [activeSubstepTitle]);
 
   const handleResourceClick = (resource: any) => {
+    const normalizedResource = normalizeResource(resource);
+    
     console.log("ResourcesBySubstep: Resource clicked", { 
-      resource: resource.title,
-      componentName: resource.componentName 
+      resource: normalizedResource.title,
+      componentName: normalizedResource.componentName 
     });
     
     // Save current path for potential return
     saveResourceReturnPath(window.location.pathname);
     
     // Get the correct substep title for navigation
-    const targetSubstepTitle = getNavigationSubstepTitle(resource, activeSubstepTitle);
+    const targetSubstepTitle = getNavigationSubstepTitle(normalizedResource, activeSubstepTitle);
     
     // Build the resource URL
     const resourceUrl = buildResourceUrl(
       stepId, 
       targetSubstepTitle, 
-      resource.componentName
+      normalizedResource.componentName
     );
     
     navigate(resourceUrl);
