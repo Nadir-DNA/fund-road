@@ -1,34 +1,33 @@
+
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
+import LandingProgressCard from './LandingProgressCard';
+
 export default function HeroSection() {
-  const {
-    t
-  } = useLanguage();
+  const { t } = useLanguage();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   useEffect(() => {
     const checkAuth = async () => {
-      const {
-        data: {
-          session
-        }
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
     };
+
     checkAuth();
-    const {
-      data: {
-        subscription
-      }
-    } = supabase.auth.onAuthStateChange((event, session) => {
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setIsAuthenticated(!!session);
     });
+
     return () => subscription.unsubscribe();
   }, []);
-  return <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-black to-slate-800 overflow-hidden">
+
+  return (
+    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-black to-slate-800 overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/20 rounded-full filter blur-3xl animate-pulse"></div>
@@ -59,37 +58,46 @@ export default function HeroSection() {
               développer et financer ta startup avec succès.
             </p>
           </div>
+
+          {/* Progress Card for authenticated users */}
+          {isAuthenticated && (
+            <div className="max-w-md mx-auto mb-12 animate-fade-in delay-300">
+              <LandingProgressCard />
+            </div>
+          )}
           
-          {/* Key benefits */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 max-w-4xl mx-auto animate-fade-in delay-300">
-            <div className="glass-card p-6">
-              <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                <Sparkles className="h-6 w-6 text-primary" />
+          {/* Key benefits - only show for non-authenticated users or below progress */}
+          {!isAuthenticated && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 max-w-4xl mx-auto animate-fade-in delay-300">
+              <div className="glass-card p-6">
+                <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                  <Sparkles className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">Méthodologie éprouvée</h3>
+                <p className="text-sm text-white/60">Un processus structuré basé sur les meilleures pratiques</p>
               </div>
-              <h3 className="font-semibold mb-2">Méthodologie éprouvée</h3>
-              <p className="text-sm text-white/60">Un processus structuré basé sur les meilleures pratiques</p>
-            </div>
-            <div className="glass-card p-6">
-              <div className="w-12 h-12 bg-accent/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                <Rocket className="h-6 w-6 text-accent" />
+              <div className="glass-card p-6">
+                <div className="w-12 h-12 bg-accent/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                  <Rocket className="h-6 w-6 text-accent" />
+                </div>
+                <h3 className="font-semibold mb-2">Outils interactifs</h3>
+                <p className="text-sm text-white/60">Templates et outils pour chaque étape de votre développement</p>
               </div>
-              <h3 className="font-semibold mb-2">Outils interactifs</h3>
-              <p className="text-sm text-white/60">Templates et outils pour chaque étape de votre développement</p>
-            </div>
-            <div className="glass-card p-6">
-              <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                <ArrowRight className="h-6 w-6 text-primary" />
+              <div className="glass-card p-6">
+                <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                  <ArrowRight className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">Accompagnement</h3>
+                <p className="text-sm text-white/60">Support personnalisé pour maximiser vos chances de succès</p>
               </div>
-              <h3 className="font-semibold mb-2">Accompagnement</h3>
-              <p className="text-sm text-white/60">Support personnalisé pour maximiser vos chances de succès</p>
             </div>
-          </div>
+          )}
           
           {/* CTA Button */}
           <div className="flex flex-col sm:flex-row justify-center gap-4 animate-fade-in delay-500">
             <Button asChild size="lg" className="button-gradient text-white px-8 py-4 text-lg font-semibold shadow-2xl shadow-primary/25 hover:shadow-primary/40 transition-all duration-300 transform hover:scale-105">
               <Link to={isAuthenticated ? "/roadmap" : "/auth"} className="flex items-center">
-                Commencer gratuitement
+                {isAuthenticated ? "Accéder au parcours" : "Commencer gratuitement"}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -100,25 +108,27 @@ export default function HeroSection() {
             </Button>
           </div>
           
-          {/* Stats */}
-          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl mx-auto animate-fade-in delay-700">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">7</div>
-              <div className="text-sm text-white/60">Entrepreneurs accompagnés</div>
+          {/* Stats - only show for non-authenticated users */}
+          {!isAuthenticated && (
+            <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl mx-auto animate-fade-in delay-700">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary">7</div>
+                <div className="text-sm text-white/60">Entrepreneurs accompagnés</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-accent">3</div>
+                <div className="text-sm text-white/60">Partenaires clés</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary">95%</div>
+                <div className="text-sm text-white/60">Taux de satisfaction</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-accent">24/7</div>
+                <div className="text-sm text-white/60">Support disponible</div>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-accent">3</div>
-              <div className="text-sm text-white/60">Partenaires clés</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">95%</div>
-              <div className="text-sm text-white/60">Taux de satisfaction</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-accent">24/7</div>
-              <div className="text-sm text-white/60">Support disponible</div>
-            </div>
-          </div>
+          )}
         </div>
       </div>
       
@@ -128,5 +138,6 @@ export default function HeroSection() {
           <div className="w-1 h-3 bg-white/60 rounded-full mt-2 animate-pulse"></div>
         </div>
       </div>
-    </section>;
+    </section>
+  );
 }
