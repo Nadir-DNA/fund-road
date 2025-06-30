@@ -1,186 +1,142 @@
 
-import React, { ReactNode, useState, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { ReactNode } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Save, Download } from "lucide-react";
+import { useResourceData } from "@/hooks/useResourceData";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
-import { Save, CheckCircle, AlertCircle, Wifi, WifiOff, Clock } from "lucide-react";
-import { useSimpleResourceData } from "@/hooks/resource/useSimpleResourceData";
+import { useInputProgressTracker } from "@/hooks/useInputProgressTracker";
+import ProgressIndicator from "./ProgressIndicator";
 
 interface SimpleResourceFormProps {
-  children: ReactNode | ((props: { formData: any; handleFormChange: (field: string, value: any) => void }) => ReactNode);
   stepId: number;
   substepTitle: string;
   resourceType: string;
   title: string;
-  description: string;
-  defaultValues?: any;
-  onDataSaved?: (data: any) => void;
+  description?: string;
+  defaultValues: any;
+  children: (props: {
+    formData: any;
+    handleFormChange: (field: string, value: any) => void;
+  }) => ReactNode;
   exportPanel?: ReactNode;
 }
 
 export default function SimpleResourceForm({
-  children,
   stepId,
   substepTitle,
   resourceType,
   title,
   description,
-  defaultValues = {},
-  onDataSaved,
+  defaultValues,
+  children,
   exportPanel
 }: SimpleResourceFormProps) {
   const {
     formData,
     isLoading,
     isSaving,
-    isAuthenticated,
-    lastSaveStatus,
     handleFormChange,
-    handleManualSave
-  } = useSimpleResourceData({
+    handleManualSave,
+    session,
+    lastSaveStatus
+  } = useResourceData(stepId, substepTitle, resourceType, defaultValues);
+
+  // Track input progress
+  const { progressData, isUpdating } = useInputProgressTracker(
     stepId,
     substepTitle,
     resourceType,
-    defaultValues,
-    onDataSaved: (data) => {
-      console.log('Données sauvegardées via SimpleResourceForm:', data);
-      if (onDataSaved) {
-        onDataSaved(data);
-      }
+    formData
+  );
+
+  const handleSave = async () => {
+    if (session) {
+      await handleManualSave(session);
     }
-  });
-
-  // Wrapper pour gérer les changements de champs avec débogage
-  const handleFieldChange = useCallback((field: string, value: any) => {
-    console.log(`SimpleResourceForm: Changement détecté pour ${field}:`, value);
-    handleFormChange(field, value);
-  }, [handleFormChange]);
-
-  const getSaveButtonText = () => {
-    if (isSaving) return "Sauvegarde...";
-    if (lastSaveStatus === 'success') return "Sauvegardé";
-    if (lastSaveStatus === 'error') return "Réessayer";
-    if (lastSaveStatus === 'pending') return "En cours...";
-    return "Sauvegarder";
-  };
-
-  const getSaveButtonIcon = () => {
-    if (isSaving) return <LoadingIndicator size="sm" />;
-    if (lastSaveStatus === 'success') return <CheckCircle className="h-4 w-4" />;
-    if (lastSaveStatus === 'error') return <AlertCircle className="h-4 w-4" />;
-    if (lastSaveStatus === 'pending') return <Clock className="h-4 w-4" />;
-    return <Save className="h-4 w-4" />;
-  };
-
-  const getSaveButtonVariant = () => {
-    if (lastSaveStatus === 'success') return 'default';
-    if (lastSaveStatus === 'error') return 'destructive';
-    if (lastSaveStatus === 'pending') return 'secondary';
-    return 'default';
   };
 
   if (isLoading) {
     return (
-      <Card className="w-full">
-        <CardContent className="flex justify-center items-center py-12">
-          <LoadingIndicator size="md" />
-          <span className="ml-2 text-muted-foreground">Chargement...</span>
-        </CardContent>
-      </Card>
+      <div className="flex justify-center py-8">
+        <LoadingIndicator size="lg" />
+      </div>
     );
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-xl">{title}</CardTitle>
-            <CardDescription className="mt-2">{description}</CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            {isAuthenticated ? (
-              <div className="flex items-center text-green-600 text-sm">
-                <Wifi className="h-4 w-4 mr-1" />
-                <span>Connecté</span>
-              </div>
-            ) : (
-              <div className="flex items-center text-amber-600 text-sm">
-                <WifiOff className="h-4 w-4 mr-1" />
-                <span>Hors ligne</span>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {/* Statut de sauvegarde amélioré */}
-        {lastSaveStatus === 'success' && (
-          <Alert variant="default" className="mt-4 border-green-500/20 bg-green-50/10">
-            <CheckCircle className="h-4 w-4 text-green-500" />
-            <AlertDescription className="text-green-700">
-              Données sauvegardées avec succès
-              {!isAuthenticated && " localement"}
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        {lastSaveStatus === 'pending' && (
-          <Alert variant="default" className="mt-4 border-blue-500/20 bg-blue-50/10">
-            <Clock className="h-4 w-4 text-blue-500" />
-            <AlertDescription className="text-blue-700">
-              Sauvegarde en cours...
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        {lastSaveStatus === 'error' && (
-          <Alert variant="destructive" className="mt-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Erreur lors de la sauvegarde. Vos données sont conservées localement.
-              {isAuthenticated && " Cliquez sur 'Réessayer' pour sauvegarder en ligne."}
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        {!isAuthenticated && (
-          <Alert variant="default" className="mt-4 border-amber-500/20 bg-amber-50/10">
-            <WifiOff className="h-4 w-4 text-amber-500" />
-            <AlertDescription className="text-amber-700">
-              Mode hors ligne - Vos données sont sauvegardées localement et seront synchronisées lors de votre connexion.
-            </AlertDescription>
-          </Alert>
-        )}
-      </CardHeader>
-      
-      <CardContent>
-        <div className="mb-6">
-          {typeof children === 'function' 
-            ? children({ formData, handleFormChange: handleFieldChange })
-            : React.cloneElement(children as React.ReactElement, { 
-                formData, 
-                handleFormChange: handleFieldChange 
-              })
-          }
-        </div>
-        
-        <div className="flex justify-between items-center mt-8">
-          <Button
-            onClick={handleManualSave}
-            disabled={isSaving}
-            variant={getSaveButtonVariant()}
-            className="flex items-center gap-2"
-          >
-            {getSaveButtonIcon()}
-            {getSaveButtonText()}
-          </Button>
-          
-          {exportPanel && (
-            <div className="ml-4">{exportPanel}</div>
+    <div className="space-y-6">
+      {/* Header with progress */}
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white mb-2">{title}</h1>
+          {description && (
+            <p className="text-slate-300 text-sm">{description}</p>
           )}
         </div>
-      </CardContent>
-    </Card>
+        
+        {/* Progress indicator */}
+        {progressData.totalInputs > 0 && (
+          <ProgressIndicator
+            totalInputs={progressData.totalInputs}
+            filledInputs={progressData.filledInputs}
+            progressPercentage={progressData.progressPercentage}
+            isUpdating={isUpdating}
+            title="Progression de cette ressource"
+          />
+        )}
+      </div>
+
+      {/* Form content */}
+      <Card className="border-slate-600 bg-slate-800/50">
+        <CardHeader className="border-b border-slate-600">
+          <CardTitle className="text-lg text-white flex items-center justify-between">
+            <span>Contenu du formulaire</span>
+            <ProgressIndicator
+              totalInputs={progressData.totalInputs}
+              filledInputs={progressData.filledInputs}
+              progressPercentage={progressData.progressPercentage}
+              isUpdating={isUpdating}
+              compact={true}
+            />
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          {children({ formData, handleFormChange })}
+        </CardContent>
+      </Card>
+
+      {/* Action buttons */}
+      <div className="flex justify-between items-center">
+        <div className="flex gap-3">
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+          >
+            <Save className="mr-2 h-4 w-4" />
+            {isSaving ? "Sauvegarde..." : "Sauvegarder"}
+          </Button>
+        </div>
+
+        {/* Export panel if provided */}
+        {exportPanel}
+      </div>
+
+      {/* Save status indicator */}
+      {lastSaveStatus && (
+        <div className="text-xs text-center">
+          {lastSaveStatus === 'success' && (
+            <span className="text-green-400">✓ Sauvegardé automatiquement</span>
+          )}
+          {lastSaveStatus === 'error' && (
+            <span className="text-red-400">✗ Erreur de sauvegarde</span>
+          )}
+          {lastSaveStatus === 'pending' && (
+            <span className="text-yellow-400">⌛ Sauvegarde en cours...</span>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
