@@ -31,17 +31,75 @@ const ErrorFallbackComponent = ({ componentName }: { componentName: string }) =>
   );
 };
 
+// Create an enhanced fallback for specific components that often fail
+const createEnhancedFallback = (componentName: string, stepId: number, substepTitle: string) => {
+  console.log(`Creating enhanced fallback for ${componentName}`);
+  
+  if (componentName === "UserResearchNotebook") {
+    return (
+      <div className="p-6 border border-slate-700 rounded-lg bg-slate-800/50">
+        <h3 className="text-xl font-semibold mb-4 text-white">Journal d'observation utilisateur</h3>
+        
+        <div className="space-y-4">
+          <div className="p-4 bg-yellow-50/10 border border-yellow-200/20 rounded-lg">
+            <h4 className="font-medium mb-2 text-yellow-300">Observations terrain</h4>
+            <p className="text-muted-foreground text-sm">
+              Documentez vos observations sur le terrain, les comportements utilisateurs que vous avez remarqués.
+            </p>
+          </div>
+          
+          <div className="p-4 bg-red-50/10 border border-red-200/20 rounded-lg">
+            <h4 className="font-medium mb-2 text-red-300">Frustrations identifiées</h4>
+            <p className="text-muted-foreground text-sm">
+              Notez les problèmes et points de friction rencontrés par vos utilisateurs cibles.
+            </p>
+          </div>
+          
+          <div className="p-4 bg-blue-50/10 border border-blue-200/20 rounded-lg">
+            <h4 className="font-medium mb-2 text-blue-300">Citations utilisateurs</h4>
+            <p className="text-muted-foreground text-sm">
+              Enregistrez des verbatims ou citations directes de vos utilisateurs.
+            </p>
+          </div>
+          
+          <div className="p-4 bg-emerald-50/10 border border-emerald-200/20 rounded-lg">
+            <h4 className="font-medium mb-2 text-emerald-300">Insight principal</h4>
+            <p className="text-muted-foreground text-sm">
+              Quel besoin sous-jacent percevez-vous ?
+            </p>
+          </div>
+          
+          <div className="text-center text-muted-foreground mt-4 p-3 bg-slate-700/50 rounded border border-slate-600">
+            <p className="text-sm">⚠️ Version interactive temporairement indisponible</p>
+            <p className="text-xs mt-1">La version complète sera rechargée automatiquement</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="p-6 border border-dashed border-slate-700 rounded-lg bg-slate-800/30">
+      <h3 className="mb-4 text-base font-medium text-center text-white">Ressource {componentName}</h3>
+      <p className="text-muted-foreground text-sm text-center">
+        Cette ressource sera disponible prochainement
+      </p>
+    </div>
+  );
+};
+
 // Create an error boundary component to catch rendering errors
 class ResourceErrorBoundary extends React.Component<
-  { children: React.ReactNode; componentName: string },
+  { children: React.ReactNode; componentName: string; stepId: number; substepTitle: string },
   { hasError: boolean; error: Error | null }
 > {
-  constructor(props: { children: React.ReactNode; componentName: string }) {
+  constructor(props: { children: React.ReactNode; componentName: string; stepId: number; substepTitle: string }) {
     super(props);
     this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: Error) {
+    console.error("ResourceErrorBoundary caught error:", error);
     return { hasError: true, error };
   }
 
@@ -51,39 +109,13 @@ class ResourceErrorBoundary extends React.Component<
 
   render() {
     if (this.state.hasError) {
-      return (
-        <div className="text-center p-4 text-destructive border border-destructive/40 rounded">
-          <p>Erreur lors du chargement du composant</p>
-          <p className="text-sm mt-1">Un problème est survenu lors du chargement de cette ressource.</p>
-          <pre className="text-xs mt-2 bg-slate-800 p-2 rounded overflow-auto max-h-[100px]">
-            {this.state.error?.message || "Erreur inconnue"}
-          </pre>
-        </div>
-      );
+      console.log(`Rendering fallback for ${this.props.componentName} due to error`);
+      return createEnhancedFallback(this.props.componentName, this.props.stepId, this.props.substepTitle);
     }
 
     return this.props.children;
   }
 }
-
-// Create a fallback component for when a component isn't found
-const ComponentNotFoundFallback = ({ componentName, stepId, substepTitle }: { 
-  componentName: string; 
-  stepId: number;
-  substepTitle: string;
-}) => {
-  return (
-    <div className="p-4 border border-amber-500/20 bg-amber-500/10 rounded-lg">
-      <h3 className="text-lg font-medium mb-2">Ressource en cours de développement</h3>
-      <p className="text-sm text-muted-foreground mb-4">
-        La ressource <strong>{componentName}</strong> n'est pas encore disponible.
-      </p>
-      <p className="text-xs text-muted-foreground/70">
-        Étape: {stepId}, Sous-étape: {substepTitle}
-      </p>
-    </div>
-  );
-};
 
 // Export this function so it can be imported in InteractiveResourceDisplay.tsx
 export const getResourceComponentByName = (componentName: string) => {
@@ -93,16 +125,6 @@ export const getResourceComponentByName = (componentName: string) => {
 export const renderResourceComponent = (componentName: string, stepId: number, substepTitle: string, subsubstepTitle?: string | null) => {
   console.log(`Rendering resource: ${componentName} for step ${stepId}, substep ${substepTitle}`);
   
-  // Offline fallback - provide a minimal placeholder when proper rendering fails
-  const renderOfflinePlaceholder = () => (
-    <div className="p-6 border border-dashed border-slate-700 rounded-lg">
-      <h3 className="mb-4 text-base font-medium text-center">Ressource {componentName}</h3>
-      <p className="text-muted-foreground text-sm text-center">
-        Cette ressource sera disponible prochainement
-      </p>
-    </div>
-  );
-  
   if (!componentName) {
     return (
       <div className="text-center p-4 text-muted-foreground">
@@ -111,91 +133,49 @@ export const renderResourceComponent = (componentName: string, stepId: number, s
     );
   }
   
-  // Special case for resources that might fail to load in Step 1
-  if (stepId === 1 && substepTitle === "Recherche utilisateur") {
-    // Rather than relying on dynamic imports that might fail, we'll create a simple inline fallback
-    return (
-      <div className="p-6 border border-slate-700 rounded-lg bg-slate-800">
-        <h3 className="text-xl font-semibold mb-4">{componentName === "UserResearchNotebook" ? 
-          "Journal d'observation utilisateur" : 
-          "Analyse comportementale"}</h3>
-        
-        <div className="space-y-4">
-          <div className="p-4 bg-yellow-50/10 border border-yellow-200/20 rounded-lg">
-            <h4 className="font-medium mb-2">Observations terrain</h4>
-            <p className="text-muted-foreground">
-              Documentez vos observations sur le terrain, les comportements utilisateurs que vous avez remarqués.
-            </p>
-          </div>
-          
-          <div className="p-4 bg-red-50/10 border border-red-200/20 rounded-lg">
-            <h4 className="font-medium mb-2">Frustrations identifiées</h4>
-            <p className="text-muted-foreground">
-              Notez les problèmes et points de friction rencontrés par vos utilisateurs cibles.
-            </p>
-          </div>
-          
-          <div className="p-4 bg-blue-50/10 border border-blue-200/20 rounded-lg">
-            <h4 className="font-medium mb-2">Citations utilisateurs</h4>
-            <p className="text-muted-foreground">
-              Enregistrez des verbatims ou citations directes de vos utilisateurs.
-            </p>
-          </div>
-          
-          <p className="text-center text-muted-foreground mt-4 p-2 bg-slate-700 rounded">
-            ⚠️ Une version interactive de cet outil sera disponible prochainement
-          </p>
-        </div>
-      </div>
-    );
-  }
-  
-  // Check if component exists in the map with graceful fallback
+  // Check if component exists in the map
   const Component = resourceComponentsMap[componentName];
   
   if (!Component) {
     console.error(`Resource component not found: ${componentName}`, Object.keys(resourceComponentsMap));
+    console.log(`Component "${componentName}" not found, using enhanced fallback`);
     
-    // Don't show toast, just log the error
-    console.log(`Component "${componentName}" not found in resourceComponentsMap`);
-    
-    // Return fallback component
-    return <ComponentNotFoundFallback 
-      componentName={componentName} 
-      stepId={stepId} 
-      substepTitle={substepTitle} 
-    />;
+    // Return enhanced fallback instead of simple error
+    return createEnhancedFallback(componentName, stepId, substepTitle);
   }
 
   // Use a memoized key to prevent unnecessary re-renders
   const componentKey = `${componentName}-${stepId}-${substepTitle}-${subsubstepTitle || ''}`;
 
-  // Return the component with error boundary, stable key and suspense fallback
+  // Return the component with enhanced error handling
   try {
     return (
-      <ResourceErrorBoundary componentName={componentName}>
+      <ResourceErrorBoundary componentName={componentName} stepId={stepId} substepTitle={substepTitle}>
         <Suspense fallback={<StableLoadingFallback />}>
           <div 
             key={componentKey} 
             id={`resource-container-${componentName}`}
             className="resource-component-wrapper"
           >
-            <Suspense fallback={<StableLoadingFallback />}>
-              <ErrorBoundary fallback={<ErrorFallbackComponent componentName={componentName} />}>
-                <Component 
-                  stepId={stepId} 
-                  substepTitle={substepTitle} 
-                  subsubstepTitle={subsubstepTitle}
-                />
-              </ErrorBoundary>
-            </Suspense>
+            <ErrorBoundary fallback={
+              <div className="p-4 text-center">
+                <p className="text-destructive mb-2">Erreur de chargement</p>
+                {createEnhancedFallback(componentName, stepId, substepTitle)}
+              </div>
+            }>
+              <Component 
+                stepId={stepId} 
+                substepTitle={substepTitle} 
+                subsubstepTitle={subsubstepTitle}
+              />
+            </ErrorBoundary>
           </div>
         </Suspense>
       </ResourceErrorBoundary>
     );
   } catch (error) {
     console.error("Error rendering resource component:", error);
-    // Return the offline fallback as last resort
-    return renderOfflinePlaceholder();
+    // Return the enhanced fallback as last resort
+    return createEnhancedFallback(componentName, stepId, substepTitle);
   }
 };

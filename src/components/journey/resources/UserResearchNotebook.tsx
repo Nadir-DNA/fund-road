@@ -16,7 +16,7 @@ interface FormData {
   insight_principal: string;
 }
 
-export default function UserResearchNotebook({ stepId, substepTitle }: UserResearchNotebookProps) {
+function UserResearchNotebook({ stepId, substepTitle }: UserResearchNotebookProps) {
   const defaultValues: FormData = {
     observations: "",
     frustrations: "",
@@ -79,3 +79,6 @@ export default function UserResearchNotebook({ stepId, substepTitle }: UserResea
     </SimpleResourceForm>
   );
 }
+
+// Export par défaut explicite
+export default UserResearchNotebook;
