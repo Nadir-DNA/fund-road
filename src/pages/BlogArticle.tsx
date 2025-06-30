@@ -66,7 +66,7 @@ export default function BlogArticle() {
       <Navbar />
       
       <main className="container mx-auto px-4 pt-32 pb-20 relative z-10">
-        <Button variant="ghost" asChild className="mb-6">
+        <Button variant="ghost" asChild className="mb-6" aria-label="Retourner à la liste des articles">
           <Link to="/blog">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Retour au blog
@@ -88,18 +88,18 @@ export default function BlogArticle() {
             <div className="flex flex-wrap items-center gap-4 text-sm text-white/60">
               <div className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
-                {publishDate}
+                <time dateTime={article.created_at}>{publishDate}</time>
               </div>
               <div className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
-                {readingTime} min de lecture
+                <span>{readingTime} min de lecture</span>
               </div>
             </div>
             
             {article.keywords && article.keywords.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-4">
                 {article.keywords.map((keyword, index) => (
-                  <Badge key={index} variant="secondary" className="text-xs">
+                  <Badge key={index} variant="secondary" className="text-xs bg-white/10 text-white/80 border-white/20">
                     <Tag className="h-3 w-3 mr-1" />
                     {keyword}
                   </Badge>
@@ -114,7 +114,7 @@ export default function BlogArticle() {
         </article>
         
         <div className="mt-12 text-center">
-          <Button asChild>
+          <Button asChild aria-label="Voir plus d'articles sur le blog">
             <Link to="/blog">
               Voir plus d'articles
             </Link>

@@ -16,19 +16,51 @@ export default function Footer() {
               Accompagnez votre entreprise de l'idée au financement avec notre plateforme intuitive dédiée aux entrepreneurs.
             </p>
             <div className="flex space-x-3 sm:space-x-4">
-              <Button variant="ghost" size="icon" className="hover:text-primary hover:bg-white/5 rounded-full h-8 w-8 sm:h-10 sm:w-10">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="hover:text-primary hover:bg-white/5 rounded-full h-8 w-8 sm:h-10 sm:w-10"
+                aria-label="Suivez-nous sur Twitter"
+              >
                 <Twitter className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="hover:text-primary hover:bg-white/5 rounded-full h-8 w-8 sm:h-10 sm:w-10">
-                <Linkedin className="h-4 w-4 sm:h-5 sm:w-5" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="hover:text-primary hover:bg-white/5 rounded-full h-8 w-8 sm:h-10 sm:w-10"
+                asChild
+              >
+                <a 
+                  href="https://www.linkedin.com/in/nadir-daoudi-531909139/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  aria-label="Connectez-vous avec nous sur LinkedIn"
+                >
+                  <Linkedin className="h-4 w-4 sm:h-5 sm:w-5" />
+                </a>
               </Button>
-              <Button variant="ghost" size="icon" className="hover:text-primary hover:bg-white/5 rounded-full h-8 w-8 sm:h-10 sm:w-10">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="hover:text-primary hover:bg-white/5 rounded-full h-8 w-8 sm:h-10 sm:w-10"
+                aria-label="Suivez-nous sur Instagram"
+              >
                 <Instagram className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="hover:text-primary hover:bg-white/5 rounded-full h-8 w-8 sm:h-10 sm:w-10">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="hover:text-primary hover:bg-white/5 rounded-full h-8 w-8 sm:h-10 sm:w-10"
+                aria-label="Visitez notre GitHub"
+              >
                 <Github className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="hover:text-primary hover:bg-white/5 rounded-full h-8 w-8 sm:h-10 sm:w-10">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="hover:text-primary hover:bg-white/5 rounded-full h-8 w-8 sm:h-10 sm:w-10"
+                aria-label="Suivez-nous sur Facebook"
+              >
                 <Facebook className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </div>
