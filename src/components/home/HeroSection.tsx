@@ -14,17 +14,23 @@ export default function HeroSection() {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
+      const authStatus = !!session;
+      console.log('HeroSection - Auth status:', authStatus, 'Session:', session?.user?.id);
+      setIsAuthenticated(authStatus);
     };
 
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
+      const authStatus = !!session;
+      console.log('HeroSection - Auth state changed:', event, authStatus, 'User:', session?.user?.id);
+      setIsAuthenticated(authStatus);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  console.log('HeroSection - Rendering with isAuthenticated:', isAuthenticated);
 
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-black to-slate-800 overflow-hidden">
@@ -59,7 +65,7 @@ export default function HeroSection() {
             </p>
           </div>
 
-          {/* Progress Card for authenticated users */}
+          {/* Progress Card - always show for authenticated users */}
           {isAuthenticated && (
             <div className="max-w-md mx-auto mb-12 animate-fade-in delay-300">
               <LandingProgressCard />

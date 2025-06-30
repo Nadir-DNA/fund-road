@@ -18,14 +18,25 @@ export const useOverallProgress = () => {
 
   const fetchOverallProgress = async () => {
     try {
+      console.log('useOverallProgress - Fetching progress...');
+      
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('useOverallProgress - User:', user?.id);
+      
       if (!user) {
+        console.log('useOverallProgress - No user, showing default state');
+        setOverallProgress({
+          totalInputs: 0,
+          filledInputs: 0,
+          progressPercentage: 0
+        });
         setIsLoading(false);
         return;
       }
 
       // Use localStorage aggregation as primary method for now
       const localProgress = aggregateLocalProgress(user.id);
+      console.log('useOverallProgress - Local progress:', localProgress);
       setOverallProgress(localProgress);
       
       // Try to get data from database as secondary source
@@ -36,16 +47,21 @@ export const useOverallProgress = () => {
           .select('total_inputs, filled_inputs')
           .eq('user_id', user.id);
 
+        console.log('useOverallProgress - DB progress records:', progressRecords);
+
         if (progressRecords && Array.isArray(progressRecords) && progressRecords.length > 0) {
           const totalInputs = progressRecords.reduce((sum: number, record: any) => sum + (record.total_inputs || 0), 0);
           const filledInputs = progressRecords.reduce((sum: number, record: any) => sum + (record.filled_inputs || 0), 0);
           const progressPercentage = totalInputs > 0 ? Math.round((filledInputs / totalInputs) * 100) : 0;
 
-          setOverallProgress({
+          const dbProgress = {
             totalInputs,
             filledInputs,
             progressPercentage
-          });
+          };
+          
+          console.log('useOverallProgress - Final DB progress:', dbProgress);
+          setOverallProgress(dbProgress);
         }
       } catch (dbError) {
         // Database query failed, but localStorage aggregation is working
@@ -63,12 +79,15 @@ export const useOverallProgress = () => {
     let totalInputs = 0;
     let filledInputs = 0;
 
+    console.log('useOverallProgress - Scanning localStorage for user:', userId);
+
     // Scan localStorage for progress entries
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && key.startsWith(`progress_${userId}_`)) {
         try {
           const progressData = JSON.parse(localStorage.getItem(key) || '{}');
+          console.log('useOverallProgress - Found progress data:', key, progressData);
           totalInputs += progressData.totalInputs || 0;
           filledInputs += progressData.filledInputs || 0;
         } catch (e) {
@@ -79,11 +98,14 @@ export const useOverallProgress = () => {
 
     const progressPercentage = totalInputs > 0 ? Math.round((filledInputs / totalInputs) * 100) : 0;
 
-    return {
+    const result = {
       totalInputs,
       filledInputs,
       progressPercentage
     };
+
+    console.log('useOverallProgress - Aggregated local progress:', result);
+    return result;
   };
 
   useEffect(() => {
