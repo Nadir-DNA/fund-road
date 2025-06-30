@@ -24,41 +24,32 @@ export const useOverallProgress = () => {
         return;
       }
 
-      // Try to get data from database, fallback to localStorage
+      // Use localStorage aggregation as primary method for now
+      const localProgress = aggregateLocalProgress(user.id);
+      setOverallProgress(localProgress);
+      
+      // Try to get data from database as secondary source
       try {
-        // Use raw SQL query since function isn't in generated types yet
-        const { data, error } = await supabase.rpc('sql', {
-          query: `
-            SELECT 
-              COALESCE(SUM(total_inputs), 0) as total_inputs,
-              COALESCE(SUM(filled_inputs), 0) as filled_inputs,
-              CASE 
-                WHEN SUM(total_inputs) > 0 THEN 
-                  ROUND((SUM(filled_inputs)::NUMERIC / SUM(total_inputs)::NUMERIC) * 100, 1)
-                ELSE 0
-              END as progress_percentage
-            FROM user_resource_progress
-            WHERE user_id = $1
-          `,
-          params: [user.id]
-        });
+        // Since the table exists but isn't in types, we'll try a direct query
+        const { data: progressRecords } = await supabase
+          .from('user_resource_progress' as any)
+          .select('total_inputs, filled_inputs')
+          .eq('user_id', user.id);
 
-        if (!error && data && Array.isArray(data) && data.length > 0) {
-          const progressData = data[0];
+        if (progressRecords && Array.isArray(progressRecords) && progressRecords.length > 0) {
+          const totalInputs = progressRecords.reduce((sum: number, record: any) => sum + (record.total_inputs || 0), 0);
+          const filledInputs = progressRecords.reduce((sum: number, record: any) => sum + (record.filled_inputs || 0), 0);
+          const progressPercentage = totalInputs > 0 ? Math.round((filledInputs / totalInputs) * 100) : 0;
+
           setOverallProgress({
-            totalInputs: parseInt(progressData.total_inputs) || 0,
-            filledInputs: parseInt(progressData.filled_inputs) || 0,
-            progressPercentage: parseFloat(progressData.progress_percentage) || 0
+            totalInputs,
+            filledInputs,
+            progressPercentage
           });
-        } else {
-          // Fallback to localStorage aggregation
-          const localProgress = aggregateLocalProgress(user.id);
-          setOverallProgress(localProgress);
         }
       } catch (dbError) {
-        // Fallback to localStorage
-        const localProgress = aggregateLocalProgress(user.id);
-        setOverallProgress(localProgress);
+        // Database query failed, but localStorage aggregation is working
+        console.log('Database query failed, using localStorage aggregation:', dbError);
       }
     } catch (error) {
       console.error('Overall progress fetch error:', error);
