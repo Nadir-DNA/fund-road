@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useBlogArticle } from "@/hooks/useBlogArticles";
-import { MarkdownContent } from "@/components/ui/MarkdownContent";
+import MarkdownContent from "@/components/ui/MarkdownContent";
 
 export default function BlogArticle() {
   const { slug } = useParams<{ slug: string }>();

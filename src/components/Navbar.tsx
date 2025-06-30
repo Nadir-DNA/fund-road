@@ -29,7 +29,7 @@ export default function Navbar() {
             <Link to="/" className="font-bold text-xl">Fund Road</Link>
           </div>
           
-          <NavLinks isAuthenticated={isAuthenticated} />
+          <NavLinks />
 
           <div className="flex items-center space-x-4">
             <LanguageSwitcher />
