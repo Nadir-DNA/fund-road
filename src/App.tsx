@@ -6,6 +6,8 @@ import Auth from "@/pages/Auth";
 import Confirm from "@/pages/Confirm";
 import RoadmapPage from "@/pages/roadmap/RoadmapPage";
 import StepDetailPage from "@/components/journey/step-detail/StepDetailPage";
+import Blog from "@/pages/Blog";
+import BlogArticle from "@/pages/BlogArticle";
 import { useAuth } from "@/hooks/useAuth";
 import { ToastIntegration } from "@/components/ToastIntegration";
 import Financing from "@/pages/Financing";
@@ -45,6 +47,10 @@ function App() {
         
         {/* Confirmation page - Accessible sans authentification */}
         <Route path="/confirm" element={<Confirm />} />
+        
+        {/* Blog pages - Accessible sans authentification */}
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<BlogArticle />} />
         
         {/* Toutes les pages du roadmap nécessitent une authentification */}
         <Route path="/roadmap" element={

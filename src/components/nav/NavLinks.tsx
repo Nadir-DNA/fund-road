@@ -1,43 +1,50 @@
 
-import { Link } from "react-router-dom";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
-export const NavLinks = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
+export function NavLinks() {
+  const location = useLocation();
+  
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
+
   return (
-    <div className="hidden md:flex items-center space-x-8">
-      <Link to="/" className="text-foreground/80 hover:text-primary transition-colors">
+    <>
+      <Link 
+        to="/" 
+        className={`text-white/90 hover:text-white transition-colors ${
+          isActive('/') ? 'text-white font-medium' : ''
+        }`}
+      >
         Accueil
       </Link>
-      <Link to={isAuthenticated ? "/roadmap" : "/auth"} className="text-foreground/80 hover:text-primary transition-colors">
-        Roadmap
+      <Link 
+        to="/roadmap" 
+        className={`text-white/90 hover:text-white transition-colors ${
+          isActive('/roadmap') ? 'text-white font-medium' : ''
+        }`}
+      >
+        Parcours
       </Link>
-      <Link to={isAuthenticated ? "/financing" : "/auth"} className="text-foreground/80 hover:text-primary transition-colors">
+      <Link 
+        to="/financing" 
+        className={`text-white/90 hover:text-white transition-colors ${
+          isActive('/financing') ? 'text-white font-medium' : ''
+        }`}
+      >
         Financement
       </Link>
-      
-      <DropdownMenu>
-        <DropdownMenuTrigger className="text-foreground/80 hover:text-primary transition-colors inline-flex items-center">
-          Nous découvrir
-          <ChevronDown className="ml-1 h-4 w-4" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem asChild>
-            <Link to="/about">À propos</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/faq">FAQ</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/contact">Contact</Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+      <Link 
+        to="/blog" 
+        className={`text-white/90 hover:text-white transition-colors ${
+          isActive('/blog') ? 'text-white font-medium' : ''
+        }`}
+      >
+        Blog
+      </Link>
+    </>
   );
-};
+}
