@@ -109,7 +109,7 @@ export default function InteractiveResourceDisplay({
         
         <CardContent className="p-6 bg-slate-800/50">
           {ResourceComponent ? (
-            <div className="bg-white rounded-lg p-6 shadow-inner">
+            <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-6 shadow-inner">
               <ResourceComponent
                 stepId={stepId}
                 substepTitle={effectiveSubstepTitle}
