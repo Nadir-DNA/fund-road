@@ -3,6 +3,7 @@ import SimpleResourceForm from "../SimpleResourceForm";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import EnhancedExportPanel from "../resource-form/EnhancedExportPanel";
 
 interface InvestorEmailScriptProps {
   stepId: number;
@@ -34,6 +35,13 @@ export default function InvestorEmailScript({ stepId, substepTitle }: InvestorEm
       title="Script d'email investisseurs"
       description="Préparez votre message d'accroche pour contacter un investisseur de manière claire et efficace."
       defaultValues={defaultValues}
+      exportPanel={
+        <EnhancedExportPanel 
+          formData={defaultValues}
+          resourceType="investor_email_script"
+          title="Script d'email investisseurs"
+        />
+      }
     >
       {({ formData, handleFormChange }: { formData: FormData; handleFormChange: (field: string, value: any) => void }) => (
         <div className="space-y-6">

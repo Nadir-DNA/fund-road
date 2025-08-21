@@ -75,8 +75,8 @@ export default function SubstepPage() {
         
         // Filter resources by type
         if (data) {
-          setCourses(data.filter(r => r.resource_type === "course"));
-          setResources(data.filter(r => r.resource_type !== "course"));
+          setCourses(data.filter(r => r.resource_type === "cours"));
+          setResources(data.filter(r => r.resource_type !== "cours"));
         }
       } catch (err) {
         console.error("Exception during fetch:", err);

@@ -21,7 +21,7 @@ export default function OverviewTab({
   console.log(`📖 OverviewTab - Step ${stepId}, Substep: ${substepTitle || 'main'}, Materials: ${materials?.length || 0}`);
   
   // Find course content in materials
-  const courseContent = materials?.find(m => m.resource_type === 'course')?.course_content || "";
+  const courseContent = materials?.find(m => m.resource_type === 'cours')?.course_content || "";
   
   const isLoading = propIsLoading || courseMaterialsLoading;
   

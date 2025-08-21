@@ -4,7 +4,7 @@ import SimpleResourceForm from "../SimpleResourceForm";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import ExportPanel from "../resource-form/ExportPanel";
+import EnhancedExportPanel from "../resource-form/EnhancedExportPanel";
 
 interface LegalStatusComparisonProps {
   stepId: number;
@@ -19,8 +19,6 @@ interface FormData {
 }
 
 export default function LegalStatusComparison({ stepId, substepTitle }: LegalStatusComparisonProps) {
-  const [isExporting, setIsExporting] = useState(false);
-
   const defaultValues: FormData = {
     sas: "",
     sarl: "",
@@ -37,11 +35,10 @@ export default function LegalStatusComparison({ stepId, substepTitle }: LegalSta
       description="Comparez les avantages et inconvénients des principaux statuts en fonction de votre situation."
       defaultValues={defaultValues}
       exportPanel={
-        <ExportPanel 
+        <EnhancedExportPanel 
           formData={defaultValues}
           resourceType="legal_status_comparison"
-          isExporting={isExporting}
-          setIsExporting={setIsExporting}
+          title="Comparateur de statuts juridiques"
         />
       }
     >

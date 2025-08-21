@@ -3,6 +3,7 @@ import SimpleResourceForm from "../SimpleResourceForm";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import EnhancedExportPanel from "../resource-form/EnhancedExportPanel";
 
 interface InvestorObjectionPrepProps {
   stepId: number;
@@ -34,6 +35,13 @@ export default function InvestorObjectionPrep({ stepId, substepTitle }: Investor
       title="Préparation aux objections"
       description="Préparez vos réponses aux objections les plus fréquentes des investisseurs."
       defaultValues={defaultValues}
+      exportPanel={
+        <EnhancedExportPanel 
+          formData={defaultValues}
+          resourceType="investor_objection_prep"
+          title="Préparation aux objections"
+        />
+      }
     >
       {({ formData, handleFormChange }: { formData: FormData; handleFormChange: (field: string, value: any) => void }) => (
         <div className="space-y-6">

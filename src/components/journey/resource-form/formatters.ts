@@ -127,6 +127,19 @@ const formatters: Record<string, (formData: any) => FormattedExport> = {
     ]
   }),
   
+  // Format for investor email script
+  investor_email_script: (formData) => ({
+    title: "Script d'email investisseurs",
+    date: formatDate(),
+    sections: [
+      { name: "Objet de l'email", content: formData.subject || "" },
+      { name: "Introduction personnalisée", content: formData.intro || "" },
+      { name: "Traction & projet", content: formData.traction || "" },
+      { name: "Résumé de la demande", content: formData.ask_summary || "" },
+      { name: "Call-to-action", content: formData.closing || "" }
+    ]
+  }),
+  
   // Add more formatters for other resource types
 };
 

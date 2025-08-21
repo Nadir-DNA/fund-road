@@ -2,11 +2,13 @@
 import { ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Save, Download } from "lucide-react";
+import { Save } from "lucide-react";
 import { useResourceData } from "@/hooks/useResourceData";
 import { LoadingIndicator } from "@/components/ui/LoadingIndicator";
 import { useInputProgressTracker } from "@/hooks/useInputProgressTracker";
+import { useResourceCompletion } from "@/hooks/useResourceCompletion";
 import ProgressIndicator from "./ProgressIndicator";
+import EnhancedExportPanel from "./resource-form/EnhancedExportPanel";
 
 interface SimpleResourceFormProps {
   stepId: number;
@@ -49,6 +51,18 @@ export default function SimpleResourceForm({
     resourceType,
     formData
   );
+
+  // Track completion and trigger downloads
+  const { isCompleted } = useResourceCompletion({
+    stepId,
+    substepTitle,
+    resourceType,
+    formData,
+    onDownload: () => {
+      // This will be called when the resource is completed
+      // The download buttons will be in the export panel
+    }
+  });
 
   const handleSave = async () => {
     if (session) {
@@ -119,8 +133,14 @@ export default function SimpleResourceForm({
           </Button>
         </div>
 
-        {/* Export panel if provided */}
-        {exportPanel}
+        {/* Export panel or default enhanced export */}
+        {exportPanel || (
+          <EnhancedExportPanel 
+            formData={formData}
+            resourceType={resourceType}
+            title={title}
+          />
+        )}
       </div>
 
       {/* Save status indicator */}
