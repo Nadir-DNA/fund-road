@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -159,7 +160,7 @@ export default function AuthForm({ isLogin, onToggleMode, initialEmail = "" }: A
               onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
             />
             <Label htmlFor="terms" className="text-sm">
-              J'accepte les <a href="/terms" className="text-primary hover:underline">conditions d'utilisation</a>
+              J'accepte les <Link to="/terms" className="text-primary hover:underline">conditions d'utilisation</Link>
             </Label>
           </div>
         )}

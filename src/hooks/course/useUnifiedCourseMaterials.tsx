@@ -46,6 +46,6 @@ export const useUnifiedCourseMaterials = (stepId: number, substepTitle: string |
       }
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    enabled: stepId > 0,
+    enabled: stepId > 0 && substepTitle !== null, // Only fetch for substeps
   });
 };
