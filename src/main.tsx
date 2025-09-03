@@ -1,5 +1,5 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import ReactDOM from 'react-dom/client';
 
 function App() {
   return (
@@ -13,7 +13,14 @@ function App() {
       fontFamily: 'system-ui, sans-serif'
     }}>
       <div style={{ textAlign: 'center' }}>
-        <h1 style={{ fontSize: '3rem', marginBottom: '1rem', fontWeight: 'bold' }}>
+        <h1 style={{ 
+          fontSize: '3rem', 
+          marginBottom: '1rem', 
+          fontWeight: 'bold',
+          background: 'linear-gradient(45deg, #60a5fa, #a78bfa)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent'
+        }}>
           Fund Road
         </h1>
         <p style={{ fontSize: '1.2rem', opacity: 0.8 }}>
@@ -24,8 +31,5 @@ function App() {
   );
 }
 
-const container = document.getElementById('root');
-if (container) {
-  const root = createRoot(container);
-  root.render(<App />);
-}
+const root = ReactDOM.createRoot(document.getElementById('root')!);
+root.render(<App />);
