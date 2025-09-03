@@ -9,6 +9,7 @@ import "./index.css";
 import { initializeApp } from "./utils/initializeApp";
 import { LanguageProvider } from "./context/LanguageContext";
 import { ThemeProvider } from "./components/ThemeProvider";
+import { SeoOptimizedApp } from "./components/seo/SeoOptimizedApp";
 
 // Initialiser les fonctionnalités de l'application
 initializeApp();
@@ -34,7 +35,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
             <LanguageProvider>
-              <App />
+              <SeoOptimizedApp>
+                <App />
+              </SeoOptimizedApp>
             </LanguageProvider>
           </ThemeProvider>
         </QueryClientProvider>

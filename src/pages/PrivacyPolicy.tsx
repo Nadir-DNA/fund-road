@@ -1,10 +1,29 @@
 
+import { Helmet } from 'react-helmet-async';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { InternalLinks } from '@/components/seo/InternalLinks';
 
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-black text-white">
+    <>
+      <Helmet>
+        <title>Politique de Confidentialité RGPD | Fund Road - Protection des données personnelles</title>
+        <meta name="description" content="Politique de confidentialité Fund Road conforme au RGPD. Découvrez comment nous collectons, traitons et protégeons vos données personnelles en toute transparence." />
+        <meta name="keywords" content="RGPD, politique confidentialité, protection données, Fund Road, vie privée, cookies, consentement" />
+        <meta name="robots" content="index, follow" />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content="Politique de Confidentialité RGPD - Fund Road" />
+        <meta property="og:description" content="Protection et traitement transparent de vos données personnelles" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fundroad.com/politique-confidentialite" />
+        
+        {/* Canonical */}
+        <link rel="canonical" href="https://fundroad.com/politique-confidentialite" />
+      </Helmet>
+      
+      <div className="min-h-screen bg-black text-white">
       <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.15),transparent_60%)]"></div>
       <div className="absolute bottom-0 left-0 w-full h-full bg-[radial-gradient(circle_at_bottom_left,rgba(124,58,237,0.15),transparent_60%)]"></div>
       
@@ -12,8 +31,10 @@ export default function PrivacyPolicy() {
       
       <main className="container mx-auto px-4 pt-32 pb-20 relative z-10">
         <div className="max-w-4xl mx-auto prose prose-invert">
-          <h1 className="flex items-center">🔐 POLITIQUE DE CONFIDENTIALITÉ (RGPD)</h1>
-          <p className="text-white/60">Dernière mise à jour : 18/04/2025</p>
+          <header>
+            <h1 className="flex items-center">🔐 POLITIQUE DE CONFIDENTIALITÉ (RGPD)</h1>
+            <p className="text-white/60">Dernière mise à jour : 18/04/2025</p>
+          </header>
           
           <h2>1. Données collectées</h2>
           <p>Nous collectons les données suivantes :</p>
@@ -69,9 +90,12 @@ export default function PrivacyPolicy() {
           <h2>8. Sécurité</h2>
           <p>Fund Road met en œuvre les mesures techniques et organisationnelles nécessaires pour assurer la sécurité de vos données (chiffrement, accès restreint, sauvegardes, audit régulier).</p>
         </div>
+        
+        <InternalLinks currentPage="/politique-confidentialite" maxLinks={2} />
       </main>
       
       <Footer />
     </div>
+    </>
   );
 }
