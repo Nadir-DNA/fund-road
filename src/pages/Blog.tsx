@@ -22,8 +22,8 @@ export default function Blog() {
 
   // Filter articles based on search and category
   const filteredArticles = articles?.filter(article => {
-    const matchesSearch = article.h1.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         article.meta_desc?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         article.meta_description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          article.keywords?.some(keyword => keyword.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesCategory = selectedCategory === "all" || 
@@ -143,7 +143,7 @@ export default function Blog() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredArticles.map((article) => {
-              const readingTime = Math.ceil(article.content_md.length / 1000);
+              const readingTime = Math.ceil(article.body_md.length / 1000);
               const publishDate = new Date(article.created_at).toLocaleDateString('fr-FR', {
                 year: 'numeric',
                 month: 'long',
@@ -165,12 +165,12 @@ export default function Blog() {
                       </div>
                       
                       <h2 className="text-xl font-semibold mb-3 group-hover:text-primary transition-colors line-clamp-2">
-                        {article.h1}
+                        {article.title}
                       </h2>
                       
-                      {article.meta_desc && (
+                      {article.meta_description && (
                         <p className="text-white/70 mb-4 line-clamp-3">
-                          {article.meta_desc}
+                          {article.meta_description}
                         </p>
                       )}
                       

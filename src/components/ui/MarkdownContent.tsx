@@ -1,56 +1,53 @@
 
-import { useMemo } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export const content = "";
 
 /**
- * Process markdown content with enhanced formatting
+ * Secure markdown component that uses react-markdown for safe rendering
+ * This prevents XSS attacks by properly sanitizing markdown content
  */
-export function useProcessMarkdown(markdown: string | undefined) {
-  return useMemo(() => {
-    if (!markdown) return "";
-    
-    // Process sections with proper headings and formatting
-    return markdown
-      // Convert markdown-style headings to HTML headings
-      .replace(/^# (.*?)$/gm, '<h1 class="text-2xl font-bold mt-6 mb-3">$1</h1>')
-      .replace(/^## (.*?)$/gm, '<h2 class="text-xl font-semibold mt-5 mb-2">$1</h2>')
-      .replace(/^### (.*?)$/gm, '<h3 class="text-lg font-medium mt-4 mb-1">$1</h3>')
-      
-      // Process numbered lists with proper formatting
-      .replace(/(\d+\.)\s+(.*?)$/gm, '<div class="list-item"><span class="list-number">$1</span> $2</div>')
-      
-      // Process bullet points
-      .replace(/^\* (.*?)$/gm, '<div class="bullet-item">• $1</div>')
-      
-      // Process bold text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      
-      // Process italics
-      .replace(/\_(.*?)\_/g, '<em>$1</em>')
-      
-      // Handle paragraphs and line breaks
-      .replace(/\n\n/g, '</p><p class="mb-4">')
-      
-      // Clean up any leftover newlines that aren't part of lists
-      .replace(/\n(?!<div class)/g, '<br>');
-  }, [markdown]);
-}
-
 export default function MarkdownContent({ content }: { content: string }) {
-  const processedContent = useProcessMarkdown(content);
+  if (!content) return null;
   
   return (
     <div className="markdown-content">
-      {/* Replace the style jsx element with CSS classes from index.css */}
-      <div 
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         className="prose prose-invert max-w-none markdown-styles"
-        dangerouslySetInnerHTML={{ 
-          __html: processedContent.startsWith('<p') ? 
-            processedContent : 
-            `<p class="mb-4">${processedContent}</p>` 
-        }} 
-      />
+        components={{
+          h1: ({ children }) => (
+            <h1 className="text-2xl font-bold mt-6 mb-3">{children}</h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="text-xl font-semibold mt-5 mb-2">{children}</h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="text-lg font-medium mt-4 mb-1">{children}</h3>
+          ),
+          ol: ({ children }) => (
+            <ol className="list-decimal pl-6 mb-4">{children}</ol>
+          ),
+          ul: ({ children }) => (
+            <ul className="list-disc pl-6 mb-4">{children}</ul>
+          ),
+          li: ({ children }) => (
+            <li className="mb-1">{children}</li>
+          ),
+          p: ({ children }) => (
+            <p className="mb-4">{children}</p>
+          ),
+          strong: ({ children }) => (
+            <strong className="font-bold">{children}</strong>
+          ),
+          em: ({ children }) => (
+            <em className="italic">{children}</em>
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
     </div>
   );
 }

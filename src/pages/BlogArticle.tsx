@@ -54,7 +54,7 @@ export default function BlogArticle() {
     );
   }
 
-  const readingTime = Math.ceil(article.content_md.length / 1000);
+  const readingTime = Math.ceil(article.body_md.length / 1000);
   const publishDate = new Date(article.created_at).toLocaleDateString('fr-FR', {
     year: 'numeric',
     month: 'long',
@@ -62,8 +62,8 @@ export default function BlogArticle() {
   });
 
   const articleSchema = createArticleSchema(
-    article.h1,
-    article.meta_desc || article.h1,
+    article.title,
+    article.meta_description || article.title,
     article.created_at,
     article.updated_at,
     `https://fundroad.com/og-blog-${article.slug}.jpg`,
@@ -73,13 +73,13 @@ export default function BlogArticle() {
   return (
     <>
       <Helmet>
-        <title>{article.h1} | Blog Fund Road</title>
-        <meta name="description" content={article.meta_desc || `${article.h1} - Conseils et guides pour entrepreneurs sur Fund Road`} />
+        <title>{article.title} | Blog Fund Road</title>
+        <meta name="description" content={article.meta_description || `${article.title} - Conseils et guides pour entrepreneurs sur Fund Road`} />
         <meta name="keywords" content={article.keywords?.join(', ') || 'entrepreneur, startup, conseil'} />
         
         {/* Open Graph */}
-        <meta property="og:title" content={article.h1} />
-        <meta property="og:description" content={article.meta_desc || article.h1} />
+        <meta property="og:title" content={article.title} />
+        <meta property="og:description" content={article.meta_description || article.title} />
         <meta property="og:type" content="article" />
         <meta property="og:url" content={`https://fundroad.com/blog/${article.slug}`} />
         <meta property="og:image" content={`https://fundroad.com/og-blog-${article.slug}.jpg`} />
@@ -93,8 +93,8 @@ export default function BlogArticle() {
         
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={article.h1} />
-        <meta name="twitter:description" content={article.meta_desc || article.h1} />
+        <meta name="twitter:title" content={article.title} />
+        <meta name="twitter:description" content={article.meta_description || article.title} />
         <meta name="twitter:image" content={`https://fundroad.com/og-blog-${article.slug}.jpg`} />
         
         {/* Canonical */}
@@ -123,12 +123,12 @@ export default function BlogArticle() {
         <article className="max-w-4xl mx-auto" itemScope itemType="https://schema.org/Article">
           <header className="mb-8">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight" itemProp="headline">
-              {article.h1}
+              {article.title}
             </h1>
             
-            {article.meta_desc && (
+            {article.meta_description && (
               <p className="text-xl text-white/70 mb-6 leading-relaxed" itemProp="description">
-                {article.meta_desc}
+                {article.meta_description}
               </p>
             )}
             
@@ -159,7 +159,7 @@ export default function BlogArticle() {
           </header>
           
           <div className="prose prose-invert prose-lg max-w-none" itemProp="articleBody">
-            <MarkdownContent content={article.content_md} />
+            <MarkdownContent content={article.body_md} />
           </div>
         </article>
         
