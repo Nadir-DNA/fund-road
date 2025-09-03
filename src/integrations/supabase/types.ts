@@ -517,10 +517,26 @@ export type Database = {
         }
         Relationships: []
       }
+      v_public_blog_articles: {
+        Row: {
+          id: string | null
+          lang: string | null
+          meta_description: string | null
+          priority: number | null
+          published_at: string | null
+          slug: string | null
+          title: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       is_admin: {
         Args: { uid: string }
+        Returns: boolean
+      }
+      is_published_article: {
+        Args: { article_id: string }
         Returns: boolean
       }
     }
