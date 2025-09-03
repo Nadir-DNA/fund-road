@@ -15,9 +15,11 @@ import { FileText, Shield, Rocket, ArrowRight, CheckCircle } from 'lucide-react'
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { InternalLinks } from '@/components/seo/InternalLinks';
 import { createOrganizationSchema, createWebSiteSchema } from '@/components/seo/StructuredData';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function Index() {
   const [isCookieConsentVisible, setIsCookieConsentVisible] = useState(false);
+  const { t } = useLanguage();
   
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -33,21 +35,21 @@ export default function Index() {
   return (
     <>
       <Helmet>
-        <title>Fund Road - Accélérez votre parcours entrepreneurial | Levée de fonds & Business Plan</title>
-        <meta name="description" content="Transformez votre idée en startup financée avec Fund Road. Outils interactifs, roadmap personnalisée et accompagnement expert pour votre levée de fonds, business plan et pitch deck." />
+        <title>{t("seo.homepage.title")}</title>
+        <meta name="description" content={t("seo.homepage.description")} />
         <meta name="keywords" content="levée de fonds, startup, business plan, pitch deck, financement startup, accompagnement entrepreneur, business model canvas, investisseur, venture capital" />
         
         {/* Open Graph */}
-        <meta property="og:title" content="Fund Road - Accélérez votre parcours entrepreneurial" />
-        <meta property="og:description" content="De l'idée au financement : ressources, outils et accompagnement pour réussir votre startup" />
+        <meta property="og:title" content={t("seo.homepage.ogTitle")} />
+        <meta property="og:description" content={t("seo.homepage.ogDescription")} />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://fundroad.com/" />
         <meta property="og:image" content="https://fundroad.com/og-homepage.jpg" />
         
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Fund Road - Accélérez votre parcours entrepreneurial" />
-        <meta name="twitter:description" content="Transformez votre idée en startup financée avec nos outils et accompagnement" />
+        <meta name="twitter:title" content={t("seo.homepage.ogTitle")} />
+        <meta name="twitter:description" content={t("seo.homepage.ogDescription")} />
         
         {/* Canonical */}
         <link rel="canonical" href="https://fundroad.com/" />
@@ -84,11 +86,10 @@ export default function Index() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Nos <span className="text-gradient">services</span> premium
+              {t("services.title")} <span className="text-gradient">{t("services.titleHighlight")}</span> {t("services.titleEnd")}
             </h2>
             <p className="text-xl text-white/70 max-w-3xl mx-auto leading-relaxed">
-              Bénéficiez d'un accompagnement personnalisé avec nos services experts 
-              pour accélérer votre développement et maximiser vos chances de succès.
+              {t("services.subtitle")}
             </p>
           </div>
           
@@ -99,27 +100,26 @@ export default function Index() {
                 <Rocket className="h-8 w-8 text-green-400" />
               </div>
               <h3 className="text-xl font-bold mb-4 text-white group-hover:text-green-400 transition-colors duration-300">
-                Pour les investisseurs
+                {t("services.investors.title")}
               </h3>
               <p className="text-white/70 mb-6 leading-relaxed">
-                Accédez à des opportunités d'investissement dans des startups à fort potentiel, 
-                rigoureusement sélectionnées et accompagnées par nos experts.
+                {t("services.investors.description")}
               </p>
               <div className="space-y-2 mb-6">
                 <div className="flex items-center text-sm text-white/60">
                   <CheckCircle className="h-4 w-4 text-green-400 mr-2" />
-                  Due diligence approfondie
+                  {t("services.investors.feature1")}
                 </div>
                 <div className="flex items-center text-sm text-white/60">
                   <CheckCircle className="h-4 w-4 text-green-400 mr-2" />
-                  Projets pré-qualifiés
+                  {t("services.investors.feature2")}
                 </div>
               </div>
               <Link 
                 to="/financing"
                 className="inline-flex items-center text-green-400 hover:text-green-300 transition-colors duration-300 font-medium"
               >
-                En savoir plus
+                {t("button.seeMore")}
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
             </div>
@@ -130,27 +130,26 @@ export default function Index() {
                 <Shield className="h-8 w-8 text-blue-400" />
               </div>
               <h3 className="text-xl font-bold mb-4 text-white group-hover:text-blue-400 transition-colors duration-300">
-                Stratégie IP
+                {t("services.ip.title")}
               </h3>
               <p className="text-white/70 mb-6 leading-relaxed">
-                Protection et valorisation de vos innovations avec une stratégie de propriété 
-                intellectuelle sur-mesure adaptée à votre secteur.
+                {t("services.ip.description")}
               </p>
               <div className="space-y-2 mb-6">
                 <div className="flex items-center text-sm text-white/60">
                   <CheckCircle className="h-4 w-4 text-blue-400 mr-2" />
-                  Audit IP complet
+                  {t("services.ip.feature1")}
                 </div>
                 <div className="flex items-center text-sm text-white/60">
                   <CheckCircle className="h-4 w-4 text-blue-400 mr-2" />
-                  Stratégie de protection
+                  {t("services.ip.feature2")}
                 </div>
               </div>
               <Link 
                 to="/contact"
                 className="inline-flex items-center text-blue-400 hover:text-blue-300 transition-colors duration-300 font-medium"
               >
-                Nous contacter
+                {t("button.contactUs")}
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
             </div>
@@ -161,27 +160,26 @@ export default function Index() {
                 <FileText className="h-8 w-8 text-purple-400" />
               </div>
               <h3 className="text-xl font-bold mb-4 text-white group-hover:text-purple-400 transition-colors duration-300">
-                Création MVP/Site web
+                {t("services.mvp.title")}
               </h3>
               <p className="text-white/70 mb-6 leading-relaxed">
-                Transformez votre concept en produit minimum viable ou site web professionnel 
-                pour valider votre marché et attirer vos premiers utilisateurs.
+                {t("services.mvp.description")}
               </p>
               <div className="space-y-2 mb-6">
                 <div className="flex items-center text-sm text-white/60">
                   <CheckCircle className="h-4 w-4 text-purple-400 mr-2" />
-                  Développement agile
+                  {t("services.mvp.feature1")}
                 </div>
                 <div className="flex items-center text-sm text-white/60">
                   <CheckCircle className="h-4 w-4 text-purple-400 mr-2" />
-                  Tests utilisateurs
+                  {t("services.mvp.feature2")}
                 </div>
               </div>
               <Link 
                 to="/contact"
                 className="inline-flex items-center text-purple-400 hover:text-purple-300 transition-colors duration-300 font-medium"
               >
-                Demander un devis
+                {t("button.requestQuote")}
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
             </div>
@@ -190,7 +188,7 @@ export default function Index() {
           <div className="text-center">
             <Button asChild size="lg" className="button-gradient text-white px-8 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 group">
               <Link to="/contact" className="flex items-center">
-                Obtenir un devis personnalisé
+                {t("button.getPersonalizedQuote")}
                 <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
             </Button>

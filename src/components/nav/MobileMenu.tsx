@@ -16,22 +16,22 @@ export const MobileMenu = ({ isAuthenticated, onSignOut, onAuthClick }: MobileMe
   return (
     <div className="mt-4 md:hidden flex flex-col space-y-4 py-4 animate-fade-in">
       <Link to="/" className="text-foreground/80 hover:text-primary transition-colors">
-        Accueil
+        {t("nav.home")}
       </Link>
       <Link to={isAuthenticated ? "/roadmap" : "/auth"} className="text-foreground/80 hover:text-primary transition-colors">
-        Roadmap
+        {t("nav.roadmap")}
       </Link>
       <Link to={isAuthenticated ? "/financing" : "/auth"} className="text-foreground/80 hover:text-primary transition-colors">
-        Financement
+        {t("nav.financing")}
       </Link>
       <Link to="/about" className="text-foreground/80 hover:text-primary transition-colors">
-        À propos
+        {t("footer.aboutUs")}
       </Link>
       <Link to="/faq" className="text-foreground/80 hover:text-primary transition-colors">
-        FAQ
+        {t("nav.faq")}
       </Link>
       <Link to="/contact" className="text-foreground/80 hover:text-primary transition-colors">
-        Contact
+        {t("nav.contact")}
       </Link>
       
       <div className="flex space-x-2 pt-2">

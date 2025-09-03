@@ -10,8 +10,8 @@ export default function FeaturesSection() {
   
   const resources = [
     {
-      title: "Idéation & Validation",
-      description: "Transformez votre idée en concept viable avec notre méthodologie de validation par le marché et nos outils d'analyse.",
+      title: t("features.ideation.title"),
+      description: t("features.ideation.description"),
       icon: <Lightbulb className="h-6 w-6" />,
       href: "/features",
       gradient: "from-yellow-500/20 to-orange-500/20",
@@ -19,8 +19,8 @@ export default function FeaturesSection() {
       iconColor: "text-yellow-400"
     },
     {
-      title: "Documentation & Structure",
-      description: "Créez tous les documents stratégiques nécessaires : Business Plan, Business Model Canvas, et plus encore.",
+      title: t("features.documentation.title"),
+      description: t("features.documentation.description"),
       icon: <FileText className="h-6 w-6" />,
       href: "/features",
       gradient: "from-blue-500/20 to-primary/20",
@@ -28,8 +28,8 @@ export default function FeaturesSection() {
       iconColor: "text-blue-400"
     },
     {
-      title: "Pitch & Financement",
-      description: "Maîtrisez l'art du pitch et identifiez les meilleures sources de financement pour votre projet.",
+      title: t("features.pitch.title"),
+      description: t("features.pitch.description"),
       icon: <Presentation className="h-6 w-6" />,
       href: "/features",
       gradient: "from-purple-500/20 to-accent/20",
@@ -49,11 +49,10 @@ export default function FeaturesSection() {
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            <span className="text-gradient">Fonctionnalités</span> principales
+            <span className="text-gradient">{t("features.title")}</span> {t("features.titleHighlight")}
           </h2>
           <p className="text-xl text-white/70 max-w-3xl mx-auto leading-relaxed">
-            Découvrez notre écosystème complet d'outils et ressources conçus pour 
-            accompagner chaque étape de votre parcours entrepreneurial.
+            {t("features.subtitle")}
           </p>
         </div>
         
@@ -82,7 +81,7 @@ export default function FeaturesSection() {
                   to={resource.href}
                   className="inline-flex items-center text-primary hover:text-accent transition-colors duration-300 font-medium"
                 >
-                  En savoir plus
+                  {t("button.seeMore")}
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
                 </Link>
               </div>
@@ -96,7 +95,7 @@ export default function FeaturesSection() {
         <div className="text-center">
           <Button asChild size="lg" variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 px-8 py-4 text-lg backdrop-blur-sm">
             <Link to="/features" className="flex items-center">
-              Voir toutes les fonctionnalités
+              {t("button.seeAllFeatures")}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>

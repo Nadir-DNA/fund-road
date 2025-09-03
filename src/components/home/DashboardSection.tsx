@@ -8,54 +8,54 @@ export default function DashboardSection() {
   const { overallProgress } = useOverallProgress();
   const tasks = [{
     id: "1",
-    text: "Valider mon idée de business",
+    text: t("dashboard.task1"),
     completed: true
   }, {
     id: "2",
-    text: "Créer mon Business Model Canvas",
+    text: t("dashboard.task2"),
     completed: false
   }, {
-    id: "3",
-    text: "Réaliser mon Business Plan",
+    id: "3", 
+    text: t("dashboard.task3"),
     completed: false
   }];
   const stats = [{
     icon: <BarChart3 className="h-8 w-8 text-primary" />,
     value: "150+",
-    label: "Templates disponibles",
-    description: "Outils prêts à utiliser"
+    label: t("dashboard.stats.templates"),
+    description: t("dashboard.stats.templatesDesc")
   }, {
     icon: <Users className="h-8 w-8 text-accent" />,
     value: "500+",
-    label: "Entrepreneurs actifs",
-    description: "Communauté grandissante"
+    label: t("dashboard.stats.entrepreneurs"),
+    description: t("dashboard.stats.entrepreneursDesc")
   }, {
     icon: <Target className="h-8 w-8 text-primary" />,
     value: "95%",
-    label: "Taux de réussite",
-    description: "Projets aboutis"
+    label: t("dashboard.stats.successRate"),
+    description: t("dashboard.stats.successRateDesc")
   }, {
     icon: <TrendingUp className="h-8 w-8 text-accent" />,
     value: "€2M+",
-    label: "Fonds levés",
-    description: "Capital mobilisé"
+    label: t("dashboard.stats.funding"),
+    description: t("dashboard.stats.fundingDesc")
   }];
   return (
     <section className="py-24 bg-gradient-to-b from-black to-slate-900 relative overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Tableau de bord
+            {t("dashboard.title")}
           </h2>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Suivez votre progression et accédez à vos outils
+            {t("dashboard.subtitle")}
           </p>
         </div>
 
         {/* Progress & Report Section */}
         <div className="grid lg:grid-cols-2 gap-8 mb-16">
           <div className="space-y-6">
-            <h3 className="text-2xl font-semibold text-white">Vos tâches</h3>
+            <h3 className="text-2xl font-semibold text-white">{t("dashboard.tasks")}</h3>
             {tasks.map((task) => (
               <TaskCard 
                 key={task.id} 
@@ -66,7 +66,7 @@ export default function DashboardSection() {
           </div>
           
           <div>
-            <h3 className="text-2xl font-semibold text-white mb-6">Rapport de progression</h3>
+            <h3 className="text-2xl font-semibold text-white mb-6">{t("dashboard.progressReport")}</h3>
             <GlobalReportGenerator />
           </div>
         </div>

@@ -1,8 +1,10 @@
 
 import { Link, useLocation } from "react-router-dom";
+import { useLanguage } from "@/context/LanguageContext";
 
 export function NavLinks() {
   const location = useLocation();
+  const { t } = useLanguage();
   
   const isActive = (path: string) => {
     if (path === '/') {
@@ -19,7 +21,7 @@ export function NavLinks() {
           isActive('/') ? 'text-white font-medium' : ''
         }`}
       >
-        Accueil
+        {t("nav.home")}
       </Link>
       <Link 
         to="/roadmap" 
@@ -27,7 +29,7 @@ export function NavLinks() {
           isActive('/roadmap') ? 'text-white font-medium' : ''
         }`}
       >
-        Parcours
+        {t("nav.roadmap")}
       </Link>
       <Link 
         to="/financing" 
@@ -35,7 +37,7 @@ export function NavLinks() {
           isActive('/financing') ? 'text-white font-medium' : ''
         }`}
       >
-        Financement
+        {t("nav.financing")}
       </Link>
       <Link 
         to="/blog" 
@@ -43,7 +45,7 @@ export function NavLinks() {
           isActive('/blog') ? 'text-white font-medium' : ''
         }`}
       >
-        Blog
+        {t("nav.blog")}
       </Link>
     </>
   );

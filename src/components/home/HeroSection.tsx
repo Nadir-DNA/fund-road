@@ -46,22 +46,21 @@ export default function HeroSection() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-2 mb-8 backdrop-blur-sm animate-fade-in">
             <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Plateforme en Beta</span>
+            <span className="text-sm font-medium text-primary">{t("hero.badge")}</span>
           </div>
           
           {/* Main heading */}
           <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in">
             <span className="block text-gradient">Fund Road</span>
             <span className="block text-2xl md:text-4xl font-normal text-white/80 mt-4">
-              Ton copilote entrepreneurial
+              {t("hero.title")} <span className="text-gradient">{t("hero.titleHighlight")}</span> {t("hero.titleEnd")}
             </span>
           </h1>
           
           {/* Subtitle */}
           <div className="text-xl md:text-2xl text-white/70 space-y-2 mb-12 max-w-4xl mx-auto animate-fade-in delay-200">
             <p className="leading-relaxed">
-              De l'idée au financement : un parcours guidé pour structurer, 
-              développer et financer ta startup avec succès.
+              {t("hero.subtitle")}
             </p>
           </div>
 
@@ -103,13 +102,13 @@ export default function HeroSection() {
           <div className="flex flex-col sm:flex-row justify-center gap-4 animate-fade-in delay-500">
             <Button asChild size="lg" className="button-gradient text-white px-8 py-4 text-lg font-semibold shadow-2xl shadow-primary/25 hover:shadow-primary/40 transition-all duration-300 transform hover:scale-105">
               <Link to={isAuthenticated ? "/roadmap" : "/auth"} className="flex items-center">
-                {isAuthenticated ? "Accéder au parcours" : "Commencer gratuitement"}
+                {t("button.getStarted")}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="border-white/20 text-white hover:bg-white/10 px-8 py-4 text-lg backdrop-blur-sm">
               <Link to="/about" className="flex items-center">
-                En savoir plus
+                {t("button.learnMore")}
               </Link>
             </Button>
           </div>
