@@ -139,6 +139,39 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_sitemap_cache: {
+        Row: {
+          id: string
+          lang: string
+          lastmod: string
+          loc: string
+          priority: number
+          slug: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          lang: string
+          lastmod: string
+          loc: string
+          priority: number
+          slug: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          lang?: string
+          lastmod?: string
+          loc?: string
+          priority?: number
+          slug?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -515,17 +548,21 @@ export type Database = {
           slug: string | null
           title: string | null
         }
-        Relationships: []
-      }
-      v_public_blog_articles: {
-        Row: {
-          id: string | null
-          lang: string | null
-          meta_description: string | null
-          priority: number | null
-          published_at: string | null
-          slug: string | null
-          title: string | null
+        Insert: {
+          lang?: string | null
+          lastmod?: string | null
+          loc?: string | null
+          priority?: number | null
+          slug?: string | null
+          title?: string | null
+        }
+        Update: {
+          lang?: string | null
+          lastmod?: string | null
+          loc?: string | null
+          priority?: number | null
+          slug?: string | null
+          title?: string | null
         }
         Relationships: []
       }
@@ -538,6 +575,10 @@ export type Database = {
       is_published_article: {
         Args: { article_id: string }
         Returns: boolean
+      }
+      refresh_blog_sitemap_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
     }
     Enums: {
