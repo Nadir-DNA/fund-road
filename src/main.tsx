@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 
-const App = () => {
+function App() {
   return (
     <div style={{
       minHeight: '100vh',
@@ -13,7 +13,7 @@ const App = () => {
       fontFamily: 'system-ui, sans-serif'
     }}>
       <div style={{ textAlign: 'center' }}>
-        <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>
+        <h1 style={{ fontSize: '3rem', marginBottom: '1rem', fontWeight: 'bold' }}>
           Fund Road
         </h1>
         <p style={{ fontSize: '1.2rem', opacity: 0.8 }}>
@@ -22,7 +22,7 @@ const App = () => {
       </div>
     </div>
   );
-};
+}
 
 const container = document.getElementById('root');
 if (container) {
