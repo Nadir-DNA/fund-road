@@ -539,33 +539,7 @@ export type Database = {
       }
     }
     Views: {
-      v_blog_sitemap: {
-        Row: {
-          lang: string | null
-          lastmod: string | null
-          loc: string | null
-          priority: number | null
-          slug: string | null
-          title: string | null
-        }
-        Insert: {
-          lang?: string | null
-          lastmod?: string | null
-          loc?: string | null
-          priority?: number | null
-          slug?: string | null
-          title?: string | null
-        }
-        Update: {
-          lang?: string | null
-          lastmod?: string | null
-          loc?: string | null
-          priority?: number | null
-          slug?: string | null
-          title?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       is_admin: {
