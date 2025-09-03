@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
-    "target": "es2015",
-    "lib": ["dom", "dom.iterable", "es2015", "es2017"],
+    "target": "es5",
+    "lib": [
+      "dom",
+      "dom.iterable", 
+      "es6"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": false,
@@ -14,33 +18,26 @@
     "jsx": "preserve",
     "incremental": true,
     "downlevelIteration": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
     "plugins": [
       {
         "name": "next"
       }
     ],
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": false,
-    "noUnusedParameters": false,
-    "noUnusedLocals": false,
-    "strictNullChecks": false
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
   },
   "include": [
     "next-env.d.ts",
-    "pages/**/*.ts",
-    "pages/**/*.tsx",
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    ".next/types/**/*.ts"
+    "**/*.ts",
+    "**/*.tsx"
   ],
   "exclude": [
     "node_modules",
-    "supabase/functions",
-    "vite.config.ts",
+    "supabase/functions/**/*",
     "dist",
     ".next"
   ]

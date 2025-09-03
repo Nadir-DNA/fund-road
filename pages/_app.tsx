@@ -1,17 +1,7 @@
 import type { AppProps } from 'next/app';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
-import { HelmetProvider } from 'react-helmet-async';
-import { ThemeProvider } from '@/components/ThemeProvider';
-import { LanguageProvider } from '@/context/LanguageContext';
-import { SeoOptimizedApp } from '@/components/seo/SeoOptimizedApp';
-import { ToastIntegration } from '@/components/ToastIntegration';
-import ErrorBoundary from '@/components/ui/ErrorBoundary';
-import { initializeApp } from '@/utils/initializeApp';
-import '@/styles/globals.css';
-
-// Initialize app features
-initializeApp();
+import '../src/styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
   // Create QueryClient instance with optimized settings
@@ -32,19 +22,10 @@ export default function App({ Component, pageProps }: AppProps) {
   );
 
   return (
-    <ErrorBoundary>
-      <HelmetProvider>
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider>
-            <LanguageProvider>
-              <SeoOptimizedApp>
-                <Component {...pageProps} />
-                <ToastIntegration />
-              </SeoOptimizedApp>
-            </LanguageProvider>
-          </ThemeProvider>
-        </QueryClientProvider>
-      </HelmetProvider>
-    </ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <div className="min-h-screen bg-slate-900 text-white">
+        <Component {...pageProps} />
+      </div>
+    </QueryClientProvider>
   );
 }
