@@ -1,8 +1,11 @@
 
+import { Helmet } from 'react-helmet-async';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
+import { InternalLinks } from '@/components/seo/InternalLinks';
+import { createProductSchema } from '@/components/seo/StructuredData';
 
 export default function Pricing() {
   const plans = [
@@ -53,16 +56,48 @@ export default function Pricing() {
     }
   ];
 
+  const productSchemas = plans.map(plan => 
+    createProductSchema(
+      `Fund Road ${plan.name}`,
+      plan.description,
+      plan.price.replace('€', ''),
+      'EUR'
+    )
+  );
+
   return (
-    <div className="min-h-screen bg-black text-white">
+    <>
+      <Helmet>
+        <title>Tarifs Fund Road - Accompagnement personnalisé pour entrepreneurs | À partir de 0€</title>
+        <meta name="description" content="Découvrez nos offres d'accompagnement pour entrepreneurs : Gratuit, Pro (29€/mois) et Expert (199€/mois). Essai gratuit 14 jours. Choisissez votre formule." />
+        <meta name="keywords" content="tarifs Fund Road, prix accompagnement startup, coaching entrepreneur, levée de fonds prix, business plan tarif" />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content="Tarifs Fund Road - Accompagnement sur-mesure" />
+        <meta property="og:description" content="Formules d'accompagnement adaptées à chaque étape de votre parcours entrepreneurial" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fundroad.com/tarifs" />
+        
+        {/* Canonical */}
+        <link rel="canonical" href="https://fundroad.com/tarifs" />
+        
+        {/* Product Structured Data */}
+        {productSchemas.map((schema, index) => (
+          <script key={index} type="application/ld+json">
+            {JSON.stringify(schema)}
+          </script>
+        ))}
+      </Helmet>
+      
+      <div className="min-h-screen bg-black text-white">
       <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.15),transparent_60%)]"></div>
       <div className="absolute bottom-0 left-0 w-full h-full bg-[radial-gradient(circle_at_bottom_left,rgba(124,58,237,0.15),transparent_60%)]"></div>
       
       <Navbar />
       
       <main className="container mx-auto px-4 pt-32 pb-20 relative z-10">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold mb-4">Nos Offres</h1>
+        <header className="text-center mb-16">
+          <h1 className="text-4xl font-bold mb-4">Nos Offres d'Accompagnement</h1>
           <p className="text-white/70 max-w-2xl mx-auto">
             Choisissez la formule qui correspond à vos besoins et à l'étape actuelle de votre projet entrepreneurial.
           </p>

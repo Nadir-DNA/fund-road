@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { Search, Filter, Calendar, Clock, Tag } from "lucide-react";
+import { Helmet } from 'react-helmet-async';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { useBlogArticles } from "@/hooks/useBlogArticles";
+import { InternalLinks } from '@/components/seo/InternalLinks';
 
 export default function Blog() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -63,13 +65,29 @@ export default function Blog() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.15),transparent_60%)]"></div>
-      <div className="absolute bottom-0 left-0 w-full h-full bg-[radial-gradient(circle_at_bottom_left,rgba(124,58,237,0.15),transparent_60%)]"></div>
+    <>
+      <Helmet>
+        <title>Blog Fund Road - Conseils et guides pour entrepreneurs | Startup & Levée de fonds</title>
+        <meta name="description" content="Découvrez nos articles exclusifs sur l'entrepreneuriat, la levée de fonds et la création de startup. Conseils d'experts et stratégies gagnantes pour réussir votre projet." />
+        <meta name="keywords" content="blog entrepreneur, conseils startup, guides levée de fonds, stratégie entrepreneuriale, business plan, pitch deck, financement" />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content="Blog Fund Road - Conseils pour entrepreneurs" />
+        <meta property="og:description" content="Articles exclusifs sur l'entrepreneuriat et la levée de fonds" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fundroad.com/blog" />
+        
+        {/* Canonical */}
+        <link rel="canonical" href="https://fundroad.com/blog" />
+      </Helmet>
       
-      <Navbar />
-      
-      <main className="container mx-auto px-4 pt-32 pb-20 relative z-10">
+      <div className="min-h-screen bg-black text-white">
+        <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.15),transparent_60%)]"></div>
+        <div className="absolute bottom-0 left-0 w-full h-full bg-[radial-gradient(circle_at_bottom_left,rgba(124,58,237,0.15),transparent_60%)]"></div>
+        
+        <Navbar />
+        
+        <main className="container mx-auto px-4 pt-32 pb-20 relative z-10">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 text-gradient">
             Blog Fund Road
@@ -182,9 +200,12 @@ export default function Blog() {
             })}
           </div>
         )}
-      </main>
-      
-      <Footer />
-    </div>
+        </main>
+        
+        <InternalLinks currentPage="/blog" />
+        
+        <Footer />
+      </div>
+    </>
   );
 }

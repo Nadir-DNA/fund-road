@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import HeroSection from '@/components/home/HeroSection';
@@ -12,6 +13,8 @@ import ResourceCard from '@/components/ResourceCard';
 import { Button } from '@/components/ui/button';
 import { FileText, Shield, Rocket, ArrowRight, CheckCircle } from 'lucide-react';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import { InternalLinks } from '@/components/seo/InternalLinks';
+import { createOrganizationSchema, createWebSiteSchema } from '@/components/seo/StructuredData';
 
 export default function Index() {
   const [isCookieConsentVisible, setIsCookieConsentVisible] = useState(false);
@@ -22,9 +25,43 @@ export default function Index() {
     }, 3000);
     return () => clearTimeout(timer);
   }, []);
+
+  // SEO schemas
+  const organizationSchema = createOrganizationSchema();
+  const websiteSchema = createWebSiteSchema();
   
   return (
-    <div className="min-h-screen bg-black text-white">
+    <>
+      <Helmet>
+        <title>Fund Road - Accélérez votre parcours entrepreneurial | Levée de fonds & Business Plan</title>
+        <meta name="description" content="Transformez votre idée en startup financée avec Fund Road. Outils interactifs, roadmap personnalisée et accompagnement expert pour votre levée de fonds, business plan et pitch deck." />
+        <meta name="keywords" content="levée de fonds, startup, business plan, pitch deck, financement startup, accompagnement entrepreneur, business model canvas, investisseur, venture capital" />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content="Fund Road - Accélérez votre parcours entrepreneurial" />
+        <meta property="og:description" content="De l'idée au financement : ressources, outils et accompagnement pour réussir votre startup" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fundroad.com/" />
+        <meta property="og:image" content="https://fundroad.com/og-homepage.jpg" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Fund Road - Accélérez votre parcours entrepreneurial" />
+        <meta name="twitter:description" content="Transformez votre idée en startup financée avec nos outils et accompagnement" />
+        
+        {/* Canonical */}
+        <link rel="canonical" href="https://fundroad.com/" />
+        
+        {/* Structured Data */}
+        <script type="application/ld+json">
+          {JSON.stringify(organizationSchema)}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify(websiteSchema)}
+        </script>
+      </Helmet>
+      
+      <div className="min-h-screen bg-black text-white">
       <ErrorBoundary>
         <Navbar />
       </ErrorBoundary>
@@ -174,8 +211,13 @@ export default function Index() {
       </ErrorBoundary>
       
       <ErrorBoundary>
+        <InternalLinks currentPage="/" />
+      </ErrorBoundary>
+      
+      <ErrorBoundary>
         <Footer />
       </ErrorBoundary>
     </div>
+    </>
   );
 }

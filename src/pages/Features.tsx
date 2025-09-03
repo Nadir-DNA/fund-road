@@ -1,12 +1,14 @@
 
 import { useState, lazy, Suspense, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from 'react-helmet-async';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ChevronRight, CheckCircle, Presentation, FileText, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/context/LanguageContext";
+import { InternalLinks } from '@/components/seo/InternalLinks';
 
 // Lazy load components wrapped with error boundaries
 const JourneyTimeline = lazy(() => import("@/components/JourneyTimeline"));
@@ -56,12 +58,28 @@ export default function Features() {
   );
   
   return (
-    <div className="min-h-screen bg-black text-white">
+    <>
+      <Helmet>
+        <title>Fonctionnalités Fund Road - Outils pour entrepreneurs | Business Plan, Pitch Deck & Financement</title>
+        <meta name="description" content="Découvrez tous nos outils pour structurer votre projet entrepreneurial : Business Model Canvas, templates pitch deck, guides de financement et accompagnement personnalisé." />
+        <meta name="keywords" content="outils entrepreneurs, business model canvas, pitch deck template, guide financement, startup tools, business plan generator" />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content="Fonctionnalités Fund Road - Outils complets pour entrepreneurs" />
+        <meta property="og:description" content="Tous les outils nécessaires pour transformer votre idée en startup financée" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fundroad.com/fonctionnalites" />
+        
+        {/* Canonical */}
+        <link rel="canonical" href="https://fundroad.com/fonctionnalites" />
+      </Helmet>
+      
+      <div className="min-h-screen bg-black text-white">
       <Navbar />
       
       <main className="pt-24 pb-16">
         {/* Hero Section */}
-        <section className="container mx-auto px-4 mb-16">
+        <header className="container mx-auto px-4 mb-16">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">{t("page.features") || "Fonctionnalités"}</h1>
             <p className="text-xl text-white/70 max-w-3xl mx-auto">
@@ -150,7 +168,7 @@ export default function Features() {
               </div>
             </>
           )}
-        </section>
+        </header>
         
         {/* Timeline Section - Lazy loaded */}
         <section className="container mx-auto px-4 py-8">
@@ -179,9 +197,12 @@ export default function Features() {
             </Suspense>
           </div>
         </section>
+        
+        <InternalLinks currentPage="/fonctionnalites" />
       </main>
       
       <Footer />
     </div>
+    </>
   );
 }

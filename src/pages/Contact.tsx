@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Send, CheckCircle } from "lucide-react";
+import { Helmet } from 'react-helmet-async';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { InternalLinks } from '@/components/seo/InternalLinks';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Le nom doit avoir au moins 2 caractères" }),
@@ -82,11 +84,27 @@ export default function Contact() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <>
+      <Helmet>
+        <title>Contact Fund Road - Demande de devis personnalisé | Accompagnement startup</title>
+        <meta name="description" content="Contactez Fund Road pour un accompagnement personnalisé de votre projet entrepreneurial. Devis gratuit pour levée de fonds, business plan et stratégie IP." />
+        <meta name="keywords" content="contact Fund Road, devis accompagnement startup, conseil entrepreneurial, coaching levée de fonds, stratégie IP" />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content="Contact Fund Road - Accompagnement personnalisé" />
+        <meta property="og:description" content="Obtenez un devis personnalisé pour votre projet entrepreneurial" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fundroad.com/contact" />
+        
+        {/* Canonical */}
+        <link rel="canonical" href="https://fundroad.com/contact" />
+      </Helmet>
+      
+      <div className="min-h-screen bg-black text-white">
       <Navbar />
       
       <main className="pt-24 pb-16 container mx-auto px-4">
-        <div className="max-w-3xl mx-auto">
+        <header className="max-w-3xl mx-auto">
           <h1 className="text-4xl font-bold mb-6 text-center">Demande de devis personnalisé</h1>
           <p className="text-white/70 text-center mb-12">
             Complétez le formulaire ci-dessous pour obtenir un accompagnement stratégique adapté à votre projet
@@ -250,10 +268,13 @@ export default function Contact() {
               </Form>
             </div>
           )}
-        </div>
+        </header>
+        
+        <InternalLinks currentPage="/contact" />
       </main>
       
       <Footer />
     </div>
+    </>
   );
 }

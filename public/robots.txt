@@ -1,12 +1,31 @@
 
+# Robots.txt pour Fund Road
 User-agent: *
 Allow: /
 
+# Pages privées - Interdites aux moteurs de recherche
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /roadmap/
+Disallow: /auth/
+Disallow: /confirm/
+Disallow: /financing/
+Disallow: /_/
+Disallow: /api/
+
+# Fichiers et dossiers techniques
+Disallow: /*.json$
+Disallow: /src/
+Disallow: /node_modules/
+
+# Optimisation pour les moteurs de recherche spécifiques
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Bingbot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Twitterbot
 Allow: /
@@ -14,5 +33,8 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+# Sitemap
 Sitemap: https://fundroad.com/sitemap.xml
+
+# Dernière mise à jour: 2025-01-03
 
