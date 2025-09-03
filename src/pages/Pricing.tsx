@@ -101,7 +101,7 @@ export default function Pricing() {
           <p className="text-white/70 max-w-2xl mx-auto">
             Choisissez la formule qui correspond à vos besoins et à l'étape actuelle de votre projet entrepreneurial.
           </p>
-        </div>
+        </header>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {plans.map((plan, index) => (
@@ -150,9 +150,12 @@ export default function Pricing() {
             </div>
           ))}
         </div>
+        
+        <InternalLinks currentPage="/tarifs" />
       </main>
       
       <Footer />
     </div>
+    </>
   );
 }
