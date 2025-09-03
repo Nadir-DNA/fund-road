@@ -1,59 +1,31 @@
-import { StrictMode } from 'react';
+import React from 'react';
 import { createRoot } from 'react-dom/client';
 
-function App() {
+const App = () => {
   return (
     <div style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #0f172a 0%, #581c87 50%, #0f172a 100%)',
+      background: '#0f172a',
       color: 'white',
       fontFamily: 'system-ui, sans-serif'
     }}>
-      <div style={{ 
-        textAlign: 'center',
-        maxWidth: '600px',
-        padding: '2rem'
-      }}>
-        <h1 style={{ 
-          fontSize: '3rem', 
-          fontWeight: 'bold',
-          marginBottom: '1rem',
-          background: 'linear-gradient(135deg, #60a5fa, #a78bfa)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text'
-        }}>
+      <div style={{ textAlign: 'center' }}>
+        <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>
           Fund Road
         </h1>
-        <p style={{ fontSize: '1.25rem', opacity: 0.9, marginBottom: '1rem' }}>
+        <p style={{ fontSize: '1.2rem', opacity: 0.8 }}>
           Plateforme de financement pour startups
         </p>
-        <div style={{
-          marginTop: '2rem',
-          padding: '1rem',
-          background: 'rgba(0,0,0,0.3)',
-          borderRadius: '0.5rem',
-          border: '1px solid rgba(255,255,255,0.1)'
-        }}>
-          <p style={{ fontSize: '0.875rem', opacity: 0.8 }}>
-            ✅ Vite configuré<br/>
-            ✅ React 18<br/>
-            ✅ Build fonctionnel
-          </p>
-        </div>
       </div>
     </div>
   );
-}
+};
 
-const root = document.getElementById('root');
-if (root) {
-  createRoot(root).render(
-    <StrictMode>
-      <App />
-    </StrictMode>
-  );
+const container = document.getElementById('root');
+if (container) {
+  const root = createRoot(container);
+  root.render(<App />);
 }
