@@ -1,14 +1,27 @@
-import StepDetailPage from '@/components/journey/step-detail/StepDetailPage';
-import { GetServerSideProps } from 'next';
+import Head from 'next/head';
+import { useRouter } from 'next/router';
 
-export default StepDetailPage;
+export default function StepDetailPage() {
+  const router = useRouter();
+  const { stepId, params } = router.query;
 
-// Pass the URL parameters as props for the component to use
-export const getServerSideProps: GetServerSideProps = async ({ params }) => {
-  return {
-    props: {
-      stepId: params?.stepId || null,
-      substepTitle: params?.params?.[0] || null,
-    },
-  };
-};
+  return (
+    <>
+      <Head>
+        <title>Step {stepId} - Fund Road</title>
+      </Head>
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-4">Step {stepId}</h1>
+          <p>Step detail en migration vers Next.js</p>
+          <button 
+            onClick={() => router.push('/roadmap')}
+            className="mt-4 px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
+          >
+            Retour à la roadmap
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
