@@ -1,15 +1,22 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import '@/styles/globals.css';
 
 const App = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
-      <div className="text-center">
-        <h1 className="text-5xl font-bold mb-4 text-gradient">
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#0f172a',
+      color: 'white',
+      fontFamily: 'system-ui, sans-serif'
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>
           Fund Road
         </h1>
-        <p className="text-xl text-gray-300">
+        <p style={{ fontSize: '1.2rem', opacity: 0.8 }}>
           Plateforme de financement pour startups
         </p>
       </div>
