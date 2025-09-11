@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import Confirm from "@/pages/Confirm";
+import RoadmapStartup from "@/pages/RoadmapStartup";
 import RoadmapPage from "@/pages/roadmap/RoadmapPage";
 import StepDetailPage from "@/components/journey/step-detail/StepDetailPage";
 import Blog from "@/pages/Blog";
@@ -51,6 +52,9 @@ function App() {
         {/* Blog pages - Accessible sans authentification */}
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:slug" element={<BlogArticle />} />
+        
+        {/* Roadmap Startup page - Accessible sans authentification */}
+        <Route path="/roadmap-startup" element={<RoadmapStartup />} />
         
         {/* Toutes les pages du roadmap nécessitent une authentification */}
         <Route path="/roadmap" element={
