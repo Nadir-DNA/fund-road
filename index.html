@@ -1,12 +1,97 @@
+
 <!DOCTYPE html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fund Road</title>
+    <title>Fund Road - Plateforme d'accompagnement pour entrepreneurs | Levée de fonds, Startup, Business Plan</title>
+    <meta name="description" content="Accélérez votre parcours entrepreneurial avec Fund Road. De l'idée au financement : ressources, outils interactifs et accompagnement personnalisé pour votre levée de fonds, business plan et pitch deck. Maximisez vos chances de succès!" />
+    <meta name="author" content="Fund Road" />
+    <meta name="keywords" content="levée de fonds, startup, business plan, pitch deck, business model canvas, financement startup, accompagnement entrepreneur, investissement, venture capital, angel investor" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://fundroad.com/" />
+    <meta property="og:title" content="Fund Road - De l'idée au financement | Accompagnement complet pour entrepreneurs" />
+    <meta property="og:description" content="Accélérez votre parcours entrepreneurial avec Fund Road. Ressources, outils interactifs et accompagnement personnalisé pour transformer votre idée en entreprise financée." />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@fundroad" />
+    <meta name="twitter:title" content="Fund Road - De l'idée au financement | Accompagnement complet pour entrepreneurs" />
+    <meta name="twitter:description" content="Accélérez votre parcours entrepreneurial avec Fund Road. Ressources, outils et accompagnement pour maximiser vos chances de financement." />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://fundroad.com/" />
+    
+    <link rel="icon" type="image/png" href="/lovable-uploads/5766c4d5-0e50-4267-9dce-865a0a4882ec.png" />
+    <link rel="apple-touch-icon" href="/lovable-uploads/5766c4d5-0e50-4267-9dce-865a0a4882ec.png" />
+    
+    <!-- Google Analytics - Defer for performance -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LNJG435Q0H"></script>
+    <script>
+      // Defer analytics initialization to improve page load speed
+      window.addEventListener('load', function() {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-LNJG435Q0H');
+      });
+    </script>
+    
+    <!-- Preconnect to external domains for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    
+    <!-- DNS Prefetch for faster resource loading -->
+    <link rel="dns-prefetch" href="//cdn.gpteng.co">
+    
+    <!-- Critical CSS will be inlined, non-critical CSS deferred -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"></noscript>
   </head>
+
   <body>
     <div id="root"></div>
+    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Performance optimizations -->
+    <script>
+      // Preload critical resources
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          // Register service worker for caching (if available)
+        });
+      }
+      
+      // Optimize images loading
+      if ('loading' in HTMLImageElement.prototype) {
+        // Native lazy loading supported
+        const images = document.querySelectorAll('img[data-src]');
+        images.forEach(img => {
+          img.src = img.dataset.src;
+          img.removeAttribute('data-src');
+        });
+      } else {
+        // Fallback for browsers without native lazy loading
+        const lazyImages = document.querySelectorAll('img[data-src]');
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const img = entry.target;
+              img.src = img.dataset.src;
+              img.removeAttribute('data-src');
+              imageObserver.unobserve(img);
+            }
+          });
+        });
+        lazyImages.forEach(img => imageObserver.observe(img));
+      }
+    </script>
   </body>
 </html>
