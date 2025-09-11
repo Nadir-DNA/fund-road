@@ -1,10 +1,55 @@
 
+import { Helmet } from 'react-helmet-async';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export default function AboutUs() {
   return (
-    <div className="min-h-screen bg-black text-white">
+    <>
+      <Helmet>
+        <title>À propos Fund Road | Plateforme entrepreneurs</title>
+        <meta name="description" content="Fund Road accompagne les entrepreneurs de l'idée au financement. Roadmap interactive, outils métiers et réseau d'investisseurs France-Afrique." />
+        <meta name="keywords" content="à propos Fund Road, plateforme entrepreneurs, accompagnement startup, France Afrique, financement, roadmap interactive" />
+        <meta name="robots" content="index, follow" />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content="À propos Fund Road - Plateforme entrepreneurs France-Afrique" />
+        <meta property="og:description" content="Fund Road accompagne les entrepreneurs de l'idée au financement avec une roadmap interactive et des outils métiers." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fundroad.com/a-propos" />
+        <meta property="og:site_name" content="Fund Road" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@fundroad" />
+        <meta name="twitter:title" content="À propos Fund Road | Plateforme entrepreneurs" />
+        <meta name="twitter:description" content="Fund Road accompagne les entrepreneurs de l'idée au financement. Roadmap interactive, outils métiers et réseau d'investisseurs France-Afrique." />
+        
+        {/* Canonical */}
+        <link rel="canonical" href="https://fundroad.com/a-propos" />
+        
+        {/* Structured Data */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "Fund Road",
+            "url": "https://fundroad.com",
+            "description": "Plateforme euro-africaine d'accompagnement des entrepreneurs de l'idée au financement",
+            "foundingLocation": {
+              "@type": "Place",
+              "name": "France"
+            },
+            "areaServed": ["France", "Africa"],
+            "serviceType": "Accompagnement entrepreneurial",
+            "sameAs": [
+              "https://fundroad.com"
+            ]
+          })}
+        </script>
+      </Helmet>
+      
+      <div className="min-h-screen bg-black text-white">
       <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.15),transparent_60%)]"></div>
       <div className="absolute bottom-0 left-0 w-full h-full bg-[radial-gradient(circle_at_bottom_left,rgba(124,58,237,0.15),transparent_60%)]"></div>
       
@@ -97,5 +142,6 @@ export default function AboutUs() {
       
       <Footer />
     </div>
+    </>
   );
 }

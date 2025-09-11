@@ -60,7 +60,7 @@ export default function Features() {
   return (
     <>
       <Helmet>
-        <title>Fonctionnalités Fund Road - Outils pour entrepreneurs | Business Plan, Pitch Deck & Financement</title>
+        <title>Outils Fund Road - Business Plan & Pitch Deck</title>
         <meta name="description" content="Découvrez tous nos outils pour structurer votre projet entrepreneurial : Business Model Canvas, templates pitch deck, guides de financement et accompagnement personnalisé." />
         <meta name="keywords" content="outils entrepreneurs, business model canvas, pitch deck template, guide financement, startup tools, business plan generator" />
         

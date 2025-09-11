@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { Helmet } from 'react-helmet-async';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -65,7 +66,47 @@ export default function FAQ() {
   );
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <>
+      <Helmet>
+        <title>FAQ Fund Road | Questions fréquentes entrepreneurs</title>
+        <meta name="description" content="Trouvez les réponses à vos questions sur Fund Road : financement, business plan, pitch deck, accompagnement startup et outils entrepreneurs." />
+        <meta name="keywords" content="FAQ Fund Road, questions fréquentes, aide entrepreneurs, support startup, financement, business plan, pitch deck" />
+        <meta name="robots" content="index, follow" />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content="FAQ Fund Road - Questions fréquentes entrepreneurs" />
+        <meta property="og:description" content="Trouvez rapidement les réponses à vos questions sur Fund Road et l'accompagnement entrepreneurial." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fundroad.com/faq" />
+        <meta property="og:site_name" content="Fund Road" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@fundroad" />
+        <meta name="twitter:title" content="FAQ Fund Road | Questions fréquentes entrepreneurs" />
+        <meta name="twitter:description" content="Trouvez les réponses à vos questions sur Fund Road : financement, business plan, pitch deck, accompagnement startup et outils entrepreneurs." />
+        
+        {/* Canonical */}
+        <link rel="canonical" href="https://fundroad.com/faq" />
+        
+        {/* Structured Data */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": faqData.map(faq => ({
+              "@type": "Question",
+              "name": faq.question,
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": faq.answer
+              }
+            }))
+          })}
+        </script>
+      </Helmet>
+      
+      <div className="min-h-screen bg-black text-white">
       <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.15),transparent_60%)]"></div>
       <div className="absolute bottom-0 left-0 w-full h-full bg-[radial-gradient(circle_at_bottom_left,rgba(124,58,237,0.15),transparent_60%)]"></div>
 
@@ -112,5 +153,6 @@ export default function FAQ() {
 
       <Footer />
     </div>
+    </>
   );
 }

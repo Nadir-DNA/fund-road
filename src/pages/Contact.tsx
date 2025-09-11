@@ -86,7 +86,7 @@ export default function Contact() {
   return (
     <>
       <Helmet>
-        <title>Contact Fund Road - Demande de devis personnalisé | Accompagnement startup</title>
+        <title>Contact Fund Road - Demande de devis personnalisé</title>
         <meta name="description" content="Contactez Fund Road pour un accompagnement personnalisé de votre projet entrepreneurial. Devis gratuit pour levée de fonds, business plan et stratégie IP." />
         <meta name="keywords" content="contact Fund Road, devis accompagnement startup, conseil entrepreneurial, coaching levée de fonds, stratégie IP" />
         

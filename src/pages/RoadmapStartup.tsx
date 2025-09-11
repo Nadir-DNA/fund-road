@@ -8,7 +8,7 @@ export default function RoadmapStartup() {
   return (
     <>
       <Helmet>
-        <title>Roadmap Startup pour réussir sa levée de fonds | Guide complet</title>
+        <title>Roadmap Startup levée de fonds | Fund Road</title>
         <meta name="description" content="Découvrez le roadmap complet pour réussir votre levée de fonds startup. Étapes clés, préparation, validation marché et stratégie de financement." />
         <meta name="keywords" content="roadmap startup, levée de fonds, financement startup, entrepreneur, business plan, investisseurs" />
         <link rel="canonical" href="https://fundroad.com/roadmap-startup" />

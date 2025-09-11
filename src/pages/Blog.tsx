@@ -67,7 +67,7 @@ export default function Blog() {
   return (
     <>
       <Helmet>
-        <title>Blog Fund Road - Conseils et guides pour entrepreneurs | Startup & Levée de fonds</title>
+        <title>Blog Fund Road - Conseils entrepreneurs</title>
         <meta name="description" content="Découvrez nos articles exclusifs sur l'entrepreneuriat, la levée de fonds et la création de startup. Conseils d'experts et stratégies gagnantes pour réussir votre projet." />
         <meta name="keywords" content="blog entrepreneur, conseils startup, guides levée de fonds, stratégie entrepreneuriale, business plan, pitch deck, financement" />
         

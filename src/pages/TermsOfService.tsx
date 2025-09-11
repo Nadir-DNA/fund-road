@@ -8,7 +8,7 @@ export default function TermsOfService() {
   return (
     <>
       <Helmet>
-        <title>Conditions Générales d'Utilisation (CGU) | Fund Road - Plateforme d'accompagnement entrepreneur</title>
+        <title>CGU Fund Road - Conditions d'utilisation</title>
         <meta name="description" content="Conditions générales d'utilisation de la plateforme Fund Road. Droits et obligations des utilisateurs, propriété intellectuelle et modalités d'utilisation des services." />
         <meta name="keywords" content="CGU Fund Road, conditions utilisation, mentions légales, entrepreneur, plateforme, droits utilisateur" />
         <meta name="robots" content="index, follow" />

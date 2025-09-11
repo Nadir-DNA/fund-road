@@ -8,7 +8,7 @@ export default function PrivacyPolicy() {
   return (
     <>
       <Helmet>
-        <title>Politique de Confidentialité RGPD | Fund Road - Protection des données personnelles</title>
+        <title>Politique Confidentialité RGPD | Fund Road</title>
         <meta name="description" content="Politique de confidentialité Fund Road conforme au RGPD. Découvrez comment nous collectons, traitons et protégeons vos données personnelles en toute transparence." />
         <meta name="keywords" content="RGPD, politique confidentialité, protection données, Fund Road, vie privée, cookies, consentement" />
         <meta name="robots" content="index, follow" />

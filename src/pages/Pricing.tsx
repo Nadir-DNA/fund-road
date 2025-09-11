@@ -68,7 +68,7 @@ export default function Pricing() {
   return (
     <>
       <Helmet>
-        <title>Tarifs Fund Road - Accompagnement personnalisé pour entrepreneurs | À partir de 0€</title>
+        <title>Tarifs Fund Road - À partir de 0€</title>
         <meta name="description" content="Découvrez nos offres d'accompagnement pour entrepreneurs : Gratuit, Pro (29€/mois) et Expert (199€/mois). Essai gratuit 14 jours. Choisissez votre formule." />
         <meta name="keywords" content="tarifs Fund Road, prix accompagnement startup, coaching entrepreneur, levée de fonds prix, business plan tarif" />
         
