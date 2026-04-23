@@ -1,5 +1,5 @@
-
 import { Routes, Route, Navigate, useParams } from "react-router-dom";
+import { Suspense, lazy } from "react";
 import NotFound from "@/pages/NotFound";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
@@ -14,8 +14,8 @@ import { ToastIntegration } from "@/components/ToastIntegration";
 import Financing from "@/pages/Financing";
 import AuthGuard from "@/components/auth/AuthGuard";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
+import { Loader2 } from "lucide-react";
 
-// Custom wrapper components for redirects that need URL parameters
 function StepRedirect() {
   const { stepId } = useParams();
   return <Navigate to={`/roadmap/step/${stepId}`} replace />;
@@ -26,67 +26,56 @@ function SubstepRedirect() {
   return <Navigate to={`/roadmap/step/${stepId}/${substepTitle}`} replace />;
 }
 
+function PageLoader() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60dvh] gap-3">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <p className="text-sm text-foreground/50">Chargement...</p>
+    </div>
+  );
+}
+
 function App() {
   const { user, isAuthChecked } = useAuth();
 
   if (!isAuthChecked) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Chargement...</p>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (
     <ErrorBoundary>
       <Routes>
-        {/* Home page - Accessible sans authentification */}
         <Route path="/" element={<Index />} />
-        
-        {/* Auth page - Accessible sans authentification */}
         <Route path="/auth" element={<Auth />} />
-        
-        {/* Confirmation page - Accessible sans authentification */}
         <Route path="/confirm" element={<Confirm />} />
-        
-        {/* Blog pages - Accessible sans authentification */}
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:slug" element={<BlogArticle />} />
-        
-        {/* Roadmap Startup page - Accessible sans authentification */}
         <Route path="/roadmap-startup" element={<RoadmapStartup />} />
         
-        {/* Toutes les pages du roadmap nécessitent une authentification */}
         <Route path="/roadmap" element={
           <AuthGuard requireAuth={true}>
             <RoadmapPage />
           </AuthGuard>
         } />
-        
         <Route path="/roadmap/step/:stepId" element={
           <AuthGuard requireAuth={true}>
             <StepDetailPage />
           </AuthGuard>
         } />
-        
         <Route path="/roadmap/step/:stepId/:substepTitle" element={
           <AuthGuard requireAuth={true}>
             <StepDetailPage />
           </AuthGuard>
         } />
         
-        {/* Keep the Financing page separate as requested */}
         <Route path="/financing" element={
           <AuthGuard requireAuth={true}>
             <Financing />
           </AuthGuard>
         } />
         
-        {/* Legacy compatibility routes */}
         <Route path="/step/:stepId" element={<StepRedirect />} />
         <Route path="/step/:stepId/:substepTitle" element={<SubstepRedirect />} />
-        
-        {/* Fallback for routes not found */}
         <Route path="*" element={<NotFound />} />
       </Routes>
       <ToastIntegration />
