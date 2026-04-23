@@ -67,11 +67,9 @@ export function useRoadmapState() {
               }
             }
           } catch (error) {
-            console.error("Error fetching progress data:", error);
           }
         }
       } catch (error) {
-        console.error("Error fetching user session:", error);
       } finally {
         if (mounted) {
           setIsLoading(false);

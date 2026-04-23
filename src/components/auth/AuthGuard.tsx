@@ -35,13 +35,11 @@ export default function AuthGuard({
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
           if (!isMounted) return;
           
-          console.log(`AuthGuard: Auth state changed: ${event}`);
           const isAuth = !!session;
           setIsAuthenticated(isAuth);
           
           // Handle authentication changes while component is mounted
           if (requireAuth && !isAuth && event === 'SIGNED_OUT') {
-            console.log("AuthGuard: User signed out, redirecting");
             saveLastPath(location.pathname + location.search);
             navigate(fallbackPath);
           }
@@ -53,11 +51,9 @@ export default function AuthGuard({
         if (!isMounted) return;
         
         if (error) {
-          console.error("AuthGuard: Auth check error:", error);
           setIsAuthenticated(false);
           
           if (requireAuth) {
-            console.log("AuthGuard: Error checking auth, redirecting to fallback path");
             saveLastPath(location.pathname + location.search);
             navigate(fallbackPath);
           }
@@ -65,12 +61,10 @@ export default function AuthGuard({
         }
         
         const isAuth = !!data.session;
-        console.log(`AuthGuard: Auth check complete, authenticated: ${isAuth}`);
         setIsAuthenticated(isAuth);
         
         // If auth required but user not authenticated, redirect
         if (requireAuth && !isAuth) {
-          console.log("AuthGuard: User not authenticated, redirecting to auth page");
           // Save current path for redirection after login
           saveLastPath(location.pathname + location.search);
           navigate(fallbackPath);
@@ -78,7 +72,6 @@ export default function AuthGuard({
       } catch (err) {
         if (!isMounted) return;
         
-        console.error("AuthGuard: Error checking auth:", err);
         setIsAuthenticated(false);
         
         toast({

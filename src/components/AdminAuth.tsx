@@ -30,7 +30,6 @@ export function AdminAuth({ onAuthSuccess }: AdminAuthProps) {
       
       if (error) throw error;
       
-      console.log("User signed in:", data.user.id);
       
       // After successful login, check if the user is an admin
       const { data: profileData, error: profileError } = await supabase
@@ -39,21 +38,17 @@ export function AdminAuth({ onAuthSuccess }: AdminAuthProps) {
         .eq('id', data.user.id)
         .single();
         
-      console.log("Admin check result:", { profileData, profileError });
         
       if (profileError) {
-        console.error("Error fetching profile:", profileError);
         throw profileError;
       }
       
       if (!profileData?.is_admin) {
-        console.log("User is not an admin:", profileData);
         // User is not an admin, sign out and show error
         await supabase.auth.signOut();
         throw new Error("Vous n'avez pas les droits d'accès à l'administration.");
       }
       
-      console.log("Admin authentication successful");
       toast({
         title: "Authentification réussie",
         description: "Bienvenue dans l'interface d'administration",
@@ -62,7 +57,6 @@ export function AdminAuth({ onAuthSuccess }: AdminAuthProps) {
       
       onAuthSuccess();
     } catch (error: any) {
-      console.error("Authentication error:", error);
       toast({
         title: "Authentification échouée",
         description: error.message || "Une erreur s'est produite lors de l'authentification",

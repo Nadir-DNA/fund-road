@@ -16,6 +16,30 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     force: true
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom") || id.includes("node_modules/react-router-dom")) {
+            return "react-vendor";
+          }
+          if (id.includes("node_modules/recharts") || id.includes("node_modules/jspdf") || id.includes("node_modules/html2canvas")) {
+            return "chart-pdf";
+          }
+          if (id.includes("node_modules/@radix-ui")) {
+            return "radix-ui";
+          }
+          if (id.includes("node_modules/react-markdown") || id.includes("node_modules/remark-gfm")) {
+            return "markdown";
+          }
+          if (id.includes("node_modules/@supabase")) {
+            return "supabase";
+          }
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
+  },
   plugins: [
     react(),
     mode === 'development' &&

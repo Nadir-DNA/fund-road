@@ -39,7 +39,6 @@ export default function AuthForm({ isLogin, onToggleMode, initialEmail = "" }: A
 
     try {
       if (isLogin) {
-        console.log("Attempting login with:", email);
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password
@@ -47,14 +46,12 @@ export default function AuthForm({ isLogin, onToggleMode, initialEmail = "" }: A
         
         if (error) throw error;
         
-        console.log("Login successful:", data);
         toast({
           title: "Connexion réussie",
           description: "Bienvenue sur Fund Road",
         });
         
       } else {
-        console.log("Attempting signup with:", email);
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -65,7 +62,6 @@ export default function AuthForm({ isLogin, onToggleMode, initialEmail = "" }: A
         
         if (error) throw error;
         
-        console.log("Signup successful:", data);
         
         if (data.user && !data.session) {
           // Email confirmation required
@@ -83,7 +79,6 @@ export default function AuthForm({ isLogin, onToggleMode, initialEmail = "" }: A
         }
       }
     } catch (error: any) {
-      console.error("Erreur d'authentification:", error);
       toast({
         title: isLogin ? "Échec de connexion" : "Échec d'inscription",
         description: error.message || "Une erreur est survenue",
@@ -97,7 +92,6 @@ export default function AuthForm({ isLogin, onToggleMode, initialEmail = "" }: A
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      console.log("Attempting Google sign-in");
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -106,9 +100,7 @@ export default function AuthForm({ isLogin, onToggleMode, initialEmail = "" }: A
       });
       
       if (error) throw error;
-      console.log("Google sign-in initiated:", data);
     } catch (error: any) {
-      console.error("Google sign-in error:", error);
       toast({
         title: "Erreur de connexion Google",
         description: error.message || "Une erreur est survenue",

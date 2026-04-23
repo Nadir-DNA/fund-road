@@ -73,7 +73,6 @@ export function AdminResourceForm() {
         if (translatedData.excerpt_en) resourceData.excerpt_en = translatedData.excerpt_en;
         if (translatedData.content_en) resourceData.content_en = translatedData.content_en;
       } catch (translationError) {
-        console.error("Translation error:", translationError);
         // Continue with submission even if translation fails
         toast({
           title: "Attention",

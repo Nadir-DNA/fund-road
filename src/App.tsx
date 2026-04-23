@@ -1,20 +1,22 @@
 import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import { Suspense, lazy } from "react";
-import NotFound from "@/pages/NotFound";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
-import Confirm from "@/pages/Confirm";
-import RoadmapStartup from "@/pages/RoadmapStartup";
-import RoadmapPage from "@/pages/roadmap/RoadmapPage";
-import StepDetailPage from "@/components/journey/step-detail/StepDetailPage";
-import Blog from "@/pages/Blog";
-import BlogArticle from "@/pages/BlogArticle";
 import { useAuth } from "@/hooks/useAuth";
 import { ToastIntegration } from "@/components/ToastIntegration";
-import Financing from "@/pages/Financing";
 import AuthGuard from "@/components/auth/AuthGuard";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { Loader2 } from "lucide-react";
+
+// Lazy-load des pages lourdes pour réduire le bundle initial
+const Confirm = lazy(() => import("@/pages/Confirm"));
+const RoadmapStartup = lazy(() => import("@/pages/RoadmapStartup"));
+const RoadmapPage = lazy(() => import("@/pages/roadmap/RoadmapPage"));
+const StepDetailPage = lazy(() => import("@/components/journey/step-detail/StepDetailPage"));
+const Blog = lazy(() => import("@/pages/Blog"));
+const BlogArticle = lazy(() => import("@/pages/BlogArticle"));
+const Financing = lazy(() => import("@/pages/Financing"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
 
 function StepRedirect() {
   const { stepId } = useParams();
@@ -35,6 +37,10 @@ function PageLoader() {
   );
 }
 
+function LazyWrap({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
+}
+
 function App() {
   const { user, isAuthChecked } = useAuth();
 
@@ -47,36 +53,37 @@ function App() {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
-        <Route path="/confirm" element={<Confirm />} />
-        <Route path="/blog" element={<Blog />} />
-        <Route path="/blog/:slug" element={<BlogArticle />} />
-        <Route path="/roadmap-startup" element={<RoadmapStartup />} />
+        
+        <Route path="/confirm" element={<LazyWrap><Confirm /></LazyWrap>} />
+        <Route path="/blog" element={<LazyWrap><Blog /></LazyWrap>} />
+        <Route path="/blog/:slug" element={<LazyWrap><BlogArticle /></LazyWrap>} />
+        <Route path="/roadmap-startup" element={<LazyWrap><RoadmapStartup /></LazyWrap>} />
         
         <Route path="/roadmap" element={
           <AuthGuard requireAuth={true}>
-            <RoadmapPage />
+            <LazyWrap><RoadmapPage /></LazyWrap>
           </AuthGuard>
         } />
         <Route path="/roadmap/step/:stepId" element={
           <AuthGuard requireAuth={true}>
-            <StepDetailPage />
+            <LazyWrap><StepDetailPage /></LazyWrap>
           </AuthGuard>
         } />
         <Route path="/roadmap/step/:stepId/:substepTitle" element={
           <AuthGuard requireAuth={true}>
-            <StepDetailPage />
+            <LazyWrap><StepDetailPage /></LazyWrap>
           </AuthGuard>
         } />
         
         <Route path="/financing" element={
           <AuthGuard requireAuth={true}>
-            <Financing />
+            <LazyWrap><Financing /></LazyWrap>
           </AuthGuard>
         } />
         
         <Route path="/step/:stepId" element={<StepRedirect />} />
         <Route path="/step/:stepId/:substepTitle" element={<SubstepRedirect />} />
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<LazyWrap><NotFound /></LazyWrap>} />
       </Routes>
       <ToastIntegration />
     </ErrorBoundary>

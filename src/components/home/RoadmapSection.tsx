@@ -20,7 +20,6 @@ export default function RoadmapSection() {
         const { data } = await supabase.auth.getSession();
         setIsAuthenticated(!!data.session);
       } catch (error) {
-        console.error("Error checking authentication:", error);
       } finally {
         setAuthLoading(false);
       }

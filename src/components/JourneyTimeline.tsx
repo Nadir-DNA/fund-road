@@ -17,7 +17,6 @@ export default function JourneyTimeline() {
   const currentStepId = match ? Number(match[1]) : null;
 
   const handleStepClick = (stepId: number) => {
-    console.log(`Step clicked: ${stepId}`);
     
     // Set a flag in localStorage to indicate resources should be shown
     localStorage.setItem('showResources', 'true');
@@ -27,7 +26,6 @@ export default function JourneyTimeline() {
   };
 
   const handleSubStepClick = (stepId: number, substepTitle: string) => {
-    console.log(`Substep clicked: ${stepId}/${substepTitle}`);
     
     // Set a flag in localStorage to indicate resources should be shown
     localStorage.setItem('showResources', 'true');
