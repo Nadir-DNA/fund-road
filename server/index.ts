@@ -27,6 +27,7 @@ import { programScore, orgProgram } from "../shared/programs.ts";
 import { allPrograms, resolvePrograms } from "./programs.ts";
 import { registerContent } from "./content.ts";
 import { registerBilling } from "./billing.ts";
+import { registerSeo, uniqueSlug, findProfile, listProfiles } from "./seo.ts";
 const app = Fastify({
   logger: { redact: ["req.headers.cookie", "req.headers.authorization"] },
   bodyLimit: 1024 * 1024,
@@ -128,15 +129,7 @@ app.post("/api/organizations", async (req) => {
   const u = await user(req);
   const b = organizationInput.parse(req.body);
   const id = randomUUID(),
-    slug =
-      b.name
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .slice(0, 40) +
-      "-" +
-      id.slice(0, 6);
+    slug = await uniqueSlug(b.name);
   await transaction(async (c) => {
     await c.query(
       "INSERT INTO organizations(id,name,kind,slug) VALUES($1,$2,$3,$4)",
@@ -213,19 +206,12 @@ app.get("/api/organizations/:id/logo", async (req: any, reply) => {
 });
 // Annuaire : un financeur y figure dès qu'il publie des critères sur son portail
 app.get("/api/directory", async () =>
-  (
-    await db.query(
-      "SELECT id,name,kind,slug,theme,criteria,logo FROM organizations WHERE kind<>'startup' AND criteria<>'{}'::jsonb ORDER BY name",
-    )
-  ).rows.filter((o) => orgProgram(o).criteria.length),
+  (await listProfiles()).filter(
+    (o) => !o.claimed || orgProgram(o).criteria.length,
+  ),
 );
 app.get("/api/portals/:slug", async (req: any) => {
-  const o = (
-    await db.query(
-      "SELECT id,name,kind,slug,theme,criteria,logo FROM organizations WHERE slug=$1 AND kind<>'startup'",
-      [req.params.slug],
-    )
-  ).rows[0];
+  const o = await findProfile(req.params.slug);
   if (!o) fail(404, "Portail introuvable");
   return o;
 });
@@ -335,7 +321,14 @@ app.get("/api/dossiers/:id", async (req: any) => {
 });
 app.get("/api/programs", async () => allPrograms());
 // Suivi financeur : candidatures reçues (version partagée) et dossiers ouverts pour une startup invitée
-const stages = ["new", "review", "meeting", "diligence", "invested", "declined"] as const;
+const stages = [
+  "new",
+  "review",
+  "meeting",
+  "diligence",
+  "invested",
+  "declined",
+] as const;
 const stageNames: Record<(typeof stages)[number], string> = {
   new: "Reçu",
   review: "En revue",
@@ -1153,6 +1146,7 @@ try {
     root: path.resolve("dist"),
     wildcard: false,
   });
+  registerSeo(app, await readFile(path.resolve("dist/index.html"), "utf8"));
   app.setNotFoundHandler((req, reply) => {
     if (req.url.startsWith("/api/"))
       return reply.code(404).send({ error: "Route inconnue" });

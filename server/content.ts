@@ -3,6 +3,7 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { db, transaction } from "./db.ts";
 import { user, admin, fail } from "./access.ts";
+import { uniqueSlug } from "./seo.ts";
 const httpsURL = z
   .string()
   .url()
@@ -102,6 +103,8 @@ export async function registerContent(app: FastifyInstance) {
         confirmed: z.literal(true),
       })
       .parse(req.body);
+    // adresse publique de la fiche : /fonds/<slug>, conservée lors des mises à jour
+    const slug = await uniqueSlug(b.name);
     return transaction(async (c) => {
       const row = (
         await c.query("SELECT * FROM legacy_content WHERE id=$1 FOR UPDATE", [
@@ -112,7 +115,7 @@ export async function registerContent(app: FastifyInstance) {
         fail(400, "Financeur requis");
       if (row.status !== "pending") fail(409, "Contenu déjà traité");
       await c.query(
-        `INSERT INTO investors(id,name,kind,description,sectors,stage,geography,ticket,source_url,application_url,verified_at,active) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,now(),true) ON CONFLICT(id) DO UPDATE SET name=$2,kind=$3,description=$4,sectors=$5,stage=$6,geography=$7,ticket=$8,source_url=$9,application_url=$10,verified_at=now(),active=true`,
+        `INSERT INTO investors(id,name,kind,description,sectors,stage,geography,ticket,source_url,application_url,verified_at,active,slug) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,now(),true,$11) ON CONFLICT(id) DO UPDATE SET name=$2,kind=$3,description=$4,sectors=$5,stage=$6,geography=$7,ticket=$8,source_url=$9,application_url=$10,verified_at=now(),active=true,slug=COALESCE(investors.slug,$11)`,
         [
           row.id,
           b.name,
@@ -124,6 +127,7 @@ export async function registerContent(app: FastifyInstance) {
           b.ticket,
           b.sourceUrl,
           b.applicationUrl || null,
+          slug,
         ],
       );
       await c.query(

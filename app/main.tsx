@@ -2448,7 +2448,7 @@ function Directory({ embedded = false }: { embedded?: boolean }) {
                       {plural((o.criteria.questions || []).length, "question")}
                     </span>
                   </small>
-                  <Link to={"/portail/" + o.slug}>
+                  <Link to={"/fonds/" + o.slug}>
                     Voir et postuler <ArrowRight size={14} />
                   </Link>
                 </div>
@@ -2540,7 +2540,7 @@ function Pipeline() {
           <Link className="button secondary" to="/app/portail">
             Mes critères
           </Link>
-          <Link className="button" to={"/portail/" + org.slug} target="_blank">
+          <Link className="button" to={"/fonds/" + org.slug} target="_blank">
             Mon lien de candidature <ArrowUpRight size={16} />
           </Link>
         </div>
@@ -2746,7 +2746,7 @@ function OrganizationPage() {
         {org.kind !== "startup" && (
           <Link
             className="button secondary"
-            to={"/portail/" + org.slug}
+            to={"/fonds/" + org.slug}
             target="_blank"
           >
             Voir mon portail <ArrowUpRight size={16} />
@@ -3266,6 +3266,11 @@ function Portal() {
   const navigate = useNavigate();
   const { run, busy } = useAction();
   const c = o?.criteria || {};
+  const name = o?.theme?.name || o?.name;
+  useEffect(() => {
+    if (name)
+      document.title = `${name} : critères, ticket et candidature | Fund Road`;
+  }, [name]);
   return (
     <PublicLayout>
       <main className="portal" style={o ? orgStyle(o) : {}}>
@@ -3278,8 +3283,8 @@ function Portal() {
                 <OrgLogo o={o} size="lg" />
                 <div>
                   <span className="fund-kind">
-                    {orgKindLabels[o.kind] || "Financeur"} · Portail de
-                    candidature
+                    {orgKindLabels[o.kind] || o.kind || "Financeur"} ·{" "}
+                    {o.claimed ? "Portail de candidature" : "Fiche annuaire"}
                   </span>
                   <h1>{o.theme.name || o.name}</h1>
                   <p className="lead">
@@ -3337,42 +3342,76 @@ function Portal() {
                   </section>
                 )}
               </div>
-              <aside className="panel portal-cta">
-                <h3>Prêt à candidater ?</h3>
-                <p>
-                  Fund Road structure votre dossier selon ces exigences et vous
-                  montre ce qui manque avant l’envoi.
-                </p>
-                <button
-                  className="button"
-                  disabled={busy}
-                  onClick={() =>
-                    run(async () => {
-                      sessionStorage.setItem(
-                        "fundroad-recipient",
-                        JSON.stringify({
-                          id: o.id,
-                          name: o.theme.name || o.name,
-                        }),
-                      );
-                      navigate("/app/dossiers");
-                    })
-                  }
-                >
-                  Préparer ma candidature <ArrowRight size={16} />
-                </button>
-                <ul>
-                  <li>
-                    <Check size={14} /> Gratuit pour les startups
-                  </li>
-                  <li>
-                    <Check size={14} /> Partage révocable à tout moment
-                  </li>
-                  <li>
-                    <Check size={14} /> Suivi de l’étape de votre dossier
-                  </li>
-                </ul>
-              </aside>
+              {o.claimed ? (
+                <aside className="panel portal-cta">
+                  <h3>Prêt à candidater ?</h3>
+                  <p>
+                    Fund Road structure votre dossier selon ces exigences et
+                    vous montre ce qui manque avant l’envoi.
+                  </p>
+                  <button
+                    className="button"
+                    disabled={busy}
+                    onClick={() =>
+                      run(async () => {
+                        sessionStorage.setItem(
+                          "fundroad-recipient",
+                          JSON.stringify({
+                            id: o.id,
+                            name: o.theme.name || o.name,
+                          }),
+                        );
+                        navigate("/app/dossiers");
+                      })
+                    }
+                  >
+                    Préparer ma candidature <ArrowRight size={16} />
+                  </button>
+                  <ul>
+                    <li>
+                      <Check size={14} /> Gratuit pour les startups
+                    </li>
+                    <li>
+                      <Check size={14} /> Partage révocable à tout moment
+                    </li>
+                    <li>
+                      <Check size={14} /> Suivi de l’étape de votre dossier
+                    </li>
+                  </ul>
+                </aside>
+              ) : (
+                <aside className="panel portal-cta">
+                  <h3>Candidater auprès de {name}</h3>
+                  <p>
+                    Préparez votre dossier sur Fund Road, puis envoyez-le par le
+                    canal officiel du financeur.
+                  </p>
+                  <Link className="button" to="/inscription">
+                    Préparer mon dossier <ArrowRight size={16} />
+                  </Link>
+                  {o.applicationUrl && (
+                    <a
+                      className="button secondary"
+                      href={o.applicationUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Canal officiel <ExternalLink size={15} />
+                    </a>
+                  )}
+                  <small>
+                    Fiche établie à partir de{" "}
+                    <a href={o.sourceUrl} target="_blank" rel="noreferrer">
+                      sources publiques
+                    </a>
+                    {o.verifiedAt &&
+                      ", vérifiée le " +
+                        new Date(o.verifiedAt).toLocaleDateString("fr")}
+                    . Vous gérez {name} ?{" "}
+                    <Link to="/inscription">Créez votre espace financeur</Link>.
+                  </small>
+                </aside>
+              )}
             </div>
           </>
         )}
@@ -3574,6 +3613,7 @@ function Root() {
           <Route path="/double-auth" element={<TwoFactor />} />
           <Route path="/app/*" element={<Shell />} />
           <Route path="/verification/:id" element={<Verification />} />
+          <Route path="/fonds/:slug" element={<Portal />} />
           <Route path="/portail/:slug" element={<Portal />} />
           <Route path="/invitation/:token" element={<Invitation />} />
           <Route path="/partages/:id" element={<SharedApplication />} />

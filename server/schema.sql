@@ -51,3 +51,4 @@ ALTER TABLE rewards ADD COLUMN IF NOT EXISTS refunded_cents integer NOT NULL DEF
 -- Étape de suivi côté financeur
 ALTER TABLE applications ADD COLUMN IF NOT EXISTS stage text NOT NULL DEFAULT 'new';
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS logo jsonb;
+ALTER TABLE investors ADD COLUMN IF NOT EXISTS slug text UNIQUE;
