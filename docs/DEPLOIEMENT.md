@@ -1,8 +1,8 @@
 # Mise en ligne de fund-road.com (Cloudflare Tunnel)
 
 Le site est un serveur Node (API + worker IA) avec PostgreSQL et un dossier de fichiers privés.
-Il tourne en Docker sur une machine Linux et Cloudflare l'expose via un tunnel : aucun port ouvert,
-HTTPS et cache gérés par Cloudflare.
+Il tourne en Docker sur la box (AuBox, à côté de Surface CRM) et Cloudflare l'expose via un tunnel :
+aucun port ouvert, HTTPS et cache gérés par Cloudflare. Projet Docker : `fundroad-prod`.
 
 ## 1. Domaine sur Cloudflare (une fois)
 1. Cloudflare → *Add a site* → `fund-road.com`, offre Free.
@@ -12,15 +12,17 @@ HTTPS et cache gérés par Cloudflare.
 ## 2. Tunnel (une fois)
 Cloudflare → Zero Trust → Networks → Tunnels → *Create a tunnel* (cloudflared) → nommer `fundroad`.
 - Copier le **jeton** du tunnel (à mettre dans `TUNNEL_TOKEN`).
-- *Public hostname* : `fund-road.com` → service `HTTP` → `api:3184`. Ajouter aussi `www.fund-road.com` → même service
+- *Public hostname* : `fund-road.com` → service `HTTP` → `api:3184` (le tunnel tourne dans le même compose que l'API). Ajouter aussi `www.fund-road.com` → même service
   (ou une règle de redirection www → apex).
 
 ## 3. Serveur
 ```bash
 git clone https://github.com/Nadir-DNA/fund-road.git && cd fund-road
 cp .env.example .env.production   # puis remplir, voir ci-dessous
-docker compose -f compose.prod.yaml --env-file .env.production up -d --build
+docker compose -p fundroad-prod -f compose.prod.yaml --env-file .env.production up -d --build
 ```
+Santé, depuis la box : `curl http://127.0.0.1:3190/api/health`.
+
 `.env.production` (jamais commité) :
 - `APP_URL=https://fund-road.com`
 - `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` : `openssl rand -base64 36`

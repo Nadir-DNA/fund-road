@@ -1,5 +1,5 @@
 # Production : docker compose -f compose.prod.yaml --env-file .env.production up -d --build
-# Aucun port n'est publié : le site n'est joignable que par le tunnel Cloudflare.
+# Seul le tunnel Cloudflare expose le site ; le port 3190 n'écoute que sur la box (santé, tests).
 x-app: &app
   build: .
   env_file: .env.production
@@ -28,6 +28,8 @@ services:
       retries: 10
   api:
     <<: *app
+    ports:
+      - '127.0.0.1:3190:3184'
   worker:
     <<: *app
     command: ['npx', 'tsx', 'server/worker.ts']
@@ -35,7 +37,7 @@ services:
     image: cloudflare/cloudflared:2026.8.3
     command: tunnel --no-autoupdate run
     environment:
-      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?required}
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
     depends_on: [api]
     restart: unless-stopped
 volumes:
