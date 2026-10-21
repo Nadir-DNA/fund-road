@@ -32,7 +32,15 @@ const app = Fastify({
   logger: { redact: ["req.headers.cookie", "req.headers.authorization"] },
   bodyLimit: 1024 * 1024,
 });
-await app.register(rateLimit, { max: 120, timeWindow: "1 minute" });
+await app.register(rateLimit, {
+  max: 120,
+  timeWindow: "1 minute",
+  // derrière un tunnel Cloudflare, toutes les requêtes arrivent du tunnel : on limite par visiteur
+  keyGenerator: (req) =>
+    (process.env.BEHIND_CLOUDFLARE &&
+      String(req.headers["cf-connecting-ip"] || "")) ||
+    req.ip,
+});
 await app.register(multipart, {
   limits: { fileSize: config.maxBytes, files: 1 },
 });
@@ -41,7 +49,8 @@ await app.register(helmet, {
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:"],
       connectSrc: ["'self'"],
       frameAncestors: ["'none'"],
@@ -1154,7 +1163,7 @@ try {
   });
 } catch {}
 await mkdir(config.data, { recursive: true, mode: 0o700 });
-await app.listen({ port: config.port, host: "127.0.0.1" });
+await app.listen({ port: config.port, host: process.env.HOST || "127.0.0.1" });
 for (const signal of ["SIGTERM", "SIGINT"])
   process.on(signal, async () => {
     await app.close();

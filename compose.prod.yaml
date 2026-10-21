@@ -1,0 +1,43 @@
+# Production : docker compose -f compose.prod.yaml --env-file .env.production up -d --build
+# Aucun port n'est publié : le site n'est joignable que par le tunnel Cloudflare.
+x-app: &app
+  build: .
+  env_file: .env.production
+  environment:
+    DATABASE_URL: postgresql://fundroad:${POSTGRES_PASSWORD:?required}@db:5432/fundroad
+    BEHIND_CLOUDFLARE: '1'
+  volumes:
+    - fundroad_data:/data
+  depends_on:
+    db:
+      condition: service_healthy
+  restart: unless-stopped
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: fundroad
+      POSTGRES_USER: fundroad
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+    volumes:
+      - fundroad_db:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U fundroad']
+      interval: 5s
+      retries: 10
+  api:
+    <<: *app
+  worker:
+    <<: *app
+    command: ['npx', 'tsx', 'server/worker.ts']
+  tunnel:
+    image: cloudflare/cloudflared:2026.8.3
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?required}
+    depends_on: [api]
+    restart: unless-stopped
+volumes:
+  fundroad_db:
+  fundroad_data:
