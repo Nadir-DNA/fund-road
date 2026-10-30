@@ -72,6 +72,12 @@ app.setErrorHandler((e: any, _req, reply) => {
         : e.message,
   });
 });
+// Une seule adresse pour Google : www.fund-road.com renvoie vers fund-road.com
+const canonicalHost = new URL(config.baseURL).host;
+app.addHook("onRequest", async (req, reply) => {
+  if (req.headers.host === "www." + canonicalHost)
+    return reply.redirect(config.baseURL + req.url, 301);
+});
 app.addHook("onRequest", async (req, reply) => {
   if (
     ["POST", "PUT", "PATCH", "DELETE"].includes(req.method) &&
