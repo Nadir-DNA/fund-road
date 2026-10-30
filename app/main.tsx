@@ -1,6 +1,7 @@
 import React, {
   useState,
   useEffect,
+  useRef,
   createContext,
   useContext,
   type FormEvent,
@@ -55,6 +56,16 @@ import {
 } from "./icons";
 import { requirements, score, type DossierState } from "../shared/domain";
 import "./style.css";
+import { publicCopy, faq, pageMeta } from "../shared/content";
+import {
+  gsap,
+  SplitText,
+  useGsap,
+  demarrerDefilement,
+  revelerTitres,
+  aimanter,
+  allerA,
+} from "./motion";
 export async function api(url: string, method = "GET", body?: any) {
   const r = await fetch("/api" + url, {
     method,
@@ -163,9 +174,10 @@ const Empty = ({
 );
 const revealSelector =
   ".section-head, .tour-row, .feature, .band-night > div > *, .faq details, .cta-band > div, .cols > article, .price-card, .info-page h1, .lead";
-function useReveal() {
+function useReveal(enabled = true) {
   const { pathname } = useLocation();
   useEffect(() => {
+    if (!enabled) return;
     const els = [...document.querySelectorAll<HTMLElement>(revealSelector)];
     const io = new IntersectionObserver(
       (entries) =>
@@ -186,11 +198,22 @@ function useReveal() {
       io.observe(el);
     });
     return () => io.disconnect();
-  }, [pathname]);
+  }, [pathname, enabled]);
 }
-function PublicLayout({ children }: { children: ReactNode }) {
+function PublicLayout({
+  children,
+  gsapPage = false,
+}: {
+  children: ReactNode;
+  gsapPage?: boolean;
+}) {
   const [open, setOpen] = useState(false);
-  useReveal();
+  const { pathname } = useLocation();
+  useReveal(!gsapPage);
+  useEffect(() => demarrerDefilement(), []);
+  useEffect(() => {
+    if (pageMeta[pathname]) document.title = pageMeta[pathname].title;
+  }, [pathname]);
   return (
     <>
       <header className="topnav">
@@ -261,9 +284,208 @@ function PublicLayout({ children }: { children: ReactNode }) {
   );
 }
 function Landing() {
+  const ref = useRef<HTMLElement>(null);
+  useGsap(ref, (reduce) => {
+    aimanter(".hero-actions .button");
+    if (reduce) return;
+    revelerTitres();
+    // Entrée : titre mot à mot, coup de pinceau, route qui se dessine
+    const titre = SplitText.create(".hero h1", {
+      type: "words",
+      mask: "words",
+    });
+    const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
+    tl.from(titre.words, { yPercent: 115, duration: 1.1, stagger: 0.06 })
+      .from(
+        ".brush path",
+        {
+          scaleX: 0,
+          transformOrigin: "0 50%",
+          duration: 0.8,
+          ease: "power3.inOut",
+        },
+        0.55,
+      )
+      .from(
+        ".hero-copy > div > *",
+        { y: 28, autoAlpha: 0, duration: 0.9, stagger: 0.1 },
+        0.35,
+      )
+      .from(
+        ".hero-points li",
+        { y: 18, autoAlpha: 0, duration: 0.7, stagger: 0.08 },
+        0.7,
+      )
+      .fromTo(
+        ".road .edge",
+        { strokeDashoffset: 1 },
+        {
+          strokeDashoffset: 0,
+          duration: 2,
+          ease: "power2.inOut",
+          stagger: 0.15,
+        },
+        0,
+      )
+      .from(".road .lane", { autoAlpha: 0, duration: 0.6 }, 1.4)
+      .fromTo(
+        ".road .car",
+        { autoAlpha: 0 },
+        { autoAlpha: 1, duration: 0.6 },
+        1.5,
+      )
+      .from(".hero-shot", { y: 120, autoAlpha: 0, duration: 1.4 }, 0.45);
+    // La voie centrale défile en continu
+    gsap.to(".road .lane", {
+      strokeDashoffset: -68,
+      duration: 1.4,
+      ease: "none",
+      repeat: -1,
+    });
+    // Le véhicule part sous le titre et descend la route plus vite que la page ne défile
+    const voie = {
+      path: ".road .lane",
+      align: ".road .lane",
+      alignOrigin: [0.5, 0.5],
+    };
+    gsap.fromTo(
+      ".road .car",
+      { motionPath: { ...voie, start: 0.3, end: 0.3 } },
+      {
+        motionPath: { ...voie, start: 0.3, end: 0.97 },
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".hero",
+          start: "top top",
+          end: "+=320",
+          scrub: 0.6,
+        },
+      },
+    );
+    // Capture du produit : se redresse en perspective au défilement
+    gsap.fromTo(
+      ".hero-shot img",
+      { rotateX: 18, scale: 0.94 },
+      {
+        rotateX: 0,
+        scale: 1,
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".hero-shot",
+          start: "top 95%",
+          end: "top 25%",
+          scrub: 0.8,
+        },
+      },
+    );
+    // Parcours : chaque capture se dévoile puis glisse légèrement
+    gsap.utils.toArray<HTMLElement>(".tour-row").forEach((row, i) => {
+      const shot = row.querySelector(".shot");
+      gsap.from(row.querySelectorAll(".step-pill, h3, p, li"), {
+        y: 30,
+        autoAlpha: 0,
+        duration: 0.8,
+        ease: "power3.out",
+        stagger: 0.06,
+        scrollTrigger: { trigger: row, start: "top 80%", once: true },
+      });
+      gsap.fromTo(
+        shot,
+        {
+          clipPath:
+            i % 2
+              ? "inset(0 0 0 100% round 20px)"
+              : "inset(0 100% 0 0 round 20px)",
+        },
+        {
+          clipPath: "inset(0 0% 0 0% round 20px)",
+          duration: 1.3,
+          ease: "expo.inOut",
+          scrollTrigger: { trigger: row, start: "top 75%", once: true },
+        },
+      );
+      gsap.fromTo(
+        shot,
+        { yPercent: 8 },
+        {
+          yPercent: -8,
+          ease: "none",
+          scrollTrigger: {
+            trigger: row,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: true,
+          },
+        },
+      );
+    });
+    // Fonctionnalités : cartes en cascade, compteur et jauge
+    gsap.from(".feature", {
+      y: 50,
+      autoAlpha: 0,
+      duration: 0.9,
+      ease: "power3.out",
+      stagger: 0.08,
+      scrollTrigger: { trigger: ".features", start: "top 80%", once: true },
+    });
+    const n = { v: 0 };
+    gsap.to(n, {
+      v: 7,
+      duration: 1.4,
+      ease: "power2.out",
+      onUpdate: () => {
+        const el = document.querySelector(".mini-score .count");
+        if (el) el.textContent = String(Math.round(n.v));
+      },
+      scrollTrigger: { trigger: ".mini-score", start: "top 85%", once: true },
+    });
+    gsap.from(".feature .bar > span", {
+      scaleX: 0,
+      transformOrigin: "0 50%",
+      duration: 1.4,
+      ease: "power3.out",
+      scrollTrigger: { trigger: ".feature .bar", start: "top 90%", once: true },
+    });
+    // Bandeau financeurs et appel final
+    gsap.from(".band-night li", {
+      x: 60,
+      autoAlpha: 0,
+      duration: 0.9,
+      ease: "power3.out",
+      stagger: 0.12,
+      scrollTrigger: {
+        trigger: ".band-night ul",
+        start: "top 80%",
+        once: true,
+      },
+    });
+    gsap.from(".faq details", {
+      y: 24,
+      autoAlpha: 0,
+      duration: 0.7,
+      ease: "power3.out",
+      stagger: 0.07,
+      scrollTrigger: { trigger: ".faq", start: "top 85%", once: true },
+    });
+    gsap.fromTo(
+      ".cta-band > div",
+      { scale: 0.92, borderRadius: "48px" },
+      {
+        scale: 1,
+        borderRadius: "24px",
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".cta-band",
+          start: "top bottom",
+          end: "top 40%",
+          scrub: true,
+        },
+      },
+    );
+  });
   return (
-    <PublicLayout>
-      <main>
+    <PublicLayout gsapPage>
+      <main ref={ref} className="home">
         <section className="hero">
           <svg
             className="road"
@@ -292,6 +514,7 @@ function Landing() {
               strokeWidth="4"
               strokeDasharray="18 16"
             />
+            <circle className="car" r="11" cx="0" cy="0" />
           </svg>
           <div className="hero-inner">
             <div className="hero-copy">
@@ -322,7 +545,14 @@ function Landing() {
                   <Link className="button accent" to="/inscription">
                     Créer mon dossier <ArrowRight size={17} />
                   </Link>
-                  <a className="button ghost" href="#fonctionnement">
+                  <a
+                    className="button ghost"
+                    href="#fonctionnement"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      allerA("#fonctionnement");
+                    }}
+                  >
                     Voir comment ça marche
                   </a>
                 </div>
@@ -342,9 +572,11 @@ function Landing() {
             </ul>
             <figure className="hero-shot">
               <img
-                src="/screens/dossier.png"
-                width={2880}
-                height={1660}
+                src="/screens/dossier.webp"
+                width={1600}
+                height={922}
+                // React 18 ne connaît que l’attribut HTML en minuscules
+                {...{ fetchpriority: "high" }}
                 alt="Tableau de bord d’un dossier Fund Road : score de complétude, prochaines étapes et analyse IA"
               />
             </figure>
@@ -353,7 +585,9 @@ function Landing() {
         <section className="section" id="fonctionnement">
           <div className="section-head">
             <span className="kicker">Comment ça marche</span>
-            <h2>De vos fichiers à un dossier complet, en trois étapes.</h2>
+            <h2 data-split>
+              De vos fichiers à un dossier complet, en trois étapes.
+            </h2>
             <p>
               Vous partez de ce que vous avez déjà. Fund Road organise, vous
               validez.
@@ -369,7 +603,7 @@ function Landing() {
                   "Doublons détectés automatiquement",
                   "Vos fichiers restent privés",
                 ],
-                img: "/screens/documents.png",
+                img: "/screens/documents.webp",
                 alt: "Onglet Documents : fichiers déposés et leur statut d’extraction",
               },
               {
@@ -380,7 +614,7 @@ function Landing() {
                   "Aucun chiffre inventé : l’inconnu reste « à compléter »",
                   "Score de complétude sur neuf rubriques",
                 ],
-                img: "/screens/facts.png",
+                img: "/screens/facts.webp",
                 alt: "Onglet Mon dossier : synthèse IA et rubrique avec sa citation source",
               },
               {
@@ -391,7 +625,7 @@ function Landing() {
                   "Export PDF et Word avec les sources",
                   "Attestation de complétude datée",
                 ],
-                img: "/screens/share.png",
+                img: "/screens/share.webp",
                 alt: "Onglet Partager : choix du destinataire et des pièces",
               },
             ].map((x, i) => (
@@ -412,8 +646,8 @@ function Landing() {
                   <img
                     src={x.img}
                     alt={x.alt}
-                    width={2376}
-                    height={1640}
+                    width={1600}
+                    height={1104}
                     loading="lazy"
                   />
                 </figure>
@@ -424,7 +658,9 @@ function Landing() {
         <section className="section" style={{ paddingTop: 0 }}>
           <div className="section-head">
             <span className="kicker">Fonctionnalités</span>
-            <h2>Tout ce qu’un financeur vérifie, au même endroit.</h2>
+            <h2 data-split>
+              Tout ce qu’un financeur vérifie, au même endroit.
+            </h2>
           </div>
           <div className="features">
             <article className="feature wide">
@@ -436,8 +672,8 @@ function Landing() {
                 exactement ce qui manque.
               </p>
               <div className="mini-score">
-                <strong className="tnum count" style={{ "--to": 7 } as any}>
-                  /9
+                <strong className="tnum">
+                  <span className="count">7</span>/9
                 </strong>
                 <small>rubriques confirmées · exemple</small>
               </div>
@@ -479,7 +715,7 @@ function Landing() {
           <div>
             <div>
               <span className="kicker">Pour les financeurs</span>
-              <h2>Des dossiers comparables, sourcés, à jour.</h2>
+              <h2 data-split>Des dossiers comparables, sourcés, à jour.</h2>
               <p>
                 Business angels, réseaux, fonds et incubateurs : recevez des
                 candidatures structurées selon vos critères et suivez
@@ -519,27 +755,10 @@ function Landing() {
         <section className="section">
           <div className="section-head">
             <span className="kicker">Questions fréquentes</span>
-            <h2>Avant de commencer.</h2>
+            <h2 data-split>Avant de commencer.</h2>
           </div>
           <div className="faq">
-            {[
-              [
-                "Fund Road garantit-il un financement ?",
-                "Non. Le score mesure la complétude de votre dossier, pas vos chances. La décision appartient toujours au financeur.",
-              ],
-              [
-                "Que fait l’IA de mes documents ?",
-                "Elle lit le texte extrait pour proposer les rubriques, avec une citation exacte pour chacune. Rien n’est validé sans vous et rien n’est partagé sans votre choix.",
-              ],
-              [
-                "Et si une information manque dans mes documents ?",
-                "Elle reste marquée « à compléter ». Fund Road n’invente aucun chiffre et sépare clairement les hypothèses des faits sourcés.",
-              ],
-              [
-                "Puis-je l’utiliser pour une subvention ?",
-                "Oui. Le même dossier sert pour une levée, un prêt d’honneur ou une demande de subvention, avec les questions propres à chaque organisme.",
-              ],
-            ].map(([q, a]) => (
+            {faq.map(([q, a]) => (
               <details key={q}>
                 <summary>{q}</summary>
                 <p>{a}</p>
@@ -549,7 +768,7 @@ function Landing() {
         </section>
         <section className="cta-band">
           <div>
-            <h2>
+            <h2 data-split>
               Votre copilote pour construire, structurer et financer votre
               startup.
             </h2>
@@ -562,151 +781,6 @@ function Landing() {
     </PublicLayout>
   );
 }
-const publicCopy: Record<
-  string,
-  { kicker: string; title: string; intro: string; items: [string, string][] }
-> = {
-  entrepreneurs: {
-    kicker: "ENTREPRENEURS",
-    title: "Un dossier qui travaille avec vous.",
-    intro:
-      "Réutilisez vos informations pour préparer vos demandes d’investissement et de subvention.",
-    items: [
-      [
-        "Un point de départ simple",
-        "Importez un PDF, un document Word, un pitch PowerPoint ou un tableur Excel.",
-      ],
-      [
-        "Des questions ciblées",
-        "Complétez les rubriques prioritaires et confirmez les informations extraites.",
-      ],
-      [
-        "Un partage maîtrisé",
-        "Une version datée, des pièces choisies et un accès nominatif révocable.",
-      ],
-    ],
-  },
-  financeurs: {
-    kicker: "BUSINESS ANGELS & FONDS",
-    title: "Concentrez-vous sur les projets.",
-    intro:
-      "Vos critères structurent les candidatures. L’IA vous aide à préparer les questions et les synthèses.",
-    items: [
-      [
-        "Deux portes d’entrée",
-        "Importez des documents reçus ou invitez les startups à compléter leur dossier.",
-      ],
-      [
-        "Votre cadre d’analyse",
-        "Thèse, secteur, stade, géographie, tickets et questions spécifiques.",
-      ],
-      [
-        "Vos échanges, au bon endroit",
-        "Distinguez les questions partagées et les notes réservées à votre équipe.",
-      ],
-    ],
-  },
-  "marque-blanche": {
-    kicker: "VOTRE MARQUE",
-    title: "Votre portail. Votre façon d’investir.",
-    intro:
-      "Un espace de candidature personnalisé, construit sur le même moteur documentaire.",
-    items: [
-      [
-        "Identité",
-        "Nom, couleur, présentation et parcours propres à votre organisation.",
-      ],
-      [
-        "Critères",
-        "Paramétrez votre thèse et vos questions sans développement spécifique.",
-      ],
-      [
-        "Domaine personnalisé",
-        "Activation accompagnée après vérification de propriété et configuration HTTPS.",
-      ],
-    ],
-  },
-  referentiel: {
-    kicker: "RÉFÉRENTIEL FUNDROAD",
-    title: "La confiance commence par la clarté.",
-    intro:
-      "Le score mesure la complétude documentaire. Il ne mesure pas la probabilité de financement.",
-    items: [
-      [
-        "Complétude",
-        "Neuf rubriques documentées et confirmées, avec les pièces et exigences applicables.",
-      ],
-      [
-        "Contrôles automatisés",
-        "Les sources et incohérences sont examinées. Les informations inconnues restent à compléter.",
-      ],
-      [
-        "Attestation datée",
-        "L’attestation concerne une version et un référentiel. Elle ne certifie ni l’authenticité des documents ni la qualité d’un investissement.",
-      ],
-    ],
-  },
-  partenaires: {
-    kicker: "PARTENAIRES",
-    title: "Recommandez un parcours utile.",
-    intro:
-      "Deux programmes distincts, avec des conditions explicites avant activation.",
-    items: [
-      [
-        "Parrainage startup",
-        "Une réduction pour la startup invitée et une remise sur un prochain achat pour la startup marraine.",
-      ],
-      [
-        "Affiliation fonds",
-        "Le contrat, le code et les commissions sont rattachés à l’organisation. Aucun versement personnel aux salariés.",
-      ],
-      [
-        "Indépendance",
-        "La rémunération ne modifie jamais le score, l’attestation ou la décision d’investissement.",
-      ],
-    ],
-  },
-  confiance: {
-    kicker: "DONNÉES & CONFIANCE",
-    title: "Vos documents restent sous contrôle.",
-    intro:
-      "Comptes et documents sont hébergés par Fund Road. Seuls les extraits utiles à l’analyse sont transmis à notre fournisseur d’IA.",
-    items: [
-      [
-        "Accès limités",
-        "Chaque espace dispose de permissions propres. Un lien de parrainage ne donne aucun accès aux dossiers.",
-      ],
-      [
-        "Partage nominatif",
-        "Choisissez les destinataires et révoquez leurs accès futurs. Les copies déjà téléchargées ne peuvent pas être effacées à distance.",
-      ],
-      [
-        "Traçabilité",
-        "Chaque information du dossier garde sa source : le document et la citation exacte dont elle provient.",
-      ],
-    ],
-  },
-  ressources: {
-    kicker: "RESSOURCES",
-    title: "Préparer les bonnes informations.",
-    intro:
-      "Les guides détaillés arrivent. Voici déjà ce qu’un financeur vous demandera.",
-    items: [
-      [
-        "Votre activité",
-        "Présentation, équipe, problème résolu, offre et modèle économique.",
-      ],
-      [
-        "Vos preuves",
-        "Traction datée, contrats partageables, finances réalisées et hypothèses prévisionnelles.",
-      ],
-      [
-        "Votre demande",
-        "Montant, forme, calendrier, répartition et jalons attendus.",
-      ],
-    ],
-  },
-};
 function Resources() {
   const { data, error } = useLoad<any[]>("/resources");
   return (

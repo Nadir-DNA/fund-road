@@ -22,3 +22,20 @@ test("SEO : page de fonds propre au financeur et échappée", () => {
   assert.ok(html.includes('"@type":"BreadcrumbList"'));
   assert.equal(slugify("Élan Capital & Co"), "elan-capital-co");
 });
+test("SEO : titres et descriptions dans les longueurs affichées par Google", async () => {
+  const { pageMeta } = await import("../shared/content.ts");
+  for (const [path, m] of Object.entries(pageMeta)) {
+    assert.ok(m.title.length <= 60, `${path} titre ${m.title.length}`);
+    assert.ok(m.description.length <= 160, `${path} description ${m.description.length}`);
+  }
+  const html = renderProfile(index, {
+    id: "f2",
+    slug: "long",
+    kind: "fund",
+    name: "Fonds Très Long",
+    theme: {},
+    criteria: { ticket: "x".repeat(80), sectors: "y ".repeat(60) },
+  });
+  const d = html.match(/name="description" content="([^"]*)"/)![1];
+  assert.ok(d.length <= 160, String(d.length));
+});

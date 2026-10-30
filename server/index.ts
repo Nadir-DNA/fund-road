@@ -1154,13 +1154,10 @@ try {
   await app.register(serveStatic, {
     root: path.resolve("dist"),
     wildcard: false,
+    // l'accueil est servi par registerSeo, avec ses balises
+    index: false,
   });
   registerSeo(app, await readFile(path.resolve("dist/index.html"), "utf8"));
-  app.setNotFoundHandler((req, reply) => {
-    if (req.url.startsWith("/api/"))
-      return reply.code(404).send({ error: "Route inconnue" });
-    return reply.sendFile("index.html");
-  });
 } catch {}
 await mkdir(config.data, { recursive: true, mode: 0o700 });
 await app.listen({ port: config.port, host: process.env.HOST || "127.0.0.1" });
