@@ -1,7 +1,12 @@
 import type { FastifyInstance } from "fastify";
 import { db } from "./db.ts";
 import { config } from "./config.ts";
-import { pageMeta, publicCopy, faq } from "../shared/content.ts";
+import {
+  pageMeta,
+  publicCopy,
+  faq,
+  financeursPage,
+} from "../shared/content.ts";
 
 export const slugify = (s: string) =>
   s
@@ -208,6 +213,15 @@ export function renderProfile(index: string, p: any) {
   });
 }
 
+const faqLd = (items: [string, string][]) => ({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: items.map(([q, a]) => ({
+    "@type": "Question",
+    name: q,
+    acceptedAnswer: { "@type": "Answer", text: a },
+  })),
+});
 // Pages publiques fixes : textes partagés avec l'interface (shared/content.ts)
 async function staticPage(path: string): Promise<Page | null> {
   const meta = pageMeta[path];
@@ -227,15 +241,7 @@ async function staticPage(path: string): Promise<Page | null> {
           inLanguage: "fr-FR",
         },
         software(offers),
-        {
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: faq.map(([q, a]) => ({
-            "@type": "Question",
-            name: q,
-            acceptedAnswer: { "@type": "Answer", text: a },
-          })),
-        },
+        faqLd(faq),
       ],
       body: `<main>${nav}
       <h1>Votre dossier de levée, prêt pour le comité.</h1>
@@ -292,6 +298,19 @@ async function staticPage(path: string): Promise<Page | null> {
             `<li><a href="/fonds/${esc(p.slug)}">${esc(p.theme?.name || p.name)}</a> · ${esc(kinds[p.kind] || p.kind || "Financeur")}${p.criteria?.ticket ? ` · ticket ${esc(p.criteria.ticket)}` : ""}</li>`,
         )
         .join("")}</ul></main>`,
+    };
+  }
+  if (path === "/financeurs") {
+    const f = financeursPage;
+    return {
+      ...base,
+      ld: [faqLd(f.faq), crumbs([["Financeurs", path]])],
+      body: `<main>${nav}<h1>${esc(f.title)}</h1><p>${esc(f.intro)}</p>
+      ${f.steps.map((x, i) => `<h2>${i + 1}. ${esc(x.t)}</h2><p>${esc(x.s)}</p><ul>${x.pts.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>`).join("")}
+      ${f.features.map(([t, d]) => `<h2>${esc(t)}</h2><p>${esc(d)}</p>`).join("")}
+      <h2>Questions fréquentes</h2>
+      ${f.faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}
+      <p><a href="/inscription">Créer mon espace financeur</a> · <a href="/annuaire">Voir l’annuaire</a></p></main>`,
     };
   }
   const key = path.slice(1);

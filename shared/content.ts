@@ -23,26 +23,6 @@ export const publicCopy: Record<
       ],
     ],
   },
-  financeurs: {
-    kicker: "BUSINESS ANGELS & FONDS",
-    title: "Concentrez-vous sur les projets.",
-    intro:
-      "Vos critères structurent les candidatures. L’IA vous aide à préparer les questions et les synthèses.",
-    items: [
-      [
-        "Deux portes d’entrée",
-        "Importez des documents reçus ou invitez les startups à compléter leur dossier.",
-      ],
-      [
-        "Votre cadre d’analyse",
-        "Thèse, secteur, stade, géographie, tickets et questions spécifiques.",
-      ],
-      [
-        "Vos échanges, au bon endroit",
-        "Distinguez les questions partagées et les notes réservées à votre équipe.",
-      ],
-    ],
-  },
   "marque-blanche": {
     kicker: "VOTRE MARQUE",
     title: "Votre portail. Votre façon d’investir.",
@@ -143,6 +123,92 @@ export const publicCopy: Record<
       ],
     ],
   },
+};
+
+// Page vitrine des financeurs (fonds, business angels, réseaux, incubateurs)
+export const financeursPage = {
+  title: "Suivez chaque startup, de la candidature au portefeuille.",
+  intro:
+    "Fonds, business angels, réseaux et incubateurs : recevez des dossiers structurés selon vos critères, voyez leur complétude et leur adéquation, puis suivez chaque startup jusqu’à l’investissement. Gratuit pendant le lancement.",
+  points: [
+    "Gratuit pendant le lancement",
+    "Adéquation à vos critères vérifiée par l’IA",
+    "Fiche publique dans l’annuaire",
+  ],
+  steps: [
+    {
+      t: "Publiez vos critères",
+      s: "Thèse, secteurs, stade, géographie, ticket, exclusions, pièces demandées et questions. Votre portail de candidature et votre fiche d’annuaire se mettent à jour aussitôt.",
+      pts: [
+        "Logo et couleur de votre organisation",
+        "Pièces et questions propres à votre fonds",
+        "Fiche publique fund-road.com/fonds/votre-nom",
+      ],
+      img: "/screens/fiche-fonds.webp",
+      h: 639,
+      alt: "Fiche publique d’un fonds : ticket, stade, zone, secteurs et pièces demandées",
+    },
+    {
+      t: "Recevez des dossiers déjà vérifiés",
+      s: "Chaque dossier reçu est comparé à vos critères par l’IA, avec la citation qui justifie chaque point. Les pièces manquantes et les critères bloquants sont signalés avant votre première lecture.",
+      pts: [
+        "Questions envoyées directement à la startup",
+        "Pièces partagées téléchargeables",
+        "Notes privées réservées à votre équipe",
+      ],
+      img: "/screens/dossier-recu.webp",
+      h: 733,
+      alt: "Dossier reçu par un fonds : questions du financeur, pièces partagées et notes privées",
+    },
+    {
+      t: "Suivez vos startups dans le temps",
+      s: "Un tableau de suivi pour tout votre flux : complétude de chaque dossier, avancement depuis le dernier envoi, adéquation à vos critères et étape de suivi.",
+      pts: [
+        "Étapes : nouveau, en revue, rendez-vous, due diligence, en portefeuille",
+        "Repère quand une startup a fait avancer son dossier",
+        "Incubateurs : toutes vos startups accompagnées au même endroit",
+      ],
+      img: "/screens/pipeline.webp",
+      h: 956,
+      alt: "Tableau de suivi d’un fonds : startups suivies, complétude moyenne, adéquation et étapes",
+    },
+  ],
+  features: [
+    [
+      "Confidentialité respectée",
+      "Vous voyez la version que la startup vous a partagée. De son dossier en cours, seul le pourcentage d’avancement vous parvient.",
+    ],
+    [
+      "Toute votre équipe",
+      "Invitez vos associés et analystes, avec des rôles distincts pour éditer ou seulement consulter.",
+    ],
+    [
+      "Visible sur Google",
+      "Votre fiche d’annuaire est une page publique, pensée pour apparaître quand une startup cherche votre nom.",
+    ],
+    [
+      "Aucune commission",
+      "Fund Road ne prend rien sur les levées ni sur les subventions obtenues.",
+    ],
+  ] as [string, string][],
+  faq: [
+    [
+      "Combien coûte l’espace financeur ?",
+      "Rien pendant le lancement : suivi, portail, critères, pièces demandées et notes d’équipe sont gratuits pour les fonds, business angels, réseaux et incubateurs.",
+    ],
+    [
+      "Comment les startups me trouvent-elles ?",
+      "Par votre lien de candidature, que vous partagez où vous voulez, et par l’annuaire Fund Road, où votre fiche publique reprend vos critères et vos pièces demandées.",
+    ],
+    [
+      "Que vois-je du dossier d’une startup ?",
+      "La version datée qu’elle vous a partagée, avec les pièces choisies. Tant que le partage est actif, vous voyez aussi le pourcentage d’avancement de son dossier, jamais son contenu en cours.",
+    ],
+    [
+      "L’IA décide-t-elle à ma place ?",
+      "Non. Elle vérifie chacun de vos critères avec une citation à l’appui et signale ce qui manque. La décision reste entièrement la vôtre.",
+    ],
+  ] as [string, string][],
 };
 
 export const faq: [string, string][] = [

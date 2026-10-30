@@ -7,6 +7,8 @@ import { MotionPathPlugin } from "gsap/MotionPathPlugin";
 import Lenis from "lenis";
 
 gsap.registerPlugin(ScrollTrigger, SplitText, MotionPathPlugin);
+// une chorégraphie partagée vise des éléments absents de certaines pages
+gsap.config({ nullTargetWarn: false });
 export { gsap, ScrollTrigger, SplitText };
 
 export const reduit = () =>
@@ -38,6 +40,12 @@ export function demarrerDefilement() {
     lenis = null;
     ro.disconnect();
   };
+}
+
+// Changement de page : on repart du haut, y compris dans la cible interne de Lenis
+export function remonter() {
+  lenis?.scrollTo(0, { immediate: true, force: true });
+  window.scrollTo(0, 0);
 }
 
 export function allerA(cible: string) {
@@ -72,23 +80,42 @@ export function revelerTitres() {
           duration: 0.9,
           ease: "expo.out",
           stagger: 0.05,
-          scrollTrigger: { trigger: el, start: "top 85%", once: true },
+          scrollTrigger: { trigger: el, start: "top 85%" },
         }),
     });
   });
-  gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
-    gsap.from(
+  gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) =>
+    entree(
       el.children.length && el.dataset.reveal === "stagger" ? el.children : el,
+      { y: 36 },
       {
-        y: 36,
-        autoAlpha: 0,
         duration: 0.9,
         ease: "power3.out",
         stagger: 0.08,
-        scrollTrigger: { trigger: el, start: "top 88%", once: true },
+        scrollTrigger: { trigger: el, start: "top 88%" },
       },
-    );
-  });
+    ),
+  );
+}
+
+// Apparition au défilement : état final explicite, puis styles rendus au CSS.
+// (gsap.from lirait un état final faussé si une transition CSS est en cours)
+export function entree(
+  targets: gsap.TweenTarget,
+  depart: gsap.TweenVars,
+  vars: gsap.TweenVars,
+) {
+  return gsap.fromTo(
+    targets,
+    { autoAlpha: 0, ...depart },
+    {
+      autoAlpha: 1,
+      x: 0,
+      y: 0,
+      clearProps: "opacity,visibility,transform",
+      ...vars,
+    },
+  );
 }
 
 // Bouton « aimanté » : suit légèrement le pointeur, seulement avec une souris

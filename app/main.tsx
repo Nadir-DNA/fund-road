@@ -1,6 +1,7 @@
 import React, {
   useState,
   useEffect,
+  useLayoutEffect,
   useRef,
   createContext,
   useContext,
@@ -56,7 +57,7 @@ import {
 } from "./icons";
 import { requirements, score, type DossierState } from "../shared/domain";
 import "./style.css";
-import { publicCopy, faq, pageMeta } from "../shared/content";
+import { publicCopy, faq, pageMeta, financeursPage } from "../shared/content";
 import {
   gsap,
   SplitText,
@@ -65,6 +66,8 @@ import {
   revelerTitres,
   aimanter,
   allerA,
+  remonter,
+  entree,
 } from "./motion";
 export async function api(url: string, method = "GET", body?: any) {
   const r = await fetch("/api" + url, {
@@ -283,239 +286,247 @@ function PublicLayout({
     </>
   );
 }
-function Landing() {
-  const ref = useRef<HTMLElement>(null);
-  useGsap(ref, (reduce) => {
-    aimanter(".hero-actions .button");
-    if (reduce) return;
-    revelerTitres();
-    // Entrée : titre mot à mot, coup de pinceau, route qui se dessine
-    const titre = SplitText.create(".hero h1", {
-      type: "words",
-      mask: "words",
-    });
-    const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
-    tl.from(titre.words, { yPercent: 115, duration: 1.1, stagger: 0.06 })
-      .from(
-        ".brush path",
-        {
-          scaleX: 0,
-          transformOrigin: "0 50%",
-          duration: 0.8,
-          ease: "power3.inOut",
-        },
-        0.55,
-      )
-      .from(
-        ".hero-copy > div > *",
-        { y: 28, autoAlpha: 0, duration: 0.9, stagger: 0.1 },
-        0.35,
-      )
-      .from(
-        ".hero-points li",
-        { y: 18, autoAlpha: 0, duration: 0.7, stagger: 0.08 },
-        0.7,
-      )
-      .fromTo(
-        ".road .edge",
-        { strokeDashoffset: 1 },
-        {
-          strokeDashoffset: 0,
-          duration: 2,
-          ease: "power2.inOut",
-          stagger: 0.15,
-        },
-        0,
-      )
-      .from(".road .lane", { autoAlpha: 0, duration: 0.6 }, 1.4)
-      .fromTo(
-        ".road .car",
-        { autoAlpha: 0 },
-        { autoAlpha: 1, duration: 0.6 },
-        1.5,
-      )
-      .from(".hero-shot", { y: 120, autoAlpha: 0, duration: 1.4 }, 0.45);
-    // La voie centrale défile en continu
-    gsap.to(".road .lane", {
-      strokeDashoffset: -68,
-      duration: 1.4,
-      ease: "none",
-      repeat: -1,
-    });
-    // Le véhicule part sous le titre et descend la route plus vite que la page ne défile
-    const voie = {
-      path: ".road .lane",
-      align: ".road .lane",
-      alignOrigin: [0.5, 0.5],
-    };
-    gsap.fromTo(
+// Route de la marque, dessinée et parcourue par animerVitrine
+const Road = () => (
+  <svg className="road" viewBox="0 0 600 560" fill="none" aria-hidden="true">
+    <path
+      className="edge"
+      pathLength={1}
+      d="M478 0C436 128 214 168 248 312S338 488 112 560"
+      stroke="currentColor"
+      strokeWidth="7"
+    />
+    <path
+      className="edge"
+      pathLength={1}
+      d="M520 0C486 132 308 176 348 312S452 486 316 560"
+      stroke="currentColor"
+      strokeWidth="7"
+    />
+    <path
+      className="lane"
+      d="M499 0C461 130 261 172 298 312S395 487 214 560"
+      stroke="currentColor"
+      strokeWidth="4"
+      strokeDasharray="18 16"
+    />
+    <circle className="car" r="11" cx="0" cy="0" />
+  </svg>
+);
+// Chorégraphie partagée par les pages vitrines (accueil, financeurs) : mêmes classes, mêmes effets
+function animerVitrine(reduce: boolean) {
+  aimanter(".hero-actions .button");
+  if (reduce) return;
+  revelerTitres();
+  // Entrée : titre mot à mot, coup de pinceau, route qui se dessine
+  const titre = SplitText.create(".hero h1", {
+    type: "words",
+    mask: "words",
+  });
+  const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
+  tl.from(titre.words, { yPercent: 115, duration: 1.1, stagger: 0.06 })
+    .from(
+      ".brush path",
+      {
+        scaleX: 0,
+        transformOrigin: "0 50%",
+        duration: 0.8,
+        ease: "power3.inOut",
+      },
+      0.55,
+    )
+    .from(
+      ".hero-copy > div > *",
+      { y: 28, autoAlpha: 0, duration: 0.9, stagger: 0.1 },
+      0.35,
+    )
+    .from(
+      ".hero-points li",
+      { y: 18, autoAlpha: 0, duration: 0.7, stagger: 0.08 },
+      0.7,
+    )
+    .fromTo(
+      ".road .edge",
+      { strokeDashoffset: 1 },
+      {
+        strokeDashoffset: 0,
+        duration: 2,
+        ease: "power2.inOut",
+        stagger: 0.15,
+      },
+      0,
+    )
+    .from(".road .lane", { autoAlpha: 0, duration: 0.6 }, 1.4)
+    .fromTo(
       ".road .car",
-      { motionPath: { ...voie, start: 0.3, end: 0.3 } },
-      {
-        motionPath: { ...voie, start: 0.3, end: 0.97 },
-        ease: "none",
-        scrollTrigger: {
-          trigger: ".hero",
-          start: "top top",
-          end: "+=320",
-          scrub: 0.6,
-        },
+      { autoAlpha: 0 },
+      { autoAlpha: 1, duration: 0.6 },
+      1.5,
+    )
+    .from(".hero-shot", { y: 120, autoAlpha: 0, duration: 1.4 }, 0.45);
+  // La voie centrale défile en continu
+  gsap.to(".road .lane", {
+    strokeDashoffset: -68,
+    duration: 1.4,
+    ease: "none",
+    repeat: -1,
+  });
+  // Le véhicule part sous le titre et descend la route plus vite que la page ne défile
+  const voie = {
+    path: ".road .lane",
+    align: ".road .lane",
+    alignOrigin: [0.5, 0.5],
+  };
+  gsap.fromTo(
+    ".road .car",
+    { motionPath: { ...voie, start: 0.3, end: 0.3 } },
+    {
+      motionPath: { ...voie, start: 0.3, end: 0.97 },
+      ease: "none",
+      scrollTrigger: {
+        trigger: ".hero",
+        start: "top top",
+        end: "+=320",
+        scrub: 0.6,
       },
-    );
-    // Capture du produit : se redresse en perspective au défilement
-    gsap.fromTo(
-      ".hero-shot img",
-      { rotateX: 18, scale: 0.94 },
-      {
-        rotateX: 0,
-        scale: 1,
-        ease: "none",
-        scrollTrigger: {
-          trigger: ".hero-shot",
-          start: "top 95%",
-          end: "top 25%",
-          scrub: 0.8,
-        },
+    },
+  );
+  // Capture du produit : se redresse en perspective au défilement
+  gsap.fromTo(
+    ".hero-shot img",
+    { rotateX: 18, scale: 0.94 },
+    {
+      rotateX: 0,
+      scale: 1,
+      ease: "none",
+      scrollTrigger: {
+        trigger: ".hero-shot",
+        start: "top 95%",
+        end: "top 25%",
+        scrub: 0.8,
       },
-    );
-    // Parcours : chaque capture se dévoile puis glisse légèrement
-    gsap.utils.toArray<HTMLElement>(".tour-row").forEach((row, i) => {
-      const shot = row.querySelector(".shot");
-      gsap.from(row.querySelectorAll(".step-pill, h3, p, li"), {
-        y: 30,
-        autoAlpha: 0,
+    },
+  );
+  // Parcours : chaque capture se dévoile puis glisse légèrement
+  gsap.utils.toArray<HTMLElement>(".tour-row").forEach((row, i) => {
+    const shot = row.querySelector(".shot");
+    entree(
+      row.querySelectorAll(".step-pill, h3, p, li"),
+      { y: 30 },
+      {
         duration: 0.8,
         ease: "power3.out",
         stagger: 0.06,
-        scrollTrigger: { trigger: row, start: "top 80%", once: true },
-      });
-      gsap.fromTo(
-        shot,
-        {
-          clipPath:
-            i % 2
-              ? "inset(0 0 0 100% round 20px)"
-              : "inset(0 100% 0 0 round 20px)",
+        scrollTrigger: { trigger: row, start: "top 80%" },
+      },
+    );
+    gsap.fromTo(
+      shot,
+      {
+        clipPath:
+          i % 2
+            ? "inset(0 0 0 100% round 20px)"
+            : "inset(0 100% 0 0 round 20px)",
+      },
+      {
+        clipPath: "inset(0 0% 0 0% round 20px)",
+        duration: 1.3,
+        ease: "expo.inOut",
+        scrollTrigger: { trigger: row, start: "top 75%" },
+      },
+    );
+    gsap.fromTo(
+      shot,
+      { yPercent: 8 },
+      {
+        yPercent: -8,
+        ease: "none",
+        scrollTrigger: {
+          trigger: row,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: true,
         },
-        {
-          clipPath: "inset(0 0% 0 0% round 20px)",
-          duration: 1.3,
-          ease: "expo.inOut",
-          scrollTrigger: { trigger: row, start: "top 75%", once: true },
-        },
-      );
-      gsap.fromTo(
-        shot,
-        { yPercent: 8 },
-        {
-          yPercent: -8,
-          ease: "none",
-          scrollTrigger: {
-            trigger: row,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: true,
-          },
-        },
-      );
-    });
-    // Fonctionnalités : cartes en cascade, compteur et jauge
-    gsap.from(".feature", {
-      y: 50,
-      autoAlpha: 0,
+      },
+    );
+  });
+  // Fonctionnalités : cartes en cascade, compteur et jauge
+  entree(
+    ".feature",
+    { y: 50 },
+    {
       duration: 0.9,
       ease: "power3.out",
       stagger: 0.08,
-      scrollTrigger: { trigger: ".features", start: "top 80%", once: true },
-    });
-    const n = { v: 0 };
-    gsap.to(n, {
-      v: 7,
-      duration: 1.4,
-      ease: "power2.out",
-      onUpdate: () => {
-        const el = document.querySelector(".mini-score .count");
-        if (el) el.textContent = String(Math.round(n.v));
-      },
-      scrollTrigger: { trigger: ".mini-score", start: "top 85%", once: true },
-    });
-    gsap.from(".feature .bar > span", {
-      scaleX: 0,
-      transformOrigin: "0 50%",
-      duration: 1.4,
-      ease: "power3.out",
-      scrollTrigger: { trigger: ".feature .bar", start: "top 90%", once: true },
-    });
-    // Bandeau financeurs et appel final
-    gsap.from(".band-night li", {
-      x: 60,
-      autoAlpha: 0,
+      scrollTrigger: { trigger: ".features", start: "top 80%" },
+    },
+  );
+  const n = { v: 0 };
+  gsap.to(n, {
+    v: 7,
+    duration: 1.4,
+    ease: "power2.out",
+    onUpdate: () => {
+      const el = document.querySelector(".mini-score .count");
+      if (el) el.textContent = String(Math.round(n.v));
+    },
+    scrollTrigger: { trigger: ".mini-score", start: "top 85%" },
+  });
+  gsap.from(".feature .bar > span", {
+    scaleX: 0,
+    transformOrigin: "0 50%",
+    duration: 1.4,
+    ease: "power3.out",
+    scrollTrigger: { trigger: ".feature .bar", start: "top 90%" },
+  });
+  // Bandeau financeurs et appel final
+  entree(
+    ".band-night li",
+    { x: 60 },
+    {
       duration: 0.9,
       ease: "power3.out",
       stagger: 0.12,
       scrollTrigger: {
         trigger: ".band-night ul",
         start: "top 80%",
-        once: true,
       },
-    });
-    gsap.from(".faq details", {
-      y: 24,
-      autoAlpha: 0,
+    },
+  );
+  entree(
+    ".faq details",
+    { y: 24 },
+    {
       duration: 0.7,
       ease: "power3.out",
       stagger: 0.07,
-      scrollTrigger: { trigger: ".faq", start: "top 85%", once: true },
-    });
-    gsap.fromTo(
-      ".cta-band > div",
-      { scale: 0.92, borderRadius: "48px" },
-      {
-        scale: 1,
-        borderRadius: "24px",
-        ease: "none",
-        scrollTrigger: {
-          trigger: ".cta-band",
-          start: "top bottom",
-          end: "top 40%",
-          scrub: true,
-        },
+      scrollTrigger: { trigger: ".faq", start: "top 85%" },
+    },
+  );
+  gsap.fromTo(
+    ".cta-band > div",
+    { scale: 0.92, borderRadius: "48px" },
+    {
+      scale: 1,
+      borderRadius: "24px",
+      ease: "none",
+      scrollTrigger: {
+        trigger: ".cta-band",
+        start: "top bottom",
+        end: "top 40%",
+        scrub: true,
       },
-    );
-  });
+    },
+  );
+}
+function Landing() {
+  const ref = useRef<HTMLElement>(null);
+  useGsap(ref, animerVitrine);
   return (
     <PublicLayout gsapPage>
       <main ref={ref} className="home">
         <section className="hero">
-          <svg
-            className="road"
-            viewBox="0 0 600 560"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              className="edge"
-              pathLength={1}
-              d="M478 0C436 128 214 168 248 312S338 488 112 560"
-              stroke="currentColor"
-              strokeWidth="7"
-            />
-            <path
-              className="edge"
-              pathLength={1}
-              d="M520 0C486 132 308 176 348 312S452 486 316 560"
-              stroke="currentColor"
-              strokeWidth="7"
-            />
-            <path
-              className="lane"
-              d="M499 0C461 130 261 172 298 312S395 487 214 560"
-              stroke="currentColor"
-              strokeWidth="4"
-              strokeDasharray="18 16"
-            />
-            <circle className="car" r="11" cx="0" cy="0" />
-          </svg>
+          <Road />
           <div className="hero-inner">
             <div className="hero-copy">
               <h1>
@@ -836,6 +847,124 @@ function ResourcePage() {
             </p>
           </>
         )}
+      </main>
+    </PublicLayout>
+  );
+}
+function FinanceursPage() {
+  const ref = useRef<HTMLElement>(null);
+  useGsap(ref, animerVitrine);
+  const f = financeursPage;
+  return (
+    <PublicLayout gsapPage>
+      <main ref={ref} className="home">
+        <section className="hero">
+          <Road />
+          <div className="hero-inner">
+            <div className="hero-copy">
+              <h1>{f.title}</h1>
+              <div>
+                <p>{f.intro}</p>
+                <div className="hero-actions">
+                  <Link className="button accent" to="/inscription">
+                    Créer mon espace financeur <ArrowRight size={17} />
+                  </Link>
+                  <Link className="button ghost" to="/annuaire">
+                    Voir l’annuaire
+                  </Link>
+                </div>
+              </div>
+            </div>
+            <ul className="hero-points">
+              {f.points.map((p) => (
+                <li key={p}>
+                  <Check size={16} /> {p}
+                </li>
+              ))}
+            </ul>
+            <figure className="hero-shot">
+              <img
+                src="/screens/pipeline.webp"
+                width={1600}
+                height={956}
+                {...{ fetchpriority: "high" }}
+                alt="Tableau de suivi d’un fonds sur Fund Road : startups suivies, complétude moyenne, adéquation aux critères et étapes"
+              />
+            </figure>
+          </div>
+        </section>
+        <section className="section">
+          <div className="section-head">
+            <span className="kicker">Comment ça marche</span>
+            <h2 data-split>
+              Vos critères en entrée, des dossiers comparables en sortie.
+            </h2>
+          </div>
+          <div className="tour">
+            {f.steps.map((x, i) => (
+              <div className="tour-row" key={x.t}>
+                <div>
+                  <span className="step-pill">{i + 1}</span>
+                  <h3>{x.t}</h3>
+                  <p>{x.s}</p>
+                  <ul>
+                    {x.pts.map((p) => (
+                      <li key={p}>
+                        <CheckCircle2 size={16} /> {p}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <figure className="shot">
+                  <img
+                    src={x.img}
+                    alt={x.alt}
+                    width={1600}
+                    height={x.h}
+                    loading="lazy"
+                  />
+                </figure>
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="section" style={{ paddingTop: 0 }}>
+          <div className="section-head">
+            <span className="kicker">Pourquoi Fund Road</span>
+            <h2 data-split>Pensé pour la façon dont vous investissez.</h2>
+          </div>
+          <div className="features four">
+            {f.features.map(([t, d], i) => (
+              <article className="feature" key={t}>
+                {[<ShieldCheck />, <Users />, <Globe />, <CheckCircle2 />][i]}
+                <h3>{t}</h3>
+                <p>{d}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+        <section className="section">
+          <div className="section-head">
+            <span className="kicker">Questions fréquentes</span>
+            <h2 data-split>Ce que les financeurs nous demandent.</h2>
+          </div>
+          <div className="faq">
+            {f.faq.map(([q, a]) => (
+              <details key={q}>
+                <summary>{q}</summary>
+                <p>{a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+        <section className="cta-band">
+          <div>
+            <h2 data-split>Recevez votre prochain dossier déjà vérifié.</h2>
+            <Link className="button accent" to="/inscription">
+              Créer mon espace financeur <ArrowRight size={17} />
+            </Link>
+          </div>
+        </section>
       </main>
     </PublicLayout>
   );
@@ -3654,6 +3783,12 @@ function SharedApplication() {
     </PublicLayout>
   );
 }
+// Chaque nouvelle page s'ouvre en haut (sinon on arrive à la position de la page précédente)
+function ScrollTop() {
+  const { pathname } = useLocation();
+  useLayoutEffect(remonter, [pathname]);
+  return null;
+}
 function Root() {
   const [toast, setToast] = useState("");
   useEffect(() => {
@@ -3670,10 +3805,12 @@ function Root() {
   return (
     <ToastContext.Provider value={setToast}>
       <BrowserRouter>
+        <ScrollTop />
         <Routes>
           <Route path="/ressources" element={<Resources />} />
           <Route path="/ressources/:slug" element={<ResourcePage />} />
           <Route path="/" element={<Landing />} />
+          <Route path="/financeurs" element={<FinanceursPage />} />
           {Object.keys(publicCopy)
             .filter((p) => p !== "ressources")
             .map((p) => (

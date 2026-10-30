@@ -482,6 +482,10 @@ svg {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-sm);
 }
+/* Quatre cartes sans carte large : une seule rangée sur ordinateur */
+.features.four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
 .feature {
   background: var(--color-paper-3);
   border: 1px solid var(--color-rule);
@@ -1995,7 +1999,13 @@ legend {
       box-shadow var(--dur-med) var(--ease-out),
       opacity 700ms var(--ease-out);
   }
-  .feature.in:hover,
+  /* Cartes animées par GSAP : pas de transition d'opacité concurrente */
+  .feature {
+    transition:
+      transform var(--dur-med) var(--ease-out),
+      box-shadow var(--dur-med) var(--ease-out);
+  }
+  .feature:hover,
   .cols > article.in:hover,
   .price-card:hover {
     transform: translateY(-4px);
@@ -2031,7 +2041,8 @@ legend {
   .tour-row:nth-child(even) > :first-child {
     order: 0;
   }
-  .features {
+  .features,
+  .features.four {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .content-grid {
@@ -2161,7 +2172,8 @@ legend {
   .hero-shot {
     padding: 6px 6px 0;
   }
-  .features {
+  .features,
+  .features.four {
     grid-template-columns: minmax(0, 1fr);
   }
   .feature.wide {
