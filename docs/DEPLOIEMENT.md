@@ -6,7 +6,7 @@ aucun port ouvert, HTTPS et cache gérés par Cloudflare. Projet Docker : `fundr
 
 ## 1. Domaine sur Cloudflare (une fois)
 1. Cloudflare → *Add a site* → `fund-road.com`, offre Free.
-2. OVH → Domaines → `fund-road.com` → *Serveurs DNS* → remplacer par les deux serveurs donnés par Cloudflare.
+2. OVH → Domaines → `fund-road.com` → *Serveurs DNS* → remplacer par `craig.ns.cloudflare.com` et `lana.ns.cloudflare.com`. La messagerie OVH est recopiée dans Cloudflare par `scripts/cloudflare-setup.py`.
 3. Attendre l'activation (quelques minutes à 24 h).
 
 ## 2. Tunnel (une fois)

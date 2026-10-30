@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Configure Cloudflare pour fund-road.com : tunnel `fundroad`, DNS du site et messagerie IONOS conservée.
+"""Configure Cloudflare pour fund-road.com : tunnel `fundroad`, DNS du site et messagerie OVH conservée.
 
 À lancer une fois depuis la racine du projet. Lit le jeton dans gopass (cloudflare/api-token),
 n'affiche aucun secret et écrit le jeton du tunnel dans .env.production.
@@ -66,18 +66,15 @@ env = open(".env.production").read()
 open(".env.production", "w").write(re.sub(r"^TUNNEL_TOKEN=.*$", "TUNNEL_TOKEN=" + token, env, flags=re.M))
 print("jeton du tunnel écrit dans .env.production")
 
-# 2. DNS : le site passe par le tunnel (proxifié) ; la messagerie IONOS reste en DNS seul
+# 2. DNS : le site passe par le tunnel (proxifié) ; la messagerie OVH reste en DNS seul
 target = f"{tunnel}.cfargotunnel.com"
 records = [
     ("CNAME", "fund-road.com", target, True, None),
     ("CNAME", "www.fund-road.com", target, True, None),
-    ("MX", "fund-road.com", "mx00.ionos.fr", False, 10),
-    ("MX", "fund-road.com", "mx01.ionos.fr", False, 10),
-    ("TXT", "fund-road.com", "v=spf1 include:_spf-eu.ionos.com ~all", False, None),
-    ("CNAME", "autodiscover.fund-road.com", "adsredir.ionos.info", False, None),
-    ("CNAME", "_dmarc.fund-road.com", "dmarc.ionos.fr", False, None),
-    ("CNAME", "s1-ionos._domainkey.fund-road.com", "s1.dkim.ionos.com", False, None),
-    ("CNAME", "s2-ionos._domainkey.fund-road.com", "s2.dkim.ionos.com", False, None),
+    ("MX", "fund-road.com", "mx1.mail.ovh.net", False, 1),
+    ("MX", "fund-road.com", "mx2.mail.ovh.net", False, 5),
+    ("MX", "fund-road.com", "mx3.mail.ovh.net", False, 100),
+    ("TXT", "fund-road.com", "v=spf1 include:mx.ovh.com -all", False, None),
 ]
 for kind, name, content, proxied, priority in records:
     body = {"type": kind, "name": name, "content": content, "ttl": 1}
