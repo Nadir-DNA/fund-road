@@ -168,7 +168,7 @@ export async function analyze(
   const factsCall = callModel(
     "Tu structures un dossier de financement en français. " +
       guard +
-      " Extrais les rubriques demandées avec une citation exacte et un id de document. Signale les contradictions entre sources ou réponses. Une réponse inconnue ne remplit pas une rubrique. Les hypothèses sont explicitement séparées. Résume les faits sourcés. Réponds uniquement par un objet JSON {summary, facts:[{id, value, source, quote, kind: document|hypothesis}], conflicts:[string]}. Les id possibles : " +
+      " Extrais les rubriques demandées avec une citation exacte et un id de document. Pour chaque rubrique, donne jusqu'à quatre faits distincts (un objet par fait, même id), le plus important d'abord, chacun avec sa propre citation. Signale les contradictions entre sources ou réponses. Une réponse inconnue ne remplit pas une rubrique. Les hypothèses sont explicitement séparées. Résume les faits sourcés. Réponds uniquement par un objet JSON {summary, facts:[{id, value, source, quote, kind: document|hypothesis}], conflicts:[string]}. Les id possibles : " +
       requirements.map((r) => r.id).join(", "),
     { today, requirements, confirmed: state.facts, documents: content },
   );
@@ -189,8 +189,9 @@ export async function analyze(
       programs.map((p, i) => [p.id, programResults[i].eligibility]),
     );
   // Par rubrique : le premier fait cité complet ; à défaut le premier fait cité partiel (« … à compléter »),
-  // affiché pour ne pas perdre l'information, mais non compté comme rempli par le score
-  const choisis = new Map<string, (typeof parsed.facts)[number]>();
+  // affiché pour ne pas perdre l'information, mais non compté comme rempli par le score.
+  // Les autres faits cités et complets de la rubrique deviennent des compléments (3 au plus).
+  const candidats = new Map<string, (typeof parsed.facts)[number][]>();
   // au moins un morceau de la valeur apporte une information (pas seulement « non communiqué »)
   const utile = (v: string) =>
     v.split(/[.;]/).some((m) => m.trim().length >= 4 && !hasMissingInformation(m));
@@ -199,19 +200,25 @@ export async function analyze(
     if (!utile(f.value)) continue;
     const doc = documents.find((d) => d.id === f.source);
     if (!doc || !f.quote || !doc.extracted.includes(f.quote)) continue;
-    const actuel = choisis.get(f.id);
-    if (!actuel || (hasMissingInformation(actuel.value) && !hasMissingInformation(f.value)))
-      choisis.set(f.id, f);
+    candidats.set(f.id, [...(candidats.get(f.id) || []), f]);
   }
-  for (const f of choisis.values())
-    if (!next.facts[f.id]?.confirmed)
-      next.facts[f.id] = {
-        value: f.value,
-        source: f.source,
-        quote: f.quote,
-        kind: f.kind,
-        confirmed: false,
-      };
+  for (const [id, liste] of candidats) {
+    if (next.facts[id]?.confirmed) continue;
+    const principal = liste.find((f) => !hasMissingInformation(f.value)) || liste[0];
+    const vus = new Set([principal.quote]);
+    const details = liste
+      .filter((f) => f !== principal && !hasMissingInformation(f.value) && !vus.has(f.quote) && vus.add(f.quote))
+      .slice(0, 3)
+      .map((f) => ({ value: f.value, source: f.source, quote: f.quote }));
+    next.facts[id] = {
+      value: principal.value,
+      source: principal.source,
+      quote: principal.quote,
+      kind: principal.kind,
+      confirmed: false,
+      ...(details.length && { details }),
+    };
+  }
   const all = [factsResult, ...programResults];
   return {
     state: next,

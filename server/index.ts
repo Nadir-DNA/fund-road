@@ -29,7 +29,7 @@ import { programScore, orgProgram } from "../shared/programs.ts";
 import { allPrograms, resolvePrograms } from "./programs.ts";
 import { registerContent } from "./content.ts";
 import { registerBilling } from "./billing.ts";
-import { registerSeo, uniqueSlug, findProfile, listProfiles } from "./seo.ts";
+import { registerSeo, uniqueSlug, findProfile, listProfiles, slugify } from "./seo.ts";
 const app = Fastify({
   logger: { redact: ["req.headers.cookie", "req.headers.authorization"] },
   bodyLimit: 1024 * 1024,
@@ -696,8 +696,18 @@ app.get("/api/dossiers/:id/export/:format", async (req: any, reply) => {
         ? "application/pdf"
         : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
-    .header("Content-Disposition", `attachment; filename="fundroad.${format}"`);
-  return exportDossier(d.name, d.state, format);
+    .header(
+      "Content-Disposition",
+      `attachment; filename="${slugify(d.name) || "dossier"}.${format}"`,
+    );
+  const documents = (
+    await db.query("SELECT id,name FROM documents WHERE dossier_id=$1", [d.id])
+  ).rows;
+  return exportDossier(d.name, d.state, format, {
+    documents,
+    programs: await resolvePrograms(d.state.programs),
+    version: d.revision,
+  });
 });
 app.post("/api/dossiers/:id/attest", async (req: any) => {
   const u = await user(req);

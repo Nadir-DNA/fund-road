@@ -2657,3 +2657,19 @@ legend {
     display: none;
   }
 }
+
+/* Compléments d'une rubrique : chaque information garde sa citation */
+.complements ul {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-2xs) 0 var(--space-sm);
+  display: grid;
+  gap: var(--space-xs);
+}
+.complements li {
+  font-size: var(--text-sm);
+}
+.complements blockquote {
+  margin: var(--space-3xs) 0 0;
+  font-size: var(--text-xs);
+}

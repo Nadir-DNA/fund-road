@@ -62,6 +62,8 @@ export type Fact = {
   confirmed: boolean;
   kind: "declared" | "document" | "hypothesis";
   quote?: string;
+  // informations complémentaires de la même rubrique, chacune avec sa propre citation
+  details?: { value: string; source: string; quote: string }[];
 };
 export type DossierState = {
   facts: Record<string, Fact>;

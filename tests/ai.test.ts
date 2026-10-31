@@ -311,3 +311,28 @@ test("IA : un fait partiel est gardé (non compté comme rempli), une simple abs
     globalThis.fetch = original;
   }
 });
+
+test("IA : compléments d'une rubrique gardés avec leur propre citation, sans doublon ni citation absente", async () => {
+  const original = globalThis.fetch;
+  const texte = "Plateforme en ligne depuis octobre 2026. Aucun client payant à ce jour. 115 fiches de financeurs publiées.";
+  const fait = (value: string, quote: string) => ({ id: "traction", value, source: "doc1", quote, kind: "document" });
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        choices: [{ finish_reason: "stop", message: { content: JSON.stringify({ summary: "", conflicts: [], facts: [
+          fait("En ligne depuis octobre 2026", "Plateforme en ligne depuis octobre 2026."),
+          fait("115 fiches publiées", "115 fiches de financeurs publiées."),
+          fait("Doublon", "Plateforme en ligne depuis octobre 2026."),
+          fait("Inventé", "10 000 utilisateurs actifs"),
+        ] }) } }],
+        usage: { prompt_tokens: 1, completion_tokens: 1 },
+      }),
+    );
+  try {
+    const r = await analyze(emptyState(), [{ id: "doc1", name: "bp.docx", extracted: texte }]);
+    assert.equal(r.state.facts.traction.value, "En ligne depuis octobre 2026");
+    assert.deepEqual(r.state.facts.traction.details?.map((d) => d.value), ["115 fiches publiées"]);
+  } finally {
+    globalThis.fetch = original;
+  }
+});

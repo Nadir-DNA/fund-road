@@ -2446,6 +2446,19 @@ function FactEditor({
           {fact.quote}
         </blockquote>
       )}
+      {fact?.details?.length > 0 && (
+        <div className="complements">
+          <small>COMPLÉMENTS TIRÉS DES DOCUMENTS</small>
+          <ul>
+            {fact.details.map((d: any) => (
+              <li key={d.quote}>
+                {d.value}
+                <blockquote>{d.quote}</blockquote>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <button className="button secondary small" disabled={busy}>
         <Check size={16} /> Confirmer cette information
       </button>
