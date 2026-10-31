@@ -7,7 +7,7 @@
 - Nouvelle interface publique et espaces startup, BA, réseau, fonds et organisme de subvention ; navigation, onboarding organisation, dossiers, annuaire, candidatures, réglages et facturation.
 - PostgreSQL local, authentification locale Better Auth, sessions, rôles propriétaire/éditeur/lecteur, invitations nominatives, double authentification et réinitialisation de mot de passe. Les emails nécessitent SMTP.
 - Upload PDF/DOCX/PPTX/XLSX avec limites, empreinte de dédoublonnage, stockage local et file d’extraction. Reprise des extractions en échec. Un seul worker propriétaire de la file via verrou PostgreSQL.
-- Analyse structurée via OpenAI Responses préparée : références documentaires et citations contrôlées, réponses confirmées préservées, hypothèses non comptées, conflits conservés. **Aucun appel réel au fournisseur n’a été validé.**
+- Analyse structurée via API compatible OpenAI : références documentaires et citations contrôlées, réponses confirmées préservées, hypothèses et absences d’information non comptées, conflits conservés. Appel réel validé sur une fixture AMES synthétique.
 - Neuf rubriques communes, score déterministe de complétude, validation des faits, exports PDF/Word avec statut et citation source. L’attestation est liée à la révision analysée ; sa page publique ne révèle pas le dossier.
 - Portail par organisation : nom, couleur, présentation, thèse et questions spécifiques. La création depuis un portail copie ses exigences dans le dossier ; les réponses se préparent avant envoi. Progression du destinataire distincte du score commun.
 - Fonds pouvant créer un dossier et inviter une startup à le compléter, sans lui ouvrir les autres dossiers de son organisation.
@@ -41,7 +41,7 @@ Les tests API créent des comptes `example.test` et des dossiers synthétiques d
 
 ## Configuration et données
 
-Le worker utilisé pour la recette est lancé avec `--extract-only` : aucun document n’est envoyé à l’IA. Le démarrage général avait été refusé par la validation automatique car il pouvait envoyer des documents à OpenAI ; le mode local a été accepté et testé. Aucun contournement ni appel réel n’a été effectué.
+Le worker est complet par défaut depuis la recette AMES ; `npm run dev:local -- --extract-only` permet de lancer uniquement l’extraction sans envoyer de document à l’IA. La recette IA réelle utilise exclusivement des fixtures synthétiques, avec accord explicite pour leur transmission au fournisseur configuré.
 
 Les anciens fichiers `.env` et `supabase/functions/.env` ont été retirés de l’index Git, conservés sur disque et ignorés. Cela ne retire pas d’éventuels secrets déjà présents dans l’historique public : leur revue et rotation restent à traiter. Aucun secret n’est reproduit dans cette documentation.
 

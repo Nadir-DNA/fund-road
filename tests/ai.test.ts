@@ -5,7 +5,7 @@ process.env.DATABASE_URL ||= "postgres://unused";
 process.env.BETTER_AUTH_SECRET ||= "test-only-unused-secret-32-characters";
 process.env.OPENAI_API_KEY = "mock-key-never-sent";
 process.env.OPENAI_MODEL = "mock-model";
-const { analyze } = await import("../server/ai.ts");
+const { analyze, evaluate } = await import("../server/ai.ts");
 const { findProgram, orgProgram } = await import("../shared/programs.ts");
 test("IA : citations exactes exigées, déclarations confirmées conservées", async () => {
   const original = globalThis.fetch;
@@ -50,6 +50,14 @@ test("IA : citations exactes exigées, déclarations confirmées conservées", a
                     quote: "Entreprise de test",
                     kind: "document",
                   },
+                  {
+                    id: "financials",
+                    value:
+                      "Aucun revenu communiqué ; aucun prévisionnel fourni.",
+                    source: "doc1",
+                    quote: "Entreprise de test",
+                    kind: "document",
+                  },
                 ],
               }),
             },
@@ -75,6 +83,7 @@ test("IA : citations exactes exigées, déclarations confirmées conservées", a
     assert.equal(result.state.facts.team, undefined);
     assert.equal(result.state.facts.market, undefined);
     assert.equal(result.state.facts.traction.confirmed, false);
+    assert.equal(result.state.facts.financials, undefined);
     assert.deepEqual(result.state.conflicts, ["Deux périodes diffèrent"]);
     assert.equal(result.input, 100);
   } finally {
@@ -169,6 +178,57 @@ test("IA : critère de programme sans citation vérifiable ramené à « à vér
     assert.equal(r.state.eligibility!.bft.innovation.status, "ok");
     assert.equal(r.state.eligibility!.bft.inexistant, undefined);
     assert.deepEqual(r.state.programs, ["bft"]);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test("IA : une pièce jointe correspondant au nom demandé est reconnue", async () => {
+  const original = globalThis.fetch;
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({
+                eligibility: [
+                  {
+                    id: "d:f1:0",
+                    status: "unknown",
+                    note: "Le fichier est joint",
+                    source: "doc1",
+                    quote: "",
+                  },
+                ],
+              }),
+            },
+          },
+        ],
+        usage: { prompt_tokens: 10, completion_tokens: 5 },
+      }),
+    );
+  try {
+    const program = orgProgram({
+      id: "f1",
+      name: "Fonds Test",
+      kind: "fund",
+      criteria: { documents: ["Pitch deck"] },
+    });
+    const result = await evaluate(
+      emptyState(),
+      [
+        {
+          id: "doc1",
+          name: "ames-pitch-deck-recette.docx",
+          extracted: "Présentation synthétique",
+        },
+      ],
+      program,
+    );
+    assert.equal(result.eligibility["d:f1:0"].status, "ok");
+    assert.equal(result.eligibility["d:f1:0"].source, "doc1");
   } finally {
     globalThis.fetch = original;
   }

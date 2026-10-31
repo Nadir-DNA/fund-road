@@ -1,95 +1,12 @@
 import { z } from "zod";
-export const requirements = [
-  {
-    id: "company",
-    label: "Présentation de l’entreprise",
-    question: "Quelle est votre entreprise et son activité ?",
-    weight: 1,
-  },
-  {
-    id: "team",
-    label: "Équipe et compétences",
-    question: "Qui porte le projet et avec quelles compétences ?",
-    weight: 1,
-  },
-  {
-    id: "solution",
-    label: "Problème et solution",
-    question: "Quel problème résolvez-vous et comment ?",
-    weight: 1,
-  },
-  {
-    id: "market",
-    label: "Marché et concurrence",
-    question: "Qui sont vos clients et vos concurrents ?",
-    weight: 1,
-  },
-  {
-    id: "business",
-    label: "Modèle économique",
-    question: "Comment générez-vous du revenu ?",
-    weight: 1,
-  },
-  {
-    id: "traction",
-    label: "Traction et preuves",
-    question: "Quels résultats avez-vous obtenus, sur quelle période ?",
-    weight: 1,
-  },
-  {
-    id: "financials",
-    label: "Situation et prévisions financières",
-    question:
-      "Quels sont vos revenus, charges et prévisions, avec leurs hypothèses ?",
-    weight: 1,
-  },
-  {
-    id: "funding",
-    label: "Besoin de financement",
-    question:
-      "Quel montant recherchez-vous, sous quelle forme et à quelle échéance ?",
-    weight: 1,
-  },
-  {
-    id: "allocation",
-    label: "Utilisation des fonds",
-    question: "Comment utiliserez-vous le financement et pour quels jalons ?",
-    weight: 1,
-  },
-] as const;
-export type Fact = {
-  value: string;
-  source: string;
-  confirmed: boolean;
-  kind: "declared" | "document" | "hypothesis";
-  quote?: string;
-};
-export type DossierState = {
-  facts: Record<string, Fact>;
-  conflicts: string[];
-  summary: string;
-  checkedRevision?: number;
-  // programmes et financeurs visés, réponses du porteur par critère, résultat de l'IA par programme
-  programs?: string[];
-  declarations?: Record<string, string>;
-  eligibility?: Record<
-    string,
-    Record<
-      string,
-      {
-        status: "ok" | "ko" | "unknown";
-        note: string;
-        source?: string;
-        quote?: string;
-      }
-    >
-  >;
-};
-export const emptyState = (): DossierState => ({
-  facts: {},
-  conflicts: [],
-  summary: "",
-});
+export * from "./score.ts";
+import { champsParType, regions, secteurs, stades, type TypeFinanceur } from "./criteria.ts";
+export function affiliateAmount(cents: number, refunded: number, rate: number) {
+  return Math.max(0, Math.floor(((cents - refunded) * rate) / 10000));
+}
+export function validColor(value: string) {
+  return /^#[0-9a-f]{6}$/i.test(value);
+}
 export const factSchema = z.object({
   value: z.string().max(12000),
   source: z.string().max(200),
@@ -97,40 +14,6 @@ export const factSchema = z.object({
   kind: z.enum(["declared", "document", "hypothesis"]),
   quote: z.string().max(2000).optional(),
 });
-export function score(state: DossierState) {
-  const completed = requirements.filter((r) => {
-    const f = state.facts[r.id];
-    return (
-      f?.confirmed && f.kind !== "hypothesis" && f.value.trim().length >= 10
-    );
-  });
-  const missing = requirements.filter((r) => !completed.includes(r));
-  return {
-    percent: Math.round((completed.length / requirements.length) * 100),
-    completed: completed.length,
-    total: requirements.length,
-    missing,
-    conflicts: state.conflicts,
-    attestable: missing.length === 0 && state.conflicts.length === 0,
-  };
-}
-export function canAttest(
-  state: DossierState,
-  revision: number,
-  documentCount: number,
-) {
-  return (
-    score(state).attestable &&
-    state.checkedRevision === revision &&
-    documentCount > 0
-  );
-}
-export function affiliateAmount(cents: number, refunded: number, rate: number) {
-  return Math.max(0, Math.floor(((cents - refunded) * rate) / 10000));
-}
-export function validColor(value: string) {
-  return /^#[0-9a-f]{6}$/i.test(value);
-}
 export const dossierInput = z.object({
   name: z.string().trim().min(2).max(150),
   goal: z.enum(["investment", "grant"]),
@@ -146,3 +29,41 @@ export const themeInput = z.object({
   accent: z.string().regex(/^#[0-9a-f]{6}$/i),
   intro: z.string().max(2000),
 });
+
+// Critères d'un financeur : listes fixes, montants en euros, détails limités aux champs de son type
+const euros = z.number().int().min(0).max(1e10).nullable().optional();
+export function criteriaInput(kind: string) {
+  const champs = champsParType[kind as TypeFinanceur] || [];
+  return z.object({
+    sectors: z.array(z.enum(secteurs)).max(secteurs.length).default([]),
+    stages: z.array(z.enum(stades)).max(stades.length).default([]),
+    regions: z.array(z.enum(regions)).max(regions.length).default([]),
+    ticketMin: euros,
+    ticketMax: euros,
+    exclusions: z.string().max(2000).default(""),
+    questions: z.array(z.string().max(1000)).max(30).default([]),
+    documents: z.array(z.string().max(300)).max(30).default([]),
+    details: z
+      .object(
+        Object.fromEntries(
+          champs.map((f) => [
+            f.key,
+            (f.type === "number"
+              ? z.number().min(0).max(1e10)
+              : f.type === "bool"
+                ? z.boolean()
+                : f.type === "choice"
+                  ? z.enum(f.options as [string, ...string[]])
+                  : f.type === "date"
+                    ? z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+                    : z.string().max(2000)
+            )
+              .nullable()
+              .optional(),
+          ]),
+        ),
+      )
+      .strip()
+      .default({}),
+  });
+}

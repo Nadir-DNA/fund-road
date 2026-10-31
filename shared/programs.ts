@@ -1,3 +1,4 @@
+import { details, resume, types, type TypeFinanceur } from "./criteria.ts";
 // Référentiels de programmes de financement : critères publics, sources et date de vérification.
 // Ces règles évoluent : toute mise à jour change `verifiedAt` et la liste `sources`.
 export type Criterion = {
@@ -576,6 +577,8 @@ export function orgProgram(org: {
   criteria: any;
 }): Program {
   const c = org.criteria || {};
+  // lisible que les critères soient structurés ou en texte libre (anciennes fiches)
+  const r = resume(c);
   const rule = (id: string, label: string, value: string, question: string) =>
     value?.trim()
       ? [{ id, label: `${label} : ${value.trim()}`, blocking: true, question }]
@@ -583,16 +586,9 @@ export function orgProgram(org: {
   return {
     id: "org:" + org.id,
     name: org.name,
-    operator:
-      {
-        angel: "Business angel",
-        fund: "Fonds",
-        network: "Réseau de BA",
-        grant: "Organisme de financement",
-        incubator: "Incubateur",
-      }[org.kind] || "Financeur",
+    operator: types[org.kind as TypeFinanceur] || "Financeur",
     kind: orgKinds[org.kind] || "Subvention",
-    amount: c.ticket ? "Ticket : " + c.ticket : "Ticket non précisé",
+    amount: r.ticket ? "Ticket : " + r.ticket : "Ticket non précisé",
     summary: "Critères définis par le financeur sur son portail Fund Road.",
     verifiedAt: new Date().toISOString().slice(0, 10),
     confidence: "officielle",
@@ -601,27 +597,39 @@ export function orgProgram(org: {
       ...rule(
         "sector",
         "Secteur",
-        c.sectors,
+        // un financeur généraliste n'exclut aucun secteur
+        /Généraliste/.test(r.sectors) ? "" : r.sectors,
         "Dans quel secteur opère l’entreprise ?",
       ),
       ...rule(
         "stage",
         "Stade",
-        c.stage,
+        r.stage,
         "À quel stade de développement est l’entreprise ?",
       ),
       ...rule(
         "geography",
         "Géographie",
-        c.geography,
+        /International/.test(r.geography) ? "" : r.geography,
         "Où l’entreprise est-elle implantée et où vend-elle ?",
       ),
       ...rule(
         "ticket",
         "Ticket",
-        c.ticket,
+        r.ticket,
         "Quel montant recherchez-vous auprès de ce financeur ?",
       ),
+      // conditions propres au type (traction minimale, conditions d'accès, autofinancement…)
+      ...details(org.kind, c)
+        .filter((d) => d.champ.regle)
+        .flatMap((d) =>
+          rule(
+            "x:" + d.champ.key,
+            d.champ.label,
+            d.texte,
+            `L’entreprise remplit-elle cette condition : ${d.champ.label.toLowerCase()} ?`,
+          ),
+        ),
       ...(c.exclusions?.trim()
         ? [
             {

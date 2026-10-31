@@ -29,6 +29,7 @@ Santé, depuis la box : `curl http://127.0.0.1:3190/api/health`.
 - `TUNNEL_TOKEN` : jeton de l'étape 2
 - `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_BASE_URL` : fournisseur IA
 - `SMTP_URL`, `MAIL_FROM` : emails (inscription, notifications)
+- `REQUIRE_EMAIL_VERIFICATION=false` uniquement pour la bêta sans SMTP ; remettre `true` dès que les emails sont actifs
 - `ADMIN_EMAILS`, `ADVISOR_ORG_ID`, Stripe quand prêt
 - `DATABASE_URL` est fourni par `compose.prod.yaml`, inutile de le renseigner.
 

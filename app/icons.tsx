@@ -28,6 +28,8 @@ import {
   faRotateRight,
   faShieldHalved,
   faSliders,
+  faSun,
+  faMoon,
   faUpload,
   faUsers,
   faListCheck,
@@ -81,3 +83,5 @@ export const Sparkles = icon(faListCheck);
 export const MapPin = icon(faLocationDot);
 export const Coins = icon(faCoins);
 export const Seedling = icon(faSeedling);
+export const Sun = icon(faSun);
+export const Moon = icon(faMoon);

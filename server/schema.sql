@@ -52,3 +52,7 @@ ALTER TABLE rewards ADD COLUMN IF NOT EXISTS refunded_cents integer NOT NULL DEF
 ALTER TABLE applications ADD COLUMN IF NOT EXISTS stage text NOT NULL DEFAULT 'new';
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS logo jsonb;
 ALTER TABLE investors ADD COLUMN IF NOT EXISTS slug text UNIQUE;
+-- Critères structurés des fiches d'annuaire (mêmes champs que les portails) et site officiel
+ALTER TABLE investors ADD COLUMN IF NOT EXISTS criteria jsonb NOT NULL DEFAULT '{}';
+ALTER TABLE investors ADD COLUMN IF NOT EXISTS website text;
+ALTER TABLE investors ADD COLUMN IF NOT EXISTS logo jsonb;

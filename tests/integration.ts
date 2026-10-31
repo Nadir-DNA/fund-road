@@ -2,6 +2,7 @@ import { Document, Packer, Paragraph } from "docx";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { requirements } from "../shared/domain.ts";
 const base = "http://127.0.0.1:3184";
 async function call(url: string, method = "GET", body?: any, cookie = "") {
   const r = await fetch(base + "/api" + url, {
@@ -196,6 +197,26 @@ test("parcours API local et frontières entre organisations", async () => {
     ).status,
     403,
   );
+  let revision = (await call("/dossiers/" + id, "GET", undefined, a.cookie))
+    .data.revision;
+  for (const requirement of requirements.filter((r) => r.id !== "company")) {
+    const completed = await call(
+      `/dossiers/${id}/facts/${requirement.id}`,
+      "PUT",
+      {
+        revision,
+        fact: {
+          value: `Information synthétique suffisamment détaillée : ${requirement.label}.`,
+          kind: "declared",
+          source: "declaration",
+          confirmed: true,
+        },
+      },
+      a.cookie,
+    );
+    assert.equal(completed.status, 200, JSON.stringify(completed.data));
+    revision++;
+  }
   const share = await call(
     "/dossiers/" + id + "/applications",
     "POST",

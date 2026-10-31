@@ -11,7 +11,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 12,
-    requireEmailVerification: config.production,
+    requireEmailVerification: config.requireEmailVerification,
     sendResetPassword: async ({ user, url }) => {
       await mail(user.email, "Réinitialiser votre mot de passe Fundroad", url);
     },

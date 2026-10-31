@@ -92,7 +92,7 @@ export async function registerContent(app: FastifyInstance) {
     const b = z
       .object({
         name: z.string().trim().min(2).max(200),
-        kind: z.enum(["fund", "angel", "network", "grant"]),
+        kind: z.enum(["fund", "angel", "network", "grant", "incubator"]),
         description: z.string().max(5000),
         sectors: z.array(z.string().max(100)).max(30),
         stage: z.string().max(1000),

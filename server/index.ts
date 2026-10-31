@@ -20,6 +20,7 @@ import {
   dossierInput,
   organizationInput,
   themeInput,
+  criteriaInput,
   factSchema,
 } from "../shared/domain.ts";
 import { exportDossier } from "./export.ts";
@@ -48,11 +49,17 @@ await app.register(helmet, {
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
+      // Google Analytics, chargé côté client seulement après consentement
+      scriptSrc: ["'self'", "https://www.googletagmanager.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:"],
-      connectSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https://*.google-analytics.com", "https://*.googletagmanager.com"],
+      connectSrc: [
+        "'self'",
+        "https://*.google-analytics.com",
+        "https://*.analytics.google.com",
+        "https://*.googletagmanager.com",
+      ],
       frameAncestors: ["'none'"],
     },
   },
@@ -157,19 +164,11 @@ app.post("/api/organizations", async (req) => {
 app.put("/api/organizations/:id", async (req: any) => {
   const u = await user(req);
   await owner(u.id, req.params.id);
+  const { kind } = (
+    await db.query("SELECT kind FROM organizations WHERE id=$1", [req.params.id])
+  ).rows[0];
   const b = z
-    .object({
-      theme: themeInput,
-      criteria: z.object({
-        sectors: z.string().max(2000),
-        stage: z.string().max(1000),
-        geography: z.string().max(1000),
-        ticket: z.string().max(1000),
-        exclusions: z.string().max(2000),
-        questions: z.array(z.string().max(1000)).max(30),
-        documents: z.array(z.string().max(300)).max(30).default([]),
-      }),
-    })
+    .object({ theme: themeInput, criteria: criteriaInput(kind) })
     .parse(req.body);
   await db.query("UPDATE organizations SET theme=$2,criteria=$3 WHERE id=$1", [
     req.params.id,
@@ -218,6 +217,20 @@ app.get("/api/organizations/:id/logo", async (req: any, reply) => {
     .type(o.logo.type)
     .header("Cache-Control", "public, max-age=86400")
     .send(await readFile(path.join(config.data, "logo-" + req.params.id)));
+});
+// Logo d'une fiche d'annuaire, récupéré sur le site officiel par scripts/qualifier-financeurs.ts
+app.get("/api/investors/:id/logo", async (req: any, reply) => {
+  const i = (
+    await db.query(
+      "SELECT logo FROM investors WHERE id=$1 AND active=true AND logo IS NOT NULL",
+      [z.string().uuid().parse(req.params.id)],
+    )
+  ).rows[0];
+  if (!i) fail(404, "Logo introuvable");
+  reply
+    .type(i.logo.type)
+    .header("Cache-Control", "public, max-age=86400")
+    .send(await readFile(path.join(config.data, "logo-inv-" + req.params.id)));
 });
 // Annuaire : un financeur y figure dès qu'il publie des critères sur son portail
 app.get("/api/directory", async () =>
@@ -780,6 +793,23 @@ app.post("/api/dossiers/:id/applications", async (req: any) => {
       )
     ).rows[0];
     if (!exists) fail(400, "Organisation destinataire invalide");
+  }
+  if (!score(d.state).attestable)
+    fail(
+      409,
+      "Complétez et confirmez les neuf rubriques, sans conflit, avant le partage",
+    );
+  if (org) {
+    const unanswered = Number(
+      (
+        await db.query(
+          "SELECT count(*) FROM questions WHERE dossier_id=$1 AND organization_id=$2 AND application_id IS NULL AND (answer IS NULL OR length(trim(answer))<10)",
+          [d.id, org],
+        )
+      ).rows[0].count,
+    );
+    if (unanswered)
+      fail(409, "Répondez aux questions du destinataire avant le partage");
   }
   const docs = (
     await db.query(

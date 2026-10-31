@@ -1,10 +1,10 @@
 import { spawn } from "node:child_process";
-// Pas de worker IA par défaut : `npm run dev:local -- --ai` l’active explicitement.
-const worker = process.argv.includes("--ai")
-  ? ["worker"]
-  : ["worker", "--", "--extract-only"];
-const children = [["server"], ["dev"], worker].map(
-  (args) => spawn("npm", ["run", ...args], { stdio: "inherit" }),
+// Worker complet par défaut ; `--extract-only` interdit tout appel IA.
+const worker = process.argv.includes("--extract-only")
+  ? ["worker", "--", "--extract-only"]
+  : ["worker"];
+const children = [["server"], ["dev"], worker].map((args) =>
+  spawn("npm", ["run", ...args], { stdio: "inherit" }),
 );
 let closing = false;
 function stop(code = 0) {

@@ -5,7 +5,7 @@ export const publicCopy: Record<
 > = {
   entrepreneurs: {
     kicker: "ENTREPRENEURS",
-    title: "Un dossier qui travaille avec vous.",
+    title: "Un dossier qui travaille avec vous",
     intro:
       "Réutilisez vos informations pour préparer vos demandes d’investissement et de subvention.",
     items: [
@@ -25,7 +25,7 @@ export const publicCopy: Record<
   },
   "marque-blanche": {
     kicker: "VOTRE MARQUE",
-    title: "Votre portail. Votre façon d’investir.",
+    title: "Votre portail. Votre façon d’investir",
     intro:
       "Un espace de candidature personnalisé, construit sur le même moteur documentaire.",
     items: [
@@ -45,7 +45,7 @@ export const publicCopy: Record<
   },
   referentiel: {
     kicker: "RÉFÉRENTIEL FUNDROAD",
-    title: "La confiance commence par la clarté.",
+    title: "La confiance commence par la clarté",
     intro:
       "Le score mesure la complétude documentaire. Il ne mesure pas la probabilité de financement.",
     items: [
@@ -65,7 +65,7 @@ export const publicCopy: Record<
   },
   partenaires: {
     kicker: "PARTENAIRES",
-    title: "Recommandez un parcours utile.",
+    title: "Recommandez un parcours utile",
     intro:
       "Deux programmes distincts, avec des conditions explicites avant activation.",
     items: [
@@ -85,9 +85,9 @@ export const publicCopy: Record<
   },
   confiance: {
     kicker: "DONNÉES & CONFIANCE",
-    title: "Vos documents restent sous contrôle.",
+    title: "Vos documents restent sous contrôle",
     intro:
-      "Comptes et documents sont hébergés par Fund Road. Seuls les extraits utiles à l’analyse sont transmis à notre fournisseur d’IA.",
+      "Comptes et documents sont hébergés par Fund Road. Seuls les extraits utiles à l’analyse sont transmis à notre fournisseur d’IA. La mesure d’audience Google Analytics ne s’active qu’avec votre accord, modifiable à tout moment en bas de page.",
     items: [
       [
         "Accès limités",
@@ -105,7 +105,7 @@ export const publicCopy: Record<
   },
   ressources: {
     kicker: "RESSOURCES",
-    title: "Préparer les bonnes informations.",
+    title: "Préparer les bonnes informations",
     intro:
       "Les guides détaillés arrivent. Voici déjà ce qu’un financeur vous demandera.",
     items: [
@@ -127,7 +127,7 @@ export const publicCopy: Record<
 
 // Page vitrine des financeurs (fonds, business angels, réseaux, incubateurs)
 export const financeursPage = {
-  title: "Suivez chaque startup, de la candidature au portefeuille.",
+  title: "Suivez chaque startup, de la candidature au portefeuille",
   intro:
     "Fonds, business angels, réseaux et incubateurs : recevez des dossiers structurés selon vos critères, voyez leur complétude et leur adéquation, puis suivez chaque startup jusqu’à l’investissement. Gratuit pendant le lancement.",
   points: [

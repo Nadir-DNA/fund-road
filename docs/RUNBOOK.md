@@ -10,7 +10,7 @@ Node 22+, npm, Docker Compose. PostgreSQL reste sur la machine ; API sur `127.0.
 4. `npm run migrate`
 5. `npm run dev:local`
 
-La dernière commande lance API, Vite et worker **extraction locale seulement**, et arrête ses enfants à Ctrl+C. Ne pas la cumuler avec les trois services déjà démarrés individuellement. Sur cette machine, Docker est aussi accessible par `/home/dna/.local/docker/docker`.
+La dernière commande lance API, Vite et le worker complet, puis arrête ses enfants à Ctrl+C. Utiliser `npm run dev:local -- --extract-only` pour interdire les appels IA. Ne pas la cumuler avec les trois services déjà démarrés individuellement. Sur cette machine, Docker est aussi accessible par `/home/dna/.local/docker/docker`.
 
 PDF texte : `pdftotext` (Poppler). PDF scanné : `pdfinfo`, `pdftoppm`, `tesseract` et langues `fra`/`eng`. L’OCR est limité à 100 pages ; au-delà, le document doit être découpé. Tesseract n’était pas installé lors de cette recette.
 
@@ -25,6 +25,7 @@ Stripe : clés secrète/webhook, catalogue et programmes restent à réceptionne
 ## Vérifier
 
 - `npm test` : tests isolés, fournisseur IA simulé.
+- `npm run test:e2e` : scénarios Chromium contre l’application et l’API locales ; crée des données synthétiques conservées en base.
 - `npm run test:integration` : API, base et worker extraction doivent être actifs ; crée uniquement des données synthétiques mais conserve les fixtures en base.
 - `npm run build` : vérification TypeScript et bundle.
 - `npm audit` : audit courant des dépendances, nécessite le réseau.

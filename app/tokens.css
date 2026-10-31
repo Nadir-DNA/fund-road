@@ -19,6 +19,7 @@
   --color-night: oklch(20.5% 0.04 257);
   --color-night-2: oklch(25.5% 0.045 257);
   --color-night-rule: oklch(33% 0.04 257);
+  --color-on-night: oklch(98.5% 0.004 255);
   --color-night-text: oklch(82% 0.018 255);
 
   --color-accent: oklch(68.5% 0.165 46);
@@ -74,4 +75,70 @@
   --dur-med: 280ms;
   --measure: 64ch;
   --page: 1200px;
+}
+
+/* Choix explicite (bouton) ou, à défaut, réglage de l'appareil */
+:root[data-theme="dark"] {
+  /* Mode sombre : la nuit de la route. La page prend le bleu nuit du bandeau, l'orange reste l'accent */
+  color-scheme: dark;
+  --color-paper: oklch(20.5% 0.04 257);
+  --color-paper-2: oklch(17.5% 0.036 257);
+  --color-paper-3: oklch(24.5% 0.044 257);
+  --color-ink: oklch(96% 0.008 255);
+  --color-ink-2: oklch(80% 0.018 255);
+  --color-ink-3: oklch(66% 0.02 255);
+  --color-rule: oklch(30% 0.04 257);
+  --color-rule-2: oklch(37% 0.04 257);
+  --color-brand: oklch(96% 0.008 255);
+  --color-brand-2: oklch(86% 0.012 255);
+  --color-brand-ink: oklch(20.5% 0.04 257);
+  --color-brand-tint: oklch(29% 0.05 257);
+  --color-night: oklch(16% 0.034 257);
+  --color-night-2: oklch(21% 0.04 257);
+  --color-night-rule: oklch(31% 0.04 257);
+  --color-accent-2: oklch(76% 0.14 52);
+  --color-accent-tint: oklch(30% 0.07 48);
+  --color-good: oklch(76% 0.13 155);
+  --color-good-bg: oklch(29% 0.06 155);
+  --color-warn: oklch(82% 0.13 80);
+  --color-warn-bg: oklch(30% 0.06 80);
+  --color-danger: oklch(72% 0.17 27);
+  --color-focus: oklch(76% 0.15 52);
+  --color-scrim: oklch(8% 0.02 257 / 0.7);
+  --shadow-sm: 0 1px 2px oklch(5% 0.02 257 / 0.4);
+  --shadow: 0 1px 2px oklch(5% 0.02 257 / 0.35), 0 8px 24px -8px oklch(5% 0.02 257 / 0.6);
+  --shadow-lg: 0 2px 4px oklch(5% 0.02 257 / 0.4), 0 30px 60px -20px oklch(5% 0.02 257 / 0.8);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  /* Mode sombre : la nuit de la route. La page prend le bleu nuit du bandeau, l'orange reste l'accent */
+  color-scheme: dark;
+  --color-paper: oklch(20.5% 0.04 257);
+  --color-paper-2: oklch(17.5% 0.036 257);
+  --color-paper-3: oklch(24.5% 0.044 257);
+  --color-ink: oklch(96% 0.008 255);
+  --color-ink-2: oklch(80% 0.018 255);
+  --color-ink-3: oklch(66% 0.02 255);
+  --color-rule: oklch(30% 0.04 257);
+  --color-rule-2: oklch(37% 0.04 257);
+  --color-brand: oklch(96% 0.008 255);
+  --color-brand-2: oklch(86% 0.012 255);
+  --color-brand-ink: oklch(20.5% 0.04 257);
+  --color-brand-tint: oklch(29% 0.05 257);
+  --color-night: oklch(16% 0.034 257);
+  --color-night-2: oklch(21% 0.04 257);
+  --color-night-rule: oklch(31% 0.04 257);
+  --color-accent-2: oklch(76% 0.14 52);
+  --color-accent-tint: oklch(30% 0.07 48);
+  --color-good: oklch(76% 0.13 155);
+  --color-good-bg: oklch(29% 0.06 155);
+  --color-warn: oklch(82% 0.13 80);
+  --color-warn-bg: oklch(30% 0.06 80);
+  --color-danger: oklch(72% 0.17 27);
+  --color-focus: oklch(76% 0.15 52);
+  --color-scrim: oklch(8% 0.02 257 / 0.7);
+  --shadow-sm: 0 1px 2px oklch(5% 0.02 257 / 0.4);
+  --shadow: 0 1px 2px oklch(5% 0.02 257 / 0.35), 0 8px 24px -8px oklch(5% 0.02 257 / 0.6);
+  --shadow-lg: 0 2px 4px oklch(5% 0.02 257 / 0.4), 0 30px 60px -20px oklch(5% 0.02 257 / 0.8);
+  }
 }

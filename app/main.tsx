@@ -21,6 +21,8 @@ import {
 } from "react-router-dom";
 import {
   ArrowUpRight,
+  Sun,
+  Moon,
   ArrowRight,
   Check,
   ChevronRight,
@@ -55,7 +57,19 @@ import {
   Coins,
   Seedling,
 } from "./icons";
-import { requirements, score, type DossierState } from "../shared/domain";
+import { requirements, score, type DossierState } from "../shared/score";
+import {
+  champsParType,
+  correspond,
+  details,
+  libelleCritere,
+  regions,
+  resume,
+  secteurs,
+  stades,
+  types,
+  type TypeFinanceur,
+} from "../shared/criteria";
 import "./style.css";
 import { publicCopy, faq, pageMeta, financeursPage } from "../shared/content";
 import {
@@ -145,9 +159,37 @@ const Logo = ({ light = false }: { light?: boolean }) => (
       width={28}
       height={33}
     />
+    {!light && (
+      <img className="logo-nuit" src="/brand/fundroad-mark-white.png" alt="" width={28} height={33} />
+    )}
     Fund Road
   </Link>
 );
+// Bascule clair / sombre ; sans choix enregistré, le site suit le réglage de l'appareil
+function BasculeTheme() {
+  const sombre = () =>
+    document.documentElement.dataset.theme === "dark" ||
+    (!document.documentElement.dataset.theme &&
+      matchMedia("(prefers-color-scheme: dark)").matches);
+  const [nuit, setNuit] = useState(sombre);
+  return (
+    <button
+      className="iconbutton theme-toggle"
+      aria-label={nuit ? "Passer en mode clair" : "Passer en mode sombre"}
+      title={nuit ? "Mode clair" : "Mode sombre"}
+      onClick={() => {
+        const t = nuit ? "light" : "dark";
+        document.documentElement.dataset.theme = t;
+        try {
+          localStorage.setItem("fundroad-theme", t);
+        } catch {}
+        setNuit(!nuit);
+      }}
+    >
+      {nuit ? <Sun /> : <Moon />}
+    </button>
+  );
+}
 const Badge = ({
   children,
   good = false,
@@ -234,6 +276,7 @@ function PublicLayout({
             <NavLink to="/tarifs">Tarifs</NavLink>
           </nav>
           <div className="nav-actions">
+            <BasculeTheme />
             <Link to="/connexion">Connexion</Link>
             <Link className="button small accent" to="/inscription">
               Commencer
@@ -279,7 +322,10 @@ function PublicLayout({
           </div>
           <small>
             © {new Date().getFullYear()} Fund Road · La préparation d’un dossier
-            ne garantit pas un financement.
+            ne garantit pas un financement. ·{" "}
+            <button className="lien-cookies" onClick={revoirCookies}>
+              Gérer les cookies
+            </button>
           </small>
         </div>
       </footer>
@@ -797,7 +843,7 @@ function Resources() {
   return (
     <PublicLayout>
       <main className="section info-page">
-        <h1>Préparer un dossier plus clair.</h1>
+        <h1>Préparer un dossier plus clair</h1>
         <p className="lead">
           Des contenus relus pour comprendre les pièces, les chiffres et les
           étapes du financement.
@@ -817,7 +863,7 @@ function Resources() {
           ))
         ) : (
           <div className="panel">
-            <h2>Les ressources sont en cours de revue.</h2>
+            <h2>Les ressources sont en cours de revue</h2>
             <p>Vous pouvez déjà consulter les critères du dossier commun.</p>
             <Link to="/referentiel">Comprendre le référentiel →</Link>
           </div>
@@ -1042,7 +1088,7 @@ function Pricing() {
   return (
     <PublicLayout>
       <main className="section info-page">
-        <h1>Un prix simple, selon votre rôle.</h1>
+        <h1>Un prix simple, selon votre rôle</h1>
         <p className="lead">
           Les startups commencent gratuitement et paient quand le dossier
           compte. Les financeurs et incubateurs sont gratuits pendant le
@@ -1116,8 +1162,7 @@ function AuthPage() {
     <PublicLayout>
       <main className="auth-wrap">
         <div className="auth-intro">
-          <div className="eyebrow">FAITES LE PREMIER PAS</div>
-          <h1>Votre prochain chapitre commence ici.</h1>
+          <h1>Votre prochain chapitre commence ici</h1>
           <p>Un espace pour vos documents, vos réponses et vos candidatures.</p>
           <div className="auth-detail">
             <ShieldCheck />
@@ -1331,6 +1376,7 @@ function Shell() {
                     : "FINANCEUR"}
             </span>
             <div>
+              <BasculeTheme />
               <Link to="/referentiel">
                 Aide & référentiel <ArrowUpRight size={14} />
               </Link>
@@ -1375,8 +1421,7 @@ function Onboarding() {
     <>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">BIENVENUE</div>
-          <h1>À chaque projet, son espace.</h1>
+          <h1>À chaque projet, son espace</h1>
           <p>
             Créez votre organisation pour préparer ou examiner des dossiers.
           </p>
@@ -1445,9 +1490,8 @@ function Dashboard({ all = false }: { all?: boolean }) {
     <>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">VOTRE PROCHAIN FINANCEMENT</div>
           <h1>
-            {all ? "Vos dossiers" : `Bonjour ${me.user.name.split(" ")[0]}.`}
+            {all ? "Vos dossiers" : `Bonjour ${me.user.name.split(" ")[0]}`}
           </h1>
           <p>
             {all
@@ -1528,95 +1572,67 @@ function Dashboard({ all = false }: { all?: boolean }) {
           <small>Des prochaines étapes concrètes</small>
         </div>
       </div>
-      <div className="content-grid">
-        <section>
-          <div className="section-title">
-            <h2>Vos dossiers de financement</h2>
+      <section>
+        <div className="section-title">
+          <h2>Vos dossiers de financement</h2>
+          <button
+            className="iconbutton"
+            onClick={() => setTick((t) => t + 1)}
+            aria-label="Actualiser"
+          >
+            <RefreshCw size={17} />
+          </button>
+        </div>
+        {!rows.length ? (
+          <div className="panel">
+            <Empty title="Votre premier dossier commence ici">
+              Déposez les documents que vous avez déjà. Vous pourrez compléter
+              la suite à votre rythme.
+            </Empty>
             <button
-              className="iconbutton"
-              onClick={() => setTick((t) => t + 1)}
-              aria-label="Actualiser"
+              className="button centered"
+              onClick={() => setCreating(true)}
             >
-              <RefreshCw size={17} />
+              <Plus size={17} /> Préparer mon dossier
             </button>
           </div>
-          {!rows.length ? (
-            <div className="panel">
-              <Empty title="Votre premier dossier commence ici">
-                Déposez les documents que vous avez déjà. Vous pourrez compléter
-                la suite à votre rythme.
-              </Empty>
-              <button
-                className="button centered"
-                onClick={() => setCreating(true)}
-              >
-                <Plus size={17} /> Préparer mon dossier
-              </button>
-            </div>
-          ) : (
-            rows.map((d) => (
-              <Link
-                to={"/app/dossiers/" + d.id}
-                className="dossier-card"
-                key={d.id}
-              >
-                <div className="dossier-top">
-                  <span className="company-icon">{d.name[0]}</span>
-                  <div>
-                    <h3>{d.name}</h3>
-                    <small>
-                      {d.goal === "grant" ? "Subvention" : "Investissement"} ·
-                      Mis à jour le{" "}
-                      {new Date(d.updated_at).toLocaleDateString("fr")}
-                    </small>
-                  </div>
-                  <ArrowUpRight size={20} />
+        ) : (
+          rows.map((d) => (
+            <Link
+              to={"/app/dossiers/" + d.id}
+              className="dossier-card"
+              key={d.id}
+            >
+              <div className="dossier-top">
+                <span className="company-icon">{d.name[0]}</span>
+                <div>
+                  <h3>{d.name}</h3>
+                  <small>
+                    {d.goal === "grant" ? "Subvention" : "Investissement"} · Mis
+                    à jour le {new Date(d.updated_at).toLocaleDateString("fr")}
+                  </small>
                 </div>
-                <div className="progress-label">
-                  <span>Complétude du dossier</span>
-                  <strong>{d.score.percent} %</strong>
-                </div>
-                <div className="bar">
-                  <span style={{ width: d.score.percent + "%" }} />
-                </div>
-                <div className="dossier-bottom">
-                  <span>
-                    {d.score.completed} rubriques confirmées sur {d.score.total}
-                  </span>
-                  <span>
-                    Continuer <ArrowRight size={15} />
-                  </span>
-                </div>
-              </Link>
-            ))
-          )}
-        </section>
-        <aside className="right-rail">
-          <div className="assistant-panel">
-            <Sparkles size={24} />
-            <h3>Une question à la fois.</h3>
-            <p>
-              L’assistant organise vos documents et identifie les informations
-              encore nécessaires.
-            </p>
-            <div className="mini-divider" />
-            <p className="smalltext">
-              Vous confirmez les faits. Le score suit votre progression.
-            </p>
-          </div>
-          <div className="panel compact">
-            <div className="eyebrow">LE BON RÉFLEXE</div>
-            <h3>Préparez vos sources</h3>
-            <p>
-              Un chiffre daté et accompagné de son justificatif vaut mieux
-              qu’une estimation sans contexte.
-            </p>
-            <Link to="/referentiel">
-              Comprendre le référentiel <ArrowRight size={15} />
+                <ArrowUpRight size={20} />
+              </div>
+              <div className="progress-label">
+                <span>Complétude du dossier</span>
+                <strong>{d.score.percent} %</strong>
+              </div>
+              <div className="bar">
+                <span style={{ width: d.score.percent + "%" }} />
+              </div>
+              <div className="dossier-bottom">
+                <span>
+                  {d.score.completed} rubriques confirmées sur {d.score.total}
+                </span>
+                <span>
+                  Continuer <ArrowRight size={15} />
+                </span>
+              </div>
             </Link>
-          </div>
-        </aside>
-      </div>
+          ))
+        )}
+      </section>
     </>
   );
 }
@@ -1643,11 +1659,6 @@ function DossierPage() {
       </Link>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">
-            {d.goal === "grant"
-              ? "DEMANDE DE SUBVENTION"
-              : "DOSSIER DE FINANCEMENT"}
-          </div>
           <h1>{d.name}</h1>
           <p>
             Version {d.revision} · Vos informations, organisées pour avancer.
@@ -1693,7 +1704,6 @@ function DossierPage() {
           <section>
             <div className="panel score-panel">
               <div>
-                <div className="eyebrow">VOTRE DOSSIER PREND FORME</div>
                 <div className="bigscore">
                   {d.score.percent}
                   <span>%</span>
@@ -1717,10 +1727,7 @@ function DossierPage() {
             </div>
             {d.recipient_org && (
               <div className="panel">
-                <div className="eyebrow">
-                  PRÉPARATION POUR {d.criteria_snapshot.recipientName}
-                </div>
-                <h3>Exigences du destinataire</h3>
+                <h3>Exigences pour {d.criteria_snapshot.recipientName}</h3>
                 <p>
                   {d.recipientProgress.completed} / {d.recipientProgress.total}{" "}
                   questions renseignées.
@@ -2476,6 +2483,9 @@ function ShareForm({ dossier: d }: { dossier: any }) {
   );
   const { data: financers } = useLoad<any[]>("/directory");
   const { run, busy } = useAction();
+  const incomplete =
+    !d.score.attestable ||
+    d.recipientProgress.completed < d.recipientProgress.total;
   return (
     <form
       className="panel form-panel"
@@ -2494,7 +2504,7 @@ function ShareForm({ dossier: d }: { dossier: any }) {
         }, "Candidature enregistrée et transmise au destinataire");
       }}
     >
-      <h2>Choisissez ce que vous partagez.</h2>
+      <h2>Choisissez ce que vous partagez</h2>
       <p>
         Une copie datée de votre dossier sera transmise. Vos modifications
         futures ne sont pas partagées : le destinataire voit seulement le
@@ -2555,7 +2565,13 @@ function ShareForm({ dossier: d }: { dossier: any }) {
         <input type="checkbox" required />
         Je confirme le destinataire et les pièces sélectionnées.
       </label>
-      <button className="button" disabled={busy}>
+      {incomplete && (
+        <p className="muted">
+          Confirmez les neuf rubriques et répondez aux questions du destinataire
+          avant le partage.
+        </p>
+      )}
+      <button className="button" disabled={busy || incomplete}>
         Partager cette version <Send size={17} />
       </button>
     </form>
@@ -2564,17 +2580,35 @@ function ShareForm({ dossier: d }: { dossier: any }) {
 function Directory({ embedded = false }: { embedded?: boolean }) {
   const { data, error } = useLoad<any[]>("/directory");
   const [search, setSearch] = useState("");
-  const rows = data?.filter((o) =>
-    [o.theme.name || o.name, o.criteria.sectors, o.criteria.geography]
-      .join(" ")
-      .toLowerCase()
-      .includes(search.toLowerCase()),
+  const [f, setF] = useState({ type: "", secteur: "", stade: "", region: "" });
+  const rows = data?.filter(
+    (o) =>
+      [o.theme.name || o.name, resume(o.criteria).sectors, resume(o.criteria).geography]
+        .join(" ")
+        .toLowerCase()
+        .includes(search.toLowerCase()) &&
+      (!f.type || o.kind === f.type) &&
+      correspond(o.criteria, f),
   );
+  const filtre = (key: keyof typeof f, label: string, options: Record<string, string>) => (
+    <select
+      aria-label={label}
+      value={f[key]}
+      onChange={(e) => setF({ ...f, [key]: e.target.value })}
+    >
+      <option value="">{label}</option>
+      {Object.entries(options).map(([v, t]) => (
+        <option key={v} value={v}>
+          {t}
+        </option>
+      ))}
+    </select>
+  );
+  const parNom = (xs: readonly string[]) => Object.fromEntries(xs.map((x) => [x, x]));
   const body = (
     <>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">LES BONS INTERLOCUTEURS</div>
           <h1>
             À chaque ambition,
             <br />
@@ -2595,6 +2629,12 @@ function Directory({ embedded = false }: { embedded?: boolean }) {
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
+      <div className="filtres">
+        {filtre("type", "Tous les types", types)}
+        {filtre("secteur", "Tous les secteurs", parNom(secteurs))}
+        {filtre("stade", "Tous les stades", parNom(stades))}
+        {filtre("region", "Toutes les régions", parNom(regions))}
+      </div>
       <ErrorBox text={error} />
       {!rows?.length ? (
         <div className="panel">
@@ -2606,37 +2646,38 @@ function Directory({ embedded = false }: { embedded?: boolean }) {
         <div className="fund-grid">
           {rows.map((o) => (
             <article className="fund-card" key={o.id} style={orgStyle(o)}>
-              <div className="fund-cover" />
               <div className="fund-body">
-                <OrgLogo o={o} />
-                <div>
-                  <span className="fund-kind">
-                    {orgKindLabels[o.kind] || "Financeur"}
-                  </span>
-                  <h3>{o.theme.name || o.name}</h3>
-                </div>
+                <header className="fund-head">
+                  <OrgLogo o={o} />
+                  <div>
+                    <span className="fund-kind">
+                      {orgKindLabels[o.kind] || "Financeur"}
+                    </span>
+                    <h3>{o.theme.name || o.name}</h3>
+                  </div>
+                </header>
                 {o.theme.intro && <p className="fund-intro">{o.theme.intro}</p>}
                 <dl className="fund-facts">
                   <div>
                     <dt>
                       <Coins size={13} /> Ticket
                     </dt>
-                    <dd>{o.criteria.ticket || "À préciser"}</dd>
+                    <dd>{resume(o.criteria).ticket || "À préciser"}</dd>
                   </div>
                   <div>
                     <dt>
                       <MapPin size={13} /> Zone
                     </dt>
-                    <dd>{o.criteria.geography || "Non précisée"}</dd>
+                    <dd>{resume(o.criteria).geography || "Non précisée"}</dd>
                   </div>
                 </dl>
                 <div className="chips">
-                  {chips(o.criteria.sectors).map((c) => (
+                  {chips(resume(o.criteria).sectors).map((c) => (
                     <span key={c}>{c}</span>
                   ))}
-                  {o.criteria.stage && (
+                  {resume(o.criteria).stage && (
                     <span className="stage">
-                      <Seedling size={11} /> {chips(o.criteria.stage)[0]}
+                      <Seedling size={11} /> {chips(resume(o.criteria).stage)[0]}
                     </span>
                   )}
                 </div>
@@ -2684,7 +2725,7 @@ function OrgLogo({ o, size = "" }: { o: any; size?: string }) {
   return o.logo ? (
     <img
       className={"org-logo " + size}
-      src={`/api/organizations/${o.id}/logo?v=${o.logo.v}`}
+      src={`/api/${o.claimed === false ? "investors" : "organizations"}/${o.id}/logo?v=${o.logo.v}`}
       alt={"Logo " + name}
     />
   ) : (
@@ -2702,7 +2743,7 @@ const orgStyle = (o: any) =>
   (o.theme?.accent ? { "--org": o.theme.accent } : {}) as any;
 const chips = (text = "") =>
   text
-    .split(/[,;·/]| et /)
+    .split(/[,;·]| et /)
     .map((x) => x.trim())
     .filter(Boolean)
     .slice(0, 4);
@@ -2732,8 +2773,7 @@ function Pipeline() {
     <>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">Suivi des startups</div>
-          <h1>Bonjour {me.user.name.split(" ")[0]}.</h1>
+          <h1>Bonjour {me.user.name.split(" ")[0]}</h1>
           <p>
             La complétude de chaque dossier reçu, son avancement depuis et son
             adéquation à vos critères.
@@ -2888,8 +2928,7 @@ function Applications() {
     <>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">VERS LES BONS PARTENAIRES</div>
-          <h1>Vos candidatures.</h1>
+          <h1>Vos candidatures</h1>
           <p>
             Des versions datées et des échanges dédiés à chaque destinataire.
           </p>
@@ -2904,10 +2943,27 @@ function Applications() {
           </Empty>
         </div>
       ) : (
-        data.map((a) => (
-          <Link className="dossier-card" to={"/partages/" + a.id} key={a.id}>
-            <div className="section-title">
-              <h3>{a.name}</h3>
+        <div className="pipeline">
+          <div className="pipeline-head" aria-hidden="true">
+            <span>Candidature</span>
+            <span>Destinataire</span>
+            <span>Partagée le</span>
+            <span>Statut</span>
+          </div>
+          {data.map((a) => (
+            <Link className="pipeline-row" to={"/partages/" + a.id} key={a.id}>
+              <span className="pipeline-name">
+                <span className="company-icon small">{a.name[0]}</span>
+                <strong>{a.name}</strong>
+              </span>
+              <span>
+                {a.investor_name ||
+                  a.recipient_email ||
+                  "Organisation partenaire"}
+              </span>
+              <time dateTime={a.created_at}>
+                {new Date(a.created_at).toLocaleDateString("fr")}
+              </time>
               <Badge>
                 {a.recipient_org
                   ? { ...stageLabels, new: "Reçu" }[a.stage as string]
@@ -2915,20 +2971,94 @@ function Applications() {
                     ? "Envoyé"
                     : "Non envoyé"}
               </Badge>
-            </div>
-            <p>
-              {a.investor_name ||
-                a.recipient_email ||
-                "Organisation partenaire"}
-            </p>
-            <small>
-              Partagée le {new Date(a.created_at).toLocaleDateString("fr")}
-            </small>
-          </Link>
-        ))
+            </Link>
+          ))}
+        </div>
       )}
     </>
   );
+}
+// Formulaire des critères : listes fixes en cases à cocher, montants en euros, champs propres au type
+function Cases({ name, label, options, valeurs }: { name: string; label: string; options: readonly string[]; valeurs: unknown }) {
+  const choisis = Array.isArray(valeurs) ? valeurs : [];
+  return (
+    <fieldset className="cases">
+      <legend>{label}</legend>
+      {options.map((x) => (
+        <label key={x}>
+          <input type="checkbox" name={name} value={x} defaultChecked={choisis.includes(x)} />
+          {x}
+        </label>
+      ))}
+    </fieldset>
+  );
+}
+function ChampsCriteres({ kind, c }: { kind: string; c: any }) {
+  const d = c.details || {};
+  return (
+    <>
+      <Cases name="sectors" label="Secteurs" options={secteurs} valeurs={c.sectors} />
+      <Cases name="stages" label="Stades" options={stades} valeurs={c.stages} />
+      <Cases name="regions" label="Zones" options={regions} valeurs={c.regions} />
+      <div className="form-row">
+        <label>
+          Ticket minimum (€)
+          <input name="ticketMin" type="number" min={0} step={1000} defaultValue={c.ticketMin ?? ""} />
+        </label>
+        <label>
+          Ticket maximum (€)
+          <input name="ticketMax" type="number" min={0} step={1000} defaultValue={c.ticketMax ?? ""} />
+        </label>
+      </div>
+      {champsParType[kind as TypeFinanceur]?.map((f) => (
+        <label key={f.key} className={f.type === "bool" ? "checkbox" : ""}>
+          {f.type === "bool" && (
+            <input type="checkbox" name={"d:" + f.key} defaultChecked={!!d[f.key]} />
+          )}
+          {f.label}
+          {f.type === "choice" ? (
+            <select name={"d:" + f.key} defaultValue={d[f.key] || ""}>
+              <option value="">Non précisé</option>
+              {f.options!.map((o) => (
+                <option key={o}>{o}</option>
+              ))}
+            </select>
+          ) : f.type === "bool" ? null : (
+            <input
+              name={"d:" + f.key}
+              type={f.type === "number" ? "number" : f.type === "date" ? "date" : "text"}
+              min={f.type === "number" ? 0 : undefined}
+              defaultValue={d[f.key] ?? ""}
+            />
+          )}
+        </label>
+      ))}
+      <label>
+        Critères d’exclusion
+        <input name="exclusions" defaultValue={c.exclusions || ""} />
+      </label>
+    </>
+  );
+}
+function lireCriteres(f: FormData, kind: string) {
+  const nombre = (v: FormDataEntryValue | null) => (v ? Number(v) : null);
+  const lignes = (k: string) => String(f.get(k) || "").split("\n").map((x) => x.trim()).filter(Boolean);
+  return {
+    sectors: f.getAll("sectors"),
+    stages: f.getAll("stages"),
+    regions: f.getAll("regions"),
+    ticketMin: nombre(f.get("ticketMin")),
+    ticketMax: nombre(f.get("ticketMax")),
+    exclusions: f.get("exclusions") || "",
+    questions: lignes("questions"),
+    documents: lignes("documents"),
+    details: Object.fromEntries(
+      (champsParType[kind as TypeFinanceur] || []).map((c) => {
+        const v = f.get("d:" + c.key);
+        return [c.key, c.type === "bool" ? v === "on" : c.type === "number" ? nombre(v) : v || null];
+      }),
+    ),
+  };
 }
 function OrganizationPage() {
   const { org, refresh } = useContext(WorkspaceContext);
@@ -2942,8 +3072,7 @@ function OrganizationPage() {
     <>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">VOTRE ORGANISATION</div>
-          <h1>Votre cadre. Votre identité.</h1>
+          <h1>Votre organisation</h1>
           <p>Un portail cohérent avec votre façon d’accompagner les projets.</p>
         </div>
         {org.kind !== "startup" && (
@@ -2970,19 +3099,7 @@ function OrganizationPage() {
                   accent: f.get("accent"),
                   intro: f.get("intro"),
                 },
-                criteria: {
-                  sectors: f.get("sectors"),
-                  stage: f.get("stage"),
-                  geography: f.get("geography"),
-                  ticket: f.get("ticket"),
-                  exclusions: f.get("exclusions"),
-                  questions: String(f.get("questions"))
-                    .split("\n")
-                    .filter(Boolean),
-                  documents: String(f.get("documents"))
-                    .split("\n")
-                    .filter(Boolean),
-                },
+                criteria: lireCriteres(f, org.kind),
               });
               refresh();
             }, "Organisation mise à jour");
@@ -3010,18 +3127,7 @@ function OrganizationPage() {
             <textarea name="intro" defaultValue={org.theme.intro || ""} />
           </label>
           <h2>Thèse et critères</h2>
-          {[
-            ["sectors", "Secteurs"],
-            ["stage", "Maturité"],
-            ["geography", "Géographies"],
-            ["ticket", "Tickets de financement"],
-            ["exclusions", "Critères d’exclusion"],
-          ].map(([key, label]) => (
-            <label key={key}>
-              {label}
-              <input name={key} defaultValue={org.criteria[key] || ""} />
-            </label>
-          ))}
+          <ChampsCriteres kind={org.kind} c={org.criteria} />
           <label>
             Questions spécifiques — une par ligne
             <textarea
@@ -3163,11 +3269,10 @@ function Partners() {
     <>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">GRANDIR ENSEMBLE</div>
           <h1>
             {org.kind === "startup"
-              ? "Parrainez une startup."
-              : "Votre partenariat Fund Road."}
+              ? "Parrainez une startup"
+              : "Votre partenariat Fund Road"}
           </h1>
           <p>
             {org.kind === "startup"
@@ -3262,8 +3367,7 @@ function Billing() {
     <>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">VOTRE USAGE, EN TOUTE CLARTÉ</div>
-          <h1>Offre & facturation.</h1>
+          <h1>Offre et facturation</h1>
           <p>
             Les achats s’activent uniquement lorsque les conditions commerciales
             sont validées.
@@ -3346,8 +3450,7 @@ function Security() {
     <>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">VOTRE COMPTE</div>
-          <h1>Sécurité.</h1>
+          <h1>Sécurité</h1>
           <p>Protégez l’accès à vos documents et à votre organisation.</p>
         </div>
       </div>
@@ -3431,7 +3534,6 @@ function Verification() {
       <main className="section">
         <div className="panel verification">
           <ShieldCheck size={40} />
-          <div className="eyebrow">VÉRIFICATION D’ATTESTATION</div>
           <h1>
             {a?.revoked_at ? "Attestation révoquée" : "Attestation Fund Road"}
           </h1>
@@ -3481,7 +3583,6 @@ function Portal() {
         {o && (
           <>
             <header className="portal-hero">
-              <div className="portal-cover" />
               <div className="portal-head">
                 <OrgLogo o={o} size="lg" />
                 <div>
@@ -3501,10 +3602,10 @@ function Portal() {
               <div>
                 <dl className="portal-facts">
                   {[
-                    [Coins, "Ticket", c.ticket],
-                    [Seedling, "Stade", c.stage],
-                    [MapPin, "Zone", c.geography],
-                    [Building2, "Secteurs", c.sectors],
+                    [Coins, "Ticket", resume(c).ticket],
+                    [Seedling, "Stade", resume(c).stage],
+                    [MapPin, "Zone", resume(c).geography],
+                    [Building2, "Secteurs", resume(c).sectors],
                   ].map(([Icon, t, v]: any) => (
                     <div key={t}>
                       <dt>
@@ -3514,6 +3615,29 @@ function Portal() {
                     </div>
                   ))}
                 </dl>
+                {details(o.kind, c).length > 0 && (
+                  <section className="panel">
+                    <h2>{types[o.kind as TypeFinanceur] || "Financeur"} : en détail</h2>
+                    <dl className="fiche-details">
+                      {details(o.kind, c).map((d) => (
+                        <div key={d.champ.key}>
+                          <dt>{d.champ.label}</dt>
+                          <dd>{d.texte}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </section>
+                )}
+                {c.notables?.length > 0 && (
+                  <section className="panel">
+                    <h2>Ils ont été accompagnés ou financés</h2>
+                    <div className="chips">
+                      {c.notables.map((x: string) => (
+                        <span key={x}>{x}</span>
+                      ))}
+                    </div>
+                  </section>
+                )}
                 {c.exclusions && (
                   <div className="notice">
                     <AlertCircle size={18} />
@@ -3542,6 +3666,21 @@ function Portal() {
                         <li key={x}>{x}</li>
                       ))}
                     </ol>
+                  </section>
+                )}
+                {Object.keys(c.sources || {}).length > 0 && (
+                  <section className="panel">
+                    <h2>D’où viennent ces informations</h2>
+                    <ul className="sources">
+                      {Object.entries<any>(c.sources).map(([k, v]) => (
+                        <li key={k}>
+                          <strong>{libelleCritere(o.kind, k)}</strong> « {v.citation} »{" "}
+                          <a href={v.url} target="_blank" rel="noreferrer">
+                            source <ExternalLink size={12} />
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
                   </section>
                 )}
               </div>
@@ -3630,7 +3769,7 @@ function Invitation() {
     <PublicLayout>
       <main className="section">
         <div className="panel verification">
-          <h1>Rejoindre le dossier.</h1>
+          <h1>Rejoindre le dossier</h1>
           <p>
             Connectez-vous avec l’adresse qui a reçu l’invitation, puis
             acceptez-la.
@@ -3784,6 +3923,75 @@ function SharedApplication() {
   );
 }
 // Chaque nouvelle page s'ouvre en haut (sinon on arrive à la position de la page précédente)
+// Mesure d'audience Google Analytics : rien n'est chargé ni déposé avant un accord explicite (CNIL)
+const GA_ID = "G-BW773NTYEG";
+const CHOIX_COOKIES = "fundroad-cookies";
+function lireChoixCookies() {
+  try {
+    return localStorage.getItem(CHOIX_COOKIES);
+  } catch {
+    return null;
+  }
+}
+function chargerAnalytics() {
+  const w = window as any;
+  // seulement sur le domaine de production, pour ne pas compter le développement
+  if (location.hostname !== "fund-road.com" || w.gtag) return;
+  w.dataLayer = w.dataLayer || [];
+  w.gtag = function () {
+    // gtag.js attend l'objet arguments, pas un tableau
+    // eslint-disable-next-line prefer-rest-params
+    w.dataLayer.push(arguments);
+  };
+  w.gtag("js", new Date());
+  w.gtag("config", GA_ID);
+  const s = document.createElement("script");
+  s.async = true;
+  s.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_ID;
+  document.head.appendChild(s);
+}
+// Retire le choix et les cookies _ga déjà posés, puis repose la question
+function revoirCookies() {
+  try {
+    localStorage.removeItem(CHOIX_COOKIES);
+  } catch {}
+  document.cookie
+    .split("; ")
+    .filter((c) => c.startsWith("_ga"))
+    .forEach((c) => {
+      document.cookie = `${c.split("=")[0]}=; Max-Age=0; path=/; domain=.${location.hostname}`;
+    });
+  location.reload();
+}
+function Consentement() {
+  const [choix, setChoix] = useState(lireChoixCookies);
+  useEffect(() => {
+    if (choix === "oui") chargerAnalytics();
+  }, [choix]);
+  if (choix) return null;
+  const choisir = (v: string) => {
+    try {
+      localStorage.setItem(CHOIX_COOKIES, v);
+    } catch {}
+    setChoix(v);
+  };
+  return (
+    <div className="cookies" role="region" aria-label="Cookies de mesure d’audience">
+      <p>
+        Nous mesurons l’audience du site avec Google Analytics, uniquement si
+        vous l’acceptez. <Link to="/confiance">En savoir plus</Link>
+      </p>
+      <div className="button-row">
+        <button className="button secondary small" onClick={() => choisir("non")}>
+          Refuser
+        </button>
+        <button className="button secondary small" onClick={() => choisir("oui")}>
+          Accepter
+        </button>
+      </div>
+    </div>
+  );
+}
 function ScrollTop() {
   const { pathname } = useLocation();
   useLayoutEffect(remonter, [pathname]);
@@ -3806,6 +4014,7 @@ function Root() {
     <ToastContext.Provider value={setToast}>
       <BrowserRouter>
         <ScrollTop />
+        <Consentement />
         <Routes>
           <Route path="/ressources" element={<Resources />} />
           <Route path="/ressources/:slug" element={<ResourcePage />} />
@@ -3833,7 +4042,7 @@ function Root() {
             element={
               <PublicLayout>
                 <div className="section">
-                  <h1>Cette page a changé.</h1>
+                  <h1>Cette page a changé</h1>
                   <p>
                     Fund Road prépare une nouvelle expérience pour vos dossiers
                     de financement.

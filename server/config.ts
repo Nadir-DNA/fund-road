@@ -4,6 +4,10 @@ export const config = {
   baseURL: process.env.APP_URL || "http://127.0.0.1:5184",
   data: path.resolve(process.env.DATA_DIR || ".local/documents"),
   production: process.env.NODE_ENV === "production",
+  requireEmailVerification:
+    process.env.REQUIRE_EMAIL_VERIFICATION !== undefined
+      ? process.env.REQUIRE_EMAIL_VERIFICATION === "true"
+      : process.env.NODE_ENV === "production",
   maxBytes: 20 * 1024 * 1024,
   maxExtracted: 300000,
   model: process.env.OPENAI_MODEL || "",

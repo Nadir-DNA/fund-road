@@ -1,0 +1,5 @@
+Fais une recherche approfondie et dresse la liste la plus complète possible des financeurs accessibles aux startups françaises : fonds de capital-risque (français et étrangers qui investissent en France), business angels et réseaux de business angels, incubateurs et accélérateurs (toutes régions), aides et subventions (nationales, régionales, européennes).
+
+Pour chacun, donne : nom, type, site officiel, secteurs, stades financés, zone géographique, ticket minimum et maximum, conditions particulières, lien pour candidater, et la page source.
+
+N'invente rien : si une information n'est pas trouvée, laisse la case vide. Présente le résultat sous forme de tableau téléchargeable (Excel ou CSV). Vise le maximum de financeurs.

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { db } from "./db.ts";
 import { config } from "./config.ts";
+import { details, libelleCritere, resume } from "../shared/criteria.ts";
 import {
   pageMeta,
   publicCopy,
@@ -38,13 +39,16 @@ const investorProfile = (i: any) => ({
   kind: i.kind,
   slug: i.slug,
   theme: { name: i.name, intro: i.description },
-  criteria: {
-    sectors: (i.sectors || []).join(", "),
-    stage: i.stage,
-    geography: i.geography,
-    ticket: i.ticket,
-  },
-  logo: null,
+  // fiches importées : critères structurés ; anciennes fiches : colonnes texte
+  criteria: Object.keys(i.criteria || {}).length
+    ? i.criteria
+    : {
+        sectors: (i.sectors || []).join(", "),
+        stage: i.stage,
+        geography: i.geography,
+        ticket: i.ticket,
+      },
+  logo: i.logo,
   claimed: false,
   sourceUrl: i.source_url,
   applicationUrl: i.application_url,
@@ -158,15 +162,17 @@ const list = (t: string, xs?: string[]) =>
 export function renderProfile(index: string, p: any) {
   const name = p.theme?.name || p.name;
   const c = p.criteria || {};
+  const r = resume(c);
   const kind = kinds[p.kind] || p.kind || "Financeur";
   const path = `/fonds/${p.slug}`;
   const title = `${name} : critères, ticket et candidature | Fund Road`;
   const facts = [
-    ["Ticket", c.ticket],
-    ["Stade", c.stage],
-    ["Zone", c.geography],
-    ["Secteurs", c.sectors],
+    ["Ticket", r.ticket],
+    ["Stade", r.stage],
+    ["Zone", r.geography],
+    ["Secteurs", r.sectors],
   ].filter(([, v]) => v);
+  const extra = details(p.kind, c).map((d) => [d.champ.label, d.texte]);
   const description = (
     `${name} (${kind.toLowerCase()}) : ` +
     (facts.map(([k, v]) => `${k.toLowerCase()} ${v}`).join(", ") ||
@@ -175,7 +181,7 @@ export function renderProfile(index: string, p: any) {
   )
     // Google tronque vers 160 caractères : on coupe sur un mot
     .replace(/^(.{0,157})\s.*$/s, "$1…");
-  const logo = p.logo ? abs(`/api/organizations/${p.id}/logo`) : "";
+  const logo = p.logo ? abs(`/api/${p.claimed ? "organizations" : "investors"}/${p.id}/logo`) : "";
   return renderPage(index, {
     path,
     title,
@@ -204,9 +210,14 @@ export function renderProfile(index: string, p: any) {
     body: `<main>${nav}
     <h1>${esc(name)}</h1><p>${esc(kind)}</p>
     ${p.theme?.intro ? `<p>${esc(p.theme.intro)}</p>` : ""}
-    <dl>${facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+    <dl>${[...facts, ...extra].map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
     ${c.exclusions ? `<p>Hors périmètre : ${esc(c.exclusions)}</p>` : ""}
     ${list(`Pièces demandées par ${name}`, c.documents)}
+    ${list(`Ils ont été accompagnés ou financés par ${name}`, c.notables)}
+    ${list(
+      "Sources",
+      Object.entries<any>(c.sources || {}).map(([k, v]) => `${libelleCritere(p.kind, k)} : « ${v.citation} » (${v.url})`),
+    )}
     ${list(`Questions de ${name}`, c.questions)}
     <h2>Comment candidater auprès de ${esc(name)}</h2>
     <p>Préparez votre dossier de financement sur Fund Road : vos documents sont structurés selon les critères de ${esc(name)} et vous voyez ce qui manque avant l’envoi.</p></main>`,
@@ -295,7 +306,7 @@ async function staticPage(path: string): Promise<Page | null> {
       <ul>${profiles
         .map(
           (p) =>
-            `<li><a href="/fonds/${esc(p.slug)}">${esc(p.theme?.name || p.name)}</a> · ${esc(kinds[p.kind] || p.kind || "Financeur")}${p.criteria?.ticket ? ` · ticket ${esc(p.criteria.ticket)}` : ""}</li>`,
+            `<li><a href="/fonds/${esc(p.slug)}">${esc(p.theme?.name || p.name)}</a> · ${esc(kinds[p.kind] || p.kind || "Financeur")}${resume(p.criteria).ticket ? ` · ticket ${esc(resume(p.criteria).ticket)}` : ""}</li>`,
         )
         .join("")}</ul></main>`,
     };
@@ -498,7 +509,7 @@ ${Object.entries(pageMeta)
   .join("\n")}
 
 ## Annuaire des financeurs
-${profiles.map((p) => `- [${p.theme?.name || p.name}](${abs("/fonds/" + p.slug)}): ${kinds[p.kind] || p.kind || "Financeur"}${p.criteria?.ticket ? `, ticket ${p.criteria.ticket}` : ""}`).join("\n")}
+${profiles.map((p) => `- [${p.theme?.name || p.name}](${abs("/fonds/" + p.slug)}): ${kinds[p.kind] || p.kind || "Financeur"}${resume(p.criteria).ticket ? `, ticket ${resume(p.criteria).ticket}` : ""}`).join("\n")}
 `;
   });
 }

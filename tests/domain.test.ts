@@ -25,6 +25,18 @@ test("une hypothèse ou une extraction non confirmée reste à compléter", () =
   s.facts.company.kind = "hypothesis";
   assert.equal(score(s).percent, 0);
 });
+test("une absence d’information ne complète pas une rubrique", () => {
+  const s = emptyState();
+  s.facts.financials = {
+    value:
+      "Aucun revenu mensuel récurrent communiqué ; aucun prévisionnel financier sur trois ans fourni.",
+    source: "doc1",
+    kind: "document",
+    confirmed: true,
+  };
+  assert.equal(score(s).percent, 0);
+  assert.ok(score(s).missing.some((r) => r.id === "financials"));
+});
 test("attestation liée à une version contrôlée et à des documents", () => {
   const s = emptyState();
   for (const r of requirements)
