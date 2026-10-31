@@ -161,64 +161,7 @@ export const programs: Program[] = [
       },
     ],
   },
-  {
-    id: "pret_amorcage",
-    name: "Prêt d’amorçage",
-    operator: "Bpifrance",
-    kind: "Prêt",
-    amount:
-      "50 000 à 100 000 €, limité aux fonds propres ; sans garantie personnelle",
-    summary:
-      "Prêt pour préparer une levée de fonds, après une première aide à l’innovation.",
-    verifiedAt: "2026-10-21",
-    confidence: "secondaire",
-    sources: [
-      {
-        label: "Bpifrance Création",
-        url: "https://bpifrance-creation.fr/encyclopedie/financements/lemprunt/pret-damorcage-bpifrance",
-      },
-      {
-        label: "Fiche Bpifrance · les-aides.fr",
-        url: "https://les-aides.fr/aide/OEhf3w/bpifrance.pret-d-amorcage-investissement.pdf",
-      },
-    ],
-    criteria: [
-      {
-        id: "age_lt_5y",
-        label: "PME de moins de 5 ans",
-        blocking: true,
-        question: "L’entreprise a-t-elle moins de 5 ans ?",
-      },
-      {
-        id: "prior_innovation_aid",
-        label: "Aide à l’innovation déjà obtenue",
-        blocking: true,
-        question:
-          "L’entreprise a-t-elle déjà bénéficié d’une aide à l’innovation (Bourse French Tech, aide Bpifrance, i-Lab…) ? Laquelle ?",
-      },
-      {
-        id: "no_dividends",
-        label: "Aucun bénéfice distribué",
-        blocking: true,
-        question: "L’entreprise a-t-elle déjà distribué des bénéfices ?",
-      },
-      notInDifficulty,
-      {
-        id: "equity_covers_loan",
-        label: "Fonds propres ≥ montant du prêt",
-        blocking: true,
-        question:
-          "Montant des fonds propres et quasi-fonds propres, comparé au prêt demandé.",
-      },
-      {
-        id: "fundraising_plan",
-        label: "Levée de fonds préparée",
-        blocking: false,
-        question:
-          "Montant visé, calendrier et investisseurs approchés pour la levée.",
-      },
-    ],
-  },
+  // Prêt d'amorçage Bpifrance retiré : l'offre n'est plus proposée (catalogue Bpifrance, octobre 2026)
   {
     id: "inov",
     name: "Concours i-Nov",

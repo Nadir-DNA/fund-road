@@ -18,8 +18,9 @@ const factsSchema = z.object({
         kind: z.enum(["document", "hypothesis"]),
       }),
     )
-    .max(30),
-  conflicts: z.array(z.string().max(2000)).max(30),
+    // le modèle détaille souvent plusieurs faits par rubrique ; seuls les faits cités d'une rubrique connue sont gardés
+    .max(200),
+  conflicts: z.array(z.string().max(2000)).max(100),
 });
 // le modèle renvoie parfois null pour un champ vide
 const text = (max: number) =>
@@ -187,11 +188,22 @@ export async function analyze(
     next.eligibility = Object.fromEntries(
       programs.map((p, i) => [p.id, programResults[i].eligibility]),
     );
+  // Par rubrique : le premier fait cité complet ; à défaut le premier fait cité partiel (« … à compléter »),
+  // affiché pour ne pas perdre l'information, mais non compté comme rempli par le score
+  const choisis = new Map<string, (typeof parsed.facts)[number]>();
+  // au moins un morceau de la valeur apporte une information (pas seulement « non communiqué »)
+  const utile = (v: string) =>
+    v.split(/[.;]/).some((m) => m.trim().length >= 4 && !hasMissingInformation(m));
   for (const f of parsed.facts) {
     if (!requirements.some((r) => r.id === f.id)) continue;
-    if (hasMissingInformation(f.value)) continue;
+    if (!utile(f.value)) continue;
     const doc = documents.find((d) => d.id === f.source);
     if (!doc || !f.quote || !doc.extracted.includes(f.quote)) continue;
+    const actuel = choisis.get(f.id);
+    if (!actuel || (hasMissingInformation(actuel.value) && !hasMissingInformation(f.value)))
+      choisis.set(f.id, f);
+  }
+  for (const f of choisis.values())
     if (!next.facts[f.id]?.confirmed)
       next.facts[f.id] = {
         value: f.value,
@@ -200,7 +212,6 @@ export async function analyze(
         kind: f.kind,
         confirmed: false,
       };
-  }
   const all = [factsResult, ...programResults];
   return {
     state: next,

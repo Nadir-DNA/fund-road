@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { emptyState } from "../shared/domain.ts";
+import { emptyState, score } from "../shared/domain.ts";
 process.env.DATABASE_URL ||= "postgres://unused";
 process.env.BETTER_AUTH_SECRET ||= "test-only-unused-secret-32-characters";
 process.env.OPENAI_API_KEY = "mock-key-never-sent";
@@ -229,6 +229,84 @@ test("IA : une pièce jointe correspondant au nom demandé est reconnue", async 
     );
     assert.equal(result.eligibility["d:f1:0"].status, "ok");
     assert.equal(result.eligibility["d:f1:0"].source, "doc1");
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test("IA : une réponse détaillée (plus de 30 faits) ne fait pas échouer l'analyse", async () => {
+  const original = globalThis.fetch;
+  const texte = "Chiffre d'affaires réalisé : 0 €.";
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({
+                summary: "Résumé",
+                conflicts: [],
+                facts: Array.from({ length: 45 }, (_, i) => ({
+                  id: i === 0 ? "financials" : "inconnu-" + i,
+                  value: "CA 0 €",
+                  source: "doc1",
+                  quote: texte,
+                  kind: "document",
+                })),
+              }),
+            },
+          },
+        ],
+        usage: { prompt_tokens: 1, completion_tokens: 1 },
+      }),
+    );
+  try {
+    const r = await analyze(emptyState(), [{ id: "doc1", name: "bp.docx", extracted: texte }]);
+    assert.equal(Object.keys(r.state.facts).length <= 1, true);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test("IA : pour une rubrique, le premier fait cité valide l'emporte sur les détails suivants", async () => {
+  const original = globalThis.fetch;
+  const texte = "Fondateur : Nadir Daoudi. Aucun salarié à ce jour.";
+  const fait = (value: string, quote: string) => ({ id: "team", value, source: "doc1", quote, kind: "document" });
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        choices: [{ finish_reason: "stop", message: { content: JSON.stringify({ summary: "", conflicts: [], facts: [fait("Fondateur : Nadir Daoudi", "Fondateur : Nadir Daoudi."), fait("Aucun salarié", "Aucun salarié à ce jour.")] }) } }],
+        usage: { prompt_tokens: 1, completion_tokens: 1 },
+      }),
+    );
+  try {
+    const r = await analyze(emptyState(), [{ id: "doc1", name: "bp.docx", extracted: texte }]);
+    assert.equal(r.state.facts.team.value, "Fondateur : Nadir Daoudi");
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test("IA : un fait partiel est gardé (non compté comme rempli), une simple absence est rejetée", async () => {
+  const original = globalThis.fetch;
+  const texte = "Fondateur : Nadir Daoudi. Parcours à compléter. Montant recherché : à compléter.";
+  const fait = (id: string, value: string, quote: string) => ({ id, value, source: "doc1", quote, kind: "document" });
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        choices: [{ finish_reason: "stop", message: { content: JSON.stringify({ summary: "", conflicts: [], facts: [
+          fait("team", "Fondateur : Nadir Daoudi ; parcours à compléter", "Fondateur : Nadir Daoudi."),
+          fait("funding", "Montant recherché : à compléter", "Montant recherché : à compléter."),
+        ] }) } }],
+        usage: { prompt_tokens: 1, completion_tokens: 1 },
+      }),
+    );
+  try {
+    const r = await analyze(emptyState(), [{ id: "doc1", name: "bp.docx", extracted: texte }]);
+    assert.match(r.state.facts.team.value, /Nadir Daoudi/);
+    assert.equal(r.state.facts.funding, undefined);
+    assert.equal(score(r.state).completed, 0, "le fait partiel ne compte pas comme rubrique remplie");
   } finally {
     globalThis.fetch = original;
   }
