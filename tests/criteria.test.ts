@@ -4,7 +4,7 @@ import { correspond, details, formatTicket, resume } from "../shared/criteria.ts
 import { orgProgram } from "../shared/programs.ts";
 process.env.DATABASE_URL ||= "postgres://unused";
 process.env.BETTER_AUTH_SECRET ||= "test-only-unused-secret-32-characters";
-const { citeLeNom, lireFiche, verifierSource, retenir, liensUtiles, logoDe, texteDe } = await import("../server/financeurs.ts");
+const { citeLeNom, lireFiche, verifierSource, retenir, liensUtiles, logoDe, texteDe, chercherLogo } = await import("../server/financeurs.ts");
 
 const fonds = {
   sectors: ["Fintech / Assurtech", "Logiciel / SaaS"],
@@ -130,4 +130,17 @@ test("qualification : pages utiles du même site et logo carré", () => {
   assert.deepEqual(liensUtiles(html, "https://x.fr/"), ["https://x.fr/nos-criteres", "https://x.fr/candidater"]);
   assert.equal(logoDe(html, "https://x.fr/"), "https://x.fr/icon-180.png");
   assert.equal(logoDe('<link rel="icon" href="/logo.svg">', "https://x.fr/"), null, "SVG refusé");
+});
+
+test("logos : repli sur l'icône Apple standard, formats vérifiés aux octets", async () => {
+  const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47]), Buffer.alloc(20)]);
+  const site = (async (u: string) =>
+    u === "https://x.fr/"
+      ? new Response("<html><link rel=\"icon\" href=\"/logo.svg\"></html>")
+      : u === "https://x.fr/apple-touch-icon.png"
+        ? new Response(png)
+        : new Response("", { status: 404 })) as typeof fetch;
+  assert.equal((await chercherLogo("https://x.fr/", site))?.type, "image/png");
+  const html = (async () => new Response("<html>pas une image</html>")) as typeof fetch;
+  assert.equal(await chercherLogo("https://y.fr/", html), null, "une page HTML n'est pas un logo");
 });

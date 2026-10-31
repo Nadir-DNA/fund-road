@@ -238,3 +238,22 @@ export function consignes(kind: string) {
     'Réponds uniquement par un objet JSON : {"sectors":{"valeur":[...],"citation":"...","url":"..."},"stages":{...},"regions":{...},"ticketMin":{...},"ticketMax":{...},"details":{"<cle>":{"valeur":...,"citation":"...","url":"..."}},"notables":[{"valeur":"Nom","citation":"...","url":"..."}]}',
   ].join("\n");
 }
+
+// Logo seul, sans IA : icône déclarée par la page, sinon les adresses standard des icônes Apple
+export async function chercherLogo(site: string, get: typeof fetch = fetch) {
+  const candidats: string[] = [];
+  try {
+    const r = await get(site, { redirect: "follow", signal: AbortSignal.timeout(15000), headers: { "user-agent": "FundRoadBot/1.0 (+https://fund-road.com)" } });
+    if (r.ok) {
+      const declare = logoDe(await r.text(), r.url || site);
+      if (declare) candidats.push(declare);
+    }
+  } catch {}
+  const origine = new URL(site).origin;
+  candidats.push(origine + "/apple-touch-icon.png", origine + "/apple-touch-icon-precomposed.png");
+  for (const u of candidats) {
+    const image = await telechargerLogo(u, get).catch(() => null);
+    if (image) return image;
+  }
+  return null;
+}
