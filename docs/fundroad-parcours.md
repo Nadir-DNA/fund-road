@@ -1,12 +1,12 @@
 ---
-title: Fundroad — Parcours et interface
+title: Fund Road — Parcours et interface
 created: 2026-10-13
 updated: 2026-10-13
 type: concept
 tags: [projet, business, decision]
 ---
 
-# Fundroad — Parcours et interface
+# Fund Road — Parcours et interface
 
 Site public : accueil, entrepreneurs, financeurs, marque blanche, tarifs, annuaire, référentiel, partenaires, ressources, confiance et mentions légales.
 Entrepreneur : compte, startup, objectif, documents, extraction sourcée, questions, confirmation, dossier, candidatures, export.

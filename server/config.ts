@@ -33,7 +33,7 @@ if (
   !/^acct_[A-Za-z0-9]+$/.test(process.env.STRIPE_CONTEXT)
 )
   throw new Error(
-    "STRIPE_CONTEXT doit identifier le compte Stripe Fundroad (acct_…)",
+    "STRIPE_CONTEXT doit identifier le compte Stripe Fund Road (acct_…)",
   );
 if (
   process.env.STRIPE_SECRET_KEY?.startsWith("sk_org") &&

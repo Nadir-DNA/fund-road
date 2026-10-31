@@ -13,13 +13,13 @@ export const auth = betterAuth({
     minPasswordLength: 12,
     requireEmailVerification: config.requireEmailVerification,
     sendResetPassword: async ({ user, url }) => {
-      await mail(user.email, "Réinitialiser votre mot de passe Fundroad", url);
+      await mail(user.email, "Réinitialiser votre mot de passe Fund Road", url);
     },
   },
   emailVerification: {
     sendOnSignUp: mailReady(),
     sendVerificationEmail: async ({ user, url }) => {
-      await mail(user.email, "Confirmer votre compte Fundroad", url);
+      await mail(user.email, "Confirmer votre compte Fund Road", url);
     },
   },
   plugins: [twoFactor()],

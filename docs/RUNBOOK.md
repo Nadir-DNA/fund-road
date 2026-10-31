@@ -1,4 +1,4 @@
-# Exploiter le pilote local Fundroad
+# Exploiter le pilote local Fund Road
 
 Node 22+, npm, Docker Compose. PostgreSQL reste sur la machine ; API sur `127.0.0.1:3184`, interface sur `http://127.0.0.1:5184`, PostgreSQL sur `127.0.0.1:5448`.
 
@@ -56,6 +56,6 @@ Recettes supplémentaires : `npm run test:ledger` utilise une transaction SQL an
 
 ## Stripe et domaine : contrôle du 17/10
 
-La clé Stripe d’organisation est déjà dans le coffre. Préférer une clé limitée au compte Fundroad pour le serveur de production ; conserver la clé d’organisation dans le coffre pour l’administration. Si une clé d’organisation est utilisée, `STRIPE_CONTEXT` doit être l’identifiant `acct_…` de Fundroad. Le SDK joint sa version API. Ne pas réutiliser le contexte d’un autre projet.
+La clé Stripe d’organisation est déjà dans le coffre. Préférer une clé limitée au compte Fund Road pour le serveur de production ; conserver la clé d’organisation dans le coffre pour l’administration. Si une clé d’organisation est utilisée, `STRIPE_CONTEXT` doit être l’identifiant `acct_…` de Fund Road. Le SDK joint sa version API. Ne pas réutiliser le contexte d’un autre projet.
 
 Le domaine `fund-road.com` est enregistré chez IONOS ; les accès OVH trouvés n’autorisent pas sa gestion. Emails et IA sont reportés par Nadir. La vérification email reste obligatoire en production dans l’authentification actuelle : ne pas lancer d’inscription publique sans avoir défini et testé le parcours sans SMTP.

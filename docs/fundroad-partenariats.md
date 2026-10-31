@@ -1,12 +1,12 @@
 ---
-title: Fundroad — Parrainage et affiliation
+title: Fund Road — Parrainage et affiliation
 created: 2026-10-13
 updated: 2026-10-14
 type: concept
 tags: [projet, business, decision]
 ---
 
-# Fundroad — Parrainage et affiliation
+# Fund Road — Parrainage et affiliation
 
 Deux programmes et codes distincts.
 Startup : remise filleul avant achat ; avantage du parrain sur un prochain achat après paiement éligible et délai de remboursement. Montants, plafonds et durée non validés.

@@ -1,12 +1,12 @@
 ---
-title: Fundroad — Risques et exploitation
+title: Fund Road — Risques et exploitation
 created: 2026-10-13
 updated: 2026-10-13
 type: concept
 tags: [projet, business, decision]
 ---
 
-# Fundroad — Risques et exploitation
+# Fund Road — Risques et exploitation
 
 Risques prioritaires : hallucinations, faux justificatifs, fuite entre fonds, prompt injection, attestations trompeuses, biais, données obsolètes, surconsommation IA, conflit d'intérêts, personnalisation ingérable.
 Contrôles : source/confirmation, distinction authenticité/présence, permissions serveur et tests croisés, traitements de documents non fiables, référentiels versionnés, décision d'investissement humaine, limites de coût, séparation commission/score.

@@ -1,12 +1,12 @@
 ---
-title: Fundroad — Refonte IA et financement
+title: Fund Road — Refonte IA et financement
 created: 2026-10-13
 updated: 2026-10-14
 type: entity
 tags: [projet, business, decision, design]
 ---
 
-# Fundroad
+# Fund Road
 
 Objectif de Nadir : gagner de l'argent dans le financement entrepreneurial avec une plateforme rentable. Plan complet accepté le 13/10/2026 ; implémentation engagée, pas encore de nouvelle production.
 
@@ -44,7 +44,7 @@ Objectif de Nadir : gagner de l'argent dans le financement entrepreneurial avec 
 - Dépôt : https://github.com/Nadir-DNA/fund-road
 - Checkout : `/home/dna/Documents/Codex/2026-10-13-j-aimerai-qu-on-reprenne-le/fundroad`.
 - État précis : `docs/IMPLEMENTATION.md` dans le checkout ; ne pas confondre plan et fonctionnalités vérifiées.
-- [[entities/digitaldna]] : projet précédent, qui conservait Fundroad en attente.
+- [[entities/digitaldna]] : projet précédent, qui conservait Fund Road en attente.
 
 Source : décisions explicites de Nadir dans la conversation Codex du 13/10/2026 ; inspection du dépôt et sources officielles référencées dans les notes.
 

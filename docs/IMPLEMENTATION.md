@@ -1,4 +1,4 @@
-# Fundroad V2 — état vérifié au 14 octobre 2026
+# Fund Road V2 — état vérifié au 14 octobre 2026
 
 **Statut : pilote local fonctionnel, refonte complète encore en cours. Pas d’ouverture commerciale ni de déploiement public effectué.** Le plan produit dans les neuf notes Obsidian décrit la cible ; cette page décrit ce qui existe réellement.
 
@@ -59,12 +59,12 @@ Voir [RUNBOOK.md](RUNBOOK.md) pour lancer le pilote. Les modifications n’ont p
 
 ## Vérification des accès — 17 octobre 2026
 
-Correction du diagnostic précédent : la clé Stripe d’organisation existe dans le coffre gopass (`stripe/api-key`). Son absence du `.env.local` Fundroad ne signifiait pas son absence de l’environnement. Aucune valeur secrète copiée dans les notes ni dans le dépôt.
+Correction du diagnostic précédent : la clé Stripe d’organisation existe dans le coffre gopass (`stripe/api-key`). Son absence du `.env.local` Fund Road ne signifiait pas son absence de l’environnement. Aucune valeur secrète copiée dans les notes ni dans le dépôt.
 
-- Stripe : appel authentifié en lecture reçu par Stripe, mais `Stripe-Context` du compte cible requis. Compte Fundroad non identifié. L’application prend désormais en charge `STRIPE_CONTEXT=acct_…`, avec refus d’une clé d’organisation sans compte explicite. 16 tests unitaires et build réussis. Aucun compte, webhook ni produit créé.
-- OVH : trois entrées du coffre examinées (`ovh/amens`, `ovh/fieatapp`, `cloudflare/ovh-locio`). Les appels GET vers le domaine Fundroad, les hébergements web et les VPS renvoient 403 « This call has not been granted ». Leur présence ne prouve pas les droits sur Fundroad.
+- Stripe : appel authentifié en lecture reçu par Stripe, mais `Stripe-Context` du compte cible requis. Compte Fund Road non identifié. L’application prend désormais en charge `STRIPE_CONTEXT=acct_…`, avec refus d’une clé d’organisation sans compte explicite. 16 tests unitaires et build réussis. Aucun compte, webhook ni produit créé.
+- OVH : trois entrées du coffre examinées (`ovh/amens`, `ovh/fieatapp`, `cloudflare/ovh-locio`). Les appels GET vers le domaine Fund Road, les hébergements web et les VPS renvoient 403 « This call has not been granted ». Leur présence ne prouve pas les droits sur Fund Road.
 - Domaine : RDAP Verisign donne **IONOS SE** comme registrar de `fund-road.com`. Les DNS publics sont `ns1111.ui-dns.de`, `ns1026.ui-dns.com`, `ns1101.ui-dns.org`, `ns1104.ui-dns.biz` ; A = `185.158.133.1`. Aucun accès IONOS trouvé dans les entrées du coffre recherchées. Aucun DNS modifié.
-- Aucune session navigateur disponible pour identifier le compte Stripe ou administrer IONOS. Questions transmises à Nadir : emplacement de l’accès IONOS et existence/identifiant du compte Stripe Fundroad.
+- Aucune session navigateur disponible pour identifier le compte Stripe ou administrer IONOS. Questions transmises à Nadir : emplacement de l’accès IONOS et existence/identifiant du compte Stripe Fund Road.
 - Instruction de Nadir : emails et IA reportés. Ne pas les présenter comme des credentials à fournir immédiatement. L’inscription publique exige encore un parcours cohérent sans SMTP : la vérification email reste requise en mode production dans le code, et n’a pas été désactivée.
 
 Mise en ligne non effectuée : il manque l’accès au domaine et l’identification de la cible d’hébergement ; création du webhook en attente du compte Stripe et d’une URL serveur effective. Conserver la base/auth locales selon la décision existante tant qu’une autre cible n’est pas confirmée.

@@ -24,6 +24,7 @@ import {
   factSchema,
 } from "../shared/domain.ts";
 import { exportDossier } from "./export.ts";
+import { supprimerDossier } from "./donnees.ts";
 import { programScore, orgProgram } from "../shared/programs.ts";
 import { allPrograms, resolvePrograms } from "./programs.ts";
 import { registerContent } from "./content.ts";
@@ -302,6 +303,15 @@ app.post("/api/dossiers", async (req) => {
   });
   await audit(u.id, b.organizationId, "dossier.created", id);
   return { id };
+});
+// Suppression définitive d'un dossier et de ses documents, réservée au propriétaire de l'organisation
+app.delete("/api/dossiers/:id", async (req: any) => {
+  const u = await user(req);
+  const d = await dossier(u.id, z.string().uuid().parse(req.params.id));
+  await owner(u.id, d.organization_id);
+  await supprimerDossier(d.id);
+  await audit(u.id, d.organization_id, "dossier.deleted", d.id);
+  return { ok: true };
 });
 app.get("/api/dossiers/:id", async (req: any) => {
   const u = await user(req);
@@ -738,7 +748,7 @@ app.get("/api/attestations/:id", async (req: any) => {
   return {
     ...a,
     label:
-      "Dossier complet selon le référentiel Fundroad — contrôles automatisés",
+      "Dossier complet selon le référentiel Fund Road — contrôles automatisés",
     limitation:
       "Complétude documentaire uniquement ; aucune vérification d’authenticité ni garantie de financement.",
   };
@@ -1043,7 +1053,7 @@ app.post("/api/invitations", async (req) => {
   try {
     await mail(
       b.email,
-      "Invitation Fundroad",
+      "Invitation Fund Road",
       `Vous êtes invité à collaborer : ${config.baseURL}/invitation/${token}`,
     );
   } catch (e) {

@@ -130,7 +130,7 @@ const organization = {
   url: abs("/"),
   logo: abs("/brand/fundroad-logo.png"),
   description:
-    "Plateforme française qui transforme les documents d’une startup en dossier de financement sourcé, vérifie son éligibilité aux aides publiques et le partage avec business angels, fonds et incubateurs.",
+    "Plateforme française qui transforme les documents d’une startup en dossier de financement sourcé, signale ce qui manque face aux critères des financeurs et des aides publiques, et le partage avec business angels, fonds et incubateurs.",
 };
 export function renderPage(index: string, p: Page) {
   const url = abs(p.path);
@@ -262,7 +262,7 @@ async function staticPage(path: string): Promise<Page | null> {
       <li>Validez ce que l’IA a trouvé : chaque information cite le passage exact de votre document, rien n’est inventé.</li>
       <li>Partagez une version datée avec le financeur de votre choix, révocable à tout moment.</li></ol>
       <h2>Ce que vérifie un financeur</h2>
-      <p>Neuf rubriques : entreprise, équipe, problème, marché, modèle économique, traction, finances, besoin de financement, utilisation des fonds. Fund Road vérifie aussi l’éligibilité à des programmes publics comme la Bourse French Tech, le Prêt d’amorçage, i-Lab ou le Pass PI de l’INPI.</p>
+      <p>Neuf rubriques : entreprise, équipe, problème, marché, modèle économique, traction, finances, besoin de financement, utilisation des fonds. Fund Road confronte aussi le dossier aux critères publiés de programmes publics comme la Bourse French Tech, i-Lab ou le Pass PI de l’INPI : un critère n’est marqué rempli que s’il est cité dans vos documents, sinon il reste à vérifier.</p>
       <h2>Questions fréquentes</h2>
       ${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}
       <p><a href="/annuaire">Consulter l’annuaire des fonds, business angels et incubateurs</a> · <a href="/tarifs">Voir les tarifs</a></p></main>`,
@@ -368,7 +368,7 @@ async function priced() {
             price: dossier.price_cents / 100,
             unit: " pour 90 jours",
             description:
-              "Analyses IA, éligibilité aux aides et aux financeurs, exports PDF et Word, partages révocables.",
+              "Analyses IA, critères des aides et des financeurs, exports PDF et Word, partages révocables.",
           },
         ]
       : []),

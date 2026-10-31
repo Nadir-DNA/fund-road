@@ -1,5 +1,7 @@
 # Image unique pour l'API et le worker ; le serveur exécute le TypeScript via tsx
 FROM node:22-alpine
+# Extraction des PDF (pdftotext, pdfinfo, pdftoppm) et OCR des PDF scannés en français et anglais
+RUN apk add --no-cache poppler-utils tesseract-ocr tesseract-ocr-data-fra tesseract-ocr-data-eng font-dejavu
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund

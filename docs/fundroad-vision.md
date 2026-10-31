@@ -1,12 +1,12 @@
 ---
-title: Fundroad — Vision et décisions
+title: Fund Road — Vision et décisions
 created: 2026-10-13
 updated: 2026-10-13
 type: concept
 tags: [projet, business, decision]
 ---
 
-# Fundroad — Vision et décisions
+# Fund Road — Vision et décisions
 
 Objectif : un business rentable dans un domaine qui plaît à Nadir. Un dossier principal réutilisable, des candidatures adaptées, des analyses privées et une attestation datée.
 Décisions confirmées le 13/10/2026 : toutes les fonctions au lancement ; interface claire et professionnelle ; reprise des contenus seulement ; authentification et base locales sur la machine de Nadir ; API IA directe ; tampon automatisé sans relecture humaine ; parrainage startup avec réduction des deux côtés ; affiliation fonds versée exclusivement à la structure, jamais aux employés.

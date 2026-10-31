@@ -69,7 +69,7 @@ export async function registerBilling(app: FastifyInstance) {
           await stripe!.coupons.create({
             percent_off: terms.discountBps / 100,
             duration: "once",
-            name: "Parrainage Fundroad " + terms.version,
+            name: "Parrainage Fund Road " + terms.version,
           })
         ).id;
       }

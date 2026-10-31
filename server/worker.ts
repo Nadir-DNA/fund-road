@@ -31,8 +31,8 @@ await db.query(
 );
 console.log(
   extractOnly
-    ? "Worker Fundroad : extraction locale uniquement, aucun appel IA"
-    : "Worker Fundroad prêt",
+    ? "Worker Fund Road : extraction locale uniquement, aucun appel IA"
+    : "Worker Fund Road prêt",
 );
 while (!stopping) {
   const job = await transaction(async (c) => {

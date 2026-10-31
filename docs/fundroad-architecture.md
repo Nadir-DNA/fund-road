@@ -1,12 +1,12 @@
 ---
-title: Fundroad — Architecture locale et données
+title: Fund Road — Architecture locale et données
 created: 2026-10-13
 updated: 2026-10-13
 type: concept
 tags: [projet, business, decision]
 ---
 
-# Fundroad — Architecture locale et données
+# Fund Road — Architecture locale et données
 
 Dépôt source : https://github.com/Nadir-DNA/fund-road ; ancien socle React/Vite/Supabase. Refondre dans un checkout isolé ; ne pas importer comptes ou dossiers.
 Cible : React/TypeScript/Vite, Fastify, PostgreSQL local dédié, Better Auth auto-hébergé, documents privés locaux, worker et file persistante PostgreSQL. Pas de Supabase cloud pour la nouvelle application.

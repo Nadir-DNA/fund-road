@@ -44,7 +44,7 @@ export const publicCopy: Record<
     ],
   },
   referentiel: {
-    kicker: "RÉFÉRENTIEL FUNDROAD",
+    kicker: "RÉFÉRENTIEL FUND ROAD",
     title: "La confiance commence par la clarté",
     intro:
       "Le score mesure la complétude documentaire. Il ne mesure pas la probabilité de financement.",
@@ -84,22 +84,34 @@ export const publicCopy: Record<
     ],
   },
   confiance: {
-    kicker: "DONNÉES & CONFIANCE",
-    title: "Vos documents restent sous contrôle",
+    kicker: "VOS DONNÉES",
+    title: "Vos données : ce qui part, à qui, et pour combien de temps",
     intro:
-      "Comptes et documents sont hébergés par Fund Road. Seuls les extraits utiles à l’analyse sont transmis à notre fournisseur d’IA. La mesure d’audience Google Analytics ne s’active qu’avec votre accord, modifiable à tout moment en bas de page.",
+      "Vos documents servent à construire votre dossier, rien d’autre. Voici exactement ce qu’ils deviennent et comment les effacer. Pour toute question ou demande : contact@fund-road.com.",
     items: [
       [
-        "Accès limités",
-        "Chaque espace dispose de permissions propres. Un lien de parrainage ne donne aucun accès aux dossiers.",
+        "Où sont vos documents",
+        "Vos fichiers et votre dossier sont stockés sur le serveur de Fund Road. Les échanges avec le site passent en HTTPS. Personne d’autre que vous et les membres que vous invitez n’y a accès depuis le site ; l’administrateur technique peut y accéder pour la maintenance et la sécurité.",
       ],
       [
-        "Partage nominatif",
-        "Choisissez les destinataires et révoquez leurs accès futurs. Les copies déjà téléchargées ne peuvent pas être effacées à distance.",
+        "Ce qui part à l’IA",
+        "Seul le texte extrait de vos documents est envoyé, jamais les fichiers, à notre fournisseur d’IA (OpenCode, modèle DeepSeek), avec la consigne de ne pas conserver la requête. Cela arrive quand vous lancez une analyse, et quand vous partagez votre dossier avec un financeur inscrit pour vérifier ses critères.",
       ],
       [
-        "Traçabilité",
-        "Chaque information du dossier garde sa source : le document et la citation exacte dont elle provient.",
+        "Qui voit votre dossier",
+        "Un financeur ne voit votre dossier que si vous le partagez avec lui, nominativement, avec les pièces choisies. Vous pouvez révoquer ce partage à tout moment ; les copies qu’il a déjà téléchargées ne peuvent pas être effacées à distance.",
+      ],
+      [
+        "Combien de temps",
+        "Vos dossiers sont conservés tant que votre compte existe. Les sauvegardes du serveur sont conservées 14 jours, puis effacées : une donnée supprimée disparaît donc aussi des sauvegardes sous 14 jours.",
+      ],
+      [
+        "Supprimer un dossier ou votre compte",
+        "Le bouton « Supprimer » d’un dossier efface immédiatement ses documents, ses versions et ses partages. Pour supprimer votre compte, écrivez à contact@fund-road.com : la suppression est faite sous 30 jours. Les données de facturation sont conservées 10 ans, comme l’impose la loi.",
+      ],
+      [
+        "Mesure d’audience",
+        "Google Analytics n’est chargé qu’après votre accord, donné ou refusé dans la bannière. Vous pouvez changer d’avis à tout moment avec le lien « Gérer les cookies » en bas de chaque page.",
       ],
     ],
   },
@@ -236,7 +248,7 @@ export const pageMeta: Record<string, { title: string; description: string }> =
     "/": {
       title: "Fund Road : dossier de levée de fonds et subvention sourcé",
       description:
-        "Déposez business plan et deck : Fund Road structure un dossier de financement sourcé, vérifie l’éligibilité aux aides (BFT, i-Lab) et le partage aux fonds.",
+        "Déposez business plan et deck : Fund Road structure un dossier de financement sourcé, montre ce qui manque et vous aide à le partager aux fonds.",
     },
     "/tarifs": {
       title: "Tarifs Fund Road : gratuit pour commencer, 149 € par dossier",
@@ -274,9 +286,9 @@ export const pageMeta: Record<string, { title: string; description: string }> =
         "Parrainage entre startups et affiliation pour les fonds : conditions explicites, sans effet sur le score ni sur la décision d’investissement.",
     },
     "/confiance": {
-      title: "Données et confidentialité de vos documents | Fund Road",
+      title: "Vos données et vos documents | Fund Road",
       description:
-        "Hébergement, accès limités, partage nominatif et traçabilité des sources : comment Fund Road protège vos documents de financement.",
+        "Ce qui est envoyé à l’IA, qui voit votre dossier, combien de temps il est conservé et comment le supprimer : la politique de données de Fund Road.",
     },
     "/ressources": {
       title: "Guides levée de fonds et subvention | Fund Road",

@@ -315,7 +315,7 @@ function PublicLayout({
             <h4>Ressources</h4>
             <nav aria-label="Ressources">
               <Link to="/referentiel">Le référentiel</Link>
-              <Link to="/confiance">Données & confiance</Link>
+              <Link to="/confiance">Vos données</Link>
               <Link to="/partenaires">Partenaires</Link>
               <Link to="/ressources">Guides</Link>
             </nav>
@@ -1064,7 +1064,7 @@ function Pricing() {
       unit: " HT / 90 jours",
       features: [
         "Analyses IA de vos documents",
-        "Éligibilité aux aides et aux financeurs",
+        "Critères des aides et des financeurs",
         "Exports PDF et Word",
         "Partages révocables et suivi des étapes",
       ],
@@ -1644,6 +1644,8 @@ function DossierPage() {
   const { data: d, error } = useLoad("/dossiers/" + id, tick);
   const { data: cfg } = useLoad("/config");
   const { run, busy } = useAction();
+  const { org } = useContext(WorkspaceContext);
+  const navigate = useNavigate();
   const refresh = () => setTick((t) => t + 1);
   useEffect(() => {
     if (!d?.jobs.some((j: any) => ["queued", "running"].includes(j.status)))
@@ -1677,6 +1679,23 @@ function DossierPage() {
           >
             Word
           </a>
+          {org.role === "owner" && (
+            <button
+              className="button secondary"
+              disabled={busy}
+              onClick={() =>
+                confirm(
+                  `Supprimer définitivement « ${d.name} », ses documents, ses versions et ses partages ? Cette action est irréversible.`,
+                ) &&
+                run(async () => {
+                  await api("/dossiers/" + id, "DELETE");
+                  navigate("/app/dossiers");
+                }, "Dossier supprimé")
+              }
+            >
+              Supprimer
+            </button>
+          )}
         </div>
       </div>
       <div className="tabs">
@@ -3463,7 +3482,7 @@ function Security() {
             setSetup(
               await api("/auth/two-factor/enable", "POST", {
                 password: f.get("password"),
-                issuer: "Fundroad",
+                issuer: "Fund Road",
               }),
             );
           });
