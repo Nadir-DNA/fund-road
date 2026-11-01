@@ -2621,6 +2621,11 @@ function EligibilityTab({
                     ) : (
                       <Clock size={18} />
                     )}
+                    {c.result.status === "ok"
+                      ? "Rempli"
+                      : c.result.status === "ko"
+                        ? "Non rempli"
+                        : "À vérifier"}
                   </span>
                   <h3>{c.label}</h3>
                   <Badge>
