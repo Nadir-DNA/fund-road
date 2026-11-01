@@ -4,6 +4,7 @@ import {
   hasMissingInformation,
   requirements,
   type DossierState,
+  type Critique,
 } from "../shared/domain.ts";
 import type { Eligibility, Program } from "../shared/programs.ts";
 const factsSchema = z.object({
@@ -42,6 +43,50 @@ const eligibilitySchema = z.object({
       }),
     )
     .max(60)
+    .default([]),
+});
+const liste = (n: number, max = 600) =>
+  z.array(z.string().max(max)).max(n).nullish().transform((v) => v ?? []);
+// le modèle varie parfois ses libellés : ramenés au plus proche, l'inconnu ne gonfle jamais l'évaluation
+const sansAccent = (v: unknown) =>
+  String(v ?? "").normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
+const statutPoint = z.preprocess((v) => {
+  const t = sansAccent(v);
+  return /^(ok|demontre|solide|rempli)/.test(t) ? "ok" : /^(absent|manquant|non)/.test(t) ? "absent" : "partiel";
+}, z.enum(["ok", "partiel", "absent"]));
+const niveauRubrique = z.preprocess((v) => {
+  const t = sansAccent(v).replace(/[\s-]+/g, "_");
+  return ["solide", "a_renforcer", "insuffisant", "absent"].includes(t) ? t : t.startsWith("a_renf") ? "a_renforcer" : "insuffisant";
+}, z.enum(["solide", "a_renforcer", "insuffisant", "absent"]));
+const critiqueSchema = z.object({
+  synthese: text(2000),
+  stade: text(200),
+  forces: liste(5),
+  alertes: liste(6),
+  priorites: liste(5),
+  rubriques: z
+    .array(
+      z.object({
+        id: z.string(),
+        niveau: niveauRubrique,
+        constats: z
+          .array(
+            z.object({
+              point: text(300),
+              statut: statutPoint,
+              note: text(600),
+            }),
+          )
+          .max(8)
+          .nullish()
+          .transform((v) => v ?? []),
+        forces: liste(4),
+        faiblesses: liste(4),
+        questions: liste(4),
+        action: text(600),
+      }),
+    )
+    .max(20)
     .default([]),
 });
 const guard =
@@ -166,6 +211,31 @@ export async function evaluate(
   return { eligibility, input: r.input, output: r.output };
 }
 
+// Revue critique d'un analyste d'investissement : ce que le dossier démontre, ce qui manque, ce qu'on lui demandera
+async function critiquer(state: DossierState, documents: Doc[], today: string) {
+  const r = await callModel(
+    "Tu es analyste d'investissement senior (amorçage, accélérateur type Y Combinator, chargé d'affaires Bpifrance). Tu relis un dossier de financement en français pour aider le porteur à le renforcer avant de l'envoyer. " +
+      guard +
+      " Tu juges la qualité de la démonstration du dossier, jamais les personnes ni les chances de financement. Pour chaque rubrique (id fourni), examine chacun de ses points de contrôle : statut ok (démontré avec un élément précis), partiel (évoqué sans chiffre, preuve ou source) ou absent ; note en une phrase ce que le dossier dit ou ne dit pas, en t'appuyant uniquement sur les documents et les réponses confirmées. Donne le niveau de la rubrique : solide (tous les points importants démontrés), a_renforcer, insuffisant (affirmation sans preuve, chiffre vague) ou absent. Sois exigeant : une phrase générale comme « nous cherchons des financements » ou « marché important » est insuffisante. Liste les forces réelles, les faiblesses précises, les questions qu'un investisseur posera, et une action concrète, réalisable par le porteur, qui ferait passer la rubrique au niveau supérieur (exemple : « chiffrer le marché : nombre d'universités × prix annuel, avec la source »). Puis une lecture globale : synthèse en trois phrases, stade estimé (idée, prototype, premiers clients, croissance), forces principales, signaux d'alerte (incohérences, hypothèses irréalistes, absence de preuve sur un point clé) et les trois priorités à traiter avant l'envoi, de la plus importante à la moins importante. Ton direct, précis, bienveillant, sans jargon anglais. Sois concis : chaque note en une phrase de 20 mots au plus ; par rubrique au plus 2 forces, 3 faiblesses et 3 questions ; pas de répétition entre les rubriques. Réponds uniquement par un objet JSON {synthese, stade, forces:[], alertes:[], priorites:[], rubriques:[{id, niveau, constats:[{point, statut, note}], forces:[], faiblesses:[], questions:[], action}]}.",
+    {
+      today,
+      rubriques: requirements.map((q) => ({ id: q.id, label: q.label, points: q.points })),
+      confirmed: state.facts,
+      declarations: state.declarations,
+      documents: contentOf(documents),
+    },
+  );
+  const c = critiqueSchema.parse(r.json);
+  const rubriques: Critique["rubriques"] = {};
+  for (const x of c.rubriques)
+    if (requirements.some((q) => q.id === x.id)) {
+      const { id, ...reste } = x;
+      rubriques[id] = reste;
+    }
+  const critique: Critique = { ...c, rubriques };
+  return { critique, input: r.input, output: r.output };
+}
+
 export async function analyze(
   state: DossierState,
   documents: Doc[],
@@ -182,17 +252,26 @@ export async function analyze(
     { today, requirements, confirmed: state.facts, documents: content },
   );
   // un appel court par programme : la longueur de réponse ne dépend plus du nombre de cibles
+  // la revue critique tourne en parallèle : elle n'allonge pas l'analyse ; son échec ne bloque pas le dossier
+  const critiqueCall = critiquer(state, documents, today).catch((e) => {
+    console.error("Revue critique indisponible :", e.message);
+    return null;
+  });
   const [factsResult, ...programResults] = await Promise.all([
     factsCall,
     ...programs.map((p) => evaluate(state, documents, p)),
   ]);
+  const revue = await critiqueCall;
   const parsed = factsSchema.parse(factsResult.json);
   const next: DossierState = {
     ...state,
     facts: { ...state.facts },
     summary: parsed.summary,
     conflicts: parsed.conflicts,
+    // une revue d'une version précédente serait trompeuse : sans nouvelle revue, il n'y en a plus
+    critique: revue?.critique,
   };
+  if (!revue) delete next.critique;
   if (programs.length)
     next.eligibility = Object.fromEntries(
       programs.map((p, i) => [p.id, programResults[i].eligibility]),
@@ -234,7 +313,7 @@ export async function analyze(
       ...(details.length && { details }),
     };
   }
-  const all = [factsResult, ...programResults];
+  const all = [factsResult, ...programResults, ...(revue ? [revue] : [])];
   return {
     state: next,
     input: all.reduce((n, r) => n + r.input, 0),
