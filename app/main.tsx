@@ -3816,8 +3816,8 @@ function Billing() {
         <div>
           <h1>Offre et facturation</h1>
           <p>
-            Les achats s’activent uniquement lorsque les conditions commerciales
-            sont validées.
+            Paiement sécurisé par Stripe. Aucune commission sur les
+            financements obtenus.
           </p>
         </div>
         <button
@@ -3840,13 +3840,21 @@ function Billing() {
           <h3>
             {org.kind !== "startup"
               ? "Gratuit pendant le lancement"
-              : billing?.entitlement?.offer_id || "Découverte"}
+              : billing?.entitlement?.offer_name || "Découverte"}
           </h3>
           <Badge>
-            {billing?.entitlement?.status || "Configuration locale"}
+            {{ active: "Active", past_due: "Paiement en échec", cancelled: "Résiliée" }[
+              billing?.entitlement?.status as string
+            ] || (billing?.entitlement ? billing.entitlement.status : "Gratuite")}
           </Badge>
         </div>
-        <p>{billing?.usage?.analyses || 0} analyse(s) ce mois-ci.</p>
+        <p>
+          {billing?.usage?.analyses || 0} analyse(s) ce mois-ci
+          {billing?.entitlement?.quota ? ` sur ${billing.entitlement.quota}` : ""}
+          {billing?.entitlement?.expires_at &&
+            ` · accès jusqu’au ${new Date(billing.entitlement.expires_at).toLocaleDateString("fr")}`}
+          .
+        </p>
         <label>
           Code de recommandation
           <input
