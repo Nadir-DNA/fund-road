@@ -57,7 +57,8 @@ export async function callModel(instructions: string, input: unknown) {
       "User-Agent": "fundroad/2.0",
       "x-opencode-session": crypto.randomUUID(),
     },
-    signal: AbortSignal.timeout(120000),
+    // une analyse complète prend souvent près de 2 minutes : marge large avant d'abandonner
+    signal: AbortSignal.timeout(300000),
     body: JSON.stringify({
       model: config.model,
       store: false,
@@ -69,6 +70,12 @@ export async function callModel(instructions: string, input: unknown) {
         { role: "user", content: JSON.stringify(input) },
       ],
     }),
+  }).catch((e) => {
+    throw new Error(
+      e?.name === "TimeoutError"
+        ? "Le service d’IA a mis trop de temps à répondre. Relancez l’analyse."
+        : "Service d’IA injoignable. Relancez l’analyse dans quelques minutes.",
+    );
   });
   if (!response.ok)
     throw new Error(`Service IA indisponible (${response.status})`);

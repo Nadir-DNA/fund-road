@@ -111,9 +111,14 @@ export async function api(url: string, method = "GET", body?: any) {
 function useLoad<T = any>(url: string, dep: any = 0) {
   const [data, setData] = useState<T | null>(null),
     [error, setError] = useState("");
+  const precedente = useRef(url);
   useEffect(() => {
     let active = true;
-    setData(null);
+    // un simple rafraîchissement garde l'affichage en place ; seul un changement d'adresse le vide
+    if (precedente.current !== url) {
+      precedente.current = url;
+      setData(null);
+    }
     setError("");
     api(url)
       .then((d) => {
@@ -1636,6 +1641,186 @@ function Dashboard({ all = false }: { all?: boolean }) {
     </>
   );
 }
+// Dépôt de fichiers ou d'un dossier entier, puis analyse lancée automatiquement, avec la progression
+const formatsAcceptes = /\.(pdf|docx|pptx|xlsx)$/i;
+// Parcourt un dossier glissé-déposé (et ses sous-dossiers) ; readEntries rend les fichiers par lots
+async function fichiersDuDepot(items: DataTransferItemList) {
+  const lire = async (entry: any): Promise<File[]> => {
+    if (entry.isFile) return [await new Promise<File>((ok, ko) => entry.file(ok, ko))];
+    if (!entry.isDirectory) return [];
+    const lecteur = entry.createReader();
+    const enfants: any[] = [];
+    for (;;) {
+      const lot: any[] = await new Promise((ok, ko) => lecteur.readEntries(ok, ko));
+      if (!lot.length) break;
+      enfants.push(...lot);
+    }
+    return (await Promise.all(enfants.map(lire))).flat();
+  };
+  const entrees = [...items].map((i) => (i as any).webkitGetAsEntry?.()).filter(Boolean);
+  return (await Promise.all(entrees.map(lire))).flat();
+}
+// Durée habituelle d'une analyse : sert à estimer la progression, l'IA ne donnant pas d'avancement
+const DUREE_ANALYSE = 120;
+function DepotAnalyse({
+  d,
+  refresh,
+  aiReady,
+  voirDossier,
+}: {
+  d: any;
+  refresh: () => void;
+  aiReady: boolean;
+  voirDossier?: () => void;
+}) {
+  const toast = useContext(ToastContext);
+  const [envoi, setEnvoi] = useState<{ fait: number; total: number; nom: string } | null>(null);
+  // nombre de documents attendus avant de lancer l'analyse (0 : rien en attente)
+  const [auto, setAuto] = useState(0);
+  const [survol, setSurvol] = useState(false);
+  const [maintenant, setMaintenant] = useState(Date.now());
+  const docs: any[] = d.documents;
+  const lus = docs.filter((x) => x.status !== "queued").length;
+  const enLecture = docs.some((x) => x.status === "queued");
+  const analyse = d.jobs.find((j: any) => j.kind === "analysis");
+  const analyseEnCours = analyse && ["queued", "running"].includes(analyse.status);
+  // relance de l'horloge pendant l'analyse, pour faire avancer l'estimation
+  useEffect(() => {
+    if (!analyseEnCours) return;
+    const t = setInterval(() => setMaintenant(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [analyseEnCours]);
+  // analyse lancée seule dès que tous les documents déposés sont visibles et lus
+  useEffect(() => {
+    if (!auto || envoi || docs.length < auto || enLecture || analyseEnCours) return;
+    setAuto(0);
+    if (!aiReady || !docs.some((x) => x.status === "ready")) return;
+    api("/dossiers/" + d.id + "/analyze", "POST", {})
+      .then(refresh)
+      .catch((e) => toast(e.message));
+  }, [auto, envoi, docs.length, enLecture, analyseEnCours]);
+  const deposer = async (fichiers: File[]) => {
+    const valides = fichiers.filter((f) => formatsAcceptes.test(f.name) && !f.name.startsWith("."));
+    const ignores = fichiers.length - valides.length;
+    if (!valides.length) return toast("Aucun fichier PDF, Word, PowerPoint ou Excel dans ce dépôt");
+    const erreurs: string[] = [];
+    let deposes = 0;
+    for (const [i, f] of valides.entries()) {
+      setEnvoi({ fait: i, total: valides.length, nom: f.name });
+      const body = new FormData();
+      body.append("file", f);
+      // un doublon (même contenu déjà déposé) n'ajoute pas de document
+      await api("/dossiers/" + d.id + "/documents", "POST", body)
+        .then((r: any) => !r?.duplicate && deposes++)
+        .catch((e) => erreurs.push(`${f.name} : ${e.message}`));
+    }
+    setEnvoi(null);
+    setAuto(docs.length + deposes);
+    refresh();
+    toast(
+      [
+        `${valides.length - erreurs.length} document(s) déposé(s)`,
+        ignores && `${ignores} fichier(s) ignoré(s) (format non pris en charge)`,
+        ...erreurs,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    );
+  };
+  // étapes pondérées : envoi 0-15 %, lecture 15-35 %, analyse 35-100 %
+  let pct = 0,
+    etape = "";
+  if (envoi) {
+    pct = Math.round((envoi.fait / envoi.total) * 15);
+    etape = `Envoi ${envoi.fait + 1}/${envoi.total} : ${envoi.nom}`;
+  } else if (enLecture) {
+    pct = 15 + Math.round((lus / docs.length) * 20);
+    etape = `Lecture des documents : ${lus}/${docs.length}`;
+  } else if (analyseEnCours) {
+    // horloges du serveur et du navigateur légèrement décalées : jamais de temps négatif
+    const ecoule = Math.max(0, (maintenant - new Date(analyse.created_at).getTime()) / 1000);
+    pct = 35 + Math.round(Math.min(0.95, ecoule / DUREE_ANALYSE) * 65);
+    etape = analyse.status === "queued" ? "Analyse en file d’attente" : `Analyse IA en cours (estimation, environ ${Math.round(DUREE_ANALYSE / 60)} min)`;
+  } else if (auto) {
+    pct = 35;
+    etape = "Lancement de l’analyse";
+  }
+  const actif = !!etape;
+  return (
+    <div className="panel depot">
+      <label
+        className={"upload-zone" + (survol ? " survol" : "")}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setSurvol(true);
+        }}
+        onDragLeave={() => setSurvol(false)}
+        onDrop={async (e) => {
+          e.preventDefault();
+          setSurvol(false);
+          if (!actif) await deposer(await fichiersDuDepot(e.dataTransfer.items));
+        }}
+      >
+        <Upload size={30} />
+        <strong>Déposez vos documents ou un dossier entier</strong>
+        <span className="button secondary small">Choisir des fichiers</span>
+        <span>
+          PDF (même scannés), Word, PowerPoint, Excel · 20 Mo par fichier · 30 documents maximum. L’analyse se lance
+          automatiquement.
+        </span>
+        <input
+          type="file"
+          multiple
+          accept=".pdf,.docx,.pptx,.xlsx"
+          disabled={actif}
+          onChange={(e) => {
+            deposer([...(e.target.files || [])]);
+            e.target.value = "";
+          }}
+        />
+      </label>
+      <label className="textbutton choisir-dossier">
+        Ou choisir un dossier
+        <input
+          type="file"
+          {...{ webkitdirectory: "" }}
+          disabled={actif}
+          onChange={(e) => {
+            deposer([...(e.target.files || [])]);
+            e.target.value = "";
+          }}
+        />
+      </label>
+      {actif && (
+        <div className="progression" role="status" aria-live="polite">
+          <div className="progression-tete">
+            <strong>{etape}</strong>
+            <span className="tnum">{pct} %</span>
+          </div>
+          <div className="bar">
+            <span style={{ width: pct + "%" }} />
+          </div>
+        </div>
+      )}
+      {!actif && analyse?.status === "failed" && (
+        <p className="notice">L’analyse n’a pas abouti : {analyse.error}. Corrigez puis relancez-la.</p>
+      )}
+      {!actif && analyse?.status === "done" && (
+        <div className="depot-fin">
+          <p>
+            Analyse terminée : {Object.keys(d.state.facts).length} rubrique(s) sur {d.score.total} renseignée(s) à
+            partir de vos documents, à relire et confirmer.
+          </p>
+          {voirDossier && (
+            <button className="button small" onClick={voirDossier}>
+              Voir mon dossier <ArrowRight size={14} />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 function DossierPage() {
   const { id } = useParams();
   const [tick, setTick] = useState(0),
@@ -1648,7 +1833,10 @@ function DossierPage() {
   const navigate = useNavigate();
   const refresh = () => setTick((t) => t + 1);
   useEffect(() => {
-    if (!d?.jobs.some((j: any) => ["queued", "running"].includes(j.status)))
+    if (
+      !d?.jobs.some((j: any) => ["queued", "running"].includes(j.status)) &&
+      !d?.documents.some((x: any) => x.status === "queued")
+    )
       return;
     const t = setInterval(refresh, 2500);
     return () => clearInterval(t);
@@ -1721,6 +1909,7 @@ function DossierPage() {
       {tab === "overview" && (
         <div className="content-grid">
           <section>
+            <DepotAnalyse d={d} refresh={refresh} aiReady={!!cfg?.aiReady} voirDossier={() => setTab("dossier")} />
             <div className="panel score-panel">
               <div>
                 <div className="bigscore">
@@ -1833,6 +2022,7 @@ function DossierPage() {
                   className="button"
                   disabled={
                     busy ||
+                    !d.documents.some((x: any) => x.status === "ready") ||
                     d.jobs.some(
                       (j: any) =>
                         j.kind === "analysis" &&
@@ -1843,7 +2033,7 @@ function DossierPage() {
                     run(async () => {
                       await api("/dossiers/" + id + "/analyze", "POST", {});
                       refresh();
-                    }, "Analyse ajoutée à la file")
+                    }, "Analyse lancée")
                   }
                 >
                   Analyser mes documents <ArrowRight size={15} />
@@ -1884,30 +2074,7 @@ function DossierPage() {
       )}
       {tab === "documents" && (
         <>
-          <label className="upload-zone">
-            <Upload size={30} />
-            <strong>Déposez les documents que vous avez déjà</strong>
-            <span>
-              PDF, Word, PowerPoint, Excel · 20 Mo par fichier · 30 documents
-              maximum
-            </span>
-            <input
-              type="file"
-              accept=".pdf,.docx,.pptx,.xlsx"
-              disabled={busy}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file)
-                  run(async () => {
-                    const body = new FormData();
-                    body.append("file", file);
-                    await api("/dossiers/" + id + "/documents", "POST", body);
-                    refresh();
-                  }, "Document enregistré");
-                e.target.value = "";
-              }}
-            />
-          </label>
+          <DepotAnalyse d={d} refresh={refresh} aiReady={!!cfg?.aiReady} />
           <div className="panel">
             {!d.documents.length ? (
               <Empty title="Aucun document pour le moment" />

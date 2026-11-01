@@ -673,6 +673,16 @@ app.post("/api/dossiers/:id/analyze", async (req: any) => {
       ).rows[0].count,
     );
     if (pending) fail(409, "Attendez ou corrigez les extractions de documents");
+    const lisibles = Number(
+      (
+        await c.query(
+          "SELECT count(*) FROM documents WHERE dossier_id=$1 AND status='ready'",
+          [d.id],
+        )
+      ).rows[0].count,
+    );
+    if (!lisibles)
+      fail(409, "Déposez au moins un document lisible avant de lancer l’analyse");
     const id = randomUUID();
     try {
       await c.query(

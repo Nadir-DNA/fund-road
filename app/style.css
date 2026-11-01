@@ -2673,3 +2673,52 @@ legend {
   margin: var(--space-3xs) 0 0;
   font-size: var(--text-xs);
 }
+
+/* Dépôt et analyse : zone de dépôt, choix d'un dossier, progression */
+.depot {
+  display: grid;
+  gap: var(--space-xs);
+}
+.upload-zone.survol {
+  border-color: var(--color-accent);
+  background: var(--color-accent-tint);
+}
+.choisir-dossier {
+  position: relative;
+  justify-self: center;
+  cursor: pointer;
+}
+.choisir-dossier input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.progression-tete {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-2xs);
+}
+/* toute la zone est cliquable : le champ natif est invisible par-dessus */
+.depot .upload-zone input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.depot-fin {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+.depot-fin p {
+  margin: 0;
+  font-size: var(--text-sm);
+}
