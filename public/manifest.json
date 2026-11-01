@@ -1,0 +1,23 @@
+{
+  "name": "Fund Road",
+  "short_name": "Fund Road",
+  "description": "Préparez, vérifiez et partagez votre dossier de financement.",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#0a192c",
+  "background_color": "#0a192c",
+  "icons": [
+    {
+      "src": "/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

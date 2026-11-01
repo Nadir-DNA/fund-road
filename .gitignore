@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.env.local
+.env
+supabase/functions/.env
+.local/
+playwright-report/
+test-results/
+.claude/settings.local.json
+.env.production
