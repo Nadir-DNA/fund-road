@@ -8,10 +8,12 @@ import { config } from "./config.ts";
 import { attribute, reward } from "./referrals.ts";
 import { netReceived, refundBalance } from "../shared/payments.ts";
 const stripe = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      stripeContext: process.env.STRIPE_CONTEXT,
-    })
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : null;
+// Clé d'organisation Stripe : le compte visé doit accompagner chaque requête v1 (l'option globale ne vaut que pour la v2)
+const compte = process.env.STRIPE_CONTEXT
+  ? { stripeContext: process.env.STRIPE_CONTEXT }
+  : {};
 export async function registerBilling(app: FastifyInstance) {
   app.get(
     "/api/offers",
@@ -29,7 +31,7 @@ export async function registerBilling(app: FastifyInstance) {
       entitlement:
         (
           await db.query(
-            "SELECT * FROM entitlements WHERE organization_id=$1",
+            "SELECT e.*,o.label AS offer_name,o.quota FROM entitlements e LEFT JOIN offers o ON o.id=e.offer_id WHERE e.organization_id=$1",
             [req.params.org],
           )
         ).rows[0] || null,
@@ -70,7 +72,7 @@ export async function registerBilling(app: FastifyInstance) {
             percent_off: terms.discountBps / 100,
             duration: "once",
             name: "Parrainage Fund Road " + terms.version,
-          })
+          }, compte)
         ).id;
       }
     }
@@ -85,7 +87,7 @@ export async function registerBilling(app: FastifyInstance) {
       discounts: coupon ? [{ coupon }] : undefined,
       success_url: config.baseURL + "/app/facturation?success=1",
       cancel_url: config.baseURL + "/app/facturation",
-    });
+    }, compte);
     return { url: session.url };
   });
   app.post("/api/billing/portal", async (req) => {
@@ -105,7 +107,7 @@ export async function registerBilling(app: FastifyInstance) {
         await stripe!.billingPortal.sessions.create({
           customer: e.customer_id,
           return_url: config.baseURL + "/app/facturation",
-        })
+        }, compte)
       ).url,
     };
   });
@@ -169,7 +171,7 @@ export async function registerBilling(app: FastifyInstance) {
       })
       .parse(req.body);
     if (!stripe) fail(503, "Stripe requis");
-    const price = await stripe!.prices.retrieve(b.stripePriceId);
+    const price = await stripe!.prices.retrieve(b.stripePriceId, {}, compte);
     if (price.currency !== "eur" || price.unit_amount !== b.priceCents)
       fail(400, "Prix Stripe différent");
     await db.query(
@@ -257,7 +259,7 @@ export async function registerBilling(app: FastifyInstance) {
             object.subscription ||
             object.parent?.subscription_details?.subscription;
           const sub = subscriptionId
-            ? await stripe!.subscriptions.retrieve(subscriptionId)
+            ? await stripe!.subscriptions.retrieve(subscriptionId, {}, compte)
             : null;
           const m = sub?.metadata;
           if (m?.organizationId) {

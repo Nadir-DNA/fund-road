@@ -2757,3 +2757,56 @@ legend {
   gap: var(--space-xs);
   flex-wrap: wrap;
 }
+
+/* Revue critique : regard d'investisseur sur chaque rubrique */
+.regard {
+  margin: var(--space-sm) 0;
+  padding: var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--color-paper-2);
+  font-size: var(--text-sm);
+}
+.regard p {
+  margin: var(--space-2xs) 0 0;
+}
+.regard-tete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+}
+.regard-points {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-xs) 0 0;
+  display: grid;
+  gap: var(--space-3xs);
+}
+.regard-points strong {
+  font-weight: 650;
+}
+.regard-points .ok strong {
+  color: var(--color-good);
+}
+.regard-points .partiel strong {
+  color: var(--color-warn);
+}
+.regard-points .absent strong {
+  color: var(--color-danger);
+}
+.regard-action {
+  color: var(--color-ink);
+}
+.lecture h4 {
+  margin: var(--space-sm) 0 var(--space-3xs);
+  font-size: var(--text-sm);
+}
+.lecture ol,
+.lecture ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+.lecture-niveaux {
+  color: var(--color-ink-3);
+  font-size: var(--text-sm);
+}

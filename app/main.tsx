@@ -57,7 +57,15 @@ import {
   Coins,
   Seedling,
 } from "./icons";
-import { requirements, score, type DossierState } from "../shared/score";
+import {
+  requirements,
+  score,
+  niveaux,
+  type DossierState,
+  type Critique,
+  type CritiqueRubrique,
+  type NiveauRubrique,
+} from "../shared/score";
 import {
   champsParType,
   correspond,
@@ -2041,6 +2049,7 @@ function DossierPage() {
                 Ce score mesure la complétude, pas vos chances de financement.
               </small>
             </div>
+            {d.state.critique && <LectureInvestisseur c={d.state.critique} />}
             {d.recipient_org && (
               <div className="panel">
                 <h3>Exigences pour {d.criteria_snapshot.recipientName}</h3>
@@ -2287,6 +2296,7 @@ function DossierPage() {
                   key={r.id + ":" + d.revision}
                   requirement={r}
                   fact={d.state.facts[r.id]}
+                  critique={d.state.critique?.rubriques?.[r.id]}
                   save={async (value: string) => {
                     await api(`/dossiers/${id}/facts/${r.id}`, "PUT", {
                       revision: d.revision,
@@ -2716,13 +2726,112 @@ function EligibilityTab({
     </div>
   );
 }
+const statutsPoint = { ok: "Démontré", partiel: "Partiel", absent: "Absent" } as const;
+// Revue d'une rubrique : niveau, points de contrôle, faiblesses, questions attendues, action prioritaire
+function RegardInvestisseur({ c }: { c: CritiqueRubrique }) {
+  return (
+    <div className={"regard " + c.niveau}>
+      <div className="regard-tete">
+        <small>REGARD INVESTISSEUR</small>
+        <Badge good={c.niveau === "solide"}>{niveaux[c.niveau]}</Badge>
+      </div>
+      {c.constats.length > 0 && (
+        <ul className="regard-points">
+          {c.constats.map((x) => (
+            <li key={x.point} className={x.statut}>
+              <strong>{statutsPoint[x.statut]}</strong> · {x.point}
+              {x.note && <span> — {x.note}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {c.faiblesses.length > 0 && (
+        <p>
+          <strong>À corriger : </strong>
+          {c.faiblesses.join(" · ")}
+        </p>
+      )}
+      {c.questions.length > 0 && (
+        <p>
+          <strong>Questions qu’on vous posera : </strong>
+          {c.questions.join(" · ")}
+        </p>
+      )}
+      {c.action && (
+        <p className="regard-action">
+          <strong>Action prioritaire : </strong>
+          {c.action}
+        </p>
+      )}
+    </div>
+  );
+}
+// Lecture globale du dossier, sur la vue d'ensemble
+function LectureInvestisseur({ c }: { c: Critique }) {
+  const compte = Object.values(c.rubriques).reduce(
+    (n: Record<string, number>, x) => ({ ...n, [x.niveau]: (n[x.niveau] || 0) + 1 }),
+    {},
+  );
+  return (
+    <div className="panel lecture">
+      <div className="section-title">
+        <h3>Lecture investisseur</h3>
+        {c.stade && <Badge>Stade : {c.stade}</Badge>}
+      </div>
+      <p>{c.synthese}</p>
+      <p className="lecture-niveaux">
+        {(Object.keys(niveaux) as NiveauRubrique[])
+          .filter((k) => compte[k])
+          .map((k) => `${compte[k]} ${niveaux[k].toLowerCase()}`)
+          .join(" · ")}
+      </p>
+      {c.priorites.length > 0 && (
+        <>
+          <h4>À traiter avant l’envoi</h4>
+          <ol>
+            {c.priorites.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
+          </ol>
+        </>
+      )}
+      {c.alertes.length > 0 && (
+        <>
+          <h4>Signaux d’alerte</h4>
+          <ul>
+            {c.alertes.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
+          </ul>
+        </>
+      )}
+      {c.forces.length > 0 && (
+        <>
+          <h4>Points forts</h4>
+          <ul>
+            {c.forces.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
+          </ul>
+        </>
+      )}
+      <small>
+        Relecture automatique de la démonstration du dossier, sur le modèle
+        d’un comité d’investissement. Elle ne juge ni les personnes ni vos
+        chances de financement.
+      </small>
+    </div>
+  );
+}
 function FactEditor({
   requirement: r,
   fact,
+  critique,
   save,
 }: {
   requirement: any;
   fact: any;
+  critique?: CritiqueRubrique;
   save: (s: string) => Promise<void>;
 }) {
   const { run, busy } = useAction();
@@ -2768,6 +2877,7 @@ function FactEditor({
           </ul>
         </div>
       )}
+      {critique && <RegardInvestisseur c={critique} />}
       <button className="button secondary small" disabled={busy}>
         <Check size={16} /> Confirmer cette information
       </button>
@@ -3816,8 +3926,8 @@ function Billing() {
         <div>
           <h1>Offre et facturation</h1>
           <p>
-            Les achats s’activent uniquement lorsque les conditions commerciales
-            sont validées.
+            Paiement sécurisé par Stripe. Aucune commission sur les
+            financements obtenus.
           </p>
         </div>
         <button
@@ -3840,13 +3950,21 @@ function Billing() {
           <h3>
             {org.kind !== "startup"
               ? "Gratuit pendant le lancement"
-              : billing?.entitlement?.offer_id || "Découverte"}
+              : billing?.entitlement?.offer_name || "Découverte"}
           </h3>
           <Badge>
-            {billing?.entitlement?.status || "Configuration locale"}
+            {{ active: "Active", past_due: "Paiement en échec", cancelled: "Résiliée" }[
+              billing?.entitlement?.status as string
+            ] || (billing?.entitlement ? billing.entitlement.status : "Gratuite")}
           </Badge>
         </div>
-        <p>{billing?.usage?.analyses || 0} analyse(s) ce mois-ci.</p>
+        <p>
+          {billing?.usage?.analyses || 0} analyse(s) ce mois-ci
+          {billing?.entitlement?.quota ? ` sur ${billing.entitlement.quota}` : ""}
+          {billing?.entitlement?.expires_at &&
+            ` · accès jusqu’au ${new Date(billing.entitlement.expires_at).toLocaleDateString("fr")}`}
+          .
+        </p>
         <label>
           Code de recommandation
           <input

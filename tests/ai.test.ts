@@ -85,7 +85,8 @@ test("IA : citations exactes exigées, déclarations confirmées conservées", a
     assert.equal(result.state.facts.traction.confirmed, false);
     assert.equal(result.state.facts.financials, undefined);
     assert.deepEqual(result.state.conflicts, ["Deux périodes diffèrent"]);
-    assert.equal(result.input, 100);
+    // extraction + revue critique : deux appels au modèle
+    assert.equal(result.input, 200);
   } finally {
     globalThis.fetch = original;
   }
@@ -343,6 +344,68 @@ test("IA : compléments d'une rubrique gardés avec leur propre citation, sans d
     assert.equal(r.state.facts.traction.value, "En ligne depuis octobre 2026");
     assert.deepEqual(r.state.facts.traction.details?.map((d) => d.value), ["115 fiches publiées", "300 dossiers en 2027"]);
     assert.equal(r.state.facts.traction.details?.[1].kind, "hypothesis", "une projection reste marquée hypothèse dans les compléments");
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test("IA : une projection ou une année à venir devient une hypothèse, même annoncée comme fait", async () => {
+  const original = globalThis.fetch;
+  const futur = new Date().getFullYear() + 1;
+  const texte = `Chiffre d'affaires 2025 : 12 000 euros. Projection ${futur} : 400 000 euros. Cible : les étudiants.`;
+  const fait = (id: string, value: string, quote: string) => ({ id, value, source: "doc1", quote, kind: "document" });
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        choices: [{ finish_reason: "stop", message: { content: JSON.stringify({ summary: "", conflicts: [], facts: [
+          fait("financials", "CA 2025 : 12 000 €", "Chiffre d'affaires 2025 : 12 000 euros."),
+          fait("financials", `CA ${futur} : 400 000 €`, `Projection ${futur} : 400 000 euros.`),
+          fait("market", "Cible : les étudiants", "Cible : les étudiants."),
+        ] }) } }],
+        usage: { prompt_tokens: 1, completion_tokens: 1 },
+      }),
+    );
+  try {
+    const r = await analyze(emptyState(), [{ id: "doc1", name: "bp.docx", extracted: texte }]);
+    assert.equal(r.state.facts.financials.kind, "document");
+    assert.equal(r.state.facts.financials.details?.[0].kind, "hypothesis");
+    assert.equal(r.state.facts.market.kind, "document", "le mot « cible » ne fait pas une hypothèse");
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test("IA : revue critique d'investisseur jointe au dossier, rubrique inconnue ignorée, échec sans blocage", async () => {
+  const original = globalThis.fetch;
+  const reponse = (content: unknown) =>
+    new Response(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: JSON.stringify(content) } }], usage: { prompt_tokens: 1, completion_tokens: 1 } }));
+  const critique = {
+    synthese: "Dossier au stade prototype.",
+    stade: "prototype",
+    forces: ["Problème bien posé"],
+    alertes: ["Aucun chiffre de marché"],
+    priorites: ["Chiffrer le marché", "Préciser le montant", "Montrer une traction datée"],
+    rubriques: [
+      { id: "market", niveau: "Insuffisant", constats: [{ point: "Taille de marché", statut: "absent", note: "Aucun chiffre." }, { point: "Concurrents", statut: "à vérifier", note: "Cités sans nom." }], forces: [], faiblesses: ["Marché non chiffré"], questions: ["Combien de clients potentiels ?"], action: "Chiffrer : nombre de campus × prix." },
+      { id: "inconnue", niveau: "solide", constats: [], forces: [], faiblesses: [], questions: [], action: "" },
+    ],
+  };
+  let revueEnPanne = false;
+  globalThis.fetch = async (_url, options) => {
+    const systeme = JSON.parse(String(options?.body)).messages[0].content as string;
+    if (systeme.includes("analyste d'investissement"))
+      return revueEnPanne ? new Response("indisponible", { status: 500 }) : reponse(critique);
+    return reponse({ summary: "", conflicts: [], facts: [] });
+  };
+  try {
+    const r = await analyze(emptyState(), [{ id: "doc1", name: "pitch.pdf", extracted: "VéloCampus" }]);
+    assert.equal(r.state.critique?.rubriques.market.niveau, "insuffisant");
+    assert.equal(r.state.critique?.rubriques.market.constats[1].statut, "partiel", "un statut inattendu ne fait pas échouer la revue");
+    assert.equal(r.state.critique?.rubriques.inconnue, undefined);
+    assert.equal(r.state.critique?.priorites.length, 3);
+    revueEnPanne = true;
+    const sans = await analyze(emptyState(), [{ id: "doc1", name: "pitch.pdf", extracted: "VéloCampus" }]);
+    assert.equal(sans.state.critique, undefined, "l'analyse aboutit même si la revue échoue");
   } finally {
     globalThis.fetch = original;
   }
