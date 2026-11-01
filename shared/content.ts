@@ -107,7 +107,7 @@ export const publicCopy: Record<
       ],
       [
         "Supprimer un dossier ou votre compte",
-        "Le bouton « Supprimer » d’un dossier efface immédiatement ses documents, ses versions et ses partages. Pour supprimer votre compte, écrivez à contact@fund-road.com : la suppression est faite sous 30 jours. Les données de facturation sont conservées 10 ans, comme l’impose la loi.",
+        "Le bouton « Supprimer » d’un dossier efface immédiatement ses documents, ses versions et ses partages. Votre compte se supprime vous-même depuis Sécurité, mot de passe à l’appui ; à défaut, écrivez à contact@fund-road.com (traitement sous 30 jours). Les données de facturation sont conservées 10 ans, comme l’impose la loi.",
       ],
       [
         "Mesure d’audience",
@@ -286,7 +286,7 @@ export const pageMeta: Record<string, { title: string; description: string }> =
         "Parrainage entre startups et affiliation pour les fonds : conditions explicites, sans effet sur le score ni sur la décision d’investissement.",
     },
     "/confiance": {
-      title: "Vos données et vos documents | Fund Road",
+      title: "Vos données et RGPD : IA, accès, suppression | Fund Road",
       description:
         "Ce qui est envoyé à l’IA, qui voit votre dossier, combien de temps il est conservé et comment le supprimer : la politique de données de Fund Road.",
     },

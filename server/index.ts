@@ -24,7 +24,8 @@ import {
   factSchema,
 } from "../shared/domain.ts";
 import { exportDossier } from "./export.ts";
-import { supprimerDossier } from "./donnees.ts";
+import { controlerArchive } from "./extract.ts";
+import { supprimerDossier, supprimerCompte } from "./donnees.ts";
 import { programScore, orgProgram } from "../shared/programs.ts";
 import { allPrograms, resolvePrograms } from "./programs.ts";
 import { registerContent } from "./content.ts";
@@ -56,8 +57,8 @@ await app.register(helmet, {
       defaultSrc: ["'self'"],
       // Google Analytics, chargé côté client seulement après consentement
       scriptSrc: ["'self'", "https://www.googletagmanager.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      fontSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https://*.google-analytics.com", "https://*.googletagmanager.com"],
       connectSrc: [
         "'self'",
@@ -350,6 +351,12 @@ app.get("/api/dossiers/:id", async (req: any) => {
       ).length,
       total: questions.filter((q) => !q.application_id).length,
     },
+    attestations: (
+      await db.query(
+        "SELECT a.id,a.created_at,a.revoked_at,v.revision FROM attestations a JOIN versions v ON v.id=a.version_id WHERE v.dossier_id=$1 ORDER BY a.created_at DESC",
+        [d.id],
+      )
+    ).rows,
     attestable: canAttest(
       d.state,
       d.revision,
@@ -377,6 +384,14 @@ const stageNames: Record<(typeof stages)[number], string> = {
   meeting: "Rendez-vous",
   diligence: "Due diligence",
   invested: "En portefeuille",
+  declined: "Non retenu",
+};
+const stageNamesIncubateur: Record<(typeof stages)[number], string> = {
+  new: "Candidature",
+  review: "En sélection",
+  meeting: "Entretien",
+  diligence: "Comité",
+  invested: "En programme",
   declined: "Non retenu",
 };
 app.get("/api/organizations/:id/pipeline", async (req: any) => {
@@ -433,7 +448,7 @@ app.put("/api/applications/:id/stage", async (req: any) => {
   const { stage } = z.object({ stage: z.enum(stages) }).parse(req.body);
   const a = (
     await db.query(
-      "SELECT a.recipient_org,a.stage,d.organization_id,d.name,r.name AS recipient FROM applications a JOIN dossiers d ON d.id=a.dossier_id JOIN organizations r ON r.id=a.recipient_org WHERE a.id=$1",
+      "SELECT a.recipient_org,a.stage,d.organization_id,d.name,r.name AS recipient,r.kind FROM applications a JOIN dossiers d ON d.id=a.dossier_id JOIN organizations r ON r.id=a.recipient_org WHERE a.id=$1",
       [req.params.id],
     )
   ).rows[0];
@@ -447,7 +462,7 @@ app.put("/api/applications/:id/stage", async (req: any) => {
     notifyOrg(
       a.organization_id,
       `${a.recipient} a fait avancer votre dossier « ${a.name} »`,
-      `Nouvelle étape : ${stageNames[stage]}\n\n${config.baseURL}/app/candidatures`,
+      `Nouvelle étape : ${(a.kind === "incubator" ? stageNamesIncubateur : stageNames)[stage]}\n\n${config.baseURL}/app/candidatures`,
     ).catch(() => {});
   await audit(u.id, a.recipient_org, "application.stage", req.params.id);
   return { ok: true };
@@ -559,6 +574,12 @@ app.post("/api/dossiers/:id/documents", async (req: any) => {
       : bytes[0] !== 0x50 || bytes[1] !== 0x4b
   )
     fail(400, "Le contenu ne correspond pas au format");
+  if (!/\.pdf$/i.test(name))
+    try {
+      controlerArchive(bytes);
+    } catch (e: any) {
+      fail(400, e.message);
+    }
   const hash = createHash("sha256").update(bytes).digest("hex");
   const existing = (
     await db.query(
@@ -670,7 +691,11 @@ app.post("/api/dossiers/:id/analyze", async (req: any) => {
         )
       ).rows[0].count,
     );
-    if (n >= quota) fail(402, "Quota d’analyses atteint ou offre inactive");
+    if (n >= quota)
+      fail(
+        402,
+        `Vous avez utilisé vos ${quota} analyse${quota > 1 ? "s" : ""} du mois. Le quota se renouvelle le 1er du mois prochain ; pour continuer dès maintenant, passez à l’offre Dossier depuis la page Facturation.`,
+      );
     const pending = Number(
       (
         await c.query(
@@ -718,7 +743,11 @@ app.get("/api/dossiers/:id/export/:format", async (req: any, reply) => {
       `attachment; filename="${slugify(d.name) || "dossier"}.${format}"`,
     );
   const documents = (
-    await db.query("SELECT id,name FROM documents WHERE dossier_id=$1", [d.id])
+    await db.query(
+      // le texte des tableurs sert aux tableaux financiers de l'export
+      "SELECT id,name,CASE WHEN name ~* '\\.xlsx$' THEN extracted END AS extracted FROM documents WHERE dossier_id=$1",
+      [d.id],
+    )
   ).rows;
   return exportDossier(d.name, d.state, format, {
     documents,
@@ -764,6 +793,21 @@ app.post("/api/dossiers/:id/attest", async (req: any) => {
     return { id, url: `${config.baseURL}/verification/${id}` };
   });
 });
+// Révocation par l'équipe du dossier : la page publique affiche alors « révoquée »
+app.post("/api/attestations/:id/revoke", async (req: any) => {
+  const u = await user(req);
+  const a = (
+    await db.query(
+      "SELECT v.dossier_id FROM attestations a JOIN versions v ON v.id=a.version_id WHERE a.id=$1",
+      [z.string().uuid().parse(req.params.id)],
+    )
+  ).rows[0];
+  if (!a) fail(404, "Attestation introuvable");
+  const d = await dossier(u.id, a.dossier_id, true);
+  await db.query("UPDATE attestations SET revoked_at=now() WHERE id=$1 AND revoked_at IS NULL", [req.params.id]);
+  await audit(u.id, d.organization_id, "attestation.revoked", req.params.id);
+  return { ok: true };
+});
 app.get("/api/attestations/:id", async (req: any) => {
   const a = (
     await db.query(
@@ -790,7 +834,7 @@ app.get("/api/applications", async (req) => {
   const u = await user(req);
   return (
     await db.query(
-      "SELECT DISTINCT a.*,d.name,COALESCE(i.name,r.theme->>'name',r.name) AS investor_name FROM applications a JOIN dossiers d ON d.id=a.dossier_id JOIN versions v ON v.id=a.version_id LEFT JOIN investors i ON i.id=a.investor_id LEFT JOIN organizations r ON r.id=a.recipient_org LEFT JOIN members m ON m.organization_id=d.organization_id OR m.organization_id=a.recipient_org LEFT JOIN contributors c ON c.dossier_id=d.id WHERE (m.user_id=$1 OR c.user_id=$1 OR lower(a.recipient_email)=lower($2)) AND a.revoked_at IS NULL ORDER BY a.created_at DESC",
+      "SELECT DISTINCT a.*,d.name,COALESCE(i.name,r.theme->>'name',r.name) AS investor_name,r.kind AS recipient_kind FROM applications a JOIN dossiers d ON d.id=a.dossier_id JOIN versions v ON v.id=a.version_id LEFT JOIN investors i ON i.id=a.investor_id LEFT JOIN organizations r ON r.id=a.recipient_org LEFT JOIN members m ON m.organization_id=d.organization_id OR m.organization_id=a.recipient_org LEFT JOIN contributors c ON c.dossier_id=d.id WHERE (m.user_id=$1 OR c.user_id=$1 OR lower(a.recipient_email)=lower($2)) AND a.revoked_at IS NULL ORDER BY a.created_at DESC",
       [u.id, u.email],
     )
   ).rows;
@@ -939,8 +983,8 @@ app.post("/api/dossiers/:id/applications", async (req: any) => {
     try {
       await mail(
         b.recipientEmail,
-        "Un dossier de financement vous est partagé",
-        `${b.message}\n\nAccès nominatif après connexion avec cette adresse : ${config.baseURL}/partages/${id}`,
+        `Dossier de financement partagé : ${d.name}`,
+        `Bonjour,\n\n${u.name || u.email} vous partage le dossier de financement « ${d.name} » via Fund Road : rubriques sourcées, pièces choisies et version datée.${b.message ? `\n\nSon message :\n${b.message}` : ""}\n\nConsultez-le après connexion avec cette adresse (accès nominatif) :\n${config.baseURL}/partages/${id}`,
       );
       await db.query("UPDATE applications SET status='submitted' WHERE id=$1", [
         id,
@@ -1064,6 +1108,9 @@ app.post("/api/invitations", async (req) => {
       fail(403, "Organisation invalide");
   }
   if (!mailReady()) fail(503, "Email non configuré");
+  const orgName = (
+    await db.query("SELECT COALESCE(theme->>'name',name) AS n FROM organizations WHERE id=$1", [b.organizationId])
+  ).rows[0].n;
   const token = randomBytes(32).toString("hex"),
     id = randomUUID();
   await db.query(
@@ -1080,8 +1127,8 @@ app.post("/api/invitations", async (req) => {
   try {
     await mail(
       b.email,
-      "Invitation Fund Road",
-      `Vous êtes invité à collaborer : ${config.baseURL}/invitation/${token}`,
+      `${u.name || u.email} vous invite sur Fund Road`,
+      `Bonjour,\n\n${u.name || u.email} vous invite à ${b.dossierId ? "contribuer à un dossier de" : "rejoindre"} « ${orgName} » sur Fund Road, en tant que ${b.role === "reviewer" ? "relecteur (lecture seule)" : "éditeur"}.\n\nAcceptez l’invitation avec ce lien, valable 7 jours, en vous connectant avec cette adresse :\n${config.baseURL}/invitation/${token}`,
     );
   } catch (e) {
     await db.query("DELETE FROM invitations WHERE id=$1", [id]);
@@ -1125,6 +1172,51 @@ app.get("/api/organizations/:id/members", async (req: any) => {
       [req.params.id],
     )
   ).rows;
+});
+// Transfert de propriété : l'ancien propriétaire devient éditeur
+app.put("/api/organizations/:id/owner", async (req: any) => {
+  const u = await user(req);
+  await owner(u.id, req.params.id);
+  const { userId } = z.object({ userId: z.string().min(1) }).parse(req.body);
+  if (userId === u.id) fail(400, "Vous êtes déjà propriétaire");
+  await transaction(async (c) => {
+    const r = await c.query(
+      "UPDATE members SET role='owner' WHERE organization_id=$1 AND user_id=$2",
+      [req.params.id, userId],
+    );
+    if (!r.rowCount) fail(404, "Ce membre n’appartient pas à l’organisation");
+    await c.query(
+      "UPDATE members SET role='editor' WHERE organization_id=$1 AND user_id=$2",
+      [req.params.id, u.id],
+    );
+  });
+  await audit(u.id, req.params.id, "organization.owner", userId);
+  return { ok: true };
+});
+// Suppression du compte par son titulaire, mot de passe à l'appui
+app.post("/api/me/delete", async (req: any) => {
+  const u = await user(req);
+  const { password } = z.object({ password: z.string().min(1) }).parse(req.body);
+  const headers = new Headers();
+  for (const [k, v] of Object.entries(req.headers))
+    if (v) headers.set(k, Array.isArray(v) ? v.join(",") : String(v));
+  await auth.api
+    .verifyPassword({ body: { password }, headers })
+    .catch(() => fail(403, "Mot de passe incorrect"));
+  // une organisation partagée ne doit pas rester sans propriétaire
+  const partagees = (
+    await db.query(
+      "SELECT o.name FROM members m JOIN organizations o ON o.id=m.organization_id WHERE m.user_id=$1 AND m.role='owner' AND EXISTS (SELECT 1 FROM members x WHERE x.organization_id=m.organization_id AND x.user_id<>$1)",
+      [u.id],
+    )
+  ).rows.map((r) => r.name);
+  if (partagees.length)
+    fail(
+      409,
+      `Transférez d’abord la propriété de : ${partagees.join(", ")} (page Mon organisation)`,
+    );
+  await supprimerCompte(u.email);
+  return { ok: true };
 });
 app.delete("/api/organizations/:id/members/:user", async (req: any) => {
   const u = await user(req);

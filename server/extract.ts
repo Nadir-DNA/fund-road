@@ -27,6 +27,24 @@ export const decodeXml = (s: string) =>
         )
       : xmlEntities[e.toLowerCase()],
   );
+// Fichier Office : refus des archives piégées et du contenu actif, contrôlé dès le dépôt puis à la lecture
+export function controlerArchive(bytes: Buffer) {
+  let zip: AdmZip;
+  try {
+    zip = new AdmZip(bytes);
+  } catch {
+    throw new Error("Fichier Office illisible");
+  }
+  const entries = zip.getEntries();
+  if (
+    entries.length > 5000 ||
+    entries.reduce((n, e) => n + e.header.size, 0) > 100 * 1024 * 1024
+  )
+    throw new Error("Archive trop volumineuse après décompression");
+  if (entries.some((e) => /vbaProject|embeddings\//i.test(e.entryName)))
+    throw new Error("Contenu actif ou pièce embarquée non accepté");
+  return zip;
+}
 export async function extract(file: string, name: string) {
   const ext = path.extname(name).toLowerCase();
   let text = "";
@@ -76,15 +94,8 @@ export async function extract(file: string, name: string) {
     }
   } else {
     const bytes = await readFile(file);
-    const zip = new AdmZip(bytes);
+    const zip = controlerArchive(bytes);
     const entries = zip.getEntries();
-    if (
-      entries.length > 5000 ||
-      entries.reduce((n, e) => n + e.header.size, 0) > 100 * 1024 * 1024
-    )
-      throw new Error("Archive trop volumineuse après décompression");
-    if (entries.some((e) => /vbaProject|embeddings\//i.test(e.entryName)))
-      throw new Error("Contenu actif ou pièce embarquée non accepté");
     if (ext === ".docx") {
       const doc = zip.getEntry("word/document.xml");
       if (!doc) throw new Error("Document Word invalide");

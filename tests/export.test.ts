@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { emptyState } from "../shared/domain.ts";
 import { findProgram } from "../shared/programs.ts";
-import { exportDossier } from "../server/export.ts";
+import { exportDossier, tableaux } from "../server/export.ts";
 
 test("export : PDF et Word produits avec compléments, sources et éligibilité", async () => {
   const state = emptyState();
@@ -21,5 +21,17 @@ test("export : PDF et Word produits avec compléments, sources et éligibilité"
   const pdf = await exportDossier("Dossier — test", state, "pdf", extra);
   assert.equal(pdf.subarray(0, 4).toString(), "%PDF");
   const docx = (await exportDossier("Dossier — test", state, "docx", extra)) as Buffer;
+  assert.equal(docx.subarray(0, 2).toString(), "PK");
+});
+
+test("export : un tableur déposé devient un tableau, formules et lignes isolées retirées", async () => {
+  const extrait = "Feuille : Prévisionnel\nLigne 1: Titre seul\nLigne 3: Poste | Année 1 | Année 2\nLigne 4: CA (€) | 8940 [formule : B2*149] | 44700\n";
+  assert.deepEqual(tableaux(extrait), [
+    { nom: "Prévisionnel", lignes: [["Poste", "Année 1", "Année 2"], ["CA (€)", "8 940", "44 700"]] },
+  ]);
+  const extra = { documents: [{ id: "x1", name: "previsionnel.xlsx", extracted: extrait }], programs: [], version: 1 };
+  const pdf = await exportDossier("Tableur", emptyState(), "pdf", extra);
+  assert.equal(pdf.subarray(0, 4).toString(), "%PDF");
+  const docx = (await exportDossier("Tableur", emptyState(), "docx", extra)) as Buffer;
   assert.equal(docx.subarray(0, 2).toString(), "PK");
 });

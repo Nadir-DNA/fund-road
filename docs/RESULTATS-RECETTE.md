@@ -390,13 +390,38 @@ Jouée en local avec un faux serveur SMTP.
 | UX-02 | Rejeu sur Safari iPhone et Firefox |
 | E2E-03 | Un vrai dossier pilote |
 
-## Améliorations prioritaires suggérées
+## Améliorations réalisées après la recette
 
-Hors anomalies ; c'est le meilleur gain pour le moindre effort.
+Toutes ces améliorations sont vérifiées en local puis en production le 1er novembre. Les 40 tests unitaires passent.
 
-1. Héberger les polices sur fund-road.com (RGPD, CKI-01).
-2. Bouton « Supprimer mon compte » et transfert de propriété (RGP-05, ORG-11).
-3. Prévisionnel en tableau dans l'export (EXP-05).
-4. Lien vers la facturation dans le message de quota atteint (IA-13).
-5. Emails avec expéditeur, contexte et signature (MAI-01, MAI-03, MAI-04).
-6. Étapes de suivi propres aux incubateurs (INC-02).
+| Cas d'origine | Amélioration | Vérification |
+|---|---|---|
+| CKI-01 | Polices Archivo et JetBrains Mono hébergées sur fund-road.com ; Google Fonts retiré de la politique de sécurité | Production : 0 requête hors du site avant le choix des cookies, police chargée |
+| RGP-05 | « Supprimer mon compte » dans Sécurité, mot de passe à l'appui ; refus tant qu'une organisation partagée n'a pas d'autre propriétaire ; page « Vos données » mise à jour | Local : mauvais mot de passe 403, organisation partagée 409, puis suppression OK et connexion impossible |
+| ORG-11 | « Rendre propriétaire » dans Mon organisation (l'ancien propriétaire devient éditeur) ; rôles affichés en français | Local : transfert OK, panneau vérifié à l'œil |
+| EXP-05 | Tableurs déposés repris en tableaux dans le PDF et le Word, milliers séparés, mention « non vérifiés par Fund Road » | Local : tableau du prévisionnel pilote rendu ; test unitaire |
+| IA-13 | Quota atteint : nombre d'analyses, date de renouvellement, renvoi vers Facturation | Local |
+| MAI-01 à MAI-04 | Emails avec contexte : qui invite, pour quelle organisation et quel rôle, nom du dossier partagé ; signature Fund Road | Local (faux SMTP) |
+| INC-02 | Étapes propres aux incubateurs : Candidature, En sélection, Entretien, Comité, En programme, Non retenu (écran et email) | Local |
+| DOS-06, 07, 08 | Le dépôt nomme les fichiers ignorés, signale les doublons et refuse les fichiers de plus de 20 Mo avant l'envoi | Navigateur local |
+| DOS-11 | Macro et archive piégée refusées dès le dépôt (plus de « Réessayer » inutile) | Local : 400 immédiat |
+| AUT-06 | « Mot de passe oublié » signale que l'envoi d'emails est indisponible et renvoie vers contact@ | Production |
+| ANN-08 | Initiales affichées si un logo ne charge pas | Code |
+| PUB-04 | « Créer mon espace financeur » présélectionne « fonds d'investissement » | Local |
+| SEO-01, SEO-03 | Titre de « Vos données » orienté RGPD ; `<lastmod>` sur les 115 fiches du sitemap | Production |
+| IA-02, UX-05 | Seule l'étape est annoncée aux lecteurs d'écran ; barre `progressbar` ; estimation « 2 à 3 min » | Code |
+| UX-03 | Lien « Aller au contenu » en premier arrêt de tabulation (site public et espace) | Local |
+| IA-08, ELI-03 | Consignes de l'IA : signaler des documents de sociétés différentes ; preuve explicite exigée pour les critères qualitatifs (deeptech, innovation) | Tests unitaires ; à observer sur les prochains dossiers |
+| ANN-03 | Filtre par secteur : spécialistes du secteur en tête | Production |
+| EXP-08 | Liste des attestations dans le dossier, avec bouton « Révoquer » (refusé aux tiers) | Local : révocation OK, tiers 403 |
+
+### Restent à faire (plus tard)
+
+- Police TTF embarquée dans le PDF (EXP-03).
+- Relevé mensuel du coût IA dans l'administration (IA-18).
+- Nom des fichiers remplacé avant l'envoi à l'IA (RGP-06) : à étudier, car la reconnaissance des pièces demandées s'appuie sur ce nom.
+- Organisation visée par le script `offrir-acces.ts` (FAC-02).
+- Choix du type d'organisation en cartes (ORG-01) et bascule de thème sur mobile (THM-05) : changements visuels à montrer d'abord en avant/après.
+- Lien « Canal officiel » manquant sur certaines fiches (ANN-06) : données à compléter.
+- Titres propres aux pages de l'espace connecté (SEO-05).
+- Envois de fichiers en parallèle (DOS-03).

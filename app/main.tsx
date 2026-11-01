@@ -70,6 +70,7 @@ import {
   types,
   type TypeFinanceur,
 } from "../shared/criteria";
+import "./fonts.css";
 import "./style.css";
 import { publicCopy, faq, pageMeta, financeursPage } from "../shared/content";
 import {
@@ -294,6 +295,9 @@ function PublicLayout({
   }, [pathname]);
   return (
     <>
+      <a className="lien-evitement" href="#contenu">
+        Aller au contenu
+      </a>
       <header className="topnav">
         <div className="topnav-inner">
           <Logo light />
@@ -325,6 +329,7 @@ function PublicLayout({
           </button>
         </div>
       </header>
+      <div id="contenu" tabIndex={-1} />
       {children}
       <footer>
         <div>
@@ -945,7 +950,7 @@ function FinanceursPage() {
               <div>
                 <p>{f.intro}</p>
                 <div className="hero-actions">
-                  <Link className="button accent" to="/inscription">
+                  <Link className="button accent" to="/inscription?profil=financeur">
                     Créer mon espace financeur <ArrowRight size={17} />
                   </Link>
                   <Link className="button ghost" to="/annuaire">
@@ -1039,7 +1044,7 @@ function FinanceursPage() {
         <section className="cta-band">
           <div>
             <h2 data-split>Recevez votre prochain dossier déjà vérifié.</h2>
-            <Link className="button accent" to="/inscription">
+            <Link className="button accent" to="/inscription?profil=financeur">
               Créer mon espace financeur <ArrowRight size={17} />
             </Link>
           </div>
@@ -1163,10 +1168,22 @@ function Pricing() {
     </PublicLayout>
   );
 }
+const profilInscription = () => {
+  try {
+    return sessionStorage.getItem("fundroad-profil") || "startup";
+  } catch {
+    return "startup";
+  }
+};
 function AuthPage() {
   const location = useLocation(),
     signup = location.pathname === "/inscription",
     navigate = useNavigate();
+  // arrivée depuis la page Financeurs : type d'organisation présélectionné ensuite
+  if (new URLSearchParams(location.search).get("profil") === "financeur")
+    try {
+      sessionStorage.setItem("fundroad-profil", "fund");
+    } catch {}
   const { run, busy } = useAction();
   const [error, setError] = useState("");
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -1251,6 +1268,7 @@ function AuthPage() {
 }
 function PasswordPage() {
   const { run, busy } = useAction();
+  const { data: cfg } = useLoad("/config");
   const reset = new URLSearchParams(useLocation().search).get("token");
   return (
     <PublicLayout>
@@ -1286,7 +1304,14 @@ function PasswordPage() {
             <input type="email" name="email" required />
           </label>
         )}
-        <button className="button" disabled={busy}>
+        {!reset && cfg && !cfg.mailReady && (
+          <p className="notice">
+            L’envoi d’emails n’est pas encore disponible. Écrivez à
+            contact@fund-road.com depuis l’adresse de votre compte : nous
+            rétablirons votre accès.
+          </p>
+        )}
+        <button className="button" disabled={busy || (!reset && cfg && !cfg.mailReady)}>
           Continuer
         </button>
       </form>
@@ -1330,6 +1355,9 @@ function Shell() {
     <WorkspaceContext.Provider
       value={{ me, org, refresh: () => setTick((t) => t + 1) }}
     >
+      <a className="lien-evitement" href="#contenu">
+        Aller au contenu
+      </a>
       <div className="workspace">
         <aside className={"sidebar " + (open ? "open" : "")}>
           <Logo />
@@ -1415,7 +1443,7 @@ function Shell() {
               </Link>
             </div>
           </header>
-          <main className="workspace-content">
+          <main className="workspace-content" id="contenu" tabIndex={-1}>
             {!org ? (
               <Onboarding />
             ) : (
@@ -1485,7 +1513,7 @@ function Onboarding() {
         </label>
         <label>
           Vous êtes
-          <select name="kind">
+          <select name="kind" defaultValue={profilInscription()}>
             <option value="startup">Une startup / entreprise</option>
             <option value="angel">Un business angel indépendant</option>
             <option value="fund">Un fonds d’investissement</option>
@@ -1694,7 +1722,7 @@ async function fichiersDuDepot(items: DataTransferItemList) {
   return (await Promise.all(entrees.map(lire))).flat();
 }
 // Durée habituelle d'une analyse : sert à estimer la progression, l'IA ne donnant pas d'avancement
-const DUREE_ANALYSE = 120;
+const DUREE_ANALYSE = 150;
 function DepotAnalyse({
   d,
   refresh,
@@ -1739,23 +1767,34 @@ function DepotAnalyse({
       .catch((e) => toast(e.message));
   }, [auto, envoi, docs.length, enLecture, analyseEnCours]);
   const deposer = async (fichiers: File[]) => {
-    const valides = fichiers.filter(
-      (f) => formatsAcceptes.test(f.name) && !f.name.startsWith("."),
+    const ignores = fichiers.filter(
+      (f) => !formatsAcceptes.test(f.name) || f.name.startsWith("."),
     );
-    const ignores = fichiers.length - valides.length;
+    // trop lourds : refusés ici plutôt qu'après un envoi complet
+    const tropLourds = fichiers.filter(
+      (f) => !ignores.includes(f) && f.size > 20 * 1024 * 1024,
+    );
+    const valides = fichiers.filter(
+      (f) => !ignores.includes(f) && !tropLourds.includes(f),
+    );
+    const noms = (l: File[]) =>
+      l.slice(0, 3).map((f) => f.name).join(", ") + (l.length > 3 ? "…" : "");
     if (!valides.length)
       return toast(
-        "Aucun fichier PDF, Word, PowerPoint ou Excel dans ce dépôt",
+        tropLourds.length
+          ? `Fichier limité à 20 Mo : ${noms(tropLourds)}`
+          : "Aucun fichier PDF, Word, PowerPoint ou Excel dans ce dépôt",
       );
     const erreurs: string[] = [];
-    let deposes = 0;
+    let deposes = 0,
+      doublons = 0;
     for (const [i, f] of valides.entries()) {
       setEnvoi({ fait: i, total: valides.length, nom: f.name });
       const body = new FormData();
       body.append("file", f);
       // un doublon (même contenu déjà déposé) n'ajoute pas de document
       await api("/dossiers/" + d.id + "/documents", "POST", body)
-        .then((r: any) => !r?.duplicate && deposes++)
+        .then((r: any) => (r?.duplicate ? doublons++ : deposes++))
         .catch((e) => erreurs.push(`${f.name} : ${e.message}`));
     }
     setEnvoi(null);
@@ -1763,9 +1802,11 @@ function DepotAnalyse({
     refresh();
     toast(
       [
-        `${valides.length - erreurs.length} document(s) déposé(s)`,
-        ignores &&
-          `${ignores} fichier(s) ignoré(s) (format non pris en charge)`,
+        `${deposes} document(s) déposé(s)`,
+        doublons > 0 && `${doublons} déjà déposé(s)`,
+        ignores.length > 0 &&
+          `ignoré(s), format non pris en charge : ${noms(ignores)}`,
+        tropLourds.length > 0 && `plus de 20 Mo : ${noms(tropLourds)}`,
         ...erreurs,
       ]
         .filter(Boolean)
@@ -1793,7 +1834,7 @@ function DepotAnalyse({
         ? "Analyse en file d’attente"
         : ecoule > DUREE_ANALYSE
           ? "Analyse IA en cours : encore quelques instants"
-          : `Analyse IA en cours (estimation, environ ${Math.round(DUREE_ANALYSE / 60)} min)`;
+          : "Analyse IA en cours (estimation, environ 2 à 3 min)";
   } else if (auto) {
     pct = 35;
     etape = "Lancement de l’analyse";
@@ -1850,12 +1891,13 @@ function DepotAnalyse({
         />
       </label>
       {actif && (
-        <div className="progression" role="status" aria-live="polite">
+        <div className="progression">
           <div className="progression-tete">
-            <strong>{etape}</strong>
-            <span className="tnum">{pct} %</span>
+            {/* seule l'étape est annoncée aux lecteurs d'écran, pas chaque pourcentage */}
+            <strong role="status">{etape}</strong>
+            <span className="tnum" aria-hidden="true">{pct} %</span>
           </div>
-          <div className="bar">
+          <div className="bar" role="progressbar" aria-label="Progression" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
             <span style={{ width: pct + "%" }} />
           </div>
         </div>
@@ -2124,6 +2166,7 @@ function DossierPage() {
                       {},
                     );
                     setAttestation(a.url);
+                    refresh();
                   })
                 }
               >
@@ -2133,6 +2176,34 @@ function DossierPage() {
                 <a href={attestation} target="_blank" rel="noreferrer">
                   Voir l’attestation <ExternalLink size={15} />
                 </a>
+              )}
+              {d.attestations?.length > 0 && (
+                <ul className="attestations">
+                  {d.attestations.map((x: any) => (
+                    <li key={x.id}>
+                      <a href={"/verification/" + x.id} target="_blank" rel="noreferrer">
+                        Attestation du {new Date(x.created_at).toLocaleDateString("fr")} (version {x.revision})
+                      </a>
+                      {x.revoked_at ? (
+                        <Badge>Révoquée</Badge>
+                      ) : (
+                        <button
+                          className="button secondary small"
+                          disabled={busy}
+                          onClick={() =>
+                            confirm("Révoquer cette attestation ? Sa page publique l’indiquera.") &&
+                            run(async () => {
+                              await api("/attestations/" + x.id + "/revoke", "POST", {});
+                              refresh();
+                            })
+                          }
+                        >
+                          Révoquer
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
           </aside>
@@ -2859,6 +2930,13 @@ function Directory({ embedded = false }: { embedded?: boolean }) {
       (!f.type || o.kind === f.type) &&
       correspond(o.criteria, f),
   );
+  // secteur choisi : les spécialistes de ce secteur avant les généralistes (tri stable)
+  if (f.secteur && rows)
+    rows.sort(
+      (a, b) =>
+        Number(!(a.criteria?.sectors || []).includes(f.secteur)) -
+        Number(!(b.criteria?.sectors || []).includes(f.secteur)),
+    );
   const filtre = (
     key: keyof typeof f,
     label: string,
@@ -2994,14 +3072,27 @@ const stageLabels: Record<string, string> = {
   invested: "En portefeuille",
   declined: "Refusé",
 };
+// Un incubateur sélectionne et accompagne : mêmes étapes enregistrées, autres mots
+const stageLabelsIncubateur: Record<string, string> = {
+  new: "Candidature",
+  review: "En sélection",
+  meeting: "Entretien",
+  diligence: "Comité",
+  invested: "En programme",
+  declined: "Non retenu",
+};
+const etapes = (kind?: string) =>
+  kind === "incubator" ? stageLabelsIncubateur : stageLabels;
 // Logo téléversé, sinon initiales sur la couleur du financeur
 function OrgLogo({ o, size = "" }: { o: any; size?: string }) {
   const name = o.theme?.name || o.name;
-  return o.logo ? (
+  const [casse, setCasse] = useState(false);
+  return o.logo && !casse ? (
     <img
       className={"org-logo " + size}
       src={`/api/${o.claimed === false ? "investors" : "organizations"}/${o.id}/logo?v=${o.logo.v}`}
       alt={"Logo " + name}
+      onError={() => setCasse(true)}
     />
   ) : (
     <span className={"org-logo monogram " + size} aria-hidden="true">
@@ -3094,13 +3185,13 @@ function Pipeline() {
         </div>
       </div>
       <div className="tabs">
-        {["all", ...Object.keys(stageLabels)].map((k) => (
+        {["all", ...Object.keys(etapes(org.kind))].map((k) => (
           <button
             key={k}
             className={filter === k ? "active" : ""}
             onClick={() => setFilter(k)}
           >
-            {k === "all" ? "Tous" : stageLabels[k]}
+            {k === "all" ? "Tous" : etapes(org.kind)[k]}
             {(k === "all"
               ? rows.length
               : rows.filter((r) => r.stage === k).length) > 0 && (
@@ -3181,7 +3272,7 @@ function Pipeline() {
                     })
                   }
                 >
-                  {Object.entries(stageLabels).map(([k, v]) => (
+                  {Object.entries(etapes(org.kind)).map(([k, v]) => (
                     <option key={k} value={k}>
                       {v}
                     </option>
@@ -3241,7 +3332,7 @@ function Applications() {
               </time>
               <Badge>
                 {a.recipient_org
-                  ? { ...stageLabels, new: "Reçu" }[a.stage as string]
+                  ? { ...etapes(a.recipient_kind), ...(a.recipient_kind !== "incubator" && { new: "Reçu" }) }[a.stage as string]
                   : a.status === "submitted"
                     ? "Envoyé"
                     : "Non envoyé"}
@@ -3491,9 +3582,27 @@ function OrganizationPage() {
                 <div>
                   <strong>{m.name}</strong>
                   <small>
-                    {m.email} · {m.role}
+                    {m.email} · {libellesRoles[m.role] || m.role}
                   </small>
                 </div>
+                {m.role !== "owner" && org.role === "owner" && (
+                  <button
+                    className="button secondary small rendre-proprietaire"
+                    onClick={() =>
+                      confirm(
+                        `Rendre ${m.name} propriétaire de ${org.name} ? Vous deviendrez éditeur.`,
+                      ) &&
+                      run(async () => {
+                        await api(`/organizations/${org.id}/owner`, "PUT", {
+                          userId: m.user_id,
+                        });
+                        location.reload();
+                      })
+                    }
+                  >
+                    Rendre propriétaire
+                  </button>
+                )}
                 {m.role !== "owner" && org.role === "owner" && (
                   <button
                     className="iconbutton"
@@ -3826,7 +3935,50 @@ function Security() {
           </>
         )}
       </form>
+      <SupprimerCompte />
     </>
+  );
+}
+const libellesRoles: Record<string, string> = {
+  owner: "Propriétaire",
+  editor: "Éditeur",
+  reviewer: "Relecteur",
+};
+function SupprimerCompte() {
+  const { run, busy } = useAction();
+  return (
+    <form
+      className="panel form-panel"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const f = new FormData(e.currentTarget);
+        if (
+          !confirm(
+            "Supprimer définitivement votre compte, vos dossiers et leurs documents ? Cette action est irréversible.",
+          )
+        )
+          return;
+        run(async () => {
+          await api("/me/delete", "POST", { password: f.get("password") });
+          location.href = "/";
+        });
+      }}
+    >
+      <h2>Supprimer mon compte</h2>
+      <p>
+        Vos dossiers, documents, versions et partages sont effacés. Les
+        factures sont conservées pour les obligations comptables. Si vous
+        possédez une organisation avec d’autres membres, transférez-en d’abord
+        la propriété depuis la page Mon organisation.
+      </p>
+      <label>
+        Confirmez votre mot de passe
+        <input name="password" type="password" required />
+      </label>
+      <button className="button secondary" disabled={busy}>
+        Supprimer mon compte
+      </button>
+    </form>
   );
 }
 function TwoFactor() {

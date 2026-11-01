@@ -474,10 +474,18 @@ export function registerSeo(app: FastifyInstance, index: string) {
         await db.query("SELECT slug FROM content_pages ORDER BY slug")
       ).rows.map((r) => "/ressources/" + r.slug),
     ];
+    // date de dernière vérification des fiches d'annuaire, pour que Google repasse sur les fiches mises à jour
+    const verifiees = new Map<string, string>(
+      (
+        await db.query(
+          "SELECT slug, verified_at FROM investors WHERE active=true AND slug IS NOT NULL AND verified_at IS NOT NULL",
+        )
+      ).rows.map((r) => ["/fonds/" + r.slug, new Date(r.verified_at).toISOString().slice(0, 10)]),
+    );
     reply.type("application/xml");
     return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${pages.map((p) => `  <url><loc>${esc(abs(p))}</loc></url>`).join("\n")}
+${pages.map((p) => `  <url><loc>${esc(abs(p))}</loc>${verifiees.has(p) ? `<lastmod>${verifiees.get(p)}</lastmod>` : ""}</url>`).join("\n")}
 </urlset>`;
   });
   app.get("/robots.txt", async (_req, reply) => {

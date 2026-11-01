@@ -1705,14 +1705,21 @@ legend {
 }
 .member-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-xs);
   padding: var(--space-xs) 0;
   border-bottom: 1px solid var(--color-rule);
 }
 .member-row > div {
-  flex: 1;
+  /* l'identité occupe la ligne : le bouton de transfert passe dessous */
+  flex: 1 1 calc(100% - 7.5rem);
   min-width: 0;
+}
+/* action secondaire sous l'identité du membre : le panneau est étroit */
+.member-row .rendre-proprietaire {
+  order: 3;
+  margin-left: calc(2rem + var(--space-xs));
 }
 .member-row strong {
   display: block;
@@ -2721,4 +2728,34 @@ legend {
 .depot-fin p {
   margin: 0;
   font-size: var(--text-sm);
+}
+
+/* Lien d'évitement : invisible jusqu'à la première tabulation */
+.lien-evitement {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 100;
+  padding: 0.6rem 1rem;
+  background: var(--color-night);
+  color: var(--color-on-night);
+  border-radius: var(--radius-sm);
+}
+.lien-evitement:focus {
+  top: 1rem;
+}
+
+.attestations {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-xs) 0 0;
+  display: grid;
+  gap: var(--space-2xs);
+}
+.attestations li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
 }

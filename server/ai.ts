@@ -117,7 +117,7 @@ export async function evaluate(
   const r = await callModel(
     "Tu vérifies l’éligibilité d’une entreprise à un programme de financement. " +
       guard +
-      " Évalue chaque critère : « ok » ou « ko » seulement avec une citation exacte tirée d’un document (source = id du document) ou d’une déclaration du porteur (source = « declaration »), sinon « unknown ». Une information absente ou « à compléter » donne « unknown », jamais « ko » : « ko » exige une citation qui contredit le critère. Pour les durées et âges, compare à la date du jour fournie. La note explique en une phrase ce qui manque ou ce qui conclut. Réponds uniquement par un objet JSON {eligibility:[{id, status, note, source, quote}]}.",
+      " Évalue chaque critère : « ok » ou « ko » seulement avec une citation exacte tirée d’un document (source = id du document) ou d’une déclaration du porteur (source = « declaration »), sinon « unknown ». Une information absente ou « à compléter » donne « unknown », jamais « ko » : « ko » exige une citation qui contredit le critère. Pour un critère qualitatif (innovation, deeptech, recherche), « ok » exige une preuve explicite (brevet, laboratoire, travaux de R&D décrits), pas la seule description du produit. Pour les durées et âges, compare à la date du jour fournie. La note explique en une phrase ce qui manque ou ce qui conclut. Réponds uniquement par un objet JSON {eligibility:[{id, status, note, source, quote}]}.",
     {
       today: new Date().toISOString().slice(0, 10),
       program: { name: p.name, criteria: p.criteria },
@@ -177,7 +177,7 @@ export async function analyze(
   const factsCall = callModel(
     "Tu structures un dossier de financement en français. " +
       guard +
-      " Extrais les rubriques demandées avec une citation exacte et un id de document. Pour chaque rubrique, donne jusqu'à quatre faits distincts (un objet par fait, même id), le plus important d'abord, chacun avec sa propre citation. Signale les contradictions entre sources ou réponses. Une réponse inconnue ne remplit pas une rubrique. Les hypothèses sont explicitement séparées. Résume les faits sourcés. Réponds uniquement par un objet JSON {summary, facts:[{id, value, source, quote, kind: document|hypothesis}], conflicts:[string]}. Les id possibles : " +
+      " Extrais les rubriques demandées avec une citation exacte et un id de document. Pour chaque rubrique, donne jusqu'à quatre faits distincts (un objet par fait, même id), le plus important d'abord, chacun avec sa propre citation. Signale les contradictions entre sources ou réponses, y compris des documents qui semblent décrire des sociétés différentes. Une réponse inconnue ne remplit pas une rubrique. Les hypothèses sont explicitement séparées. Résume les faits sourcés. Réponds uniquement par un objet JSON {summary, facts:[{id, value, source, quote, kind: document|hypothesis}], conflicts:[string]}. Les id possibles : " +
       requirements.map((r) => r.id).join(", "),
     { today, requirements, confirmed: state.facts, documents: content },
   );
