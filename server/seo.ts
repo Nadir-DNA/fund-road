@@ -274,9 +274,9 @@ async function staticPage(path: string): Promise<Page | null> {
       ...base,
       ld: [software(offers), crumbs([["Tarifs", path]])],
       body: `<main>${nav}<h1>Un prix simple, selon votre rôle.</h1>
-      <ul>${offers.map((o) => `<li>${esc(o.name)} : ${o.price} € HT${o.unit}. ${esc(o.description)}</li>`).join("")}
+      <ul>${offers.map((o) => `<li>${esc(o.name)} : ${o.price} €${o.unit}. ${esc(o.description)}</li>`).join("")}
       <li>Fonds, business angels et incubateurs : gratuit pendant le lancement.</li></ul>
-      <p>Aucune commission sur les levées ni sur les subventions obtenues.</p></main>`,
+      <p>Aucune commission sur les levées ni sur les subventions obtenues. TVA non applicable, article 293 B du CGI.</p></main>`,
     };
   }
   if (path === "/annuaire") {

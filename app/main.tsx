@@ -362,6 +362,9 @@ function PublicLayout({
             <nav aria-label="Ressources">
               <Link to="/referentiel">Le référentiel</Link>
               <Link to="/confiance">Vos données</Link>
+              <Link to="/mentions-legales">Mentions légales</Link>
+              <Link to="/cgv">CGV</Link>
+              <Link to="/confidentialite">Confidentialité</Link>
               <Link to="/partenaires">Partenaires</Link>
               <Link to="/ressources">Guides</Link>
             </nav>
@@ -1064,6 +1067,21 @@ function FinanceursPage() {
 function InfoPage() {
   const key = useLocation().pathname.slice(1),
     p = publicCopy[key];
+  if (p.legal)
+    return (
+      <PublicLayout>
+        <main className="section info-page legal">
+          <h1>{p.title}</h1>
+          <p className="lead">{p.intro}</p>
+          {p.items.map(([t, s]) => (
+            <section key={t}>
+              <h2>{t}</h2>
+              <p>{s}</p>
+            </section>
+          ))}
+        </main>
+      </PublicLayout>
+    );
   return (
     <PublicLayout>
       <main className="section info-page">
@@ -1107,7 +1125,7 @@ function Pricing() {
       badge: "Startups",
       label: dossier?.label || "Dossier financement",
       price: dossier ? dossier.price_cents / 100 + " €" : "—",
-      unit: " HT / 90 jours",
+      unit: " / 90 jours",
       features: [
         "Analyses IA de vos documents",
         "Critères des aides et des financeurs",
@@ -1171,6 +1189,8 @@ function Pricing() {
         </div>
         <p className="muted">
           Aucune commission sur les levées ni sur les subventions obtenues.
+          TVA non applicable, article 293 B du CGI.{" "}
+          <Link to="/cgv">Conditions générales de vente</Link>
         </p>
       </main>
     </PublicLayout>
@@ -3982,7 +4002,7 @@ function Billing() {
               <Badge>{o.active ? "Disponible" : "Ouverture prochaine"}</Badge>
               <h3>{o.label}</h3>
               <div className="price">
-                {o.price_cents / 100} €<small> HT</small>
+                {o.price_cents / 100} €
               </div>
               <p>{o.cadence === "month" ? "Par mois" : "Forfait 90 jours"}</p>
               <button
