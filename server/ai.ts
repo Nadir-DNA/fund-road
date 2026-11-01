@@ -204,8 +204,14 @@ export async function analyze(
   // au moins un morceau de la valeur apporte une information (pas seulement « non communiqué »)
   const utile = (v: string) =>
     v.split(/[.;]/).some((m) => m.trim().length >= 4 && !hasMissingInformation(m));
+  // Filet de sécurité : une projection ou une année à venir est une hypothèse, quoi qu'en dise l'IA
+  const anneeCourante = new Date().getFullYear();
+  const projection = (t: string) =>
+    /\b(projections?|pr[ée]visionnel(le)?s?|pr[ée]visions?)\b/i.test(t) ||
+    (t.match(/\b20\d\d\b/g) || []).some((a) => Number(a) > anneeCourante);
   for (const f of parsed.facts) {
     if (!requirements.some((r) => r.id === f.id)) continue;
+    if (f.kind === "document" && projection(f.value + " " + (f.quote || ""))) f.kind = "hypothesis";
     if (!utile(f.value)) continue;
     const doc = documents.find((d) => d.id === f.source);
     if (!doc || !f.quote || !doc.extracted.includes(f.quote)) continue;

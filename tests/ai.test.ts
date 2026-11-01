@@ -347,3 +347,29 @@ test("IA : compléments d'une rubrique gardés avec leur propre citation, sans d
     globalThis.fetch = original;
   }
 });
+
+test("IA : une projection ou une année à venir devient une hypothèse, même annoncée comme fait", async () => {
+  const original = globalThis.fetch;
+  const futur = new Date().getFullYear() + 1;
+  const texte = `Chiffre d'affaires 2025 : 12 000 euros. Projection ${futur} : 400 000 euros. Cible : les étudiants.`;
+  const fait = (id: string, value: string, quote: string) => ({ id, value, source: "doc1", quote, kind: "document" });
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        choices: [{ finish_reason: "stop", message: { content: JSON.stringify({ summary: "", conflicts: [], facts: [
+          fait("financials", "CA 2025 : 12 000 €", "Chiffre d'affaires 2025 : 12 000 euros."),
+          fait("financials", `CA ${futur} : 400 000 €`, `Projection ${futur} : 400 000 euros.`),
+          fait("market", "Cible : les étudiants", "Cible : les étudiants."),
+        ] }) } }],
+        usage: { prompt_tokens: 1, completion_tokens: 1 },
+      }),
+    );
+  try {
+    const r = await analyze(emptyState(), [{ id: "doc1", name: "bp.docx", extracted: texte }]);
+    assert.equal(r.state.facts.financials.kind, "document");
+    assert.equal(r.state.facts.financials.details?.[0].kind, "hypothesis");
+    assert.equal(r.state.facts.market.kind, "document", "le mot « cible » ne fait pas une hypothèse");
+  } finally {
+    globalThis.fetch = original;
+  }
+});
