@@ -23,6 +23,12 @@ export const auth = betterAuth({
     },
   },
   plugins: [twoFactor()],
-  advanced: { useSecureCookies: config.baseURL.startsWith("https:") },
+  advanced: {
+    useSecureCookies: config.baseURL.startsWith("https:"),
+    // derrière le tunnel Cloudflare, seule cette adresse est fiable (x-forwarded-for est falsifiable)
+    ...(process.env.BEHIND_CLOUDFLARE && {
+      ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
+    }),
+  },
   rateLimit: { enabled: true },
 });

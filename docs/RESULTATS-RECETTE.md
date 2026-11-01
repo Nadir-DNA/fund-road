@@ -9,14 +9,13 @@ Campagne du 1er novembre 2026, conduite sur la base de [CAHIER-DE-RECETTE.md](CA
 | **Total** | 192 | 162 | 13 | 2 | 15 |
 | dont P1 | 99 | 83 | 7 | 2 | 7 |
 
-Deux cas ont été ajoutés en cours de campagne : SEC-10 (corrigé) et SEC-11 (à vérifier).
+Deux cas ont été ajoutés en cours de campagne : SEC-10 et SEC-11, tous deux corrigés.
 
-- **11 anomalies trouvées, toutes corrigées.** Chaque correctif a été revérifié, puis mis en production (2 déploiements de 29 s, santé OK).
+- **12 anomalies trouvées, toutes corrigées.** Chaque correctif a été revérifié, puis mis en production (3 déploiements, santé OK).
 - **Restent ouverts, hors code :**
   - clé Resend à révoquer (SEC-09) ;
   - copie de sauvegarde hors de la box (EXO-09) ;
-  - mentions légales et CGU absentes ;
-  - limite d'inscriptions à vérifier derrière Cloudflare (SEC-11).
+  - mentions légales et CGU absentes.
 - **Décision :** mise en vente **non encore possible**. Deux P1 sont KO et les mentions légales manquent. Sept P1 sont NT, faute d'emails, de paiement et de pilote réel (détail en fin de document).
 
 ### Environnement et méthode
@@ -41,10 +40,11 @@ Deux cas ont été ajoutés en cours de campagne : SEC-10 (corrigé) et SEC-11 (
 | ANO-004 | DOS-08 | Mineure | Au-delà de 20 Mo, message anglais « request file too large ». | Message « Fichier limité à 20 Mo ». | Local |
 | ANO-005 | FIN-01 | Majeure | Un financeur pouvait enregistrer un ticket minimum supérieur au maximum. | Règle ajoutée au schéma des critères. | Local : refus 400 |
 | ANO-006 | IA-06 | Bloquante | Les projections (prévisionnel 2027) arrivaient dans les « compléments » sans marque d'hypothèse ; seul le libellé de l'IA le disait. | Les compléments gardent leur nature, badge « Hypothèse » à l'écran et « Hypothèse : » dans le PDF. Test unitaire ajouté. | Local : 2 projections, 2 marquées |
-| ANO-007 | ELI-04, ELI-07 | Bloquante | i-Lab marqué « Non éligible » parce que l'information juridique était « à compléter » : une absence d'information devenait un échec bloquant. | Un « non rempli » fondé sur une mention « à compléter » redevient « à vérifier » ; consigne de l'IA précisée. Test unitaire ajouté. | Test unitaire (pas de nouvelle analyse réelle) |
+| ANO-007 | ELI-04, ELI-07 | Bloquante | i-Lab marqué « Non éligible » parce que l'information juridique était « à compléter » : une absence d'information devenait un échec bloquant. | Un « non rempli » fondé sur une mention « à compléter » redevient « à vérifier » ; consigne de l'IA précisée. Test unitaire ajouté. | Test unitaire et nouvelle analyse réelle |
 | ANO-008 | IA-02 | Majeure | Le pourcentage reculait de 35 % à 15 % entre le lancement et la lecture des documents. | Barre monotone ; au-delà de l'estimation : « encore quelques instants ». | Local : 295 relevés, aucun recul |
 | ANO-009 | PUB-09 | Mineure | La page 404 disait « Cette page a changé — Fund Road prépare une nouvelle expérience », ce qui trompe le visiteur après une faute de frappe. | « Page introuvable », avec un texte d'orientation. | Production |
 | ANO-010 | SEC-10 (ajouté) | Mineure | Un identifiant de document mal formé provoquait une erreur 500 dans les journaux. | Format validé : réponse 400. | Local |
+| ANO-012 | SEC-11 | Majeure | Limite de connexion contournable en falsifiant `x-forwarded-for`. | Lecture de `cf-connecting-ip` derrière Cloudflare (`server/auth.ts`). | Production |
 | ANO-011 | ORG, FIN (formulaires) | Mineure | Une saisie refusée affichait seulement « Données invalides ». | Le détail du champ en cause est affiché. | Compilation et tests |
 
 Après correctifs : 39 tests unitaires OK, compilation TypeScript sans erreur.
@@ -187,7 +187,7 @@ Jouée en local : la création de comptes en production m'est interdite. Le code
 | ELI-01 | OK | Bourse French Tech et i-Lab ajoutées ; le Prêt d'amorçage n'est plus proposé | — |
 | ELI-02 | OK | Chaque critère en ok / ko / à vérifier, avec explication | — |
 | ELI-03 | OK | 3 critères remplis, tous avec une citation exacte | « Deeptech » accordé à une plateforme logicielle : l'IA est généreuse sur les critères qualitatifs. Exiger une preuve (brevet, laboratoire) pour ce critère |
-| ELI-04 | OK après correctif | Information « à compléter » → « à vérifier » (ANO-007) | Revérifier sur une vraie analyse lors du prochain dossier pilote |
+| ELI-04 | OK après correctif | Information « à compléter » → « à vérifier » (ANO-007). Revérifié sur une vraie analyse du dossier pilote : i-Lab passe de « Non éligible » à « Informations manquantes » | — |
 | ELI-05 | OK | Déclaration enregistrée, critère inconnu refusé (400) | — |
 | ELI-06 | OK | Programme retiré du dossier et de l'évaluation | — |
 | ELI-07 | OK après correctif | Verdicts cohérents avec les critères bloquants (le faux « non éligible » venait d'ANO-007) | — |
@@ -307,7 +307,7 @@ Jouée en local : la création de comptes en production m'est interdite. Le code
 | SEC-08 | OK | Archive piégée : « Archive trop volumineuse après décompression » | — |
 | SEC-09 | **KO** | Le dépôt est public et `RESEND_API_KEY` figure toujours dans l'historique (3 occurrences) | La révoquer chez Resend (action de votre côté) |
 | SEC-10 | OK après correctif | Identifiant mal formé : 400 au lieu de 500 (ANO-010) | — |
-| SEC-11 | **KO** (à vérifier) | La bibliothèque d'authentification limite les inscriptions par adresse IP (attente de 10 s observée) | Derrière Cloudflare, vérifier qu'elle lit l'IP du visiteur (`cf-connecting-ip`) : sinon trois inscriptions simultanées bloquent tout le monde |
+| SEC-11 | OK après correctif | La limite des connexions et inscriptions lisait `x-forwarded-for`, que l'on peut falsifier pour la contourner. Elle lit maintenant `cf-connecting-ip` (ANO-012). Production : 3 échecs puis 429, IP du visiteur bien résolue | — |
 
 ### 20. Exploitation
 
@@ -378,7 +378,6 @@ Jouée en local avec un faux serveur SMTP.
 | SEC-09 | Révoquer `RESEND_API_KEY` chez Resend |
 | EXO-09 | Mettre en place une copie chiffrée hors de la box |
 | Mentions légales, CGU/CGV | À rédiger : obligatoires pour vendre l'offre à 149 € |
-| SEC-11 | Vérifier la limite d'inscription derrière Cloudflare (je peux la régler en code si vous le souhaitez) |
 
 **P1 non testés**
 
