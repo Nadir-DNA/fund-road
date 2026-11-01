@@ -1,6 +1,12 @@
 import { z } from "zod";
 export * from "./score.ts";
-import { champsParType, regions, secteurs, stades, type TypeFinanceur } from "./criteria.ts";
+import {
+  champsParType,
+  regions,
+  secteurs,
+  stades,
+  type TypeFinanceur,
+} from "./criteria.ts";
 export function affiliateAmount(cents: number, refunded: number, rate: number) {
   return Math.max(0, Math.floor(((cents - refunded) * rate) / 10000));
 }
@@ -65,5 +71,8 @@ export function criteriaInput(kind: string) {
       )
       .strip()
       .default({}),
+  }).refine((c) => c.ticketMin == null || c.ticketMax == null || c.ticketMin <= c.ticketMax, {
+    message: "Le ticket minimum est supérieur au ticket maximum",
+    path: ["ticketMax"],
   });
 }

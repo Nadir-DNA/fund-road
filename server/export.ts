@@ -41,7 +41,7 @@ function contenu(name: string, state: DossierState, docs: { id: string; name: st
       continue;
     }
     b.push({ t: "texte", texte: f.value });
-    for (const d of f.details || []) b.push({ t: "puce", texte: d.value });
+    for (const d of f.details || []) b.push({ t: "puce", texte: (d.kind === "hypothesis" && !/^hypoth/i.test(d.value) ? "Hypothèse : " : "") + d.value });
     const nature =
       f.kind === "hypothesis" ? "hypothèse du porteur" : f.kind === "declared" ? "déclaration du porteur" : "tiré des documents";
     b.push({

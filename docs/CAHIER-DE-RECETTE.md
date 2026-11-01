@@ -352,7 +352,7 @@ Cas à noter `NT` ou `KO` d'office tant que le point n'est pas réglé :
 - **Paiement** (FAC-03 à FAC-06) : compte, prix et webhook Stripe à configurer.
 - **Clé Resend** (SEC-09) : présente dans l'historique du dépôt public, à révoquer.
 - **`contact@fund-road.com`** (RGP-02) : boîte à créer chez OVH.
-- **Sauvegardes** (EXO-08, EXO-09) : sauvegarde de nuit non activée, pas de copie hors de la box.
+- **Sauvegardes** (EXO-09) : pas de copie hors de la box (la sauvegarde de nuit tourne depuis le 31/10).
 - **Mentions légales et CGU** : absentes du site.
 - **Prévisionnel** dans l'export : repris en texte, pas en tableau.
 - **Dépôt de dossier entier** : vérifié dans Chromium uniquement.

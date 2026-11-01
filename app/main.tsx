@@ -104,10 +104,32 @@ export async function api(url: string, method = "GET", body?: any) {
   }
   if (!r.ok)
     throw new Error(
-      data.error?.message || data.error || data.message || "Action impossible",
+      (r.status === 429 && "Trop de tentatives. Patientez quelques secondes puis réessayez.") ||
+        messagesAuth[data.code] ||
+        // erreurs de validation : le détail du champ plutôt que « Données invalides » seul
+        (Array.isArray(data.details) &&
+          data.details.map((d: string) => d.split(": ").slice(1).join(": ")).join(" · ")) ||
+        data.error?.message ||
+        data.error ||
+        data.message ||
+        "Action impossible",
     );
   return data;
 }
+// La bibliothèque d'authentification répond en anglais : messages traduits par code
+const messagesAuth: Record<string, string> = {
+  INVALID_EMAIL_OR_PASSWORD: "Adresse email ou mot de passe incorrect.",
+  USER_ALREADY_EXISTS: "Un compte existe déjà avec cette adresse. Connectez-vous.",
+  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: "Un compte existe déjà avec cette adresse. Connectez-vous.",
+  PASSWORD_TOO_SHORT: "Mot de passe trop court : 12 caractères minimum.",
+  PASSWORD_TOO_LONG: "Mot de passe trop long.",
+  INVALID_EMAIL: "Adresse email invalide.",
+  EMAIL_NOT_VERIFIED: "Confirmez d’abord votre adresse avec le lien reçu par email.",
+  INVALID_TOKEN: "Lien expiré ou déjà utilisé. Refaites une demande.",
+  INVALID_CODE: "Code incorrect.",
+  INVALID_TWO_FACTOR_CODE: "Code incorrect.",
+  INVALID_PASSWORD: "Mot de passe incorrect.",
+};
 function useLoad<T = any>(url: string, dep: any = 0) {
   const [data, setData] = useState<T | null>(null),
     [error, setError] = useState("");
@@ -165,7 +187,13 @@ const Logo = ({ light = false }: { light?: boolean }) => (
       height={33}
     />
     {!light && (
-      <img className="logo-nuit" src="/brand/fundroad-mark-white.png" alt="" width={28} height={33} />
+      <img
+        className="logo-nuit"
+        src="/brand/fundroad-mark-white.png"
+        alt=""
+        width={28}
+        height={33}
+      />
     )}
     Fund Road
   </Link>
@@ -1646,18 +1674,23 @@ const formatsAcceptes = /\.(pdf|docx|pptx|xlsx)$/i;
 // Parcourt un dossier glissé-déposé (et ses sous-dossiers) ; readEntries rend les fichiers par lots
 async function fichiersDuDepot(items: DataTransferItemList) {
   const lire = async (entry: any): Promise<File[]> => {
-    if (entry.isFile) return [await new Promise<File>((ok, ko) => entry.file(ok, ko))];
+    if (entry.isFile)
+      return [await new Promise<File>((ok, ko) => entry.file(ok, ko))];
     if (!entry.isDirectory) return [];
     const lecteur = entry.createReader();
     const enfants: any[] = [];
     for (;;) {
-      const lot: any[] = await new Promise((ok, ko) => lecteur.readEntries(ok, ko));
+      const lot: any[] = await new Promise((ok, ko) =>
+        lecteur.readEntries(ok, ko),
+      );
       if (!lot.length) break;
       enfants.push(...lot);
     }
     return (await Promise.all(enfants.map(lire))).flat();
   };
-  const entrees = [...items].map((i) => (i as any).webkitGetAsEntry?.()).filter(Boolean);
+  const entrees = [...items]
+    .map((i) => (i as any).webkitGetAsEntry?.())
+    .filter(Boolean);
   return (await Promise.all(entrees.map(lire))).flat();
 }
 // Durée habituelle d'une analyse : sert à estimer la progression, l'IA ne donnant pas d'avancement
@@ -1674,7 +1707,11 @@ function DepotAnalyse({
   voirDossier?: () => void;
 }) {
   const toast = useContext(ToastContext);
-  const [envoi, setEnvoi] = useState<{ fait: number; total: number; nom: string } | null>(null);
+  const [envoi, setEnvoi] = useState<{
+    fait: number;
+    total: number;
+    nom: string;
+  } | null>(null);
   // nombre de documents attendus avant de lancer l'analyse (0 : rien en attente)
   const [auto, setAuto] = useState(0);
   const [survol, setSurvol] = useState(false);
@@ -1683,7 +1720,8 @@ function DepotAnalyse({
   const lus = docs.filter((x) => x.status !== "queued").length;
   const enLecture = docs.some((x) => x.status === "queued");
   const analyse = d.jobs.find((j: any) => j.kind === "analysis");
-  const analyseEnCours = analyse && ["queued", "running"].includes(analyse.status);
+  const analyseEnCours =
+    analyse && ["queued", "running"].includes(analyse.status);
   // relance de l'horloge pendant l'analyse, pour faire avancer l'estimation
   useEffect(() => {
     if (!analyseEnCours) return;
@@ -1692,7 +1730,8 @@ function DepotAnalyse({
   }, [analyseEnCours]);
   // analyse lancée seule dès que tous les documents déposés sont visibles et lus
   useEffect(() => {
-    if (!auto || envoi || docs.length < auto || enLecture || analyseEnCours) return;
+    if (!auto || envoi || docs.length < auto || enLecture || analyseEnCours)
+      return;
     setAuto(0);
     if (!aiReady || !docs.some((x) => x.status === "ready")) return;
     api("/dossiers/" + d.id + "/analyze", "POST", {})
@@ -1700,9 +1739,14 @@ function DepotAnalyse({
       .catch((e) => toast(e.message));
   }, [auto, envoi, docs.length, enLecture, analyseEnCours]);
   const deposer = async (fichiers: File[]) => {
-    const valides = fichiers.filter((f) => formatsAcceptes.test(f.name) && !f.name.startsWith("."));
+    const valides = fichiers.filter(
+      (f) => formatsAcceptes.test(f.name) && !f.name.startsWith("."),
+    );
     const ignores = fichiers.length - valides.length;
-    if (!valides.length) return toast("Aucun fichier PDF, Word, PowerPoint ou Excel dans ce dépôt");
+    if (!valides.length)
+      return toast(
+        "Aucun fichier PDF, Word, PowerPoint ou Excel dans ce dépôt",
+      );
     const erreurs: string[] = [];
     let deposes = 0;
     for (const [i, f] of valides.entries()) {
@@ -1720,7 +1764,8 @@ function DepotAnalyse({
     toast(
       [
         `${valides.length - erreurs.length} document(s) déposé(s)`,
-        ignores && `${ignores} fichier(s) ignoré(s) (format non pris en charge)`,
+        ignores &&
+          `${ignores} fichier(s) ignoré(s) (format non pris en charge)`,
         ...erreurs,
       ]
         .filter(Boolean)
@@ -1738,14 +1783,26 @@ function DepotAnalyse({
     etape = `Lecture des documents : ${lus}/${docs.length}`;
   } else if (analyseEnCours) {
     // horloges du serveur et du navigateur légèrement décalées : jamais de temps négatif
-    const ecoule = Math.max(0, (maintenant - new Date(analyse.created_at).getTime()) / 1000);
+    const ecoule = Math.max(
+      0,
+      (maintenant - new Date(analyse.created_at).getTime()) / 1000,
+    );
     pct = 35 + Math.round(Math.min(0.95, ecoule / DUREE_ANALYSE) * 65);
-    etape = analyse.status === "queued" ? "Analyse en file d’attente" : `Analyse IA en cours (estimation, environ ${Math.round(DUREE_ANALYSE / 60)} min)`;
+    etape =
+      analyse.status === "queued"
+        ? "Analyse en file d’attente"
+        : ecoule > DUREE_ANALYSE
+          ? "Analyse IA en cours : encore quelques instants"
+          : `Analyse IA en cours (estimation, environ ${Math.round(DUREE_ANALYSE / 60)} min)`;
   } else if (auto) {
     pct = 35;
     etape = "Lancement de l’analyse";
   }
   const actif = !!etape;
+  // entre deux étapes, la liste des documents arrive après le lancement : la barre ne recule jamais
+  const plusHaut = useRef(0);
+  plusHaut.current = actif ? Math.max(plusHaut.current, pct) : 0;
+  pct = plusHaut.current;
   return (
     <div className="panel depot">
       <label
@@ -1758,15 +1815,16 @@ function DepotAnalyse({
         onDrop={async (e) => {
           e.preventDefault();
           setSurvol(false);
-          if (!actif) await deposer(await fichiersDuDepot(e.dataTransfer.items));
+          if (!actif)
+            await deposer(await fichiersDuDepot(e.dataTransfer.items));
         }}
       >
         <Upload size={30} />
         <strong>Déposez vos documents ou un dossier entier</strong>
         <span className="button secondary small">Choisir des fichiers</span>
         <span>
-          PDF (même scannés), Word, PowerPoint, Excel · 20 Mo par fichier · 30 documents maximum. L’analyse se lance
-          automatiquement.
+          PDF (même scannés), Word, PowerPoint, Excel · 20 Mo par fichier · 30
+          documents maximum. L’analyse se lance automatiquement.
         </span>
         <input
           type="file"
@@ -1803,13 +1861,16 @@ function DepotAnalyse({
         </div>
       )}
       {!actif && analyse?.status === "failed" && (
-        <p className="notice">L’analyse n’a pas abouti : {analyse.error}. Corrigez puis relancez-la.</p>
+        <p className="notice">
+          L’analyse n’a pas abouti : {analyse.error}. Corrigez puis relancez-la.
+        </p>
       )}
       {!actif && analyse?.status === "done" && (
         <div className="depot-fin">
           <p>
-            Analyse terminée : {Object.keys(d.state.facts).length} rubrique(s) sur {d.score.total} renseignée(s) à
-            partir de vos documents, à relire et confirmer.
+            Analyse terminée : {Object.keys(d.state.facts).length} rubrique(s)
+            sur {d.score.total} renseignée(s) à partir de vos documents, à
+            relire et confirmer.
           </p>
           {voirDossier && (
             <button className="button small" onClick={voirDossier}>
@@ -1909,7 +1970,12 @@ function DossierPage() {
       {tab === "overview" && (
         <div className="content-grid">
           <section>
-            <DepotAnalyse d={d} refresh={refresh} aiReady={!!cfg?.aiReady} voirDossier={() => setTab("dossier")} />
+            <DepotAnalyse
+              d={d}
+              refresh={refresh}
+              aiReady={!!cfg?.aiReady}
+              voirDossier={() => setTab("dossier")}
+            />
             <div className="panel score-panel">
               <div>
                 <div className="bigscore">
@@ -2619,7 +2685,7 @@ function FactEditor({
           <ul>
             {fact.details.map((d: any) => (
               <li key={d.quote}>
-                {d.value}
+                {d.kind === "hypothesis" && <Badge>Hypothèse</Badge>} {d.value}
                 <blockquote>{d.quote}</blockquote>
               </li>
             ))}
@@ -2782,14 +2848,22 @@ function Directory({ embedded = false }: { embedded?: boolean }) {
   const [f, setF] = useState({ type: "", secteur: "", stade: "", region: "" });
   const rows = data?.filter(
     (o) =>
-      [o.theme.name || o.name, resume(o.criteria).sectors, resume(o.criteria).geography]
+      [
+        o.theme.name || o.name,
+        resume(o.criteria).sectors,
+        resume(o.criteria).geography,
+      ]
         .join(" ")
         .toLowerCase()
         .includes(search.toLowerCase()) &&
       (!f.type || o.kind === f.type) &&
       correspond(o.criteria, f),
   );
-  const filtre = (key: keyof typeof f, label: string, options: Record<string, string>) => (
+  const filtre = (
+    key: keyof typeof f,
+    label: string,
+    options: Record<string, string>,
+  ) => (
     <select
       aria-label={label}
       value={f[key]}
@@ -2803,7 +2877,8 @@ function Directory({ embedded = false }: { embedded?: boolean }) {
       ))}
     </select>
   );
-  const parNom = (xs: readonly string[]) => Object.fromEntries(xs.map((x) => [x, x]));
+  const parNom = (xs: readonly string[]) =>
+    Object.fromEntries(xs.map((x) => [x, x]));
   const body = (
     <>
       <div className="page-heading">
@@ -2876,7 +2951,8 @@ function Directory({ embedded = false }: { embedded?: boolean }) {
                   ))}
                   {resume(o.criteria).stage && (
                     <span className="stage">
-                      <Seedling size={11} /> {chips(resume(o.criteria).stage)[0]}
+                      <Seedling size={11} />{" "}
+                      {chips(resume(o.criteria).stage)[0]}
                     </span>
                   )}
                 </div>
@@ -3178,14 +3254,29 @@ function Applications() {
   );
 }
 // Formulaire des critères : listes fixes en cases à cocher, montants en euros, champs propres au type
-function Cases({ name, label, options, valeurs }: { name: string; label: string; options: readonly string[]; valeurs: unknown }) {
+function Cases({
+  name,
+  label,
+  options,
+  valeurs,
+}: {
+  name: string;
+  label: string;
+  options: readonly string[];
+  valeurs: unknown;
+}) {
   const choisis = Array.isArray(valeurs) ? valeurs : [];
   return (
     <fieldset className="cases">
       <legend>{label}</legend>
       {options.map((x) => (
         <label key={x}>
-          <input type="checkbox" name={name} value={x} defaultChecked={choisis.includes(x)} />
+          <input
+            type="checkbox"
+            name={name}
+            value={x}
+            defaultChecked={choisis.includes(x)}
+          />
           {x}
         </label>
       ))}
@@ -3196,23 +3287,49 @@ function ChampsCriteres({ kind, c }: { kind: string; c: any }) {
   const d = c.details || {};
   return (
     <>
-      <Cases name="sectors" label="Secteurs" options={secteurs} valeurs={c.sectors} />
+      <Cases
+        name="sectors"
+        label="Secteurs"
+        options={secteurs}
+        valeurs={c.sectors}
+      />
       <Cases name="stages" label="Stades" options={stades} valeurs={c.stages} />
-      <Cases name="regions" label="Zones" options={regions} valeurs={c.regions} />
+      <Cases
+        name="regions"
+        label="Zones"
+        options={regions}
+        valeurs={c.regions}
+      />
       <div className="form-row">
         <label>
           Ticket minimum (€)
-          <input name="ticketMin" type="number" min={0} step={1000} defaultValue={c.ticketMin ?? ""} />
+          <input
+            name="ticketMin"
+            type="number"
+            min={0}
+            step={1000}
+            defaultValue={c.ticketMin ?? ""}
+          />
         </label>
         <label>
           Ticket maximum (€)
-          <input name="ticketMax" type="number" min={0} step={1000} defaultValue={c.ticketMax ?? ""} />
+          <input
+            name="ticketMax"
+            type="number"
+            min={0}
+            step={1000}
+            defaultValue={c.ticketMax ?? ""}
+          />
         </label>
       </div>
       {champsParType[kind as TypeFinanceur]?.map((f) => (
         <label key={f.key} className={f.type === "bool" ? "checkbox" : ""}>
           {f.type === "bool" && (
-            <input type="checkbox" name={"d:" + f.key} defaultChecked={!!d[f.key]} />
+            <input
+              type="checkbox"
+              name={"d:" + f.key}
+              defaultChecked={!!d[f.key]}
+            />
           )}
           {f.label}
           {f.type === "choice" ? (
@@ -3225,7 +3342,13 @@ function ChampsCriteres({ kind, c }: { kind: string; c: any }) {
           ) : f.type === "bool" ? null : (
             <input
               name={"d:" + f.key}
-              type={f.type === "number" ? "number" : f.type === "date" ? "date" : "text"}
+              type={
+                f.type === "number"
+                  ? "number"
+                  : f.type === "date"
+                    ? "date"
+                    : "text"
+              }
               min={f.type === "number" ? 0 : undefined}
               defaultValue={d[f.key] ?? ""}
             />
@@ -3241,7 +3364,11 @@ function ChampsCriteres({ kind, c }: { kind: string; c: any }) {
 }
 function lireCriteres(f: FormData, kind: string) {
   const nombre = (v: FormDataEntryValue | null) => (v ? Number(v) : null);
-  const lignes = (k: string) => String(f.get(k) || "").split("\n").map((x) => x.trim()).filter(Boolean);
+  const lignes = (k: string) =>
+    String(f.get(k) || "")
+      .split("\n")
+      .map((x) => x.trim())
+      .filter(Boolean);
   return {
     sectors: f.getAll("sectors"),
     stages: f.getAll("stages"),
@@ -3254,7 +3381,14 @@ function lireCriteres(f: FormData, kind: string) {
     details: Object.fromEntries(
       (champsParType[kind as TypeFinanceur] || []).map((c) => {
         const v = f.get("d:" + c.key);
-        return [c.key, c.type === "bool" ? v === "on" : c.type === "number" ? nombre(v) : v || null];
+        return [
+          c.key,
+          c.type === "bool"
+            ? v === "on"
+            : c.type === "number"
+              ? nombre(v)
+              : v || null,
+        ];
       }),
     ),
   };
@@ -3816,7 +3950,10 @@ function Portal() {
                 </dl>
                 {details(o.kind, c).length > 0 && (
                   <section className="panel">
-                    <h2>{types[o.kind as TypeFinanceur] || "Financeur"} : en détail</h2>
+                    <h2>
+                      {types[o.kind as TypeFinanceur] || "Financeur"} : en
+                      détail
+                    </h2>
                     <dl className="fiche-details">
                       {details(o.kind, c).map((d) => (
                         <div key={d.champ.key}>
@@ -3873,7 +4010,8 @@ function Portal() {
                     <ul className="sources">
                       {Object.entries<any>(c.sources).map(([k, v]) => (
                         <li key={k}>
-                          <strong>{libelleCritere(o.kind, k)}</strong> « {v.citation} »{" "}
+                          <strong>{libelleCritere(o.kind, k)}</strong> «{" "}
+                          {v.citation} »{" "}
                           <a href={v.url} target="_blank" rel="noreferrer">
                             source <ExternalLink size={12} />
                           </a>
@@ -4154,6 +4292,8 @@ function revoirCookies() {
   try {
     localStorage.removeItem(CHOIX_COOKIES);
   } catch {}
+  // sinon Google Analytics réécrit son cookie avant le rechargement
+  (window as any)["ga-disable-" + GA_ID] = true;
   document.cookie
     .split("; ")
     .filter((c) => c.startsWith("_ga"))
@@ -4175,16 +4315,26 @@ function Consentement() {
     setChoix(v);
   };
   return (
-    <div className="cookies" role="region" aria-label="Cookies de mesure d’audience">
+    <div
+      className="cookies"
+      role="region"
+      aria-label="Cookies de mesure d’audience"
+    >
       <p>
         Nous mesurons l’audience du site avec Google Analytics, uniquement si
         vous l’acceptez. <Link to="/confiance">En savoir plus</Link>
       </p>
       <div className="button-row">
-        <button className="button secondary small" onClick={() => choisir("non")}>
+        <button
+          className="button secondary small"
+          onClick={() => choisir("non")}
+        >
           Refuser
         </button>
-        <button className="button secondary small" onClick={() => choisir("oui")}>
+        <button
+          className="button secondary small"
+          onClick={() => choisir("oui")}
+        >
           Accepter
         </button>
       </div>
@@ -4241,10 +4391,11 @@ function Root() {
             element={
               <PublicLayout>
                 <div className="section">
-                  <h1>Cette page a changé</h1>
+                  <h1>Page introuvable</h1>
                   <p>
-                    Fund Road prépare une nouvelle expérience pour vos dossiers
-                    de financement.
+                    Cette adresse n’existe pas ou a changé. L’annuaire des
+                    financeurs et votre espace restent accessibles depuis le
+                    menu.
                   </p>
                   <Link className="button" to="/">
                     Découvrir Fund Road

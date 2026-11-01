@@ -63,7 +63,7 @@ export type Fact = {
   kind: "declared" | "document" | "hypothesis";
   quote?: string;
   // informations complémentaires de la même rubrique, chacune avec sa propre citation
-  details?: { value: string; source: string; quote: string }[];
+  details?: { value: string; source: string; quote: string; kind?: "hypothesis" }[];
 };
 export type DossierState = {
   facts: Record<string, Fact>;
@@ -101,9 +101,7 @@ export function hasMissingInformation(value: string) {
       text,
     ) ||
     /\baucun\w*\s+[^.;!?]*\b(?:communique|fourni|renseigne)\w*/.test(text) ||
-    /\ba completer\b|\binformation inconnue\b|\bdonnees manquantes\b/.test(
-      text,
-    )
+    /\ba completer\b|\binformation inconnue\b|\bdonnees manquantes\b/.test(text)
   );
 }
 export function score(state: DossierState) {

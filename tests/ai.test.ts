@@ -141,6 +141,14 @@ test("IA : critère de programme sans citation vérifiable ramené à « à vér
                   },
                   {
                     program: "bft",
+                    id: "revenue_lt_10m",
+                    status: "ko",
+                    note: "Chiffre d'affaires non renseigné",
+                    source: "doc1",
+                    quote: "Chiffre d'affaires : à compléter",
+                  },
+                  {
+                    program: "bft",
                     id: "inexistant",
                     status: "ko",
                     note: "",
@@ -168,7 +176,7 @@ test("IA : critère de programme sans citation vérifiable ramené à « à vér
         {
           id: "doc1",
           name: "kbis.pdf",
-          extracted: "Société créée en mars 2026 à Lyon.",
+          extracted: "Société créée en mars 2026 à Lyon. Chiffre d'affaires : à compléter.",
         },
       ],
       [findProgram("bft")!],
@@ -176,6 +184,7 @@ test("IA : critère de programme sans citation vérifiable ramené à « à vér
     assert.equal(r.state.eligibility!.bft.age_lt_1y.status, "ok");
     assert.equal(r.state.eligibility!.bft.headcount_lt_50.status, "unknown");
     assert.equal(r.state.eligibility!.bft.innovation.status, "ok");
+    assert.equal(r.state.eligibility!.bft.revenue_lt_10m.status, "unknown", "une information à compléter ne rend pas un critère « non rempli »");
     assert.equal(r.state.eligibility!.bft.inexistant, undefined);
     assert.deepEqual(r.state.programs, ["bft"]);
   } finally {
@@ -314,8 +323,8 @@ test("IA : un fait partiel est gardé (non compté comme rempli), une simple abs
 
 test("IA : compléments d'une rubrique gardés avec leur propre citation, sans doublon ni citation absente", async () => {
   const original = globalThis.fetch;
-  const texte = "Plateforme en ligne depuis octobre 2026. Aucun client payant à ce jour. 115 fiches de financeurs publiées.";
-  const fait = (value: string, quote: string) => ({ id: "traction", value, source: "doc1", quote, kind: "document" });
+  const texte = "Plateforme en ligne depuis octobre 2026. Aucun client payant à ce jour. 115 fiches de financeurs publiées. Objectif 2027 : 300 dossiers vendus.";
+  const fait = (value: string, quote: string, kind = "document") => ({ id: "traction", value, source: "doc1", quote, kind });
   globalThis.fetch = async () =>
     new Response(
       JSON.stringify({
@@ -324,6 +333,7 @@ test("IA : compléments d'une rubrique gardés avec leur propre citation, sans d
           fait("115 fiches publiées", "115 fiches de financeurs publiées."),
           fait("Doublon", "Plateforme en ligne depuis octobre 2026."),
           fait("Inventé", "10 000 utilisateurs actifs"),
+          fait("300 dossiers en 2027", "Objectif 2027 : 300 dossiers vendus.", "hypothesis"),
         ] }) } }],
         usage: { prompt_tokens: 1, completion_tokens: 1 },
       }),
@@ -331,7 +341,8 @@ test("IA : compléments d'une rubrique gardés avec leur propre citation, sans d
   try {
     const r = await analyze(emptyState(), [{ id: "doc1", name: "bp.docx", extracted: texte }]);
     assert.equal(r.state.facts.traction.value, "En ligne depuis octobre 2026");
-    assert.deepEqual(r.state.facts.traction.details?.map((d) => d.value), ["115 fiches publiées"]);
+    assert.deepEqual(r.state.facts.traction.details?.map((d) => d.value), ["115 fiches publiées", "300 dossiers en 2027"]);
+    assert.equal(r.state.facts.traction.details?.[1].kind, "hypothesis", "une projection reste marquée hypothèse dans les compléments");
   } finally {
     globalThis.fetch = original;
   }

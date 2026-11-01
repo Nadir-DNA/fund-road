@@ -117,7 +117,7 @@ export async function evaluate(
   const r = await callModel(
     "Tu vérifies l’éligibilité d’une entreprise à un programme de financement. " +
       guard +
-      " Évalue chaque critère : « ok » ou « ko » seulement avec une citation exacte tirée d’un document (source = id du document) ou d’une déclaration du porteur (source = « declaration »), sinon « unknown ». Pour les durées et âges, compare à la date du jour fournie. La note explique en une phrase ce qui manque ou ce qui conclut. Réponds uniquement par un objet JSON {eligibility:[{id, status, note, source, quote}]}.",
+      " Évalue chaque critère : « ok » ou « ko » seulement avec une citation exacte tirée d’un document (source = id du document) ou d’une déclaration du porteur (source = « declaration »), sinon « unknown ». Une information absente ou « à compléter » donne « unknown », jamais « ko » : « ko » exige une citation qui contredit le critère. Pour les durées et âges, compare à la date du jour fournie. La note explique en une phrase ce qui manque ou ce qui conclut. Réponds uniquement par un objet JSON {eligibility:[{id, status, note, source, quote}]}.",
     {
       today: new Date().toISOString().slice(0, 10),
       program: { name: p.name, criteria: p.criteria },
@@ -139,7 +139,9 @@ export async function evaluate(
         ? state.declarations?.[e.id] || ""
         : documents.find((d) => d.id === e.source)?.extracted || "";
     const proven = e.quote && text.includes(e.quote);
-    eligibility[e.id] = proven
+    // une information « à compléter » ne prouve pas qu'un critère échoue : elle reste à vérifier
+    const manque = e.status === "ko" && hasMissingInformation(e.quote || "");
+    eligibility[e.id] = proven && !manque
       ? { status: e.status, note: e.note, source: e.source, quote: e.quote }
       : { status: "unknown", note: e.note };
   }
@@ -216,7 +218,7 @@ export async function analyze(
     const details = liste
       .filter((f) => f !== principal && !hasMissingInformation(f.value) && !vus.has(f.quote) && vus.add(f.quote))
       .slice(0, 3)
-      .map((f) => ({ value: f.value, source: f.source, quote: f.quote }));
+      .map((f) => ({ value: f.value, source: f.source, quote: f.quote, ...(f.kind === "hypothesis" && { kind: "hypothesis" as const }) }));
     next.facts[id] = {
       value: principal.value,
       source: principal.source,

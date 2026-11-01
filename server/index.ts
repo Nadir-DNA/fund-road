@@ -42,6 +42,10 @@ await app.register(rateLimit, {
     (process.env.BEHIND_CLOUDFLARE &&
       String(req.headers["cf-connecting-ip"] || "")) ||
     req.ip,
+  // fichiers statiques et logos hors quota : l'annuaire seul charge plus de 80 logos
+  allowList: (req) =>
+    req.method === "GET" &&
+    (!req.url.startsWith("/api/") || /^\/api\/(investors|organizations)\/[^/]+\/logo/.test(req.url)),
 });
 await app.register(multipart, {
   limits: { fileSize: config.maxBytes, files: 1 },
@@ -545,7 +549,8 @@ app.post("/api/dossiers/:id/documents", async (req: any) => {
   const name = path.basename(part.filename).slice(0, 180);
   if (!/\.(pdf|docx|pptx|xlsx)$/i.test(name))
     fail(400, "Formats acceptés : PDF, DOCX, PPTX, XLSX");
-  const bytes = await part.toBuffer();
+  // au-delà de la limite, le module d'envoi lève une erreur en anglais
+  const bytes = await part.toBuffer().catch(() => fail(413, "Fichier limité à 20 Mo"));
   if (part.file.truncated) fail(413, "Fichier limité à 20 Mo");
   const magic = bytes.subarray(0, 4).toString();
   if (
@@ -622,7 +627,9 @@ app.post("/api/documents/:id/retry", async (req: any) => {
 app.get("/api/documents/:id", async (req: any, reply) => {
   const u = await user(req);
   const doc = (
-    await db.query("SELECT * FROM documents WHERE id=$1", [req.params.id])
+    await db.query("SELECT * FROM documents WHERE id=$1", [
+      z.string().uuid().parse(req.params.id),
+    ])
   ).rows[0];
   if (!doc) fail(404, "Document introuvable");
   await dossier(u.id, doc.dossier_id);
