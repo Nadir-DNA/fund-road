@@ -2727,8 +2727,8 @@ function EligibilityTab({
               </p>
             )}
             <p className="smalltext">
-              Évaluation indicative à partir de vos documents et réponses. La
-              décision appartient à l’organisme ou au financeur.
+              Évaluation indicative générée par IA à partir de vos documents et
+              réponses. La décision appartient à l’organisme ou au financeur.
             </p>
           </div>
         ) : (
@@ -2747,12 +2747,14 @@ function EligibilityTab({
   );
 }
 const statutsPoint = { ok: "Démontré", partiel: "Partiel", absent: "Absent" } as const;
+// AI Act art. 50 : une information rédigée par l'IA et pas encore validée par la startup est signalée
+const proposeParIA = (f: any) => Boolean(f && !f.confirmed && f.source !== "declaration");
 // Revue d'une rubrique : niveau, points de contrôle, faiblesses, questions attendues, action prioritaire
 function RegardInvestisseur({ c }: { c: CritiqueRubrique }) {
   return (
     <div className={"regard " + c.niveau}>
       <div className="regard-tete">
-        <small>REGARD INVESTISSEUR</small>
+        <small>REGARD INVESTISSEUR · GÉNÉRÉ PAR IA</small>
         <Badge good={c.niveau === "solide"}>{niveaux[c.niveau]}</Badge>
       </div>
       {c.constats.length > 0 && (
@@ -2796,6 +2798,7 @@ function LectureInvestisseur({ c }: { c: Critique }) {
     <div className="panel lecture">
       <div className="section-title">
         <h3>Lecture investisseur</h3>
+        <Badge>Générée par IA · À relire</Badge>
         {c.stade && <Badge>Stade : {c.stade}</Badge>}
       </div>
       <p>{c.synthese}</p>
@@ -2836,7 +2839,7 @@ function LectureInvestisseur({ c }: { c: Critique }) {
         </>
       )}
       <small>
-        Relecture automatique de la démonstration du dossier, sur le modèle
+        Relecture automatique par IA de la démonstration du dossier, sur le modèle
         d’un comité d’investissement. Elle ne juge ni les personnes ni vos
         chances de financement.
       </small>
@@ -2867,7 +2870,13 @@ function FactEditor({
       <div className="section-title">
         <h3>{r.label}</h3>
         <Badge good={fact?.confirmed}>
-          {fact?.confirmed ? "Confirmé" : fact ? "À confirmer" : "À compléter"}
+          {fact?.confirmed
+            ? "Confirmé"
+            : proposeParIA(fact)
+              ? "Proposé par l’IA · À confirmer"
+              : fact
+                ? "À confirmer"
+                : "À compléter"}
         </Badge>
       </div>
       <p>{r.question}</p>
@@ -4478,6 +4487,9 @@ function SharedApplication() {
                 {requirements.map((r) => (
                   <div className="panel" key={r.id}>
                     <h3>{r.label}</h3>
+                    {proposeParIA(a.snapshot.state.facts[r.id]) && (
+                      <Badge>Proposé par l’IA · Non confirmé par la startup</Badge>
+                    )}
                     <p className="preline">
                       {a.snapshot.state.facts[r.id]?.value || "À compléter"}
                     </p>
