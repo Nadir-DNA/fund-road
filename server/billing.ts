@@ -77,13 +77,15 @@ export async function registerBilling(app: FastifyInstance) {
       }
     }
     const metadata = { organizationId: b.organizationId, offerId: b.offerId };
+    // toute offre hors « once » est un abonnement (mois, ou 90 jours renouvelables)
+    const abonnement = offer.cadence !== "once";
     const session = await stripe!.checkout.sessions.create({
-      mode: offer.cadence === "month" ? "subscription" : "payment",
+      mode: abonnement ? "subscription" : "payment",
       customer_email: u.email,
       line_items: [{ price: offer.stripe_price_id, quantity: 1 }],
       metadata,
-      subscription_data: offer.cadence === "month" ? { metadata } : undefined,
-      payment_intent_data: offer.cadence === "month" ? undefined : { metadata },
+      subscription_data: abonnement ? { metadata } : undefined,
+      payment_intent_data: abonnement ? undefined : { metadata },
       discounts: coupon ? [{ coupon }] : undefined,
       success_url: config.baseURL + "/app/facturation?success=1",
       cancel_url: config.baseURL + "/app/facturation",

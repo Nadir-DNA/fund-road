@@ -60,7 +60,7 @@ const ACTEURS = [
     chiffres: [["9", "rubriques d’un dossier complet"], ["36", "points de contrôle investisseur"], ["119", "financeurs référencés"]],
     offre: [
       ["Découverte", "Gratuit", "Une analyse IA par mois pour voir où en est votre dossier."],
-      ["Dossier", "149 €", "Paiement unique, 90 jours d’accès, sans renouvellement automatique."],
+      ["Dossier", "149 €", "Renouvelé tous les 90 jours, résiliable en un clic depuis votre espace."],
     ],
     appel: "Créez votre dossier sur fund-road.com",
   },

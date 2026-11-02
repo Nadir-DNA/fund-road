@@ -26,15 +26,16 @@ export const publicCopy: Record<
     items: [
       ["1. Objet", "Les présentes conditions régissent l’usage de fund-road.com (« le Service ») par les startups, entreprises et financeurs (« l’Utilisateur ») et la vente des offres payantes par Nadir DAOUDI, entrepreneur individuel (DigitalDNA), SIRET 890 997 349 00026 (« l’Éditeur »). Créer un compte vaut acceptation de ces conditions."],
       ["2. Clientèle professionnelle", "Le Service est réservé aux professionnels (sociétés, entrepreneurs, financeurs) agissant pour les besoins de leur activité. En créant un compte, l’Utilisateur déclare agir à ce titre."],
-      ["3. Offres et prix", "Découverte : gratuite, une analyse IA par mois. Dossier : 149 € pour 90 jours d’accès, paiement unique, sans renouvellement automatique. Espace financeur : gratuit pendant la période de lancement. TVA non applicable, article 293 B du CGI. Fund Road ne prélève aucune commission sur les financements obtenus."],
-      ["4. Paiement et accès", "Le paiement s’effectue en ligne par carte via Stripe. L’accès à l’offre est ouvert dès la confirmation du paiement, pour la durée indiquée. Une facture est émise pour chaque achat."],
+      ["3. Offres et prix", "Découverte : gratuite, une analyse IA par mois. Dossier : 149 € pour 90 jours d’accès, renouvelé automatiquement par période de 90 jours jusqu’à résiliation. Espace financeur : gratuit pendant la période de lancement. TVA non applicable, article 293 B du CGI. Fund Road ne prélève aucune commission sur les financements obtenus."],
+      ["4. Paiement et accès", "Le paiement s’effectue en ligne par carte via Stripe. L’accès à l’offre est ouvert dès la confirmation du paiement, pour la durée indiquée. Une facture est émise pour chaque paiement."],
+      ["4 bis. Renouvellement, résiliation et remboursement", "L’offre Dossier se renouvelle automatiquement à la fin de chaque période de 90 jours, au même prix, par prélèvement sur la carte enregistrée. L’Utilisateur peut la résilier à tout moment depuis la page Facturation de son espace : l’accès reste ouvert jusqu’à la fin de la période payée et aucun nouveau prélèvement n’a lieu. En cas de renouvellement non souhaité, l’Utilisateur peut en demander le remboursement à contact@fund-road.com dans les 30 jours suivant le prélèvement : le montant du renouvellement est alors remboursé intégralement et l’abonnement résilié."],
       ["5. Absence de droit de rétractation", "L’offre étant réservée aux professionnels, le droit de rétractation prévu par le Code de la consommation ne s’applique pas. L’accès commence dès le paiement à la demande de l’Utilisateur."],
       ["6. Engagements de l’Utilisateur", "L’Utilisateur garantit disposer des droits sur les documents qu’il dépose et l’exactitude de ses déclarations. Il s’interdit de déposer des contenus illicites, contrefaisants ou contenant du code actif, et de tenter d’accéder aux données d’autres utilisateurs."],
       ["7. Nature du service", "Le Service structure un dossier à partir des documents et déclarations de l’Utilisateur. Les extractions, évaluations et relectures automatisées sont des aides à la préparation : elles peuvent comporter des erreurs et doivent être relues et confirmées. Le score mesure la complétude documentaire, pas les chances de financement. L’attestation porte sur une version datée et un référentiel ; elle ne certifie pas l’authenticité des pièces. Aucune décision de financement n’est prise par Fund Road."],
       ["8. Responsabilité", "La responsabilité de l’Éditeur est limitée aux dommages directs prouvés et plafonnée au montant payé par l’Utilisateur au cours des douze derniers mois. Elle ne peut être engagée pour un refus de financement, une décision d’un tiers ou une perte de chance."],
       ["9. Disponibilité", "L’Éditeur s’efforce d’assurer l’accès au Service sans garantir une disponibilité continue. Des interruptions pour maintenance ou incident peuvent survenir ; les données sont sauvegardées chaque jour."],
       ["10. Données personnelles", "Le traitement des données est décrit dans la politique de confidentialité (/confidentialite)."],
-      ["11. Fin du contrat", "L’Utilisateur peut supprimer son compte à tout moment depuis la page Sécurité de son espace. Les sommes versées pour une période entamée ne sont pas remboursées. L’Éditeur peut suspendre un compte en cas de manquement grave à ces conditions, après information préalable sauf urgence."],
+      ["11. Fin du contrat", "L’Utilisateur peut supprimer son compte à tout moment depuis la page Sécurité de son espace. Hors le cas de renouvellement non souhaité prévu à l’article 4 bis, les sommes versées pour une période entamée ne sont pas remboursées. L’Éditeur peut suspendre un compte en cas de manquement grave à ces conditions, après information préalable sauf urgence."],
       ["12. Droit applicable", "Les présentes conditions sont soumises au droit français. À défaut d’accord amiable, tout litige relève des tribunaux de Marseille."],
     ],
   },
@@ -305,7 +306,7 @@ export const pageMeta: Record<string, { title: string; description: string }> =
     "/tarifs": {
       title: "Tarifs Fund Road : gratuit pour commencer, 149 € par dossier",
       description:
-        "Startups : offre Découverte gratuite, dossier complet à 149 € pour 90 jours. Gratuit pour fonds, business angels et incubateurs pendant le lancement.",
+        "Startups : Découverte gratuite, dossier complet à 149 € tous les 90 jours, résiliable. Gratuit pour fonds, business angels et incubateurs pendant le lancement.",
     },
     "/annuaire": {
       title: "Annuaire des fonds et business angels | Fund Road",

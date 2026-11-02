@@ -366,7 +366,7 @@ async function priced() {
           {
             name: dossier.label,
             price: dossier.price_cents / 100,
-            unit: " pour 90 jours",
+            unit: " tous les 90 jours, résiliable à tout moment",
             description:
               "Analyses IA, critères des aides et des financeurs, exports PDF et Word, partages révocables.",
           },

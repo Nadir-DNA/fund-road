@@ -1125,7 +1125,7 @@ function Pricing() {
       badge: "Startups",
       label: dossier?.label || "Dossier financement",
       price: dossier ? dossier.price_cents / 100 + " €" : "—",
-      unit: " / 90 jours",
+      unit: " / 90 jours, résiliable",
       features: [
         "Analyses IA de vos documents",
         "Critères des aides et des financeurs",
@@ -4013,7 +4013,7 @@ function Billing() {
               <div className="price">
                 {o.price_cents / 100} €
               </div>
-              <p>{o.cadence === "month" ? "Par mois" : "Forfait 90 jours"}</p>
+              <p>{o.cadence === "month" ? "Par mois" : o.cadence === "quarter" ? "Tous les 90 jours, résiliable à tout moment" : "Forfait 90 jours"}</p>
               <button
                 disabled={!o.active || busy}
                 className="button secondary"
