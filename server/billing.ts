@@ -80,6 +80,9 @@ export async function registerBilling(app: FastifyInstance) {
     // toute offre hors « once » est un abonnement (mois, ou 90 jours renouvelables)
     const abonnement = offer.cadence !== "once";
     const session = await stripe!.checkout.sessions.create({
+      // Managed Payments (Stripe vendeur officiel, TVA collectée, +3,5 %) est actif par défaut sur le compte :
+      // Fund Road vend en direct, TVA non applicable (art. 293 B du CGI)
+      ...({ managed_payments: { enabled: false } } as {}),
       mode: abonnement ? "subscription" : "payment",
       customer_email: u.email,
       line_items: [{ price: offer.stripe_price_id, quantity: 1 }],
