@@ -5,6 +5,10 @@ process.env.DATABASE_URL ||= "postgres://unused";
 process.env.BETTER_AUTH_SECRET ||= "test-only-unused-secret-32-characters";
 process.env.OPENAI_API_KEY = "mock-key-never-sent";
 process.env.OPENAI_MODEL = "mock-model";
+process.env.OPENAI_BASE_URL = "https://principal.test/v1";
+process.env.AI_FALLBACK_BASE_URL = "https://secours.test/v1";
+process.env.AI_FALLBACK_API_KEY = "mock-secours";
+process.env.AI_FALLBACK_MODEL = "mock-secours-model";
 const { analyze, evaluate } = await import("../server/ai.ts");
 const { findProgram, orgProgram } = await import("../shared/programs.ts");
 test("IA : citations exactes exigées, déclarations confirmées conservées", async () => {
@@ -78,7 +82,7 @@ test("IA : citations exactes exigées, déclarations confirmées conservées", a
     const result = await analyze(state, [
       { id: "doc1", name: "test.docx", extracted: "Entreprise de test" },
     ]);
-    assert.equal(payload.store, false);
+    assert.equal(payload.store, undefined, "paramètre propre à OpenAI, refusé par Mistral");
     assert.equal(result.state.facts.company.value, state.facts.company.value);
     assert.equal(result.state.facts.team, undefined);
     assert.equal(result.state.facts.market, undefined);
@@ -91,6 +95,31 @@ test("IA : citations exactes exigées, déclarations confirmées conservées", a
     globalThis.fetch = original;
   }
 });
+test("IA : panne du fournisseur principal, l'analyse passe par le secours", async () => {
+  const original = globalThis.fetch;
+  const appels: string[] = [];
+  globalThis.fetch = async (url, options) => {
+    appels.push(JSON.parse(String(options?.body)).model);
+    if (String(url).startsWith("https://principal.test"))
+      return new Response("surcharge", { status: 503 });
+    return new Response(
+      JSON.stringify({
+        choices: [{ finish_reason: "stop", message: { content: JSON.stringify({ summary: "Par le secours", conflicts: [], facts: [] }) } }],
+        usage: { prompt_tokens: 1, completion_tokens: 1 },
+      }),
+    );
+  };
+  try {
+    const r = await analyze(emptyState(), [{ id: "doc1", name: "bp.docx", extracted: "Texte" }]);
+    assert.equal(r.state.summary, "Par le secours");
+    // extraction et revue critique partent en parallèle : chacune tente le principal puis le secours
+    assert.equal(appels[0], "mock-model");
+    assert.ok(appels.includes("mock-secours-model"));
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
 test("IA : sortie incomplète rejetée sans résultat utilisable", async () => {
   const original = globalThis.fetch;
   globalThis.fetch = async () =>

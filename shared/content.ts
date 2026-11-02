@@ -48,11 +48,11 @@ export const publicCopy: Record<
       ["Responsable du traitement", "Nadir DAOUDI, entrepreneur individuel (DigitalDNA), 7 rue de Madagascar, 13006 Marseille. Contact : contact@fund-road.com."],
       ["Compte", "Nom, adresse email, mot de passe haché et, si vous l’activez, double authentification. Finalité : accès au Service. Base légale : exécution du contrat. Durée : celle du compte."],
       ["Documents et dossiers", "Documents déposés, textes extraits, rubriques, versions, partages et notes. Finalité : préparer et partager votre dossier. Base légale : exécution du contrat. Durée : jusqu’à la suppression du dossier ou du compte."],
-      ["Analyse par l’IA", "Quand vous lancez une analyse ou partagez un dossier avec un financeur dont les critères sont évalués, le texte extrait de vos documents (jamais les fichiers) est transmis au fournisseur d’IA OpenCode (opencode.ai), qui l’achemine vers le modèle DeepSeek. Ces traitements peuvent avoir lieu hors de l’Union européenne. Aucune analyse n’est lancée sans votre action."],
+      ["Analyse par l’IA", "Quand vous lancez une analyse ou partagez un dossier avec un financeur dont les critères sont évalués, le texte extrait de vos documents (jamais les fichiers) est transmis à notre fournisseur d’IA, Mistral AI (France), et traité sur des serveurs situés dans l’Union européenne. Si Mistral AI est indisponible, la requête est reprise par Google (modèle Gemini), qui peut la traiter hors de l’Union européenne dans le cadre du Data Privacy Framework UE–États-Unis. Ni l’un ni l’autre n’utilise ces données pour entraîner ses modèles. Aucune analyse n’est lancée sans votre action."],
       ["Facturation", "Achats et factures, traités avec Stripe. Base légale : obligation légale. Durée : 10 ans."],
       ["Mesure d’audience", "Google Analytics, uniquement après votre accord dans la bannière cookies. Durée des cookies : 14 mois au plus. Modifiable à tout moment via « Gérer les cookies »."],
       ["Sécurité et sauvegardes", "Connexions chiffrées, mots de passe hachés, contrôle des fichiers déposés, accès cloisonné par organisation et par dossier, journal des actions sensibles. Sauvegarde quotidienne conservée 14 jours."],
-      ["Destinataires", "Vous seul et les membres de votre organisation, puis les financeurs ou contacts avec lesquels vous partagez un dossier, limités aux pièces choisies et à la version partagée. Sous-traitants techniques : Cloudflare (acheminement réseau), OpenCode (IA), Stripe (paiement), Google (mesure d’audience, sur accord). Aucune donnée n’est vendue."],
+      ["Destinataires", "Vous seul et les membres de votre organisation, puis les financeurs ou contacts avec lesquels vous partagez un dossier, limités aux pièces choisies et à la version partagée. Sous-traitants techniques : Cloudflare (acheminement réseau), Mistral AI (IA), Google (IA de secours), Stripe (paiement), Google (mesure d’audience, sur accord). Aucune donnée n’est vendue."],
       ["Vos droits", "Accès, rectification, effacement, limitation, opposition et portabilité. Votre compte se supprime vous-même depuis la page Sécurité ; les autres demandes s’adressent à contact@fund-road.com et sont traitées sous un mois. Vous pouvez saisir la CNIL (cnil.fr)."],
     ],
   },
@@ -148,7 +148,7 @@ export const publicCopy: Record<
       ],
       [
         "Ce qui part à l’IA",
-        "Seul le texte extrait de vos documents est envoyé, jamais les fichiers, à notre fournisseur d’IA (OpenCode, modèle DeepSeek), avec la consigne de ne pas conserver la requête. Cela arrive quand vous lancez une analyse, et quand vous partagez votre dossier avec un financeur inscrit pour vérifier ses critères.",
+        "Seul le texte extrait de vos documents est envoyé, jamais les fichiers, à notre fournisseur d’IA, Mistral AI (France, serveurs en Europe), ou à Google (Gemini) en secours si Mistral est indisponible. Ni l’un ni l’autre ne s’en sert pour entraîner ses modèles. Cela arrive quand vous lancez une analyse, et quand vous partagez votre dossier avec un financeur inscrit pour vérifier ses critères.",
       ],
       [
         "Qui voit votre dossier",
