@@ -10,7 +10,7 @@ export const publicCopy: Record<
     intro: "Qui édite fund-road.com, où le service est hébergé et à qui s’adresser.",
     legal: true,
     items: [
-      ["Éditeur", "Le site fund-road.com et le service Fund Road sont édités par Nadir DAOUDI, entrepreneur individuel (micro-entreprise) exerçant sous le nom commercial DigitalDNA. Siège : 7 rue de Madagascar, 13006 Marseille. SIRET : 890 997 349 00026. TVA non applicable, article 293 B du CGI. Contact : contact@fund-road.com."],
+      ["Éditeur", "Le site fund-road.com et le service Fund Road sont édités par Nadir DAOUDI, entrepreneur individuel (micro-entreprise) exerçant sous le nom commercial DigitalDNA. Siège : 7 rue de Madagascar, 13006 Marseille. SIRET : 890 997 349 00026. TVA non applicable, article 293 B du CGI. Contact : contact@fund-road.com, 06 20 85 93 62."],
       ["Directeur de la publication", "Nadir DAOUDI."],
       ["Hébergement", "Le service et les données sont hébergés en France sur un serveur exploité par l’éditeur (coordonnées ci-dessus). L’acheminement du trafic est assuré par Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis."],
       ["Propriété intellectuelle", "Le nom et la marque Fund Road, le site, ses textes, son code et sa présentation appartiennent à l’éditeur. Toute reproduction sans autorisation écrite est interdite. Les fiches de l’annuaire citent leurs sources publiques ; un financeur peut demander la correction ou le retrait de sa fiche à contact@fund-road.com."],

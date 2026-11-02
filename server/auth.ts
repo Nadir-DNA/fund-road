@@ -22,6 +22,8 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendOnSignUp: mailReady(),
+    // le lien de confirmation ouvre directement l'espace (callbackURL envoyée à l'inscription)
+    autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
       await mail(
         user.email,

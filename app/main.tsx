@@ -1214,6 +1214,8 @@ function AuthPage() {
     } catch {}
   const { run, busy } = useAction();
   const [error, setError] = useState("");
+  // adresse à confirmer : pas de session tant que le lien reçu par email n'est pas ouvert
+  const [aConfirmer, setAConfirmer] = useState("");
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
@@ -1226,8 +1228,13 @@ function AuthPage() {
           name: f.get("name"),
           email: f.get("email"),
           password: f.get("password"),
+          ...(signup && { callbackURL: "/app" }),
         },
       );
+      if (signup && !r.token) {
+        setAConfirmer(String(f.get("email")));
+        return null;
+      }
       if (r.twoFactorRedirect) {
         navigate("/double-auth");
         return null;
@@ -1249,6 +1256,21 @@ function AuthPage() {
             </span>
           </div>
         </div>
+        {aConfirmer ? (
+          <div className="auth-card" role="status">
+            <Badge>Dernière étape</Badge>
+            <h2>Vérifiez votre boîte mail</h2>
+            <p>
+              Un lien de confirmation vient d’être envoyé à{" "}
+              <strong>{aConfirmer}</strong>. Ouvrez-le pour activer votre compte
+              : vous serez connecté directement.
+            </p>
+            <p className="smalltext">
+              Rien reçu ? Regardez dans les indésirables, ou écrivez à
+              contact@fund-road.com.
+            </p>
+          </div>
+        ) : (
         <form className="auth-card" onSubmit={submit}>
           <Badge>
             {signup ? "Bienvenue sur Fund Road" : "Heureux de vous retrouver"}
@@ -1290,6 +1312,7 @@ function AuthPage() {
             Mot de passe oublié
           </Link>
         </form>
+        )}
       </main>
     </PublicLayout>
   );

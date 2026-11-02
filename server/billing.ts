@@ -158,8 +158,9 @@ export async function registerBilling(app: FastifyInstance) {
     const code =
       (program === "startup" ? "START-" : "FUND-") +
       randomBytes(5).toString("hex").toUpperCase();
+    // shortcut: code actif dès sa création (pas d'écran d'approbation) ; le contrôle se fait au versement, manuel, après 30 jours de rétention
     await db.query(
-      "INSERT INTO referral_codes(code,organization_id,program_id) VALUES($1,$2,$3)",
+      "INSERT INTO referral_codes(code,organization_id,program_id,approved) VALUES($1,$2,$3,true)",
       [code, req.params.org, program],
     );
     return { code };
