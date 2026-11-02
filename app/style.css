@@ -1336,6 +1336,7 @@ legend {
 }
 .section-title {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-sm);
@@ -2809,4 +2810,16 @@ legend {
 .lecture-niveaux {
   color: var(--color-ink-3);
   font-size: var(--text-sm);
+}
+
+/* Pages juridiques : lecture continue, largeur de texte confortable */
+.legal {
+  max-width: 46rem;
+}
+.legal section {
+  margin-top: var(--space-md);
+}
+.legal h2 {
+  font-size: var(--text-lg);
+  margin: 0 0 var(--space-2xs);
 }

@@ -362,6 +362,9 @@ function PublicLayout({
             <nav aria-label="Ressources">
               <Link to="/referentiel">Le référentiel</Link>
               <Link to="/confiance">Vos données</Link>
+              <Link to="/mentions-legales">Mentions légales</Link>
+              <Link to="/cgv">CGV</Link>
+              <Link to="/confidentialite">Confidentialité</Link>
               <Link to="/partenaires">Partenaires</Link>
               <Link to="/ressources">Guides</Link>
             </nav>
@@ -1064,6 +1067,21 @@ function FinanceursPage() {
 function InfoPage() {
   const key = useLocation().pathname.slice(1),
     p = publicCopy[key];
+  if (p.legal)
+    return (
+      <PublicLayout>
+        <main className="section info-page legal">
+          <h1>{p.title}</h1>
+          <p className="lead">{p.intro}</p>
+          {p.items.map(([t, s]) => (
+            <section key={t}>
+              <h2>{t}</h2>
+              <p>{s}</p>
+            </section>
+          ))}
+        </main>
+      </PublicLayout>
+    );
   return (
     <PublicLayout>
       <main className="section info-page">
@@ -1107,7 +1125,7 @@ function Pricing() {
       badge: "Startups",
       label: dossier?.label || "Dossier financement",
       price: dossier ? dossier.price_cents / 100 + " €" : "—",
-      unit: " HT / 90 jours",
+      unit: " / 90 jours, résiliable",
       features: [
         "Analyses IA de vos documents",
         "Critères des aides et des financeurs",
@@ -1171,6 +1189,8 @@ function Pricing() {
         </div>
         <p className="muted">
           Aucune commission sur les levées ni sur les subventions obtenues.
+          TVA non applicable, article 293 B du CGI.{" "}
+          <Link to="/cgv">Conditions générales de vente</Link>
         </p>
       </main>
     </PublicLayout>
@@ -1194,6 +1214,8 @@ function AuthPage() {
     } catch {}
   const { run, busy } = useAction();
   const [error, setError] = useState("");
+  // adresse à confirmer : pas de session tant que le lien reçu par email n'est pas ouvert
+  const [aConfirmer, setAConfirmer] = useState("");
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
@@ -1206,8 +1228,13 @@ function AuthPage() {
           name: f.get("name"),
           email: f.get("email"),
           password: f.get("password"),
+          ...(signup && { callbackURL: "/app" }),
         },
       );
+      if (signup && !r.token) {
+        setAConfirmer(String(f.get("email")));
+        return null;
+      }
       if (r.twoFactorRedirect) {
         navigate("/double-auth");
         return null;
@@ -1229,6 +1256,21 @@ function AuthPage() {
             </span>
           </div>
         </div>
+        {aConfirmer ? (
+          <div className="auth-card" role="status">
+            <Badge>Dernière étape</Badge>
+            <h2>Vérifiez votre boîte mail</h2>
+            <p>
+              Un lien de confirmation vient d’être envoyé à{" "}
+              <strong>{aConfirmer}</strong>. Ouvrez-le pour activer votre compte
+              : vous serez connecté directement.
+            </p>
+            <p className="smalltext">
+              Rien reçu ? Regardez dans les indésirables, ou écrivez à
+              contact@fund-road.com.
+            </p>
+          </div>
+        ) : (
         <form className="auth-card" onSubmit={submit}>
           <Badge>
             {signup ? "Bienvenue sur Fund Road" : "Heureux de vous retrouver"}
@@ -1270,6 +1312,7 @@ function AuthPage() {
             Mot de passe oublié
           </Link>
         </form>
+        )}
       </main>
     </PublicLayout>
   );
@@ -2707,8 +2750,8 @@ function EligibilityTab({
               </p>
             )}
             <p className="smalltext">
-              Évaluation indicative à partir de vos documents et réponses. La
-              décision appartient à l’organisme ou au financeur.
+              Évaluation indicative générée par IA à partir de vos documents et
+              réponses. La décision appartient à l’organisme ou au financeur.
             </p>
           </div>
         ) : (
@@ -2727,12 +2770,14 @@ function EligibilityTab({
   );
 }
 const statutsPoint = { ok: "Démontré", partiel: "Partiel", absent: "Absent" } as const;
+// AI Act art. 50 : une information rédigée par l'IA et pas encore validée par la startup est signalée
+const proposeParIA = (f: any) => Boolean(f && !f.confirmed && f.source !== "declaration");
 // Revue d'une rubrique : niveau, points de contrôle, faiblesses, questions attendues, action prioritaire
 function RegardInvestisseur({ c }: { c: CritiqueRubrique }) {
   return (
     <div className={"regard " + c.niveau}>
       <div className="regard-tete">
-        <small>REGARD INVESTISSEUR</small>
+        <small>REGARD INVESTISSEUR · GÉNÉRÉ PAR IA</small>
         <Badge good={c.niveau === "solide"}>{niveaux[c.niveau]}</Badge>
       </div>
       {c.constats.length > 0 && (
@@ -2776,6 +2821,7 @@ function LectureInvestisseur({ c }: { c: Critique }) {
     <div className="panel lecture">
       <div className="section-title">
         <h3>Lecture investisseur</h3>
+        <Badge>Générée par IA · À relire</Badge>
         {c.stade && <Badge>Stade : {c.stade}</Badge>}
       </div>
       <p>{c.synthese}</p>
@@ -2816,7 +2862,7 @@ function LectureInvestisseur({ c }: { c: Critique }) {
         </>
       )}
       <small>
-        Relecture automatique de la démonstration du dossier, sur le modèle
+        Relecture automatique par IA de la démonstration du dossier, sur le modèle
         d’un comité d’investissement. Elle ne juge ni les personnes ni vos
         chances de financement.
       </small>
@@ -2847,7 +2893,13 @@ function FactEditor({
       <div className="section-title">
         <h3>{r.label}</h3>
         <Badge good={fact?.confirmed}>
-          {fact?.confirmed ? "Confirmé" : fact ? "À confirmer" : "À compléter"}
+          {fact?.confirmed
+            ? "Confirmé"
+            : proposeParIA(fact)
+              ? "Proposé par l’IA · À confirmer"
+              : fact
+                ? "À confirmer"
+                : "À compléter"}
         </Badge>
       </div>
       <p>{r.question}</p>
@@ -3982,9 +4034,9 @@ function Billing() {
               <Badge>{o.active ? "Disponible" : "Ouverture prochaine"}</Badge>
               <h3>{o.label}</h3>
               <div className="price">
-                {o.price_cents / 100} €<small> HT</small>
+                {o.price_cents / 100} €
               </div>
-              <p>{o.cadence === "month" ? "Par mois" : "Forfait 90 jours"}</p>
+              <p>{o.cadence === "month" ? "Par mois" : o.cadence === "quarter" ? "Tous les 90 jours, résiliable à tout moment" : "Forfait 90 jours"}</p>
               <button
                 disabled={!o.active || busy}
                 className="button secondary"
@@ -4458,6 +4510,9 @@ function SharedApplication() {
                 {requirements.map((r) => (
                   <div className="panel" key={r.id}>
                     <h3>{r.label}</h3>
+                    {proposeParIA(a.snapshot.state.facts[r.id]) && (
+                      <Badge>Proposé par l’IA · Non confirmé par la startup</Badge>
+                    )}
                     <p className="preline">
                       {a.snapshot.state.facts[r.id]?.value || "À compléter"}
                     </p>

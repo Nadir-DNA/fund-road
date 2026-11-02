@@ -1,8 +1,61 @@
 // Textes publics partagés : affichés par React et écrits dans le HTML servi aux moteurs (SEO/GEO)
 export const publicCopy: Record<
   string,
-  { kicker: string; title: string; intro: string; items: [string, string][] }
+  // legal : texte juridique affiché en sections continues, sans appel à l'action
+  { kicker: string; title: string; intro: string; items: [string, string][]; legal?: boolean }
 > = {
+  "mentions-legales": {
+    kicker: "MENTIONS LÉGALES",
+    title: "Mentions légales",
+    intro: "Qui édite fund-road.com, où le service est hébergé et à qui s’adresser.",
+    legal: true,
+    items: [
+      ["Éditeur", "Le site fund-road.com et le service Fund Road sont édités par Nadir DAOUDI, entrepreneur individuel (micro-entreprise) exerçant sous le nom commercial DigitalDNA. Siège : 7 rue de Madagascar, 13006 Marseille. SIRET : 890 997 349 00026. TVA non applicable, article 293 B du CGI. Contact : contact@fund-road.com, 06 20 85 93 62."],
+      ["Directeur de la publication", "Nadir DAOUDI."],
+      ["Hébergement", "Le service et les données sont hébergés en France sur un serveur exploité par l’éditeur (coordonnées ci-dessus). L’acheminement du trafic est assuré par Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis."],
+      ["Propriété intellectuelle", "Le nom et la marque Fund Road, le site, ses textes, son code et sa présentation appartiennent à l’éditeur. Toute reproduction sans autorisation écrite est interdite. Les fiches de l’annuaire citent leurs sources publiques ; un financeur peut demander la correction ou le retrait de sa fiche à contact@fund-road.com."],
+      ["Responsabilité", "Fund Road organise les informations fournies par ses utilisateurs et en contrôle la cohérence documentaire. Le service ne garantit ni l’obtention d’un financement, ni l’éligibilité à une aide, ni l’exactitude des documents déposés."],
+      ["Données personnelles et cookies", "Voir la politique de confidentialité (/confidentialite) et la page Vos données (/confiance). Le choix des cookies se modifie à tout moment depuis « Gérer les cookies » en pied de page."],
+    ],
+  },
+  cgv: {
+    kicker: "CONDITIONS GÉNÉRALES",
+    title: "Conditions générales de vente et d’utilisation",
+    intro: "Les règles d’usage de Fund Road et les conditions d’achat de l’offre Dossier. Version du 1er novembre 2026.",
+    legal: true,
+    items: [
+      ["1. Objet", "Les présentes conditions régissent l’usage de fund-road.com (« le Service ») par les startups, entreprises et financeurs (« l’Utilisateur ») et la vente des offres payantes par Nadir DAOUDI, entrepreneur individuel (DigitalDNA), SIRET 890 997 349 00026 (« l’Éditeur »). Créer un compte vaut acceptation de ces conditions."],
+      ["2. Clientèle professionnelle", "Le Service est réservé aux professionnels (sociétés, entrepreneurs, financeurs) agissant pour les besoins de leur activité. En créant un compte, l’Utilisateur déclare agir à ce titre."],
+      ["3. Offres et prix", "Découverte : gratuite, une analyse IA par mois. Dossier : 149 € pour 90 jours d’accès, renouvelé automatiquement par période de 90 jours jusqu’à résiliation. Espace financeur : gratuit pendant la période de lancement. TVA non applicable, article 293 B du CGI. Fund Road ne prélève aucune commission sur les financements obtenus."],
+      ["4. Paiement et accès", "Le paiement s’effectue en ligne par carte via Stripe. L’accès à l’offre est ouvert dès la confirmation du paiement, pour la durée indiquée. Une facture est émise pour chaque paiement."],
+      ["4 bis. Renouvellement, résiliation et remboursement", "L’offre Dossier se renouvelle automatiquement à la fin de chaque période de 90 jours, au même prix, par prélèvement sur la carte enregistrée. L’Utilisateur peut la résilier à tout moment depuis la page Facturation de son espace : l’accès reste ouvert jusqu’à la fin de la période payée et aucun nouveau prélèvement n’a lieu. En cas de renouvellement non souhaité, l’Utilisateur peut en demander le remboursement à contact@fund-road.com dans les 30 jours suivant le prélèvement : le montant du renouvellement est alors remboursé intégralement et l’abonnement résilié."],
+      ["5. Absence de droit de rétractation", "L’offre étant réservée aux professionnels, le droit de rétractation prévu par le Code de la consommation ne s’applique pas. L’accès commence dès le paiement à la demande de l’Utilisateur."],
+      ["6. Engagements de l’Utilisateur", "L’Utilisateur garantit disposer des droits sur les documents qu’il dépose et l’exactitude de ses déclarations. Il s’interdit de déposer des contenus illicites, contrefaisants ou contenant du code actif, et de tenter d’accéder aux données d’autres utilisateurs."],
+      ["7. Nature du service", "Le Service structure un dossier à partir des documents et déclarations de l’Utilisateur. Les extractions, évaluations et relectures automatisées sont des aides à la préparation : elles peuvent comporter des erreurs et doivent être relues et confirmées. Le score mesure la complétude documentaire, pas les chances de financement. L’attestation porte sur une version datée et un référentiel ; elle ne certifie pas l’authenticité des pièces. Aucune décision de financement n’est prise par Fund Road."],
+      ["8. Responsabilité", "La responsabilité de l’Éditeur est limitée aux dommages directs prouvés et plafonnée au montant payé par l’Utilisateur au cours des douze derniers mois. Elle ne peut être engagée pour un refus de financement, une décision d’un tiers ou une perte de chance."],
+      ["9. Disponibilité", "L’Éditeur s’efforce d’assurer l’accès au Service sans garantir une disponibilité continue. Des interruptions pour maintenance ou incident peuvent survenir ; les données sont sauvegardées chaque jour."],
+      ["10. Données personnelles", "Le traitement des données est décrit dans la politique de confidentialité (/confidentialite)."],
+      ["11. Fin du contrat", "L’Utilisateur peut supprimer son compte à tout moment depuis la page Sécurité de son espace. Hors le cas de renouvellement non souhaité prévu à l’article 4 bis, les sommes versées pour une période entamée ne sont pas remboursées. L’Éditeur peut suspendre un compte en cas de manquement grave à ces conditions, après information préalable sauf urgence."],
+      ["12. Droit applicable", "Les présentes conditions sont soumises au droit français. À défaut d’accord amiable, tout litige relève des tribunaux de Marseille."],
+    ],
+  },
+  confidentialite: {
+    kicker: "CONFIDENTIALITÉ",
+    title: "Politique de confidentialité",
+    intro: "Quelles données Fund Road traite, pourquoi, avec qui, combien de temps, et comment exercer vos droits. Version du 1er novembre 2026.",
+    legal: true,
+    items: [
+      ["Responsable du traitement", "Nadir DAOUDI, entrepreneur individuel (DigitalDNA), 7 rue de Madagascar, 13006 Marseille. Contact : contact@fund-road.com."],
+      ["Compte", "Nom, adresse email, mot de passe haché et, si vous l’activez, double authentification. Finalité : accès au Service. Base légale : exécution du contrat. Durée : celle du compte."],
+      ["Documents et dossiers", "Documents déposés, textes extraits, rubriques, versions, partages et notes. Finalité : préparer et partager votre dossier. Base légale : exécution du contrat. Durée : jusqu’à la suppression du dossier ou du compte."],
+      ["Analyse par l’IA", "Quand vous lancez une analyse ou partagez un dossier avec un financeur dont les critères sont évalués, le texte extrait de vos documents (jamais les fichiers) est transmis à notre fournisseur d’IA, Mistral AI (France), et traité sur des serveurs situés dans l’Union européenne. Si Mistral AI est indisponible, la requête est reprise par Google (modèle Gemini), qui peut la traiter hors de l’Union européenne dans le cadre du Data Privacy Framework UE–États-Unis. Ni l’un ni l’autre n’utilise ces données pour entraîner ses modèles. Aucune analyse n’est lancée sans votre action."],
+      ["Facturation", "Achats et factures, traités avec Stripe. Base légale : obligation légale. Durée : 10 ans."],
+      ["Mesure d’audience", "Google Analytics, uniquement après votre accord dans la bannière cookies. Durée des cookies : 14 mois au plus. Modifiable à tout moment via « Gérer les cookies »."],
+      ["Sécurité et sauvegardes", "Connexions chiffrées, mots de passe hachés, contrôle des fichiers déposés, accès cloisonné par organisation et par dossier, journal des actions sensibles. Sauvegarde quotidienne conservée 14 jours."],
+      ["Destinataires", "Vous seul et les membres de votre organisation, puis les financeurs ou contacts avec lesquels vous partagez un dossier, limités aux pièces choisies et à la version partagée. Sous-traitants techniques : Cloudflare (acheminement réseau), Mistral AI (IA), Google (IA de secours), Stripe (paiement), Google (mesure d’audience, sur accord). Aucune donnée n’est vendue."],
+      ["Vos droits", "Accès, rectification, effacement, limitation, opposition et portabilité. Votre compte se supprime vous-même depuis la page Sécurité ; les autres demandes s’adressent à contact@fund-road.com et sont traitées sous un mois. Vous pouvez saisir la CNIL (cnil.fr)."],
+    ],
+  },
   entrepreneurs: {
     kicker: "ENTREPRENEURS",
     title: "Un dossier qui travaille avec vous",
@@ -95,7 +148,7 @@ export const publicCopy: Record<
       ],
       [
         "Ce qui part à l’IA",
-        "Seul le texte extrait de vos documents est envoyé, jamais les fichiers, à notre fournisseur d’IA (OpenCode, modèle DeepSeek), avec la consigne de ne pas conserver la requête. Cela arrive quand vous lancez une analyse, et quand vous partagez votre dossier avec un financeur inscrit pour vérifier ses critères.",
+        "Seul le texte extrait de vos documents est envoyé, jamais les fichiers, à notre fournisseur d’IA, Mistral AI (France, serveurs en Europe), ou à Google (Gemini) en secours si Mistral est indisponible. Ni l’un ni l’autre ne s’en sert pour entraîner ses modèles. Cela arrive quand vous lancez une analyse, et quand vous partagez votre dossier avec un financeur inscrit pour vérifier ses critères.",
       ],
       [
         "Qui voit votre dossier",
@@ -253,7 +306,7 @@ export const pageMeta: Record<string, { title: string; description: string }> =
     "/tarifs": {
       title: "Tarifs Fund Road : gratuit pour commencer, 149 € par dossier",
       description:
-        "Startups : offre Découverte gratuite, dossier complet à 149 € HT pour 90 jours. Gratuit pour fonds, business angels et incubateurs pendant le lancement.",
+        "Startups : Découverte gratuite, dossier complet à 149 € tous les 90 jours, résiliable. Gratuit pour fonds, business angels et incubateurs pendant le lancement.",
     },
     "/annuaire": {
       title: "Annuaire des fonds et business angels | Fund Road",
@@ -284,6 +337,21 @@ export const pageMeta: Record<string, { title: string; description: string }> =
       title: "Programme partenaires et parrainage | Fund Road",
       description:
         "Parrainage entre startups et affiliation pour les fonds : conditions explicites, sans effet sur le score ni sur la décision d’investissement.",
+    },
+    "/mentions-legales": {
+      title: "Mentions légales | Fund Road",
+      description:
+        "Éditeur, hébergement et contact de fund-road.com, le service de préparation de dossiers de financement pour startups.",
+    },
+    "/cgv": {
+      title: "Conditions générales de vente | Fund Road",
+      description:
+        "Offres, prix, paiement, responsabilités et nature du service Fund Road. Réservé aux professionnels, sans commission sur les financements.",
+    },
+    "/confidentialite": {
+      title: "Politique de confidentialité | Fund Road",
+      description:
+        "Données traitées, finalités, durées, sous-traitants dont le fournisseur d’IA, et vos droits sur Fund Road.",
     },
     "/confiance": {
       title: "Vos données et RGPD : IA, accès, suppression | Fund Road",

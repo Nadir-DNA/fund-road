@@ -12,7 +12,9 @@ const verdicts: Record<string, string> = {
 };
 const statuts = { ok: "Rempli", ko: "Non rempli", unknown: "À vérifier" } as const;
 const avertissement =
-  "Dossier préparé avec Fund Road à partir des documents et déclarations du porteur de projet. Il ne garantit ni un financement ni l’éligibilité à une aide.";
+  "Dossier préparé avec Fund Road à partir des documents et déclarations du porteur de projet. Il ne garantit ni un financement ni l’éligibilité à une aide. Les passages générés par IA sont signalés.";
+// AI Act art. 50 : marquage lisible par machine dans les métadonnées du fichier
+const marquageIA = "Contient du contenu généré par IA (Fund Road), signalé dans le texte";
 
 // Contenu commun au PDF et au Word : un même dossier, deux formats
 type Bloc =
@@ -51,7 +53,7 @@ function contenu(name: string, state: DossierState, docs: { id: string; name: st
       texte: `Rubriques confirmées par le porteur : ${s.completed} sur ${s.total} · renseignées à partir des documents : ${proposees} sur ${s.total} · à compléter : ${s.total - proposees}`,
     },
   ];
-  if (state.summary) b.push({ t: "titre", texte: "Synthèse" }, { t: "texte", texte: state.summary });
+  if (state.summary) b.push({ t: "titre", texte: "Synthèse" }, { t: "source", texte: "Générée par IA à partir des documents, à relire." }, { t: "texte", texte: state.summary });
   for (const r of requirements) {
     const f = state.facts[r.id];
     b.push({ t: "titre", texte: r.label });
@@ -62,7 +64,7 @@ function contenu(name: string, state: DossierState, docs: { id: string; name: st
     b.push({ t: "texte", texte: f.value });
     for (const d of f.details || []) b.push({ t: "puce", texte: (d.kind === "hypothesis" && !/^hypoth/i.test(d.value) ? "Hypothèse : " : "") + d.value });
     const nature =
-      f.kind === "hypothesis" ? "hypothèse du porteur" : f.kind === "declared" ? "déclaration du porteur" : "tiré des documents";
+      f.kind === "hypothesis" ? "hypothèse du porteur" : f.kind === "declared" ? "déclaration du porteur" : f.confirmed ? "tiré des documents par IA" : "proposé par IA à partir des documents";
     b.push({
       t: "source",
       texte: `${f.confirmed ? "Confirmé" : "À confirmer"} · ${nature}${f.quote ? ` · ${nomDoc(f.source)} : « ${court(f.quote)} »` : ""}`,
@@ -71,7 +73,7 @@ function contenu(name: string, state: DossierState, docs: { id: string; name: st
   }
   const elig = programs.filter((p) => state.eligibility?.[p.id]);
   if (elig.length) {
-    b.push({ t: "titre", texte: "Aides et financeurs visés" });
+    b.push({ t: "titre", texte: "Aides et financeurs visés" }, { t: "source", texte: "Évaluation indicative générée par IA à partir des documents et déclarations." });
     for (const p of elig) {
       const sc = programScore(p, state.eligibility![p.id]);
       b.push({ t: "sous-titre", texte: `${p.name} · ${p.operator}` }, { t: "texte", texte: `${verdicts[sc.verdict]} (${sc.ok} critère${sc.ok > 1 ? "s" : ""} sur ${sc.total})` });
@@ -91,6 +93,7 @@ function contenu(name: string, state: DossierState, docs: { id: string; name: st
   }
   b.push(
     { t: "titre", texte: "Points à clarifier" },
+    { t: "source", texte: "Contradictions relevées par IA entre les documents." },
     { t: "texte", texte: state.conflicts.join("\n") || "Aucune contradiction relevée entre les documents." },
   );
   return b;
@@ -128,6 +131,10 @@ export async function exportDossier(
   if (format === "docx")
     return Packer.toBuffer(
       new Document({
+        creator: "Fund Road",
+        title: name,
+        description: marquageIA,
+        keywords: "IA, généré par IA",
         sections: [
           {
             footers: {
@@ -177,7 +184,7 @@ export async function exportDossier(
       }),
     );
   return new Promise<Buffer>((resolve, reject) => {
-    const pdf = new PDFDocument({ size: "A4", margin: 56, bufferPages: true, info: { Title: name, Producer: "Fund Road" } });
+    const pdf = new PDFDocument({ size: "A4", margin: 56, bufferPages: true, info: { Title: name, Producer: "Fund Road", Subject: marquageIA, Keywords: "IA, généré par IA" } });
     const chunks: Buffer[] = [];
     pdf.on("data", (x) => chunks.push(x));
     pdf.on("error", reject);

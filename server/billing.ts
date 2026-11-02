@@ -77,13 +77,18 @@ export async function registerBilling(app: FastifyInstance) {
       }
     }
     const metadata = { organizationId: b.organizationId, offerId: b.offerId };
+    // toute offre hors « once » est un abonnement (mois, ou 90 jours renouvelables)
+    const abonnement = offer.cadence !== "once";
     const session = await stripe!.checkout.sessions.create({
-      mode: offer.cadence === "month" ? "subscription" : "payment",
+      // Managed Payments (Stripe vendeur officiel, TVA collectée, +3,5 %) est actif par défaut sur le compte :
+      // Fund Road vend en direct, TVA non applicable (art. 293 B du CGI)
+      ...({ managed_payments: { enabled: false } } as {}),
+      mode: abonnement ? "subscription" : "payment",
       customer_email: u.email,
       line_items: [{ price: offer.stripe_price_id, quantity: 1 }],
       metadata,
-      subscription_data: offer.cadence === "month" ? { metadata } : undefined,
-      payment_intent_data: offer.cadence === "month" ? undefined : { metadata },
+      subscription_data: abonnement ? { metadata } : undefined,
+      payment_intent_data: abonnement ? undefined : { metadata },
       discounts: coupon ? [{ coupon }] : undefined,
       success_url: config.baseURL + "/app/facturation?success=1",
       cancel_url: config.baseURL + "/app/facturation",
@@ -153,8 +158,9 @@ export async function registerBilling(app: FastifyInstance) {
     const code =
       (program === "startup" ? "START-" : "FUND-") +
       randomBytes(5).toString("hex").toUpperCase();
+    // shortcut: code actif dès sa création (pas d'écran d'approbation) ; le contrôle se fait au versement, manuel, après 30 jours de rétention
     await db.query(
-      "INSERT INTO referral_codes(code,organization_id,program_id) VALUES($1,$2,$3)",
+      "INSERT INTO referral_codes(code,organization_id,program_id,approved) VALUES($1,$2,$3,true)",
       [code, req.params.org, program],
     );
     return { code };
