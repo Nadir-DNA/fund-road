@@ -39,3 +39,12 @@ test("SEO : titres et descriptions dans les longueurs affichées par Google", as
   const d = html.match(/name="description" content="([^"]*)"/)![1];
   assert.ok(d.length <= 160, String(d.length));
 });
+test("SEO : la page d'un programme public reprend ses critères sourcés et une FAQ", () => {
+  const html = renderProfile(index, { id: "b1", slug: "bourse-french-tech", kind: "public", name: "Bourse French Tech", criteria: {} });
+  assert.match(html, /<h2>Conditions d’éligibilité de Bourse French Tech<\/h2>/);
+  assert.match(html, /Moins de 50 salariés/);
+  assert.ok(html.includes('"@type":"FAQPage"'));
+  assert.match(html, /name="description" content="Bourse French Tech \(Bpifrance\) : Jusqu’à 30 000 €/);
+  const desc = html.match(/name="description" content="([^"]*)"/)![1];
+  assert.ok(desc.length <= 160, `description ${desc.length}`);
+});

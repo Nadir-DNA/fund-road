@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { db } from "./db.ts";
 import { config } from "./config.ts";
 import { details, libelleCritere, resume } from "../shared/criteria.ts";
+import { programs, type Program } from "../shared/programs.ts";
 import {
   pageMeta,
   publicCopy,
@@ -159,8 +160,31 @@ const list = (t: string, xs?: string[]) =>
     ? `<h2>${esc(t)}</h2><ul>${xs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`
     : "";
 
+// Guide d'un programme public (critères vérifiés et sourcés) pour la page du financeur du même nom
+function programGuide(prog: Program, name: string) {
+  const conditions = prog.criteria.filter((c) => c.blocking).map((c) => c.label);
+  const pieces = prog.criteria.filter((c) => !c.blocking).map((c) => `${c.label} : ${c.question}`);
+  const faq: [string, string][] = [
+    [`Quel est le montant de ${name} ?`, `${prog.amount}. ${prog.summary}`],
+    [`Qui peut bénéficier de ${name} ?`, `Conditions à remplir : ${conditions.join(" ; ")}.`],
+    ...(pieces.length
+      ? [[`Que faut-il préparer pour demander ${name} ?`, prog.criteria.filter((c) => !c.blocking).map((c) => c.label).join(" ; ") + "."] as [string, string]]
+      : []),
+    [`Qui gère ${name} ?`, `${prog.operator}. Critères vérifiés le ${prog.verifiedAt.split("-").reverse().join("/")}.`],
+  ];
+  const body = `<h2>Montant et nature de l’aide</h2><p>${esc(prog.kind)} · ${esc(prog.amount)}. ${esc(prog.summary)}</p>
+    ${list(`Conditions d’éligibilité de ${name}`, conditions)}
+    ${list(`Ce qu’il faut préparer pour ${name}`, pieces)}
+    <p>Critères vérifiés le ${esc(prog.verifiedAt.split("-").reverse().join("/"))} auprès de : ${prog.sources.map((x) => `<a href="${esc(x.url)}" rel="nofollow noopener">${esc(x.label)}</a>`).join(", ")}.</p>
+    <h2>Questions fréquentes sur ${esc(name)}</h2>
+    ${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}`;
+  return { body, faq };
+}
+
 export function renderProfile(index: string, p: any) {
   const name = p.theme?.name || p.name;
+  const prog = programs.find((x) => slugify(x.name) === p.slug || x.id.replace(/_/g, "-") === p.slug);
+  const guide = prog && programGuide(prog, name);
   const c = p.criteria || {};
   const r = resume(c);
   const kind = kinds[p.kind] || p.kind || "Financeur";
@@ -174,6 +198,7 @@ export function renderProfile(index: string, p: any) {
   ].filter(([, v]) => v);
   const extra = details(p.kind, c).map((d) => [d.champ.label, d.texte]);
   const description = (
+    (prog ? `${name} (${prog.operator}) : ${prog.amount}. Conditions, pièces et candidature avec Fund Road.` : "") ||
     `${name} (${kind.toLowerCase()}) : ` +
     (facts.map(([k, v]) => `${k.toLowerCase()} ${v}`).join(", ") ||
       "critères d’investissement") +
@@ -206,6 +231,7 @@ export function renderProfile(index: string, p: any) {
         ["Annuaire des financeurs", "/annuaire"],
         [name, path],
       ]),
+      ...(guide ? [faqLd(guide.faq)] : []),
     ],
     body: `<main>${nav}
     <h1>${esc(name)}</h1><p>${esc(kind)}</p>
@@ -219,6 +245,7 @@ export function renderProfile(index: string, p: any) {
       Object.entries<any>(c.sources || {}).map(([k, v]) => `${libelleCritere(p.kind, k)} : « ${v.citation} » (${v.url})`),
     )}
     ${list(`Questions de ${name}`, c.questions)}
+    ${guide?.body ?? ""}
     <h2>Comment candidater auprès de ${esc(name)}</h2>
     <p>Préparez votre dossier de financement sur Fund Road : vos documents sont structurés selon les critères de ${esc(name)} et vous voyez ce qui manque avant l’envoi.</p></main>`,
   });
