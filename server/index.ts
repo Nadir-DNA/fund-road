@@ -56,7 +56,8 @@ await app.register(helmet, {
     directives: {
       defaultSrc: ["'self'"],
       // Google Analytics, chargé côté client seulement après consentement
-      scriptSrc: ["'self'", "https://www.googletagmanager.com"],
+      // Searchtide (mesure d'audience sans cookie)
+      scriptSrc: ["'self'", "https://www.googletagmanager.com", "https://stats.nadirdaoudi.com"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       fontSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https://*.google-analytics.com", "https://*.googletagmanager.com"],
@@ -65,6 +66,7 @@ await app.register(helmet, {
         "https://*.google-analytics.com",
         "https://*.analytics.google.com",
         "https://*.googletagmanager.com",
+        "https://stats.nadirdaoudi.com",
       ],
       frameAncestors: ["'none'"],
     },
