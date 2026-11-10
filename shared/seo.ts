@@ -22,3 +22,13 @@ export function profileDescription(head: string) {
   if ((head + short).length <= max) return head + short;
   return clipWords(head, max - short.length - 1) + "…" + short;
 }
+
+/** Identifiant d'URL (fonds, programmes, titres). */
+export const slugify = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60) || "financeur";

@@ -20,7 +20,9 @@ import {
   useLocation,
 } from "react-router-dom";
 import { editorial } from "../shared/editorial.generated.ts";
-import { profileTitle } from "../shared/seo.ts";
+import { profileTitle, slugify } from "../shared/seo.ts";
+import { programs } from "../shared/programs.ts";
+import { profileFaq, programFaq } from "../shared/faq.ts";
 import {
   ArrowUpRight,
   Sun,
@@ -4253,6 +4255,8 @@ function Portal() {
       document.title = profileTitle(name);
   }, [name]);
   const ed = slug ? editorial[`/fonds/${slug}`] : undefined;
+  const prog = slug ? programs.find((x) => slugify(x.name) === slug || x.id.replace(/_/g, "-") === slug) : undefined;
+  const faq = o && name ? (prog ? programFaq(prog, name) : profileFaq(name, resume(c), o.applicationUrl)) : [];
   if (ed)
     return (
       <PublicLayout>
@@ -4442,6 +4446,17 @@ function Portal() {
                 </aside>
               )}
             </div>
+            {faq.length > 0 && (
+              <section className="panel portal-faq">
+                <h2>Questions fréquentes sur {name}</h2>
+                {faq.map(([q, a]) => (
+                  <div key={q}>
+                    <h3>{q}</h3>
+                    <p>{a}</p>
+                  </div>
+                ))}
+              </section>
+            )}
           </>
         )}
       </main>

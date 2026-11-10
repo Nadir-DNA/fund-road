@@ -3,7 +3,10 @@ import { db } from "./db.ts";
 import { config } from "./config.ts";
 import { details, libelleCritere, resume } from "../shared/criteria.ts";
 import { editorial } from "../shared/editorial.generated.ts";
-import { profileTitle, profileDescription } from "../shared/seo.ts";
+import { profileTitle, profileDescription, slugify } from "../shared/seo.ts";
+import { programFaq, profileFaq } from "../shared/faq.ts";
+
+export { slugify };
 
 export { profileTitle, profileDescription };
 import { programs, type Program } from "../shared/programs.ts";
@@ -14,14 +17,6 @@ import {
   financeursPage,
 } from "../shared/content.ts";
 
-export const slugify = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 60) || "financeur";
 // URL lisible (« /fonds/capital-demo ») ; suffixe numérique seulement en cas d'homonyme
 export async function uniqueSlug(name: string) {
   const base = slugify(name);
@@ -169,14 +164,7 @@ const list = (t: string, xs?: string[]) =>
 function programGuide(prog: Program, name: string) {
   const conditions = prog.criteria.filter((c) => c.blocking).map((c) => c.label);
   const pieces = prog.criteria.filter((c) => !c.blocking).map((c) => `${c.label} : ${c.question}`);
-  const faq: [string, string][] = [
-    [`Quel est le montant de ${name} ?`, `${prog.amount}. ${prog.summary}`],
-    [`Qui peut bénéficier de ${name} ?`, `Conditions à remplir : ${conditions.join(" ; ")}.`],
-    ...(pieces.length
-      ? [[`Que faut-il préparer pour demander ${name} ?`, prog.criteria.filter((c) => !c.blocking).map((c) => c.label).join(" ; ") + "."] as [string, string]]
-      : []),
-    [`Qui gère ${name} ?`, `${prog.operator}. Critères vérifiés le ${prog.verifiedAt.split("-").reverse().join("/")}.`],
-  ];
+  const faq: [string, string][] = programFaq(prog, name);
   const body = `<h2>Montant et nature de l’aide</h2><p>${esc(prog.kind)} · ${esc(prog.amount)}. ${esc(prog.summary)}</p>
     ${list(`Conditions d’éligibilité de ${name}`, conditions)}
     ${list(`Ce qu’il faut préparer pour ${name}`, pieces)}
@@ -184,21 +172,6 @@ function programGuide(prog: Program, name: string) {
     <h2>Questions fréquentes sur ${esc(name)}</h2>
     ${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}`;
   return { body, faq };
-}
-
-/** FAQ factuelle d'une fiche : uniquement des données déjà publiées, jamais de contenu inventé. */
-export function profileFaq(
-  name: string,
-  r: { ticket?: string; stage?: string; geography?: string },
-  applicationUrl?: string,
-): [string, string][] {
-  const q: [string, string][] = [];
-  if (r.ticket) q.push([`Quel ticket propose ${name} ?`, `Ticket indiqué par ${name} : ${r.ticket}.`]);
-  if (r.stage) q.push([`Quel stade vise ${name} ?`, `Stade indiqué par ${name} : ${r.stage}.`]);
-  if (r.geography) q.push([`Où intervient ${name} ?`, `Zone couverte : ${r.geography}.`]);
-  if (q.length < 2) return [];
-  if (applicationUrl) q.push([`Comment candidater auprès de ${name} ?`, `Cette fiche indique une adresse de candidature officielle : ${applicationUrl}`]);
-  return q;
 }
 
 export function renderProfile(index: string, p: any) {

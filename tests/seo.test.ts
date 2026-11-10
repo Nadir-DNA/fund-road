@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 process.env.DATABASE_URL ||= "postgres://unused";
 process.env.BETTER_AUTH_SECRET ||= "test-only-unused-secret-32-characters";
-const { renderProfile, slugify, profileTitle, profileDescription, profileFaq } = await import("../server/seo.ts");
+const { renderProfile, slugify, profileTitle, profileDescription } = await import("../server/seo.ts");
+const { profileFaq } = await import("../shared/faq.ts");
 const index =
   '<html><head><meta name="description" content="générique" /><title>Fund Road</title></head><body><div id="root"></div></body></html>';
 test("SEO : page de fonds propre au financeur et échappée", () => {
