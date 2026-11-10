@@ -132,3 +132,18 @@ test("Prix : chaque montant du JSON-LD figure dans le HTML serveur de /tarifs", 
   for (const offer of ld.offers) assert.ok(html.includes(`${offer.price} €`), `${offer.price} € absent du HTML`);
   assert.match(html, /Fonds, business angels et incubateurs<\/dt><dd>0 € pendant le lancement/);
 });
+
+test("OG/Twitter : les fiches utilisent og.jpg 1200×630, dimensions déclarées et cohérentes", () => {
+  for (const p of [
+    { id: "o1", slug: "360-capital", kind: "fund", name: "360 Capital", criteria: {} },
+    { id: "o2", slug: "bourse-french-tech", kind: "public", name: "Bourse French Tech", criteria: {} },
+    { id: "o3", slug: "pass-pi", kind: "grant", name: "Pass PI", criteria: {} },
+  ]) {
+    const html = renderProfile(index, p);
+    assert.match(html, /<meta property="og:image" content="[^"]*\/brand\/og\.jpg" \/>/, p.slug);
+    assert.match(html, /<meta property="og:image:width" content="1200" \/>/, p.slug);
+    assert.match(html, /<meta property="og:image:height" content="630" \/>/, p.slug);
+    assert.match(html, /<meta name="twitter:image" content="[^"]*\/brand\/og\.jpg" \/>/, p.slug);
+    assert.doesNotMatch(html, /og:image" content="[^"]*\/api\/(investors|organizations)/, p.slug);
+  }
+});

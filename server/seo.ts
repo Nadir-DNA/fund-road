@@ -146,6 +146,8 @@ export function renderPage(index: string, p: Page) {
     <meta property="og:description" content="${esc(p.description)}" />
     <meta property="og:url" content="${esc(url)}" />
     <meta property="og:image" content="${esc(image)}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${esc(p.title)}" />
     <meta name="twitter:description" content="${esc(p.description)}" />
@@ -227,7 +229,6 @@ export function renderProfile(index: string, p: any) {
     title,
     description,
     ogType: "profile",
-    ...(logo && { image: logo }),
     ld: [
       {
         "@context": "https://schema.org",
