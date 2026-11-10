@@ -9,7 +9,7 @@ const texte = (html: string) => html
 
 test("Contenus éditoriaux : métadonnées, HTML, FAQ alignée et liens internes", () => {
   const entries = Object.entries(editorial);
-  assert.equal(entries.length, 9);
+  assert.equal(entries.length, 11);
   for (const [url, p] of entries) {
     assert.ok(url.startsWith("/"), url);
     assert.ok(p.title.length <= 60, `${url} titre ${p.title.length}`);
@@ -36,6 +36,8 @@ test("Contenus éditoriaux : métadonnées, HTML, FAQ alignée et liens internes
   assert.ok(editorial["/fonds/eic-accelerator"]);
   assert.ok(editorial["/aides/pass-pi"]);
   assert.ok(editorial["/aides/pret-honneur-reseau-entreprendre"]);
+  assert.ok(editorial["/fonds/concours-i-lab"]);
+  assert.ok(editorial["/aides/concours-i-nov"]);
 });
 
 test("Validation : toutes les pages intégrées sont validées et la migration sauve les ressources existantes", async () => {

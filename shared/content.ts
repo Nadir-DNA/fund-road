@@ -341,6 +341,10 @@ export const pageMeta: Record<string, { title: string; description: string }> =
       title: "Subventions Bpifrance : montants, règles et dossier",
       description: "Comment fonctionnent les subventions à l'innovation de Bpifrance : montants, taux de 50 à 70 %, règle des dépenses, versement en deux tranches et pièges.",
     },
+    "/aides/concours-i-nov": {
+      title: "Concours i-Nov : projet de 1 à 5 M€, jusqu'à 45 % financés",
+      description: "Concours i-Nov : projets de R&D de 1 à 5 M€, 45 % financés pour une petite entreprise, dont 60 % de subvention. Conditions, thèmes et vagues.",
+    },
     "/aides/pass-pi": {
       title: "Pass PI INPI : 50 % de vos frais de propriété industrielle",
       description: "Pass PI : l'INPI finance 50 % d'une prestation en propriété industrielle, jusqu'à 3 000 € par pass et 5 000 € par entreprise. Conditions et démarche.",

@@ -42,8 +42,8 @@ test("SEO : titres et descriptions dans les longueurs affichées par Google", as
   assert.ok(d.length <= 160, String(d.length));
 });
 test("SEO : la page d'un programme public reprend ses critères sourcés et une FAQ", () => {
-  const html = renderProfile(index, { id: "b1", slug: "concours-i-lab", kind: "public", name: "Concours i-Lab", criteria: {} });
-  assert.match(html, /<h2>Conditions d’éligibilité de Concours i-Lab<\/h2>/);
+  const html = renderProfile(index, { id: "b1", slug: "pass-pi-brevet", kind: "public", name: "Pass PI Brevet Français", criteria: {} });
+  assert.match(html, /<h2>Conditions d’éligibilité de Pass PI Brevet Français<\/h2>/);
   assert.ok(html.includes('"@type":"FAQPage"'));
   const desc = html.match(/name="description" content="([^"]*)"/)![1].replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"');
   assert.ok(desc.length <= 155, `description ${desc.length}`);
@@ -73,7 +73,7 @@ test("SEO : un nom long garde un titre ≤ 60 et une description qui ne coupe pa
   assert.doesNotMatch(desc, /…/);
 });
 test("SEO : la description d'un programme se termine par Fund Road sans troncature", () => {
-  const html = renderProfile(index, { id: "b3", slug: "concours-i-lab", kind: "public", name: "Concours i-Lab", criteria: {} });
+  const html = renderProfile(index, { id: "b3", slug: "pass-pi-brevet", kind: "public", name: "Pass PI Brevet Français", criteria: {} });
   const desc = html.match(/name="description" content="([^"]*)"/)![1].replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"');
   assert.ok(desc.length <= 155, String(desc.length));
   assert.match(desc, /Fund Road\.$/);
@@ -99,8 +99,8 @@ test("SEO : une fiche sans guide reçoit une FAQ factuelle et son JSON-LD", () =
 test("SEO : les descriptions de i-Lab et Pass PI sont des phrases complètes, sans coupure", () => {
   assert.equal(showAidesLink("grant"), true);
   assert.equal(showAidesLink("fund"), false);
-  for (const name of ["Concours i-Lab", "Pass PI"]) {
-    const html = renderProfile(index, { id: "x", slug: name === "Pass PI" ? "pass-pi" : "concours-i-lab", kind: "grant", name, criteria: { ticket: "jusqu’à 3 k€", stage: "Prototype", geography: "France entière" } });
+  for (const [name, slug] of [["Concours i-Nov", "concours-i-nov"], ["Pass PI", "pass-pi"]]) {
+    const html = renderProfile(index, { id: "x", slug, kind: "grant", name, criteria: { ticket: "jusqu’à 3 k€", stage: "Prototype", geography: "France entière" } });
     const desc = html.match(/name="description" content="([^"]*)"/)![1].replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"');
     assert.ok(desc.length <= 155, `${name} : ${desc.length}`);
     assert.ok(!desc.includes("…"), `${name} : coupure`);
