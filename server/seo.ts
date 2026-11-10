@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { db } from "./db.ts";
 import { config } from "./config.ts";
 import { details, libelleCritere, resume } from "../shared/criteria.ts";
+import { editorial } from "../shared/editorial.generated.ts";
 import { programs, type Program } from "../shared/programs.ts";
 import {
   pageMeta,
@@ -219,6 +220,7 @@ export function profileFaq(name: string, r: { ticket?: string; stage?: string; g
 }
 
 export function renderProfile(index: string, p: any) {
+  if (p?.slug && editorial[`/fonds/${p.slug}`]) return renderPage(index, editorialPage(`/fonds/${p.slug}`)!);
   const name = p.theme?.name || p.name;
   const prog = programs.find((x) => slugify(x.name) === p.slug || x.id.replace(/_/g, "-") === p.slug);
   const guide = prog && programGuide(prog, name);
@@ -297,32 +299,27 @@ const faqLd = (items: [string, string][]) => ({
     acceptedAnswer: { "@type": "Answer", text: a },
   })),
 });
+/** Page éditoriale validée (contenus-seo) : HTML, FAQPage et fil d'Ariane. */
+function editorialPage(path: string): Page | null {
+  const e = editorial[path];
+  if (!e) return null;
+  const trail: [string, string][] = path.startsWith("/fonds/")
+    ? [["Annuaire des financeurs", "/annuaire"], [e.h1, path]]
+    : path === "/aides" ? [["Aides publiques", "/aides"]] : [["Aides publiques", "/aides"], [e.h1, path]];
+  return {
+    path,
+    title: e.title,
+    description: e.description,
+    ogType: "article",
+    ld: [...(e.faq ? [e.faq] : []), crumbs(trail)],
+    body: `<main>${nav}<article><h1>${esc(e.h1)}</h1>${e.html}</article></main>`,
+  };
+}
+
 // Pages publiques fixes : textes partagés avec l'interface (shared/content.ts)
 async function staticPage(path: string): Promise<Page | null> {
-  if (path === "/aides") {
-    const row = (
-      await db.query("SELECT title, excerpt, body FROM content_pages WHERE slug='aides' AND published_at IS NOT NULL LIMIT 1")
-    ).rows[0];
-    if (row)
-      return {
-        path,
-        title: `${row.title} | Fund Road`,
-        description: clipWords(String(row.excerpt || row.title), 155) + " | Fund Road",
-        ogType: "article",
-        ld: [
-          { "@context": "https://schema.org", "@type": "Article", headline: row.title, description: row.excerpt, inLanguage: "fr-FR", publisher: organization, mainEntityOfPage: abs(path) },
-          crumbs([["Aides publiques", path]]),
-        ],
-        body: `<main>${nav}<article><h1>${esc(row.title)}</h1><p>${esc(row.excerpt)}</p>${String(row.body).split(/\n{2,}/).map((x) => `<p>${esc(x.replace(/^#+\s*/, ""))}</p>`).join("")}</article></main>`,
-      };
-    return {
-      path,
-      title: "Aides publiques : le hub | Fund Road",
-      description: "Le hub des aides publiques de Fund Road est en préparation : bourses, subventions et prêts d’honneur vérifiés, conditions et calendrier.",
-      robots: "noindex,follow",
-      body: `<main>${nav}<h1>Aides publiques</h1><p>Le hub des aides publiques est en préparation : les fiches vérifiées arrivent après validation.</p><p><a href="/annuaire">Consulter l’annuaire des financeurs</a> · <a href="/">Accueil</a></p></main>`,
-    };
-  }
+  const ed = editorialPage(path);
+  if (ed) return ed;
   const meta = pageMeta[path];
   if (!meta) return null;
   const base = { path, ...meta };
@@ -492,10 +489,6 @@ export function registerSeo(app: FastifyInstance, index: string) {
     app.get(path, async (_req, reply) =>
       html(reply).send(renderPage(index, (await staticPage(path))!)),
     );
-  // Hub /aides : route prête avant la publication du contenu validé (noindex tant que vide)
-  app.get("/aides", async (_req, reply) =>
-    html(reply).send(renderPage(index, (await staticPage("/aides"))!)),
-  );
   app.get("/ressources/:slug", async (req: any, reply) => {
     const r = (
       await db.query(

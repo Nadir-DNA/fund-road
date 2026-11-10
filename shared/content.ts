@@ -333,6 +333,18 @@ export const pageMeta: Record<string, { title: string; description: string }> =
       description:
         "Les neuf rubriques d’un dossier de financement complet, les contrôles automatisés et ce que l’attestation de complétude certifie ou non.",
     },
+    "/aides": {
+      title: "Aides à l'innovation : quel dispositif à quel stade ?",
+      description: "Subventions Bpifrance, Bourse French Tech, i-Lab, prêt d'honneur : les aides publiques classées par étape de projet, avec montants, sources et pièges.",
+    },
+    "/aides/subventions-bpifrance": {
+      title: "Subventions Bpifrance : montants, règles et dossier",
+      description: "Comment fonctionnent les subventions à l'innovation de Bpifrance : montants, taux de 50 à 70 %, règle des dépenses, versement en deux tranches et pièges.",
+    },
+    "/aides/pret-honneur-initiative-france": {
+      title: "Prêt d'honneur Initiative France : 3 000 à 50 000 €",
+      description: "Prêt d'honneur Initiative France : 3 000 à 50 000 € à taux 0, sans garantie, décidé par un comité d'agrément. Conditions, étapes et erreurs à éviter.",
+    },
     "/partenaires": {
       title: "Programme partenaires et parrainage | Fund Road",
       description:

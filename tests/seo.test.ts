@@ -40,13 +40,19 @@ test("SEO : titres et descriptions dans les longueurs affichées par Google", as
   assert.ok(d.length <= 160, String(d.length));
 });
 test("SEO : la page d'un programme public reprend ses critères sourcés et une FAQ", () => {
-  const html = renderProfile(index, { id: "b1", slug: "bourse-french-tech", kind: "public", name: "Bourse French Tech", criteria: {} });
-  assert.match(html, /<h2>Conditions d’éligibilité de Bourse French Tech<\/h2>/);
-  assert.match(html, /Moins de 50 salariés/);
+  const html = renderProfile(index, { id: "b1", slug: "concours-i-lab", kind: "public", name: "Concours i-Lab", criteria: {} });
+  assert.match(html, /<h2>Conditions d’éligibilité de Concours i-Lab<\/h2>/);
   assert.ok(html.includes('"@type":"FAQPage"'));
-  assert.match(html, /name="description" content="Bourse French Tech \(Bpifrance\) : Jusqu’à 30 000 €/);
-  const desc = html.match(/name="description" content="([^"]*)"/)![1];
+  const desc = html.match(/name="description" content="([^"]*)"/)![1].replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"');
   assert.ok(desc.length <= 160, `description ${desc.length}`);
+  assert.match(desc, /Fund Road\.$/);
+});
+test("SEO : une fiche éditoriale validée remplace la fiche générique", () => {
+  const html = renderProfile(index, { id: "b2", slug: "bourse-french-tech", kind: "public", name: "Bourse French Tech", criteria: {} });
+  assert.match(html, /<title>Bourse French Tech : 30 000 €, conditions et dossier<\/title>/);
+  assert.match(html, /<h1>Bourse French Tech<\/h1>/);
+  assert.ok(html.includes('"@type":"FAQPage"'));
+  assert.match(html, /Questions fréquentes/);
 });
 
 test("SEO : un nom long garde un titre ≤ 60 et une description qui ne coupe pas la marque", () => {
@@ -58,13 +64,13 @@ test("SEO : un nom long garde un titre ≤ 60 et une description qui ne coupe pa
   assert.match(d, /Fund Road\.$/);
   assert.doesNotMatch(d, /Fund…/);
   const html = renderProfile(index, { id: "x", slug: "nom-long", kind: "public", name, criteria: { ticket: "1 à 2 M€", sectors: "Industrie ".repeat(30) } });
-  const desc = html.match(/name="description" content="([^"]*)"/)![1];
+  const desc = html.match(/name="description" content="([^"]*)"/)![1].replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"');
   assert.ok(desc.length <= 160, String(desc.length));
   assert.match(desc, /Fund Road\.$/);
 });
 test("SEO : la description d'un programme se termine par Fund Road sans troncature", () => {
-  const html = renderProfile(index, { id: "b2", slug: "bourse-french-tech-emergence", kind: "public", name: "Bourse French Tech Émergence", criteria: {} });
-  const desc = html.match(/name="description" content="([^"]*)"/)![1];
+  const html = renderProfile(index, { id: "b3", slug: "concours-i-lab", kind: "public", name: "Concours i-Lab", criteria: {} });
+  const desc = html.match(/name="description" content="([^"]*)"/)![1].replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"');
   assert.ok(desc.length <= 160, String(desc.length));
   assert.match(desc, /Fund Road\.$/);
 });

@@ -19,6 +19,7 @@ import {
   useParams,
   useLocation,
 } from "react-router-dom";
+import { editorial } from "../shared/editorial.generated.ts";
 import {
   ArrowUpRight,
   Sun,
@@ -4225,6 +4226,20 @@ function Verification() {
     </PublicLayout>
   );
 }
+function Editorial() {
+  const path = useLocation().pathname.replace(/\/$/, "") || "/";
+  const e = editorial[path];
+  useEffect(() => {
+    if (e) document.title = e.title;
+  }, [e]);
+  if (!e) return <Portal />;
+  return (
+    <PublicLayout>
+      <main className="section info-page editorial" dangerouslySetInnerHTML={{ __html: `<h1>${e.h1}</h1>${e.html}` }} />
+    </PublicLayout>
+  );
+}
+
 function Portal() {
   const { slug } = useParams();
   const { data: o, error } = useLoad("/portals/" + slug);
@@ -4236,6 +4251,13 @@ function Portal() {
     if (name)
       document.title = `${name} : critères, ticket et candidature | Fund Road`;
   }, [name]);
+  const ed = slug ? editorial[`/fonds/${slug}`] : undefined;
+  if (ed)
+    return (
+      <PublicLayout>
+        <main className="section info-page editorial" dangerouslySetInnerHTML={{ __html: `<h1>${ed.h1}</h1>${ed.html}` }} />
+      </PublicLayout>
+    );
   return (
     <PublicLayout>
       <main className="portal" style={o ? orgStyle(o) : {}}>
@@ -4713,15 +4735,8 @@ function Root() {
           <Route path="/app/*" element={<Shell />} />
           <Route path="/verification/:id" element={<Verification />} />
           <Route path="/fonds/:slug" element={<Portal />} />
-          <Route path="/aides" element={
-            <PublicLayout>
-              <main className="section info-page">
-                <h1>Aides publiques</h1>
-                <p className="lead">Le hub des aides publiques est en préparation : les fiches vérifiées arrivent après validation.</p>
-                <p><Link className="button" to="/annuaire">Annuaire des financeurs</Link></p>
-              </main>
-            </PublicLayout>
-          } />
+          <Route path="/aides" element={<Editorial />} />
+          <Route path="/aides/:slug" element={<Editorial />} />
           <Route path="/portail/:slug" element={<Portal />} />
           <Route path="/invitation/:token" element={<Invitation />} />
           <Route path="/partages/:id" element={<SharedApplication />} />
