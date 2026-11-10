@@ -170,7 +170,8 @@ function programGuide(prog: Program, name: string) {
     ${list(`Ce qu’il faut préparer pour ${name}`, pieces)}
     <p>Critères vérifiés le ${esc(prog.verifiedAt.split("-").reverse().join("/"))} auprès de : ${prog.sources.map((x) => `<a href="${esc(x.url)}" rel="nofollow noopener">${esc(x.label)}</a>`).join(", ")}.</p>
     <h2>Questions fréquentes sur ${esc(name)}</h2>
-    ${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}`;
+    ${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}
+    <p><a href="/aides">Guide complet des aides publiques</a> · <a href="/entrepreneurs">Préparer son dossier</a></p>`;
   return { body, faq };
 }
 
@@ -193,11 +194,12 @@ export function renderProfile(index: string, p: any) {
   const extra = details(p.kind, c).map((d) => [d.champ.label, d.texte]);
   const description = profileDescription(
     prog
-      ? `${name} (${prog.operator}) : ${prog.amount}. Conditions, pièces et candidature`
-      : `${name} (${kind.toLowerCase()}) : ` +
-          (facts.map(([k, v]) => `${k.toLowerCase()} ${v}`).join(", ") ||
-            "critères d’investissement") +
-          ". Pièces demandées et comment candidater",
+      ? [`${name}.`, `Organisme : ${prog.operator}.`, `${prog.amount}.`, "Conditions et pièces détaillées sur la fiche."]
+      : [
+          `${name}.`,
+          ...(facts.map(([k, v]) => `${k} : ${v}.`)),
+          "Pièces demandées et conditions sur la fiche.",
+        ],
   );
   const faq: [string, string][] = guide ? guide.faq : profileFaq(name, r, p.applicationUrl);
   const logo = p.logo ? abs(`/api/${p.claimed ? "organizations" : "investors"}/${p.id}/logo`) : "";
@@ -240,6 +242,7 @@ export function renderProfile(index: string, p: any) {
     )}
     ${list(`Questions de ${name}`, c.questions)}
     ${guide?.body ?? (faq.length ? `<h2>Questions fréquentes sur ${esc(name)}</h2>${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}` : "")}
+    ${p.kind === "public" && !guide ? `<p><a href="/aides">Guide complet des aides publiques</a> · <a href="/entrepreneurs">Préparer son dossier</a></p>` : ""}
     ${faq.some(([q]) => /candidater/i.test(q)) ? "" : `<h2>Comment candidater auprès de ${esc(name)}</h2>
     <p>Préparez votre dossier de financement sur Fund Road : vos documents sont structurés selon les critères de ${esc(name)} et vous voyez ce qui manque avant l’envoi.</p>`}</main>`,
   });

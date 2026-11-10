@@ -15,12 +15,18 @@ export function profileTitle(name: string) {
   return options.find((x) => x.length <= 60) ?? clipWords(name, 57) + "…";
 }
 
-/** Description ≤ 160 caractères, terminée par « Fund Road. » et coupée entre deux mots. */
-export function profileDescription(head: string) {
-  const max = 155, full = " avec Fund Road.", short = " Fund Road.";
-  if ((head + full).length <= max) return head + full;
-  if ((head + short).length <= max) return head + short;
-  return clipWords(head, max - short.length - 1) + "…" + short;
+/** Description ≤ 155 caractères, en phrases complètes : on retire des précisions, on ne coupe jamais. */
+export function profileDescription(parts: string[], tail = "Candidature sur Fund Road.", max = 155) {
+  const chosen: string[] = [];
+  for (const part of parts) {
+    const text = [...chosen, part].join(" ");
+    if ((text + " " + tail).length <= max) chosen.push(part);
+    else break;
+  }
+  const base = chosen.join(" ");
+  if ((base + " " + tail).length <= max) return `${base} ${tail}`;
+  const name = parts[0] ?? "";
+  return (name + " " + tail).length <= max ? `${name} ${tail}` : name;
 }
 
 /** Identifiant d'URL (fonds, programmes, titres). */

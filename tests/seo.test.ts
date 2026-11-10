@@ -45,8 +45,9 @@ test("SEO : la page d'un programme public reprend ses critères sourcés et une 
   assert.match(html, /<h2>Conditions d’éligibilité de Concours i-Lab<\/h2>/);
   assert.ok(html.includes('"@type":"FAQPage"'));
   const desc = html.match(/name="description" content="([^"]*)"/)![1].replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-  assert.ok(desc.length <= 160, `description ${desc.length}`);
+  assert.ok(desc.length <= 155, `description ${desc.length}`);
   assert.match(desc, /Fund Road\.$/);
+  assert.doesNotMatch(desc, /…/);
 });
 test("SEO : une fiche éditoriale validée remplace la fiche générique", () => {
   const html = renderProfile(index, { id: "b2", slug: "bourse-french-tech", kind: "public", name: "Bourse French Tech", criteria: {} });
@@ -59,21 +60,23 @@ test("SEO : une fiche éditoriale validée remplace la fiche générique", () =>
 test("SEO : un nom long garde un titre ≤ 60 et une description qui ne coupe pas la marque", () => {
   const name = "Aide pour le développement de l’innovation et de l’expérimentation";
   assert.ok(profileTitle(name).length <= 60, profileTitle(name));
-  assert.ok(profileDescription(`${name} (Bpifrance) : 1 à 2 M€. Conditions, pièces et candidature`).length <= 160);
-  const d = profileDescription("x ".repeat(200));
-  assert.ok(d.length <= 160);
+  assert.ok(profileDescription([`${name}.`, "Organisme : Bpifrance.", "1 à 2 M€.", "Conditions, pièces et candidature."]).length <= 155);
+  const d = profileDescription(["x ".repeat(200)]);
+  assert.ok(d.length <= 155);
   assert.match(d, /Fund Road\.$/);
   assert.doesNotMatch(d, /Fund…/);
   const html = renderProfile(index, { id: "x", slug: "nom-long", kind: "public", name, criteria: { ticket: "1 à 2 M€", sectors: "Industrie ".repeat(30) } });
   const desc = html.match(/name="description" content="([^"]*)"/)![1].replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-  assert.ok(desc.length <= 160, String(desc.length));
+  assert.ok(desc.length <= 155, String(desc.length));
   assert.match(desc, /Fund Road\.$/);
+  assert.doesNotMatch(desc, /…/);
 });
 test("SEO : la description d'un programme se termine par Fund Road sans troncature", () => {
   const html = renderProfile(index, { id: "b3", slug: "concours-i-lab", kind: "public", name: "Concours i-Lab", criteria: {} });
   const desc = html.match(/name="description" content="([^"]*)"/)![1].replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-  assert.ok(desc.length <= 160, String(desc.length));
+  assert.ok(desc.length <= 155, String(desc.length));
   assert.match(desc, /Fund Road\.$/);
+  assert.doesNotMatch(desc, /…/);
 });
 
 test("SEO : une fiche sans guide reçoit une FAQ factuelle et son JSON-LD", () => {
@@ -90,4 +93,15 @@ test("SEO : une fiche sans guide reçoit une FAQ factuelle et son JSON-LD", () =
   assert.equal(avecLien.length, 3);
   assert.match(avecLien[2][1], /adresse de candidature officielle/);
   assert.ok(!avecLien[2][1].includes("pièces"));
+});
+
+test("SEO : les descriptions de i-Lab et Pass PI sont des phrases complètes, sans coupure", () => {
+  for (const name of ["Concours i-Lab", "Pass PI"]) {
+    const html = renderProfile(index, { id: "x", slug: name === "Pass PI" ? "pass-pi" : "concours-i-lab", kind: "public", name, criteria: { ticket: "jusqu’à 3 k€", stage: "Prototype", geography: "France entière" } });
+    const desc = html.match(/name="description" content="([^"]*)"/)![1].replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    assert.ok(desc.length <= 155, `${name} : ${desc.length}`);
+    assert.ok(!desc.includes("…"), `${name} : coupure`);
+    assert.match(desc, /Fund Road\.$/, name);
+    assert.match(html, /href="\/aides"/, `${name} : lien /aides absent`);
+  }
 });
