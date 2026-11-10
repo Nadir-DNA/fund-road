@@ -90,7 +90,7 @@ const pages = files.map((file) => {
   const faq = faqMatch ? JSON.parse(faqMatch[1]) : null;
   const text = body.replace(/```json\n[\s\S]*?\n```/g, "");
   const withoutTitle = text.replace(/^\s*#\s+.*\n+/, "");
-  return { file, url: meta.url, title: meta.title, description: meta.meta_description, h1: meta.h1, date: meta.date_verification, md: withoutTitle, faq, faqType: faq?.["@type"] };
+  return { file, url: meta.url, title: meta.title, description: meta.meta_description, h1: meta.h1, date: meta.date_verification, validated: meta.statut === "prêt-à-intégrer", md: withoutTitle, faq, faqType: faq?.["@type"] };
 });
 
 const byFile = new Map(pages.map((p) => [p.file, p.url]));
@@ -102,6 +102,6 @@ for (const p of pages) {
 mkdirSync(DEST, { recursive: true });
 for (const p of pages) copyFileSync(join(SRC, p.file), join(DEST, p.file));
 
-const entries = pages.map((p) => `  ${JSON.stringify(p.url)}: {\n    title: ${JSON.stringify(p.title)},\n    description: ${JSON.stringify(p.description)},\n    h1: ${JSON.stringify(p.h1)},\n    date: ${JSON.stringify(p.date)},\n    html: ${JSON.stringify(p.html)},\n    faq: ${JSON.stringify(p.faq)},\n  },`).join("\n");
-writeFileSync(join(ROOT, "shared/editorial.generated.ts"), `// Généré par scripts/integrer-contenus.mjs — ne pas éditer à la main.\nexport type EditorialPage = { title: string; description: string; h1: string; date: string; html: string; faq: any };\nexport const editorial: Record<string, EditorialPage> = {\n${entries}\n};\n`);
+const entries = pages.map((p) => `  ${JSON.stringify(p.url)}: {\n    title: ${JSON.stringify(p.title)},\n    description: ${JSON.stringify(p.description)},\n    h1: ${JSON.stringify(p.h1)},\n    date: ${JSON.stringify(p.date)},\n    validated: ${JSON.stringify(p.validated)},\n    html: ${JSON.stringify(p.html)},\n    faq: ${JSON.stringify(p.faq)},\n  },`).join("\n");
+writeFileSync(join(ROOT, "shared/editorial.generated.ts"), `// Généré par scripts/integrer-contenus.mjs — ne pas éditer à la main.\nexport type EditorialPage = { title: string; description: string; h1: string; date: string; validated: boolean; html: string; faq: any };\nexport const editorial: Record<string, EditorialPage> = {\n${entries}\n};\n`);
 console.log(`${pages.length} contenus intégrés : ${pages.map((p) => p.url).join(", ")}`);

@@ -3,6 +3,9 @@ import { db } from "./db.ts";
 import { config } from "./config.ts";
 import { details, libelleCritere, resume } from "../shared/criteria.ts";
 import { editorial } from "../shared/editorial.generated.ts";
+import { profileTitle, profileDescription } from "../shared/seo.ts";
+
+export { profileTitle, profileDescription };
 import { programs, type Program } from "../shared/programs.ts";
 import {
   pageMeta,
@@ -183,44 +186,23 @@ function programGuide(prog: Program, name: string) {
   return { body, faq };
 }
 
-/** Coupe au mot sans jamais couper la marque : la queue « … Fund Road. » est ajoutée après. */
-function clipWords(text: string, max: number) {
-  if (text.length <= max) return text;
-  return text.slice(0, max).replace(/\s+\S*$/, "").replace(/[\s,;:.–-]+$/, "");
-}
-
-/** Titre de fiche ≤ 60 caractères, marque conservée quand elle tient. */
-export function profileTitle(name: string) {
-  const options = [
-    `${name} : critères, ticket et candidature | Fund Road`,
-    `${name} : critères et ticket | Fund Road`,
-    `${name} | Fund Road`,
-    name,
-  ];
-  return options.find((x) => x.length <= 60) ?? clipWords(name, 57) + "…";
-}
-
-/** Description ≤ 160 caractères, terminée par « Fund Road. » et coupée entre deux mots. */
-export function profileDescription(head: string) {
-  const max = 160, full = " avec Fund Road.", short = " Fund Road.";
-  if ((head + full).length <= max) return head + full;
-  if ((head + short).length <= max) return head + short;
-  return clipWords(head, max - short.length - 1) + "…" + short;
-}
-
-/** FAQ factuelle d'une fiche : uniquement des données déjà publiées (ticket, stade, zone), jamais de contenu inventé. */
-export function profileFaq(name: string, r: { ticket?: string; stage?: string; geography?: string }) {
+/** FAQ factuelle d'une fiche : uniquement des données déjà publiées, jamais de contenu inventé. */
+export function profileFaq(
+  name: string,
+  r: { ticket?: string; stage?: string; geography?: string },
+  applicationUrl?: string,
+): [string, string][] {
   const q: [string, string][] = [];
-  if (r.ticket) q.push([`Quel ticket propose ${name} ?`, `${name} indique un ticket de ${r.ticket}.`]);
-  if (r.stage) q.push([`À quel stade intervient ${name} ?`, `${name} intervient aux stades : ${r.stage}.`]);
-  if (r.geography) q.push([`Dans quelle zone ${name} intervient-il ?`, `${name} couvre : ${r.geography}.`]);
+  if (r.ticket) q.push([`Quel ticket propose ${name} ?`, `Ticket indiqué par ${name} : ${r.ticket}.`]);
+  if (r.stage) q.push([`Quel stade vise ${name} ?`, `Stade indiqué par ${name} : ${r.stage}.`]);
+  if (r.geography) q.push([`Où intervient ${name} ?`, `Zone couverte : ${r.geography}.`]);
   if (q.length < 2) return [];
-  q.push([`Comment candidater auprès de ${name} ?`, `Préparez votre dossier sur Fund Road : vos documents sont comparés aux critères et aux pièces demandées par ${name}, puis vous envoyez par son canal officiel.`]);
+  if (applicationUrl) q.push([`Comment candidater auprès de ${name} ?`, `Cette fiche indique une adresse de candidature officielle : ${applicationUrl}`]);
   return q;
 }
 
 export function renderProfile(index: string, p: any) {
-  if (p?.slug && editorial[`/fonds/${p.slug}`]) return renderPage(index, editorialPage(`/fonds/${p.slug}`)!);
+  if (p?.slug && editorial[`/fonds/${p.slug}`]?.validated) return renderPage(index, editorialPage(`/fonds/${p.slug}`)!);
   const name = p.theme?.name || p.name;
   const prog = programs.find((x) => slugify(x.name) === p.slug || x.id.replace(/_/g, "-") === p.slug);
   const guide = prog && programGuide(prog, name);
@@ -244,7 +226,7 @@ export function renderProfile(index: string, p: any) {
             "critères d’investissement") +
           ". Pièces demandées et comment candidater",
   );
-  const faq = guide ? guide.faq : profileFaq(name, r);
+  const faq: [string, string][] = guide ? guide.faq : profileFaq(name, r, p.applicationUrl);
   const logo = p.logo ? abs(`/api/${p.claimed ? "organizations" : "investors"}/${p.id}/logo`) : "";
   return renderPage(index, {
     path,
@@ -285,8 +267,8 @@ export function renderProfile(index: string, p: any) {
     )}
     ${list(`Questions de ${name}`, c.questions)}
     ${guide?.body ?? (faq.length ? `<h2>Questions fréquentes sur ${esc(name)}</h2>${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}` : "")}
-    <h2>Comment candidater auprès de ${esc(name)}</h2>
-    <p>Préparez votre dossier de financement sur Fund Road : vos documents sont structurés selon les critères de ${esc(name)} et vous voyez ce qui manque avant l’envoi.</p></main>`,
+    ${faq.some(([q]) => /candidater/i.test(q)) ? "" : `<h2>Comment candidater auprès de ${esc(name)}</h2>
+    <p>Préparez votre dossier de financement sur Fund Road : vos documents sont structurés selon les critères de ${esc(name)} et vous voyez ce qui manque avant l’envoi.</p>`}</main>`,
   });
 }
 
@@ -302,7 +284,7 @@ const faqLd = (items: [string, string][]) => ({
 /** Page éditoriale validée (contenus-seo) : HTML, FAQPage et fil d'Ariane. */
 function editorialPage(path: string): Page | null {
   const e = editorial[path];
-  if (!e) return null;
+  if (!e?.validated) return null;
   const trail: [string, string][] = path.startsWith("/fonds/")
     ? [["Annuaire des financeurs", "/annuaire"], [e.h1, path]]
     : path === "/aides" ? [["Aides publiques", "/aides"]] : [["Aides publiques", "/aides"], [e.h1, path]];
@@ -489,10 +471,12 @@ export function registerSeo(app: FastifyInstance, index: string) {
     app.get(path, async (_req, reply) =>
       html(reply).send(renderPage(index, (await staticPage(path))!)),
     );
+  // Pas de doublon indexable : l'ancienne URL de ressource renvoie vers le hub /aides
+  app.get("/ressources/aides", async (_req, reply) => reply.redirect("/aides", 301));
   app.get("/ressources/:slug", async (req: any, reply) => {
     const r = (
       await db.query(
-        "SELECT slug,title,excerpt,body FROM content_pages WHERE slug=$1",
+        "SELECT slug,title,excerpt,body FROM content_pages WHERE slug=$1 AND validated=true",
         [req.params.slug],
       )
     ).rows[0];
@@ -553,10 +537,10 @@ export function registerSeo(app: FastifyInstance, index: string) {
   });
   app.get("/sitemap.xml", async (_req, reply) => {
     const pages = [
-      ...Object.keys(pageMeta),
+      ...Object.keys(pageMeta).filter((p) => !editorial[p] || editorial[p].validated),
       ...(await listProfiles()).map((p) => "/fonds/" + p.slug),
       ...(
-        await db.query("SELECT slug FROM content_pages ORDER BY slug")
+        await db.query("SELECT slug FROM content_pages WHERE validated=true ORDER BY slug")
       ).rows.map((r) => "/ressources/" + r.slug),
     ];
     // date de dernière vérification des fiches d'annuaire, pour que Google repasse sur les fiches mises à jour

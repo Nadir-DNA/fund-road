@@ -17,14 +17,14 @@ export async function registerContent(app: FastifyInstance) {
     async () =>
       (
         await db.query(
-          "SELECT slug,title,excerpt,published_at FROM content_pages ORDER BY published_at DESC",
+          "SELECT slug,title,excerpt,published_at FROM content_pages WHERE validated=true ORDER BY published_at DESC",
         )
       ).rows,
   );
   app.get("/api/resources/:slug", async (req: any) => {
     const page = (
       await db.query(
-        "SELECT slug,title,excerpt,body,source_url,published_at FROM content_pages WHERE slug=$1",
+        "SELECT slug,title,excerpt,body,source_url,published_at FROM content_pages WHERE slug=$1 AND validated=true",
         [req.params.slug],
       )
     ).rows[0];

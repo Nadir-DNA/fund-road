@@ -60,3 +60,5 @@ ALTER TABLE investors ADD COLUMN IF NOT EXISTS logo jsonb;
 INSERT INTO offers VALUES ('pilote','Pilote offert',0,'once',50,NULL,false) ON CONFLICT DO NOTHING;
 
 ALTER TABLE investors ADD COLUMN IF NOT EXISTS updated_at timestamptz;
+
+ALTER TABLE content_pages ADD COLUMN IF NOT EXISTS validated boolean NOT NULL DEFAULT false;

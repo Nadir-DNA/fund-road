@@ -20,6 +20,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { editorial } from "../shared/editorial.generated.ts";
+import { profileTitle } from "../shared/seo.ts";
 import {
   ArrowUpRight,
   Sun,
@@ -4249,7 +4250,7 @@ function Portal() {
   const name = o?.theme?.name || o?.name;
   useEffect(() => {
     if (name)
-      document.title = `${name} : critères, ticket et candidature | Fund Road`;
+      document.title = profileTitle(name);
   }, [name]);
   const ed = slug ? editorial[`/fonds/${slug}`] : undefined;
   if (ed)

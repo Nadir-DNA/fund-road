@@ -83,6 +83,10 @@ test("SEO : une fiche sans guide reçoit une FAQ factuelle et son JSON-LD", () =
   assert.ok(!html.includes("Fund…"));
   assert.equal(profileFaq("X", { ticket: "1 k€" }).length, 0, "une seule donnée ne suffit pas");
   const faq = profileFaq("X", { ticket: "1 k€", stage: "Amorçage" });
-  assert.equal(faq.length, 3);
-  assert.match(faq[2][1], /Fund Road/);
+  assert.equal(faq.length, 2);
+  assert.match(faq[0][1], /^Ticket indiqué par X : 1 k€\.$/);
+  const avecLien = profileFaq("X", { ticket: "1 k€", stage: "Amorçage" }, "https://exemple.test/candidater");
+  assert.equal(avecLien.length, 3);
+  assert.match(avecLien[2][1], /adresse de candidature officielle/);
+  assert.ok(!avecLien[2][1].includes("pièces"));
 });
