@@ -8,6 +8,13 @@ const SRC = process.argv[2] ?? join(process.env.HOME, "OpenBot/Shared/projets/fu
 const ROOT = new URL("..", import.meta.url).pathname;
 const DEST = join(ROOT, "contenus");
 
+const cleanText = (s) => String(s)
+  .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+  .replace(/\*\*([^*]+)\*\*/g, "$1")
+  .replace(/`([^`]+)`/g, "$1")
+  .replace(/\s+/g, " ")
+  .trim();
+
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 function frontMatter(text) {
@@ -88,6 +95,11 @@ const pages = files.map((file) => {
   if (meta.statut !== "prêt-à-intégrer") throw new Error(`${file} : statut « ${meta.statut} »`);
   const faqMatch = body.match(/```json\n([\s\S]*?)\n```/);
   const faq = faqMatch ? JSON.parse(faqMatch[1]) : null;
+  if (faq)
+    for (const item of faq.mainEntity) {
+      item.name = cleanText(item.name);
+      item.acceptedAnswer.text = cleanText(item.acceptedAnswer.text);
+    }
   const text = body.replace(/```json\n[\s\S]*?\n```/g, "");
   const withoutTitle = text.replace(/^\s*#\s+.*\n+/, "");
   return { file, url: meta.url, title: meta.title, description: meta.meta_description, h1: meta.h1, date: meta.date_verification, validated: meta.statut === "prêt-à-intégrer", md: withoutTitle, faq, faqType: faq?.["@type"] };

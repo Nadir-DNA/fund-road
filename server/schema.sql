@@ -61,4 +61,11 @@ INSERT INTO offers VALUES ('pilote','Pilote offert',0,'once',50,NULL,false) ON C
 
 ALTER TABLE investors ADD COLUMN IF NOT EXISTS updated_at timestamptz;
 
-ALTER TABLE content_pages ADD COLUMN IF NOT EXISTS validated boolean NOT NULL DEFAULT false;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='content_pages' AND column_name='validated') THEN
+    ALTER TABLE content_pages ADD COLUMN validated boolean NOT NULL DEFAULT false;
+    -- Une seule fois : les ressources déjà publiées restent visibles.
+    UPDATE content_pages SET validated = true;
+  END IF;
+END $$;

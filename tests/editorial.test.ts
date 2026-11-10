@@ -2,6 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 const { editorial } = await import("../shared/editorial.generated.ts");
 
+const texte = (html: string) => html
+  .replace(/<[^>]+>/g, " ")
+  .replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+  .replace(/\s+/g, " ").trim();
+
 test("Contenus éditoriaux : métadonnées, HTML, FAQ alignée et liens internes", () => {
   const entries = Object.entries(editorial);
   assert.equal(entries.length, 6);
@@ -14,10 +19,12 @@ test("Contenus éditoriaux : métadonnées, HTML, FAQ alignée et liens internes
     assert.ok(!/\.md\)/.test(p.html), `${url} : lien Markdown non réécrit`);
     assert.ok(p.html.includes("<table>"), `${url} : tableau attendu`);
     assert.equal(p.faq?.["@type"], "FAQPage", url);
+    const visible = texte(p.html);
     for (const q of p.faq.mainEntity) {
-      assert.ok(p.html.includes(`<h3>${q.name}</h3>`), `${url} : question absente du HTML : ${q.name}`);
+      assert.ok(visible.includes(q.name), `${url} : question absente du HTML : ${q.name}`);
       assert.equal(q.acceptedAnswer["@type"], "Answer");
-      assert.ok(q.acceptedAnswer.text.trim().length > 3, `${url} : réponse vide`);
+      assert.ok(!/\]\(/.test(q.acceptedAnswer.text), `${url} : Markdown non nettoyé dans la réponse`);
+      assert.ok(visible.includes(q.acceptedAnswer.text), `${url} : réponse absente du HTML : ${q.acceptedAnswer.text.slice(0, 60)}`);
     }
   }
   assert.ok(editorial["/aides"]);
@@ -26,4 +33,11 @@ test("Contenus éditoriaux : métadonnées, HTML, FAQ alignée et liens internes
   assert.ok(editorial["/fonds/bourse-french-tech"]);
   assert.ok(editorial["/fonds/bourse-french-tech-emergence"]);
   assert.ok(editorial["/fonds/bourse-french-tech-lab"]);
+});
+
+test("Validation : toutes les pages intégrées sont validées et la migration sauve les ressources existantes", async () => {
+  const { readFileSync } = await import("node:fs");
+  for (const [url, p] of Object.entries(editorial)) assert.equal(p.validated, true, url);
+  const schema = readFileSync(new URL("../server/schema.sql", import.meta.url), "utf8");
+  assert.match(schema, /IF NOT EXISTS \(SELECT 1 FROM information_schema\.columns[\s\S]*ALTER TABLE content_pages ADD COLUMN validated[\s\S]*UPDATE content_pages SET validated = true/);
 });

@@ -17,7 +17,7 @@ export function profileTitle(name: string) {
 
 /** Description ≤ 160 caractères, terminée par « Fund Road. » et coupée entre deux mots. */
 export function profileDescription(head: string) {
-  const max = 160, full = " avec Fund Road.", short = " Fund Road.";
+  const max = 155, full = " avec Fund Road.", short = " Fund Road.";
   if ((head + full).length <= max) return head + full;
   if ((head + short).length <= max) return head + short;
   return clipWords(head, max - short.length - 1) + "…" + short;

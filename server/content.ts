@@ -76,7 +76,7 @@ export async function registerContent(app: FastifyInstance) {
         fail(400, "Ressource éditoriale requise");
       if (row.status !== "pending") fail(409, "Contenu déjà traité");
       await c.query(
-        "INSERT INTO content_pages(id,legacy_id,slug,title,excerpt,body,source_url) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(legacy_id) DO UPDATE SET slug=$3,title=$4,excerpt=$5,body=$6,source_url=$7,updated_at=now()",
+        "INSERT INTO content_pages(id,legacy_id,slug,title,excerpt,body,source_url,validated) VALUES($1,$2,$3,$4,$5,$6,$7,true) ON CONFLICT(legacy_id) DO UPDATE SET slug=$3,title=$4,excerpt=$5,body=$6,source_url=$7,validated=true,updated_at=now()",
         [randomUUID(), row.id, b.slug, b.title, b.excerpt, b.body, b.sourceUrl],
       );
       await c.query(
