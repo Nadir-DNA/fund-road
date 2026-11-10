@@ -341,6 +341,14 @@ export const pageMeta: Record<string, { title: string; description: string }> =
       title: "Subventions Bpifrance : montants, règles et dossier",
       description: "Comment fonctionnent les subventions à l'innovation de Bpifrance : montants, taux de 50 à 70 %, règle des dépenses, versement en deux tranches et pièges.",
     },
+    "/aides/pass-pi": {
+      title: "Pass PI INPI : 50 % de vos frais de propriété industrielle",
+      description: "Pass PI : l'INPI finance 50 % d'une prestation en propriété industrielle, jusqu'à 3 000 € par pass et 5 000 € par entreprise. Conditions et démarche.",
+    },
+    "/aides/pret-honneur-reseau-entreprendre": {
+      title: "Prêt d'honneur Réseau Entreprendre : 15 000 à 50 000 €",
+      description: "Prêt d'honneur Réseau Entreprendre : 15 000 à 50 000 € à taux zéro, sans garantie, avec 2 à 3 ans d'accompagnement. Conditions, parcours et dossier.",
+    },
     "/aides/pret-honneur-initiative-france": {
       title: "Prêt d'honneur Initiative France : 3 000 à 50 000 €",
       description: "Prêt d'honneur Initiative France : 3 000 à 50 000 € à taux 0, sans garantie, décidé par un comité d'agrément. Conditions, étapes et erreurs à éviter.",

@@ -4,7 +4,7 @@
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, copyFileSync } from "node:fs";
 import { join, basename } from "node:path";
 
-const SRC = process.argv[2] ?? join(process.env.HOME, "OpenBot/Shared/projets/fundroad/contenus-seo");
+const SRC = process.argv[2] ?? join(new URL("..", import.meta.url).pathname, "contenus");
 const ROOT = new URL("..", import.meta.url).pathname;
 const DEST = join(ROOT, "contenus");
 
@@ -112,7 +112,7 @@ for (const p of pages) {
 }
 
 mkdirSync(DEST, { recursive: true });
-for (const p of pages) copyFileSync(join(SRC, p.file), join(DEST, p.file));
+if (SRC !== DEST) for (const p of pages) copyFileSync(join(SRC, p.file), join(DEST, p.file));
 
 const entries = pages.map((p) => `  ${JSON.stringify(p.url)}: {\n    title: ${JSON.stringify(p.title)},\n    description: ${JSON.stringify(p.description)},\n    h1: ${JSON.stringify(p.h1)},\n    date: ${JSON.stringify(p.date)},\n    validated: ${JSON.stringify(p.validated)},\n    html: ${JSON.stringify(p.html)},\n    faq: ${JSON.stringify(p.faq)},\n  },`).join("\n");
 writeFileSync(join(ROOT, "shared/editorial.generated.ts"), `// Généré par scripts/integrer-contenus.mjs — ne pas éditer à la main.\nexport type EditorialPage = { title: string; description: string; h1: string; date: string; validated: boolean; html: string; faq: any };\nexport const editorial: Record<string, EditorialPage> = {\n${entries}\n};\n`);
