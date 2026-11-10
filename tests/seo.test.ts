@@ -120,3 +120,15 @@ test("LCP : les classes du premier écran serveur sont celles du client", async 
   assert.match(server, /<p class="lead">Les startups commencent/);
   assert.match(client, /<p className="lead">\s*Les startups commencent/);
 });
+
+test("Prix : chaque montant du JSON-LD figure dans le HTML serveur de /tarifs", async () => {
+  const { tarifsBody, software } = await import("../server/seo.ts");
+  const offers = [
+    { name: "Découverte", price: 0, unit: "", description: "Dossier même incomplet" },
+    { name: "Dossier financement", price: 149, unit: " tous les 90 jours, résiliable à tout moment", description: "Analyses IA" },
+  ];
+  const html = tarifsBody(offers);
+  const ld = software(offers);
+  for (const offer of ld.offers) assert.ok(html.includes(`${offer.price} €`), `${offer.price} € absent du HTML`);
+  assert.match(html, /Fonds, business angels et incubateurs<\/dt><dd>0 € pendant le lancement/);
+});

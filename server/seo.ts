@@ -163,6 +163,22 @@ const list = (t: string, xs?: string[]) =>
     ? `<h2>${esc(t)}</h2><ul>${xs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`
     : "";
 
+type Offer = { name: string; price: number; unit: string; description: string };
+/** Corps SSR de /tarifs : premier écran aligné sur le client, puis la liste des prix (hors écran). */
+export function tarifsBody(offers: Offer[]) {
+  return `${nav}<main class="section info-page"><h1>Un prix simple, selon votre rôle</h1>
+      <p class="lead">Les startups commencent gratuitement et paient quand le dossier compte. Les financeurs et incubateurs sont gratuits pendant le lancement.</p>
+      <h3>Découverte</h3><ul><li>Dossier de financement, même incomplet</li><li>Dépôt de vos pièces</li><li>Annuaire et envoi aux financeurs</li><li>Une analyse IA offerte chaque mois</li></ul>
+      <h3>Dossier financement</h3><ul><li>Analyses IA de vos documents</li><li>Critères des aides et des financeurs</li><li>Exports PDF et Word</li><li>Partages révocables et suivi des étapes</li></ul>
+      <h3>Fonds, business angels, incubateurs</h3><ul><li>Suivi de vos startups et de leur complétude</li><li>Vos critères, questions et pièces demandées</li><li>Adéquation calculée à chaque dossier reçu</li><li>Notes privées d’équipe</li></ul>
+      <dl class="tarifs-offres">
+        <dt>Découverte</dt><dd>0 €</dd>
+        ${offers.filter((o) => o.name !== "Découverte").map((o) => `<dt>${esc(o.name)}</dt><dd>${o.price} €${esc(o.unit)}</dd>`).join("")}
+        <dt>Fonds, business angels et incubateurs</dt><dd>0 € pendant le lancement</dd>
+      </dl>
+      <p>Aucune commission sur les levées ni sur les subventions obtenues. TVA non applicable, article 293 B du CGI.</p></main>`;
+}
+
 // Guide d'un programme public (critères vérifiés et sourcés) pour la page du financeur du même nom
 function programGuide(prog: Program, name: string) {
   const conditions = prog.criteria.filter((c) => c.blocking).map((c) => c.label);
@@ -327,12 +343,7 @@ async function staticPage(path: string): Promise<Page | null> {
     return {
       ...base,
       ld: [software(offers), crumbs([["Tarifs", path]])],
-      body: `${nav}<main class="section info-page"><h1>Un prix simple, selon votre rôle</h1>
-      <p class="lead">Les startups commencent gratuitement et paient quand le dossier compte. Les financeurs et incubateurs sont gratuits pendant le lancement.</p>
-      <h3>Découverte</h3><ul><li>Dossier de financement, même incomplet</li><li>Dépôt de vos pièces</li><li>Annuaire et envoi aux financeurs</li><li>Une analyse IA offerte chaque mois</li></ul>
-      <h3>Dossier financement</h3><ul><li>Analyses IA de vos documents</li><li>Critères des aides et des financeurs</li><li>Exports PDF et Word</li><li>Partages révocables et suivi des étapes</li></ul>
-      <h3>Fonds, business angels, incubateurs</h3><ul><li>Suivi de vos startups et de leur complétude</li><li>Vos critères, questions et pièces demandées</li><li>Adéquation calculée à chaque dossier reçu</li><li>Notes privées d’équipe</li></ul>
-      <p>Aucune commission sur les levées ni sur les subventions obtenues. TVA non applicable, article 293 B du CGI.</p></main>`,
+      body: tarifsBody(offers),
     };
   }
   if (path === "/annuaire") {
@@ -432,7 +443,7 @@ async function priced() {
       : []),
   ];
 }
-const software = (offers: Awaited<ReturnType<typeof priced>>) => ({
+export const software = (offers: Awaited<ReturnType<typeof priced>>) => ({
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   name: "Fund Road",
