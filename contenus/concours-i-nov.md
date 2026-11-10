@@ -87,7 +87,7 @@ Le concours fonctionne par **vagues successives**, chacune avec sa date de clôt
 |---|---|---|
 | Public | entreprise en création ou de moins de 2 ans | PME existante |
 | Coût du projet | pas de plancher publié | 1 à 5 M€ |
-| Aide maximale | 600 000 €, 60 % des dépenses éligibles | 45 % (PE) ou 35 % (ME) du coût total |
+| Aide maximale | 600 000 € (édition 2022), 60 % des dépenses éligibles | 45 % (PE) ou 35 % (ME) du coût total |
 | Forme | subvention | 60 % subvention, 40 % avance récupérable |
 | Objet | créer l'entreprise et finaliser le produit | financer un projet de R&D d'envergure |
 
