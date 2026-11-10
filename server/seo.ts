@@ -157,7 +157,7 @@ export function renderPage(index: string, p: Page) {
     .replace("</head>", head + "\n  </head>")
     .replace('<div id="root"></div>', `<div id="root">${p.body}</div>`);
 }
-const nav = `<nav><a href="/">Fund Road</a> · <a href="/entrepreneurs">Entrepreneurs</a> · <a href="/financeurs">Financeurs</a> · <a href="/annuaire">Annuaire des financeurs</a> · <a href="/tarifs">Tarifs</a> · <a href="/referentiel">Référentiel</a></nav>`;
+const nav = `<nav><a href="/">Fund Road</a> · <a href="/entrepreneurs">Entrepreneurs</a> · <a href="/financeurs">Financeurs</a> · <a href="/referentiel">Le référentiel</a> · <a href="/annuaire">Annuaire</a> · <a href="/tarifs">Tarifs</a></nav>`;
 const list = (t: string, xs?: string[]) =>
   xs?.length
     ? `<h2>${esc(t)}</h2><ul>${xs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`
@@ -327,10 +327,8 @@ async function staticPage(path: string): Promise<Page | null> {
     return {
       ...base,
       ld: [software(offers), crumbs([["Tarifs", path]])],
-      body: `<main>${nav}<h1>Un prix simple, selon votre rôle.</h1>
+      body: `${nav}<main class="section info-page"><h1>Un prix simple, selon votre rôle</h1>
       <p class="lead">Les startups commencent gratuitement et paient quand le dossier compte. Les financeurs et incubateurs sont gratuits pendant le lancement.</p>
-      <ul>${offers.map((o) => `<li>${esc(o.name)} : ${o.price} €${o.unit}. ${esc(o.description)}</li>`).join("")}
-      <li>Fonds, business angels et incubateurs : gratuit pendant le lancement.</li></ul>
       <h3>Découverte</h3><ul><li>Dossier de financement, même incomplet</li><li>Dépôt de vos pièces</li><li>Annuaire et envoi aux financeurs</li><li>Une analyse IA offerte chaque mois</li></ul>
       <h3>Dossier financement</h3><ul><li>Analyses IA de vos documents</li><li>Critères des aides et des financeurs</li><li>Exports PDF et Word</li><li>Partages révocables et suivi des étapes</li></ul>
       <h3>Fonds, business angels, incubateurs</h3><ul><li>Suivi de vos startups et de leur complétude</li><li>Vos critères, questions et pièces demandées</li><li>Adéquation calculée à chaque dossier reçu</li><li>Notes privées d’équipe</li></ul>
@@ -374,12 +372,12 @@ async function staticPage(path: string): Promise<Page | null> {
     return {
       ...base,
       ld: [faqLd(f.faq), crumbs([["Financeurs", path]])],
-      body: `<main>${nav}<h1>${esc(f.title)}</h1><p>${esc(f.intro)}</p>
-      ${f.steps.map((x, i) => `<h2>${i + 1}. ${esc(x.t)}</h2><p>${esc(x.s)}</p><ul>${x.pts.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>`).join("")}
+      body: `${nav}<main class="home"><section class="hero"><div class="hero-inner"><div class="hero-copy"><h1>${esc(f.title)}</h1><div><p>${esc(f.intro)}</p><div class="hero-actions"><a class="button accent" href="/inscription?profil=financeur">Créer mon espace financeur</a> <a class="button ghost" href="/annuaire">Voir l’annuaire</a></div></div></div><ul class="hero-points">${f.points.map((p) => `<li>${esc(p)}</li>`).join("")}</ul></div></section>
+      ${f.steps.map((x) => `<h3>${esc(x.t)}</h3><p>${esc(x.s)}</p><ul>${x.pts.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>`).join("")}
       ${f.features.map(([t, d]) => `<h2>${esc(t)}</h2><p>${esc(d)}</p>`).join("")}
       <h2>Questions fréquentes</h2>
       ${f.faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}
-      <p><a href="/inscription">Créer mon espace financeur</a> · <a href="/annuaire">Voir l’annuaire</a></p></main>`,
+      <p><a href="/inscription">Créer mon espace financeur</a></p><p><a href="/annuaire">Voir l’annuaire</a></p></main>`,
     };
   }
   const key = path.slice(1);

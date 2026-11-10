@@ -108,3 +108,15 @@ test("SEO : les descriptions de i-Lab et Pass PI sont des phrases complètes, sa
     assert.match(html, /href="\/aides"/, `${name} : lien /aides absent`);
   }
 });
+
+test("LCP : les classes du premier écran serveur sont celles du client", async () => {
+  const { readFileSync } = await import("node:fs");
+  const server = readFileSync(new URL("../server/seo.ts", import.meta.url), "utf8");
+  const client = readFileSync(new URL("../app/main.tsx", import.meta.url), "utf8");
+  assert.match(server, /<main class="section info-page"><h1>Un prix simple/);
+  assert.match(client, /<main className="section info-page">\s*<h1>Un prix simple/);
+  assert.match(server, /<main class="home"><section class="hero">/);
+  assert.match(client, /<main ref=\{ref\} className="home">\s*<section className="hero">/);
+  assert.match(server, /<p class="lead">Les startups commencent/);
+  assert.match(client, /<p className="lead">\s*Les startups commencent/);
+});
