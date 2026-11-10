@@ -536,11 +536,24 @@ export function registerSeo(app: FastifyInstance, index: string) {
         '<div id="root"></div>',
         `<div id="root"><main>${nav}<h1>Page introuvable</h1><p>Cette adresse n’existe pas ou a changé.</p><p><a href="/">Accueil</a> · <a href="/annuaire">Annuaire des financeurs</a> · <a href="/aides">Aides publiques</a></p></main></div>`,
       );
+    const privateTitles: [RegExp, string][] = [
+      [/^\/app(\/|$)/, "Espace | Fund Road"],
+      [/^\/connexion/, "Connexion | Fund Road"],
+      [/^\/inscription/, "Créer un compte | Fund Road"],
+      [/^\/mot-de-passe/, "Mot de passe | Fund Road"],
+      [/^\/double-auth/, "Vérification en deux étapes | Fund Road"],
+      [/^\/partages/, "Partage de dossier | Fund Road"],
+      [/^\/invitation/, "Invitation | Fund Road"],
+      [/^\/verification/, "Vérification | Fund Road"],
+    ];
+    const privateTitle = privateTitles.find(([re]) => re.test(path))?.[1];
     const page = privatePaths.test(path)
-      ? index.replace(
-          "</head>",
-          '<meta name="robots" content="noindex" />\n  </head>',
-        )
+      ? index
+          .replace(/<title>[\s\S]*?<\/title>/, `<title>${privateTitle ?? "Fund Road"}</title>`)
+          .replace(
+            "</head>",
+            '<meta name="robots" content="noindex" />\n  </head>',
+          )
       : spaPaths.test(path) ? index : notFound;
     return reply.code(spaPaths.test(path) ? 200 : 404).send(page);
   });
