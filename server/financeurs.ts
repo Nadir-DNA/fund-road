@@ -98,13 +98,13 @@ export async function enregistrer(f: Fiche, verifiee: boolean) {
   ];
   if (existant) {
     await db.query(
-      "UPDATE investors SET name=$2,kind=$3,description=$4,sectors=$5,stage=$6,geography=$7,ticket=$8,source_url=$9,application_url=$10,criteria=$11,website=$12,active=$13,verified_at=CASE WHEN $13 THEN now() ELSE verified_at END,slug=COALESCE(slug,$14) WHERE id=$1",
+      "UPDATE investors SET name=$2,kind=$3,description=$4,sectors=$5,stage=$6,geography=$7,ticket=$8,source_url=$9,application_url=$10,criteria=$11,website=$12,active=$13,verified_at=CASE WHEN $13 THEN now() ELSE verified_at END,updated_at=now(),slug=COALESCE(slug,$14) WHERE id=$1",
       [existant.id, ...valeurs, await uniqueSlug(f.nom)],
     );
     return "mis à jour";
   }
   await db.query(
-    "INSERT INTO investors(id,name,kind,description,sectors,stage,geography,ticket,source_url,application_url,criteria,website,active,verified_at,slug) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,CASE WHEN $13 THEN now() END,$14)",
+    "INSERT INTO investors(id,name,kind,description,sectors,stage,geography,ticket,source_url,application_url,criteria,website,active,verified_at,updated_at,slug) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,CASE WHEN $13 THEN now() END,now(),$14)",
     [randomUUID(), ...valeurs, await uniqueSlug(f.nom)],
   );
   return "créé";

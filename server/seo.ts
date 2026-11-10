@@ -110,6 +110,7 @@ type Page = {
   ld?: object[];
   image?: string;
   ogType?: string;
+  robots?: string;
 };
 const abs = (path: string) => config.baseURL + path;
 const crumbs = (items: [string, string][]) => ({
@@ -137,7 +138,7 @@ export function renderPage(index: string, p: Page) {
   const url = abs(p.path);
   const image = p.image || abs("/brand/og.jpg");
   const head = `<title>${esc(p.title)}</title>
-    <meta name="description" content="${esc(p.description)}" />
+    <meta name="description" content="${esc(p.description)}" />${p.robots ? `\n    <meta name="robots" content="${esc(p.robots)}" />` : ""}
     <link rel="canonical" href="${esc(url)}" />
     <meta property="og:site_name" content="Fund Road" />
     <meta property="og:locale" content="fr_FR" />
@@ -181,6 +182,42 @@ function programGuide(prog: Program, name: string) {
   return { body, faq };
 }
 
+/** Coupe au mot sans jamais couper la marque : la queue « … Fund Road. » est ajoutée après. */
+function clipWords(text: string, max: number) {
+  if (text.length <= max) return text;
+  return text.slice(0, max).replace(/\s+\S*$/, "").replace(/[\s,;:.–-]+$/, "");
+}
+
+/** Titre de fiche ≤ 60 caractères, marque conservée quand elle tient. */
+export function profileTitle(name: string) {
+  const options = [
+    `${name} : critères, ticket et candidature | Fund Road`,
+    `${name} : critères et ticket | Fund Road`,
+    `${name} | Fund Road`,
+    name,
+  ];
+  return options.find((x) => x.length <= 60) ?? clipWords(name, 57) + "…";
+}
+
+/** Description ≤ 160 caractères, terminée par « Fund Road. » et coupée entre deux mots. */
+export function profileDescription(head: string) {
+  const max = 160, full = " avec Fund Road.", short = " Fund Road.";
+  if ((head + full).length <= max) return head + full;
+  if ((head + short).length <= max) return head + short;
+  return clipWords(head, max - short.length - 1) + "…" + short;
+}
+
+/** FAQ factuelle d'une fiche : uniquement des données déjà publiées (ticket, stade, zone), jamais de contenu inventé. */
+export function profileFaq(name: string, r: { ticket?: string; stage?: string; geography?: string }) {
+  const q: [string, string][] = [];
+  if (r.ticket) q.push([`Quel ticket propose ${name} ?`, `${name} indique un ticket de ${r.ticket}.`]);
+  if (r.stage) q.push([`À quel stade intervient ${name} ?`, `${name} intervient aux stades : ${r.stage}.`]);
+  if (r.geography) q.push([`Dans quelle zone ${name} intervient-il ?`, `${name} couvre : ${r.geography}.`]);
+  if (q.length < 2) return [];
+  q.push([`Comment candidater auprès de ${name} ?`, `Préparez votre dossier sur Fund Road : vos documents sont comparés aux critères et aux pièces demandées par ${name}, puis vous envoyez par son canal officiel.`]);
+  return q;
+}
+
 export function renderProfile(index: string, p: any) {
   const name = p.theme?.name || p.name;
   const prog = programs.find((x) => slugify(x.name) === p.slug || x.id.replace(/_/g, "-") === p.slug);
@@ -189,7 +226,7 @@ export function renderProfile(index: string, p: any) {
   const r = resume(c);
   const kind = kinds[p.kind] || p.kind || "Financeur";
   const path = `/fonds/${p.slug}`;
-  const title = `${name} : critères, ticket et candidature | Fund Road`;
+  const title = profileTitle(name);
   const facts = [
     ["Ticket", r.ticket],
     ["Stade", r.stage],
@@ -197,15 +234,15 @@ export function renderProfile(index: string, p: any) {
     ["Secteurs", r.sectors],
   ].filter(([, v]) => v);
   const extra = details(p.kind, c).map((d) => [d.champ.label, d.texte]);
-  const description = (
-    (prog ? `${name} (${prog.operator}) : ${prog.amount}. Conditions, pièces et candidature avec Fund Road.` : "") ||
-    `${name} (${kind.toLowerCase()}) : ` +
-    (facts.map(([k, v]) => `${k.toLowerCase()} ${v}`).join(", ") ||
-      "critères d’investissement") +
-    ". Pièces demandées et comment candidater avec Fund Road."
-  )
-    // Google tronque vers 160 caractères : on coupe sur un mot
-    .replace(/^(.{0,157})\s.*$/s, "$1…");
+  const description = profileDescription(
+    prog
+      ? `${name} (${prog.operator}) : ${prog.amount}. Conditions, pièces et candidature`
+      : `${name} (${kind.toLowerCase()}) : ` +
+          (facts.map(([k, v]) => `${k.toLowerCase()} ${v}`).join(", ") ||
+            "critères d’investissement") +
+          ". Pièces demandées et comment candidater",
+  );
+  const faq = guide ? guide.faq : profileFaq(name, r);
   const logo = p.logo ? abs(`/api/${p.claimed ? "organizations" : "investors"}/${p.id}/logo`) : "";
   return renderPage(index, {
     path,
@@ -231,7 +268,7 @@ export function renderProfile(index: string, p: any) {
         ["Annuaire des financeurs", "/annuaire"],
         [name, path],
       ]),
-      ...(guide ? [faqLd(guide.faq)] : []),
+      ...(faq.length ? [faqLd(faq)] : []),
     ],
     body: `<main>${nav}
     <h1>${esc(name)}</h1><p>${esc(kind)}</p>
@@ -245,7 +282,7 @@ export function renderProfile(index: string, p: any) {
       Object.entries<any>(c.sources || {}).map(([k, v]) => `${libelleCritere(p.kind, k)} : « ${v.citation} » (${v.url})`),
     )}
     ${list(`Questions de ${name}`, c.questions)}
-    ${guide?.body ?? ""}
+    ${guide?.body ?? (faq.length ? `<h2>Questions fréquentes sur ${esc(name)}</h2>${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}` : "")}
     <h2>Comment candidater auprès de ${esc(name)}</h2>
     <p>Préparez votre dossier de financement sur Fund Road : vos documents sont structurés selon les critères de ${esc(name)} et vous voyez ce qui manque avant l’envoi.</p></main>`,
   });
@@ -262,6 +299,30 @@ const faqLd = (items: [string, string][]) => ({
 });
 // Pages publiques fixes : textes partagés avec l'interface (shared/content.ts)
 async function staticPage(path: string): Promise<Page | null> {
+  if (path === "/aides") {
+    const row = (
+      await db.query("SELECT title, excerpt, body FROM content_pages WHERE slug='aides' AND published_at IS NOT NULL LIMIT 1")
+    ).rows[0];
+    if (row)
+      return {
+        path,
+        title: `${row.title} | Fund Road`,
+        description: clipWords(String(row.excerpt || row.title), 155) + " | Fund Road",
+        ogType: "article",
+        ld: [
+          { "@context": "https://schema.org", "@type": "Article", headline: row.title, description: row.excerpt, inLanguage: "fr-FR", publisher: organization, mainEntityOfPage: abs(path) },
+          crumbs([["Aides publiques", path]]),
+        ],
+        body: `<main>${nav}<article><h1>${esc(row.title)}</h1><p>${esc(row.excerpt)}</p>${String(row.body).split(/\n{2,}/).map((x) => `<p>${esc(x.replace(/^#+\s*/, ""))}</p>`).join("")}</article></main>`,
+      };
+    return {
+      path,
+      title: "Aides publiques : le hub | Fund Road",
+      description: "Le hub des aides publiques de Fund Road est en préparation : bourses, subventions et prêts d’honneur vérifiés, conditions et calendrier.",
+      robots: "noindex,follow",
+      body: `<main>${nav}<h1>Aides publiques</h1><p>Le hub des aides publiques est en préparation : les fiches vérifiées arrivent après validation.</p><p><a href="/annuaire">Consulter l’annuaire des financeurs</a> · <a href="/">Accueil</a></p></main>`,
+    };
+  }
   const meta = pageMeta[path];
   if (!meta) return null;
   const base = { path, ...meta };
@@ -431,6 +492,10 @@ export function registerSeo(app: FastifyInstance, index: string) {
     app.get(path, async (_req, reply) =>
       html(reply).send(renderPage(index, (await staticPage(path))!)),
     );
+  // Hub /aides : route prête avant la publication du contenu validé (noindex tant que vide)
+  app.get("/aides", async (_req, reply) =>
+    html(reply).send(renderPage(index, (await staticPage("/aides"))!)),
+  );
   app.get("/ressources/:slug", async (req: any, reply) => {
     const r = (
       await db.query(
@@ -505,9 +570,12 @@ export function registerSeo(app: FastifyInstance, index: string) {
     const verifiees = new Map<string, string>(
       (
         await db.query(
-          "SELECT slug, verified_at FROM investors WHERE active=true AND slug IS NOT NULL AND verified_at IS NOT NULL",
+          `SELECT slug, COALESCE((to_jsonb(i)->>'updated_at')::timestamptz, i.verified_at) AS modified
+             FROM investors i
+            WHERE active=true AND slug IS NOT NULL
+              AND COALESCE((to_jsonb(i)->>'updated_at')::timestamptz, i.verified_at) IS NOT NULL`,
         )
-      ).rows.map((r) => ["/fonds/" + r.slug, new Date(r.verified_at).toISOString().slice(0, 10)]),
+      ).rows.map((r) => ["/fonds/" + r.slug, new Date(r.modified).toISOString().slice(0, 10)]),
     );
     reply.type("application/xml");
     return `<?xml version="1.0" encoding="UTF-8"?>

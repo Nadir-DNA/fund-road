@@ -115,7 +115,7 @@ export async function registerContent(app: FastifyInstance) {
         fail(400, "Financeur requis");
       if (row.status !== "pending") fail(409, "Contenu déjà traité");
       await c.query(
-        `INSERT INTO investors(id,name,kind,description,sectors,stage,geography,ticket,source_url,application_url,verified_at,active,slug) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,now(),true,$11) ON CONFLICT(id) DO UPDATE SET name=$2,kind=$3,description=$4,sectors=$5,stage=$6,geography=$7,ticket=$8,source_url=$9,application_url=$10,verified_at=now(),active=true,slug=COALESCE(investors.slug,$11)`,
+        `INSERT INTO investors(id,name,kind,description,sectors,stage,geography,ticket,source_url,application_url,verified_at,updated_at,active,slug) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,now(),now(),true,$11) ON CONFLICT(id) DO UPDATE SET name=$2,kind=$3,description=$4,sectors=$5,stage=$6,geography=$7,ticket=$8,source_url=$9,application_url=$10,verified_at=now(),updated_at=now(),active=true,slug=COALESCE(investors.slug,$11)`,
         [
           row.id,
           b.name,

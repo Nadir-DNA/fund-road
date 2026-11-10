@@ -58,3 +58,5 @@ ALTER TABLE investors ADD COLUMN IF NOT EXISTS website text;
 ALTER TABLE investors ADD COLUMN IF NOT EXISTS logo jsonb;
 -- Offre gratuite attribuée à la main (pilotes, équipe) : pas de paiement Stripe, quota d'analyses élevé
 INSERT INTO offers VALUES ('pilote','Pilote offert',0,'once',50,NULL,false) ON CONFLICT DO NOTHING;
+
+ALTER TABLE investors ADD COLUMN IF NOT EXISTS updated_at timestamptz;
