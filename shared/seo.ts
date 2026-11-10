@@ -38,3 +38,7 @@ export const slugify = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 60) || "financeur";
+
+/** Les fiches d'aides (subventions, programmes publics) portent le lien vers le hub /aides. */
+export const AID_KINDS = new Set(["grant"]);
+export const showAidesLink = (kind?: string, hasProgram = false) => hasProgram || (!!kind && AID_KINDS.has(kind));

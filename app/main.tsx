@@ -20,7 +20,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { editorial } from "../shared/editorial.generated.ts";
-import { profileTitle, slugify } from "../shared/seo.ts";
+import { profileTitle, slugify, showAidesLink } from "../shared/seo.ts";
 import { programs } from "../shared/programs.ts";
 import { profileFaq, programFaq } from "../shared/faq.ts";
 import {
@@ -4446,6 +4446,12 @@ function Portal() {
                 </aside>
               )}
             </div>
+            {showAidesLink(o.kind, !!prog) && (
+              <p className="portal-aides">
+                <Link to="/aides">Guide complet des aides publiques</Link> ·{" "}
+                <Link to="/entrepreneurs">Préparer son dossier</Link>
+              </p>
+            )}
             {faq.length > 0 && (
               <section className="panel portal-faq">
                 <h2>Questions fréquentes sur {name}</h2>

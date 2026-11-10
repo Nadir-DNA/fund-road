@@ -4,6 +4,7 @@ process.env.DATABASE_URL ||= "postgres://unused";
 process.env.BETTER_AUTH_SECRET ||= "test-only-unused-secret-32-characters";
 const { renderProfile, slugify, profileTitle, profileDescription } = await import("../server/seo.ts");
 const { profileFaq } = await import("../shared/faq.ts");
+const { showAidesLink } = await import("../shared/seo.ts");
 const index =
   '<html><head><meta name="description" content="générique" /><title>Fund Road</title></head><body><div id="root"></div></body></html>';
 test("SEO : page de fonds propre au financeur et échappée", () => {
@@ -96,8 +97,10 @@ test("SEO : une fiche sans guide reçoit une FAQ factuelle et son JSON-LD", () =
 });
 
 test("SEO : les descriptions de i-Lab et Pass PI sont des phrases complètes, sans coupure", () => {
+  assert.equal(showAidesLink("grant"), true);
+  assert.equal(showAidesLink("fund"), false);
   for (const name of ["Concours i-Lab", "Pass PI"]) {
-    const html = renderProfile(index, { id: "x", slug: name === "Pass PI" ? "pass-pi" : "concours-i-lab", kind: "public", name, criteria: { ticket: "jusqu’à 3 k€", stage: "Prototype", geography: "France entière" } });
+    const html = renderProfile(index, { id: "x", slug: name === "Pass PI" ? "pass-pi" : "concours-i-lab", kind: "grant", name, criteria: { ticket: "jusqu’à 3 k€", stage: "Prototype", geography: "France entière" } });
     const desc = html.match(/name="description" content="([^"]*)"/)![1].replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"');
     assert.ok(desc.length <= 155, `${name} : ${desc.length}`);
     assert.ok(!desc.includes("…"), `${name} : coupure`);

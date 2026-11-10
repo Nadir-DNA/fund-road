@@ -3,7 +3,7 @@ import { db } from "./db.ts";
 import { config } from "./config.ts";
 import { details, libelleCritere, resume } from "../shared/criteria.ts";
 import { editorial } from "../shared/editorial.generated.ts";
-import { profileTitle, profileDescription, slugify } from "../shared/seo.ts";
+import { profileTitle, profileDescription, slugify, showAidesLink } from "../shared/seo.ts";
 import { programFaq, profileFaq } from "../shared/faq.ts";
 
 export { slugify };
@@ -242,7 +242,7 @@ export function renderProfile(index: string, p: any) {
     )}
     ${list(`Questions de ${name}`, c.questions)}
     ${guide?.body ?? (faq.length ? `<h2>Questions fréquentes sur ${esc(name)}</h2>${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}` : "")}
-    ${p.kind === "public" && !guide ? `<p><a href="/aides">Guide complet des aides publiques</a> · <a href="/entrepreneurs">Préparer son dossier</a></p>` : ""}
+    ${!guide && showAidesLink(p.kind, !!prog) ? `<p><a href="/aides">Guide complet des aides publiques</a> · <a href="/entrepreneurs">Préparer son dossier</a></p>` : ""}
     ${faq.some(([q]) => /candidater/i.test(q)) ? "" : `<h2>Comment candidater auprès de ${esc(name)}</h2>
     <p>Préparez votre dossier de financement sur Fund Road : vos documents sont structurés selon les critères de ${esc(name)} et vous voyez ce qui manque avant l’envoi.</p>`}</main>`,
   });
