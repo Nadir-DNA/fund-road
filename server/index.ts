@@ -1323,6 +1323,11 @@ try {
     wildcard: false,
     // l'accueil est servi par registerSeo, avec ses balises
     index: false,
+    setHeaders(reply, filePath) {
+      // noms hachés par Vite : cache long et immuable
+      if (filePath.includes(`${path.sep}assets${path.sep}`))
+        reply.header("Cache-Control", "public, max-age=31536000, immutable");
+    },
   });
   registerSeo(app, await readFile(path.resolve("dist/index.html"), "utf8"));
 } catch {}

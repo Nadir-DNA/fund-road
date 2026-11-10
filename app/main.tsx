@@ -294,9 +294,11 @@ function useReveal(enabled = true) {
 function PublicLayout({
   children,
   gsapPage = false,
+  footer = true,
 }: {
   children: ReactNode;
   gsapPage?: boolean;
+  footer?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
@@ -343,7 +345,7 @@ function PublicLayout({
       </header>
       <div id="contenu" tabIndex={-1} />
       {children}
-      <footer>
+      {footer && <footer>
         <div>
           <div>
             <Logo />
@@ -381,7 +383,7 @@ function PublicLayout({
             </button>
           </small>
         </div>
-      </footer>
+      </footer>}
     </>
   );
 }
@@ -875,6 +877,19 @@ function Landing() {
               </details>
             ))}
           </div>
+        </section>
+        <section className="section home-aides">
+          <div className="section-head">
+            <span className="kicker">Aides publiques</span>
+            <h2>Quel dispositif pour quel stade ?</h2>
+          </div>
+          <ul className="home-aides-list">
+            <li><Link to="/aides">Toutes les aides publiques</Link></li>
+            <li><Link to="/fonds/bourse-french-tech">Bourse French Tech</Link></li>
+            <li><Link to="/fonds/eic-accelerator">EIC Accelerator</Link></li>
+            <li><Link to="/fonds/concours-i-lab">Concours i-Lab</Link></li>
+            <li><Link to="/aides/subventions-bpifrance">Subventions Bpifrance</Link></li>
+          </ul>
         </section>
         <section className="cta-band">
           <div>
@@ -4264,7 +4279,7 @@ function Portal() {
       </PublicLayout>
     );
   return (
-    <PublicLayout>
+    <PublicLayout footer={!!o || !!error}>
       <main className="portal" style={o ? orgStyle(o) : {}}>
         <ErrorBox text={error} />
         {o && (

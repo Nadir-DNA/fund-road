@@ -308,6 +308,14 @@ async function staticPage(path: string): Promise<Page | null> {
       <p>Neuf rubriques : entreprise, équipe, problème, marché, modèle économique, traction, finances, besoin de financement, utilisation des fonds. Fund Road confronte aussi le dossier aux critères publiés de programmes publics comme la Bourse French Tech, i-Lab ou le Pass PI de l’INPI : un critère n’est marqué rempli que s’il est cité dans vos documents, sinon il reste à vérifier.</p>
       <h2>Questions fréquentes</h2>
       ${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}
+      <h2>Aides et programmes</h2>
+      <ul>
+        <li><a href="/aides">Toutes les aides publiques</a></li>
+        <li><a href="/fonds/bourse-french-tech">Bourse French Tech</a></li>
+        <li><a href="/fonds/eic-accelerator">EIC Accelerator</a></li>
+        <li><a href="/fonds/concours-i-lab">Concours i-Lab</a></li>
+        <li><a href="/aides/subventions-bpifrance">Subventions Bpifrance</a></li>
+      </ul>
       <p><a href="/annuaire">Consulter l’annuaire des fonds, business angels et incubateurs</a> · <a href="/tarifs">Voir les tarifs</a></p></main>`,
     };
   }
@@ -317,8 +325,12 @@ async function staticPage(path: string): Promise<Page | null> {
       ...base,
       ld: [software(offers), crumbs([["Tarifs", path]])],
       body: `<main>${nav}<h1>Un prix simple, selon votre rôle.</h1>
+      <p class="lead">Les startups commencent gratuitement et paient quand le dossier compte. Les financeurs et incubateurs sont gratuits pendant le lancement.</p>
       <ul>${offers.map((o) => `<li>${esc(o.name)} : ${o.price} €${o.unit}. ${esc(o.description)}</li>`).join("")}
       <li>Fonds, business angels et incubateurs : gratuit pendant le lancement.</li></ul>
+      <h3>Découverte</h3><ul><li>Dossier de financement, même incomplet</li><li>Dépôt de vos pièces</li><li>Annuaire et envoi aux financeurs</li><li>Une analyse IA offerte chaque mois</li></ul>
+      <h3>Dossier financement</h3><ul><li>Analyses IA de vos documents</li><li>Critères des aides et des financeurs</li><li>Exports PDF et Word</li><li>Partages révocables et suivi des étapes</li></ul>
+      <h3>Fonds, business angels, incubateurs</h3><ul><li>Suivi de vos startups et de leur complétude</li><li>Vos critères, questions et pièces demandées</li><li>Adéquation calculée à chaque dossier reçu</li><li>Notes privées d’équipe</li></ul>
       <p>Aucune commission sur les levées ni sur les subventions obtenues. TVA non applicable, article 293 B du CGI.</p></main>`,
     };
   }
@@ -370,21 +382,23 @@ async function staticPage(path: string): Promise<Page | null> {
   const key = path.slice(1);
   const copy = publicCopy[key];
   if (!copy) return null;
-  const extra =
+  const resourceRows =
     key === "ressources"
       ? (
           await db.query(
-            "SELECT slug,title,excerpt FROM content_pages ORDER BY published_at DESC",
+            "SELECT slug,title,excerpt FROM content_pages WHERE validated=true ORDER BY published_at DESC",
           )
         ).rows
-          .map(
-            (r) =>
-              `<li><a href="/ressources/${esc(r.slug)}">${esc(r.title)}</a> · ${esc(r.excerpt)}</li>`,
-          )
-          .join("")
-      : "";
+      : [];
+  const extra = resourceRows
+    .map(
+      (r: any) =>
+        `<li><a href="/ressources/${esc(r.slug)}">${esc(r.title)}</a> · ${esc(r.excerpt)}</li>`,
+    )
+    .join("");
   return {
     ...base,
+    ...(key === "ressources" && resourceRows.length === 0 ? { robots: "noindex,follow" } : {}),
     ld: [crumbs([[copy.title, path]])],
     body: `<main>${nav}<h1>${esc(copy.title)}</h1><p>${esc(copy.intro)}</p>
     ${copy.items.map(([t, d]) => `<h2>${esc(t)}</h2><p>${esc(d)}</p>`).join("")}
@@ -512,12 +526,15 @@ export function registerSeo(app: FastifyInstance, index: string) {
     return reply.code(spaPaths.test(path) ? 200 : 404).send(page);
   });
   app.get("/sitemap.xml", async (_req, reply) => {
+    const ressources = (
+      await db.query("SELECT slug FROM content_pages WHERE validated=true ORDER BY slug")
+    ).rows.map((r) => "/ressources/" + r.slug);
     const pages = [
-      ...Object.keys(pageMeta).filter((p) => !editorial[p] || editorial[p].validated),
+      ...Object.keys(pageMeta).filter(
+        (p) => (!editorial[p] || editorial[p].validated) && (p !== "/ressources" || ressources.length > 0),
+      ),
       ...(await listProfiles()).map((p) => "/fonds/" + p.slug),
-      ...(
-        await db.query("SELECT slug FROM content_pages WHERE validated=true ORDER BY slug")
-      ).rows.map((r) => "/ressources/" + r.slug),
+      ...ressources,
     ];
     // date de dernière vérification des fiches d'annuaire, pour que Google repasse sur les fiches mises à jour
     const verifiees = new Map<string, string>(
@@ -530,10 +547,14 @@ export function registerSeo(app: FastifyInstance, index: string) {
         )
       ).rows.map((r) => ["/fonds/" + r.slug, new Date(r.modified).toISOString().slice(0, 10)]),
     );
+    const editorialDates = new Map(Object.entries(editorial).map(([p, e]) => [p, e.date]));
     reply.type("application/xml");
     return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${pages.map((p) => `  <url><loc>${esc(abs(p))}</loc>${verifiees.has(p) ? `<lastmod>${verifiees.get(p)}</lastmod>` : ""}</url>`).join("\n")}
+${pages.map((p) => {
+  const last = editorialDates.get(p) ?? verifiees.get(p);
+  return `  <url><loc>${esc(abs(p))}</loc>${last ? `<lastmod>${last}</lastmod>` : ""}</url>`;
+}).join("\n")}
 </urlset>`;
   });
   app.get("/robots.txt", async (_req, reply) => {
