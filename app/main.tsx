@@ -3278,6 +3278,10 @@ function OrgLogo({ o, size = "" }: { o: any; size?: string }) {
       className={"org-logo " + size}
       src={`/api/${o.claimed === false ? "investors" : "organizations"}/${o.id}/logo?v=${o.logo.v}`}
       alt={"Logo " + name}
+      width={size === "lg" ? 96 : 56}
+      height={size === "lg" ? 96 : 56}
+      loading={size === "lg" ? "eager" : "lazy"}
+      decoding="async"
       onError={() => setCasse(true)}
     />
   ) : (

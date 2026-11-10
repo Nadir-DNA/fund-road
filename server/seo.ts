@@ -147,6 +147,9 @@ export function renderPage(index: string, p: Page) {
     <meta property="og:url" content="${esc(url)}" />
     <meta property="og:image" content="${esc(image)}" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${esc(p.title)}" />
+    <meta name="twitter:description" content="${esc(p.description)}" />
+    <meta name="twitter:image" content="${esc(image)}" />
     ${p.ld?.length ? `<script type="application/ld+json">${JSON.stringify(p.ld).replace(/</g, "\\u003c")}</script>` : ""}`;
   return index
     .replace(/<title>[\s\S]*?<\/title>/, "")
@@ -457,6 +460,16 @@ const spaPaths =
 export function registerSeo(app: FastifyInstance, index: string) {
   const html = (reply: any) =>
     reply.type("text/html; charset=utf-8").header("Cache-Control", "no-cache");
+  // Casse et slash : 301 vers l'adresse canonique des pages publiques connues (jamais les routes privées)
+  app.addHook("onRequest", async (req, reply) => {
+    if (req.method !== "GET") return;
+    const raw = req.raw.url?.split("?")[0] ?? "";
+    const clean = raw.length > 1 ? raw.replace(/\/+$/, "") : raw;
+    const lower = clean.toLowerCase();
+    const known = (x: string) => x in pageMeta || x in editorial;
+    if (clean !== raw && known(lower)) return reply.redirect(lower + (req.raw.url?.includes("?") ? "?" + req.raw.url.split("?")[1] : ""), 301);
+    if (raw !== lower && known(lower)) return reply.redirect(lower + (req.raw.url?.includes("?") ? "?" + req.raw.url.split("?")[1] : ""), 301);
+  });
   for (const path of Object.keys(pageMeta))
     app.get(path, async (_req, reply) =>
       html(reply).send(renderPage(index, (await staticPage(path))!)),
@@ -517,12 +530,18 @@ export function registerSeo(app: FastifyInstance, index: string) {
       return reply.code(404).send({ error: "Route inconnue" });
     const path = req.url.split("?")[0];
     html(reply);
+    const notFound = index
+      .replace(/<title>[\s\S]*?<\/title>/, "<title>Page introuvable | Fund Road</title>")
+      .replace(
+        '<div id="root"></div>',
+        `<div id="root"><main>${nav}<h1>Page introuvable</h1><p>Cette adresse n’existe pas ou a changé.</p><p><a href="/">Accueil</a> · <a href="/annuaire">Annuaire des financeurs</a> · <a href="/aides">Aides publiques</a></p></main></div>`,
+      );
     const page = privatePaths.test(path)
       ? index.replace(
           "</head>",
           '<meta name="robots" content="noindex" />\n  </head>',
         )
-      : index;
+      : spaPaths.test(path) ? index : notFound;
     return reply.code(spaPaths.test(path) ? 200 : 404).send(page);
   });
   app.get("/sitemap.xml", async (_req, reply) => {
