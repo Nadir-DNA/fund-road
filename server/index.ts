@@ -155,6 +155,14 @@ app.get("/api/me", async (req) => {
       twoFactorEnabled: (u as any).twoFactorEnabled,
     },
     organizations: orgs,
+    // invité sur un dossier sans avoir d'organisation : l'espace s'ouvre quand même
+    contributor: Boolean(
+      (
+        await db.query("SELECT 1 FROM contributors WHERE user_id=$1 LIMIT 1", [
+          u.id,
+        ])
+      ).rowCount,
+    ),
   };
 });
 app.post("/api/organizations", async (req) => {
@@ -1164,7 +1172,8 @@ app.post("/api/invitations/:token/accept", async (req: any) => {
     await c.query("UPDATE invitations SET accepted_at=now() WHERE id=$1", [
       i.id,
     ]);
-    return { ok: true };
+    // dossierId : l'invité arrive directement sur le dossier auquel il contribue
+    return { ok: true, dossierId: i.dossier_id || null };
   });
 });
 app.get("/api/organizations/:id/members", async (req: any) => {
@@ -1272,6 +1281,17 @@ app.put("/api/questions/:id", async (req: any) => {
     q.id,
     b.answer,
   ]);
+  // le financeur n'a pas à rouvrir chaque dossier pour voir une réponse
+  if (q.application_id && q.answer !== b.answer) {
+    const nom = (
+      await db.query("SELECT name FROM dossiers WHERE id=$1", [q.dossier_id])
+    ).rows[0]?.name;
+    notifyOrg(
+      q.organization_id,
+      `Réponse reçue sur le dossier « ${nom} »`,
+      `${q.body}\n\n${b.answer}\n\nConsulter : ${config.baseURL}/partages/${q.application_id}`,
+    ).catch(() => {});
+  }
   return { ok: true };
 });
 app.get("/api/applications/:id/documents/:doc", async (req: any, reply) => {

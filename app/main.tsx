@@ -1165,6 +1165,7 @@ function Pricing() {
         "Notes privées d’équipe",
       ],
       cta: "Créer mon espace",
+      to: "/inscription?profil=financeur",
     },
   ];
   return (
@@ -1199,7 +1200,7 @@ function Pricing() {
               <Link
                 className={"button" + (p.featured ? "" : " secondary")}
                 data-searchtide="cta-tarifs-inscription"
-                to="/inscription"
+                to={p.to || "/inscription"}
               >
                 {p.cta} <ArrowRight size={16} />
               </Link>
@@ -1217,20 +1218,37 @@ function Pricing() {
 }
 const profilInscription = () => {
   try {
-    return sessionStorage.getItem("fundroad-profil") || "startup";
+    return localStorage.getItem("fundroad-profil") || "startup";
   } catch {
     return "startup";
+  }
+};
+// Jeton d'une invitation ouverte avant d'avoir un compte : conservé le temps de s'inscrire,
+// y compris dans l'onglet ouvert par le lien de confirmation de l'email
+const CLE_INVITATION = "fundroad-invitation";
+const apresConnexion = () => {
+  try {
+    const t = localStorage.getItem(CLE_INVITATION);
+    return t && /^[a-f0-9]{64}$/.test(t) ? "/invitation/" + t : "/app";
+  } catch {
+    return "/app";
   }
 };
 function AuthPage() {
   const location = useLocation(),
     signup = location.pathname === "/inscription",
     navigate = useNavigate();
-  // arrivée depuis la page Financeurs : type d'organisation présélectionné ensuite
-  if (new URLSearchParams(location.search).get("profil") === "financeur")
+  // arrivée depuis la page Financeurs : type d'organisation présélectionné ensuite.
+  // localStorage : le lien de confirmation de l'email s'ouvre dans un autre onglet.
+  // Une inscription sans ?profil efface un choix ancien.
+  useEffect(() => {
+    if (!signup) return;
     try {
-      sessionStorage.setItem("fundroad-profil", "fund");
+      if (new URLSearchParams(location.search).get("profil") === "financeur")
+        localStorage.setItem("fundroad-profil", "fund");
+      else localStorage.removeItem("fundroad-profil");
     } catch {}
+  }, [signup, location.search]);
   const { run, busy } = useAction();
   const [error, setError] = useState("");
   // adresse à confirmer : pas de session tant que le lien reçu par email n'est pas ouvert
@@ -1268,7 +1286,8 @@ function AuthPage() {
             name: f.get("name"),
             email: f.get("email"),
             password: f.get("password"),
-            ...(signup && { callbackURL: keepUtm("/app") }),
+            // le jeton d'invitation survit à la confirmation de l'e-mail
+            ...(signup && { callbackURL: keepUtm(apresConnexion()) }),
           },
         );
       } catch (err: any) {
@@ -1288,7 +1307,7 @@ function AuthPage() {
       }
       return r;
     });
-    if (result) navigate("/app");
+    if (result) navigate(apresConnexion());
   }
   return (
     <PublicLayout>
@@ -1459,6 +1478,11 @@ const links = [
   ["/app/facturation", "Facturation", CreditCard],
   ["/app/securite", "Sécurité", ShieldCheck],
 ] as const;
+// Invité sur un dossier, sans organisation : ses dossiers, et la possibilité d'en créer une
+const liensInvite = [
+  ["/app", "Dossiers partagés", FolderOpen],
+  ["/app/nouvelle-organisation", "Créer mon organisation", Building2],
+] as const;
 function Shell() {
   const [tick, setTick] = useState(0),
     [orgId, setOrgId] = useState(localStorage.getItem("fundroad-org") || ""),
@@ -1480,6 +1504,8 @@ function Shell() {
       </PublicLayout>
     );
   if (!me) return <div className="loading">Chargement de votre espace…</div>;
+  const menu: readonly (readonly [string, string, typeof LayoutDashboard])[] =
+    org ? links : liensInvite;
   return (
     <WorkspaceContext.Provider
       value={{ me, org, refresh: () => setTick((t) => t + 1) }}
@@ -1490,26 +1516,28 @@ function Shell() {
       <div className="workspace">
         <aside className={"sidebar " + (open ? "open" : "")}>
           <Logo />
-          <div className="workspace-switch">
-            <span className="company-icon small">{org?.name?.[0] || "+"}</span>
-            <select
-              aria-label="Organisation active"
-              value={org?.id || ""}
-              onChange={(e) => {
-                setOrgId(e.target.value);
-                localStorage.setItem("fundroad-org", e.target.value);
-              }}
-            >
-              {me.organizations.map((o: any) => (
-                <option value={o.id} key={o.id}>
-                  {o.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {org && (
+            <div className="workspace-switch">
+              <span className="company-icon small">{org.name?.[0] || "+"}</span>
+              <select
+                aria-label="Organisation active"
+                value={org.id}
+                onChange={(e) => {
+                  setOrgId(e.target.value);
+                  localStorage.setItem("fundroad-org", e.target.value);
+                }}
+              >
+                {me.organizations.map((o: any) => (
+                  <option value={o.id} key={o.id}>
+                    {o.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <small className="nav-label">VOTRE ESPACE</small>
           <nav>
-            {links.map(([to, label, Icon]) => (
+            {menu.map(([to, label, Icon]) => (
               <NavLink
                 key={to}
                 to={to}
@@ -1574,7 +1602,18 @@ function Shell() {
           </header>
           <main className="workspace-content" id="contenu" tabIndex={-1}>
             {!org ? (
-              <Onboarding />
+              me.contributor ? (
+                <Routes>
+                  <Route path="dossiers/:id" element={<DossierPage />} />
+                  <Route
+                    path="nouvelle-organisation"
+                    element={<Onboarding />}
+                  />
+                  <Route path="*" element={<DossiersPartages />} />
+                </Routes>
+              ) : (
+                <Onboarding />
+              )
             ) : (
               <Routes>
                 <Route
@@ -1607,6 +1646,7 @@ function Shell() {
 function Onboarding() {
   const { refresh } = useContext(WorkspaceContext);
   const { run, busy } = useAction();
+  const navigate = useNavigate();
   return (
     <>
       <div className="page-heading">
@@ -1627,6 +1667,8 @@ function Onboarding() {
               name: f.get("name"),
               kind: f.get("kind"),
             });
+            // depuis « Créer mon organisation » (invité), on repart de l'accueil de l'espace
+            navigate("/app");
             refresh();
           });
         }}
@@ -1658,12 +1700,17 @@ function Onboarding() {
     </>
   );
 }
+// localStorage (lien de confirmation dans un autre onglet) ; un choix de plus de 7 jours est ignoré
 function storedRecipient(): { id: string; name: string } | null {
   try {
     const value = JSON.parse(
-      sessionStorage.getItem("fundroad-recipient") || "null",
+      localStorage.getItem("fundroad-recipient") || "null",
     );
-    return value?.id && value?.name ? value : null;
+    return value?.id &&
+      value?.name &&
+      Date.now() - (value.t || 0) < 7 * 864e5
+      ? value
+      : null;
   } catch {
     return null;
   }
@@ -1676,6 +1723,12 @@ function Dashboard({ all = false }: { all?: boolean }) {
   const navigate = useNavigate();
   const { run, busy } = useAction();
   const rows = data?.filter((d) => d.organization_id === org.id) || [];
+  // dossiers d'une autre organisation auxquels on contribue sur invitation
+  // (les dossiers de ses autres organisations s'ouvrent en changeant d'organisation)
+  const partages =
+    data?.filter(
+      (d) => !me.organizations.some((o: any) => o.id === d.organization_id),
+    ) || [];
   return (
     <>
       <div className="page-heading">
@@ -1707,7 +1760,7 @@ function Dashboard({ all = false }: { all?: boolean }) {
                 organizationId: org.id,
                 recipientOrg: storedRecipient()?.id,
               });
-              sessionStorage.removeItem("fundroad-recipient");
+              localStorage.removeItem("fundroad-recipient");
               track("dossier_cree");   // après la réponse de succès du serveur ; aucun nom de dossier envoyé
               navigate("/app/dossiers/" + d.id);
             });
@@ -1788,43 +1841,79 @@ function Dashboard({ all = false }: { all?: boolean }) {
             </button>
           </div>
         ) : (
-          rows.map((d) => (
-            <Link
-              to={"/app/dossiers/" + d.id}
-              className="dossier-card"
-              key={d.id}
-            >
-              <div className="dossier-top">
-                <span className="company-icon">{d.name[0]}</span>
-                <div>
-                  <h3>{d.name}</h3>
-                  <small>
-                    {d.goal === "grant" ? "Subvention" : "Investissement"} · Mis
-                    à jour le {new Date(d.updated_at).toLocaleDateString("fr")}
-                  </small>
-                </div>
-                <ArrowUpRight size={20} />
-              </div>
-              <div className="progress-label">
-                <span>Complétude du dossier</span>
-                <strong>{d.score.percent} %</strong>
-              </div>
-              <div className="bar">
-                <span style={{ width: d.score.percent + "%" }} />
-              </div>
-              <div className="dossier-bottom">
-                <span>
-                  {d.score.completed} rubriques confirmées sur {d.score.total}
-                </span>
-                <span>
-                  Continuer <ArrowRight size={15} />
-                </span>
-              </div>
-            </Link>
-          ))
+          rows.map((d) => <DossierCard d={d} key={d.id} />)
         )}
       </section>
+      {partages.length > 0 && (
+        <section>
+          <div className="section-title">
+            <h2>Partagés avec moi</h2>
+          </div>
+          {partages.map((d) => (
+            <DossierCard d={d} key={d.id} />
+          ))}
+        </section>
+      )}
     </>
+  );
+}
+// Dossiers d'autres organisations auxquels on contribue sur invitation, pour qui n'a pas d'organisation
+function DossiersPartages() {
+  const { data, error } = useLoad<any[]>("/dossiers");
+  return (
+    <>
+      <div className="page-heading">
+        <div>
+          <h1>Dossiers partagés avec vous</h1>
+          <p>
+            Complétez ces dossiers à votre rythme. Pour préparer le vôtre,
+            créez votre organisation.
+          </p>
+        </div>
+        <Link className="button secondary" to="/app/nouvelle-organisation">
+          <Plus size={18} /> Créer mon organisation
+        </Link>
+      </div>
+      <ErrorBox text={error} />
+      {data && !data.length && (
+        <div className="panel">
+          <Empty title="Aucun dossier partagé pour le moment" />
+        </div>
+      )}
+      {data?.map((d) => <DossierCard d={d} key={d.id} />)}
+    </>
+  );
+}
+function DossierCard({ d }: { d: any }) {
+  return (
+    <Link to={"/app/dossiers/" + d.id} className="dossier-card">
+      <div className="dossier-top">
+        <span className="company-icon">{d.name[0]}</span>
+        <div>
+          <h3>{d.name}</h3>
+          <small>
+            {d.goal === "grant" ? "Subvention" : "Investissement"} · Mis à jour
+            le {new Date(d.updated_at).toLocaleDateString("fr")}
+          </small>
+        </div>
+        <ArrowUpRight size={20} />
+      </div>
+      <div className="progress-label">
+        <span>Complétude du dossier</span>
+        <strong>{d.score.percent} %</strong>
+      </div>
+      <div className="bar">
+        <span style={{ width: d.score.percent + "%" }} />
+      </div>
+      <div className="dossier-bottom">
+        <span>
+          {d.score.completed} rubriques confirmées sur {d.score.total}
+        </span>
+        <span>
+          Continuer <ArrowRight size={15} />
+        </span>
+      </div>
+    </Link>
   );
 }
 // Dépôt de fichiers ou d'un dossier entier, puis analyse lancée automatiquement, avec la progression
@@ -2111,7 +2200,7 @@ function DossierPage() {
           >
             Word
           </a>
-          {org.role === "owner" && (
+          {org?.role === "owner" && (
             <button
               className="button secondary"
               disabled={busy}
@@ -2426,7 +2515,7 @@ function DossierPage() {
               )
               .map((r) => (
                 <FactEditor
-                  key={r.id + ":" + d.revision}
+                  key={r.id}
                   requirement={r}
                   fact={d.state.facts[r.id]}
                   critique={d.state.critique?.rubriques?.[r.id]}
@@ -2971,13 +3060,23 @@ function FactEditor({
   save: (s: string) => Promise<void>;
 }) {
   const { run, busy } = useAction();
+  // texte tenu ici : une nouvelle révision ne doit pas effacer une saisie non confirmée
+  const [valeur, setValeur] = useState(fact?.value || "");
+  const [modifie, setModifie] = useState(false);
+  useEffect(() => {
+    if (!modifie) setValeur(fact?.value || "");
+  }, [fact?.value]);
   return (
     <form
       className="panel fact-card"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
-        run(() => save(String(f.get("value"))), "Information confirmée");
+        const r = await run(
+          () => save(String(f.get("value"))),
+          "Information confirmée",
+        );
+        if (r !== null) setModifie(false);
       }}
     >
       <div className="section-title">
@@ -2995,7 +3094,11 @@ function FactEditor({
       <p>{r.question}</p>
       <textarea
         name="value"
-        defaultValue={fact?.value || ""}
+        value={valeur}
+        onChange={(e) => {
+          setValeur(e.target.value);
+          setModifie(true);
+        }}
         placeholder="Précisez vos informations, leurs dates et leurs hypothèses…"
         minLength={10}
         required
@@ -3029,7 +3132,7 @@ function FactEditor({
 function ContributorInvite({ dossier: d }: { dossier: any }) {
   const { org } = useContext(WorkspaceContext);
   const { run, busy } = useAction();
-  if (org.id !== d.organization_id || org.role !== "owner") return null;
+  if (org?.id !== d.organization_id || org.role !== "owner") return null;
   return (
     <form
       className="panel form-panel"
@@ -3048,7 +3151,11 @@ function ContributorInvite({ dossier: d }: { dossier: any }) {
         );
       }}
     >
-      <h2>Inviter la startup à compléter ce dossier</h2>
+      <h2>
+        {org.kind === "startup"
+          ? "Inviter un associé à compléter ce dossier"
+          : "Inviter la startup à compléter ce dossier"}
+      </h2>
       <p>
         Cette personne pourra compléter ce dossier uniquement. Elle ne rejoint
         pas l’équipe de votre organisation.
@@ -3076,6 +3183,7 @@ function ShareForm({ dossier: d }: { dossier: any }) {
   );
   const { data: financers } = useLoad<any[]>("/directory");
   const { run, busy } = useAction();
+  const navigate = useNavigate();
   const incomplete =
     !d.score.attestable ||
     d.recipientProgress.completed < d.recipientProgress.total;
@@ -3094,6 +3202,7 @@ function ShareForm({ dossier: d }: { dossier: any }) {
             documentIds: f.getAll("documents"),
             confirmed: true,
           });
+          navigate("/app/candidatures");
         }, "Candidature enregistrée et transmise au destinataire");
       }}
     >
@@ -3113,7 +3222,7 @@ function ShareForm({ dossier: d }: { dossier: any }) {
               className="button secondary"
               onClick={() => {
                 setPortal(null);
-                sessionStorage.removeItem("fundroad-recipient");
+                localStorage.removeItem("fundroad-recipient");
               }}
             >
               Changer
@@ -3122,7 +3231,8 @@ function ShareForm({ dossier: d }: { dossier: any }) {
         )}
         <select name="org" disabled={!!portal}>
           <option value="">Choisir un financeur inscrit</option>
-          {financers?.map((o) => (
+          {/* les fiches non inscrites ne reçoivent pas de dossier : canal officiel sur leur fiche */}
+          {financers?.filter((o) => o.claimed).map((o) => (
             <option key={o.id} value={o.id}>
               {o.theme.name || o.name} · {orgKindLabels[o.kind]}
             </option>
@@ -3149,7 +3259,12 @@ function ShareForm({ dossier: d }: { dossier: any }) {
         <legend>Pièces à joindre</legend>
         {d.documents.map((doc: any) => (
           <label className="checkbox" key={doc.id}>
-            <input type="checkbox" name="documents" value={doc.id} />
+            <input
+              type="checkbox"
+              name="documents"
+              value={doc.id}
+              defaultChecked={doc.status === "ready"}
+            />
             {doc.name}
           </label>
         ))}
@@ -4070,7 +4185,7 @@ function Billing() {
     track("paiement_retour");
   }, []);
   const [code, setCode] = useState(
-    sessionStorage.getItem("fundroad-code") || "",
+    localStorage.getItem("fundroad-code") || "",
   );
   return (
     <>
@@ -4082,19 +4197,22 @@ function Billing() {
             financements obtenus.
           </p>
         </div>
-        <button
-          className="button secondary"
-          onClick={() =>
-            run(async () => {
-              const r = await api("/billing/portal", "POST", {
-                organizationId: org.id,
-              });
-              window.location.assign(r.url);
-            })
-          }
-        >
-          Gérer ma facturation
-        </button>
+        {/* le portail Stripe n'existe qu'une fois un paiement enregistré */}
+        {billing?.entitlement?.customer_id && (
+          <button
+            className="button secondary"
+            onClick={() =>
+              run(async () => {
+                const r = await api("/billing/portal", "POST", {
+                  organizationId: org.id,
+                });
+                window.location.assign(r.url);
+              })
+            }
+          >
+            Gérer ma facturation
+          </button>
+        )}
       </div>
       <ErrorBox text={error} />
       <div className="panel">
@@ -4117,14 +4235,6 @@ function Billing() {
             ` · accès jusqu’au ${new Date(billing.entitlement.expires_at).toLocaleDateString("fr")}`}
           .
         </p>
-        <label>
-          Code de recommandation
-          <input
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="START-… ou FUND-…"
-          />
-        </label>
       </div>
       <div className="pricing-grid">
         {offers
@@ -4137,6 +4247,14 @@ function Billing() {
                 {o.price_cents / 100} €
               </div>
               <p>{o.cadence === "month" ? "Par mois" : o.cadence === "quarter" ? "Tous les 90 jours, résiliable à tout moment" : "Forfait 90 jours"}</p>
+              <label>
+                Code de recommandation
+                <input
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="START-… ou FUND-…"
+                />
+              </label>
               <button
                 disabled={!o.active || busy}
                 className="button secondary"
@@ -4271,7 +4389,7 @@ function TwoFactor() {
             await api("/auth/two-factor/verify-totp", "POST", {
               code: f.get("code"),
             });
-            navigate("/app");
+            navigate(apresConnexion());
           });
         }}
       >
@@ -4484,14 +4602,20 @@ function Portal() {
                     disabled={busy}
                     onClick={() =>
                       run(async () => {
-                        sessionStorage.setItem(
+                        localStorage.setItem(
                           "fundroad-recipient",
                           JSON.stringify({
                             id: o.id,
                             name: o.theme.name || o.name,
+                            t: Date.now(),
                           }),
                         );
-                        navigate("/app/dossiers");
+                        // visiteur sans session : inscription plutôt qu'un message d'erreur
+                        const connecte = await api("/me").then(
+                          () => true,
+                          () => false,
+                        );
+                        navigate(connecte ? "/app/dossiers" : "/inscription");
                       })
                     }
                   >
@@ -4568,30 +4692,66 @@ function Portal() {
 }
 function Invitation() {
   const { token } = useParams();
+  const { data: me, error } = useLoad("/me");
   const { run, busy } = useAction();
   const navigate = useNavigate();
+  // sans session, le jeton survit à l'inscription et à la confirmation de l'email ;
+  // connecté, il n'a plus d'utilité
+  useEffect(() => {
+    try {
+      if (me) localStorage.removeItem(CLE_INVITATION);
+      else if (error && token) localStorage.setItem(CLE_INVITATION, token);
+    } catch {}
+  }, [me, error, token]);
   return (
     <PublicLayout>
       <main className="section">
         <div className="panel verification">
           <h1>Rejoindre le dossier</h1>
-          <p>
-            Connectez-vous avec l’adresse qui a reçu l’invitation, puis
-            acceptez-la.
-          </p>
-          <Link to="/connexion">Se connecter</Link>
-          <button
-            className="button"
-            disabled={busy}
-            onClick={() =>
-              run(async () => {
-                await api("/invitations/" + token + "/accept", "POST", {});
-                navigate("/app");
-              })
-            }
-          >
-            Accepter l’invitation
-          </button>
+          {me ? (
+            <>
+              <p>
+                Vous êtes connecté avec <strong>{me.user.email}</strong>.
+                L’invitation n’est valable qu’avec l’adresse qui l’a reçue.
+              </p>
+              <button
+                className="button"
+                disabled={busy}
+                onClick={() =>
+                  run(async () => {
+                    const r = await api(
+                      "/invitations/" + token + "/accept",
+                      "POST",
+                      {},
+                    );
+                    navigate(
+                      r.dossierId ? "/app/dossiers/" + r.dossierId : "/app",
+                    );
+                  })
+                }
+              >
+                Accepter l’invitation
+              </button>
+            </>
+          ) : error ? (
+            <>
+              <p>
+                Créez votre compte, ou connectez-vous, avec l’adresse qui a
+                reçu l’invitation : vous reviendrez ici ensuite pour
+                l’accepter.
+              </p>
+              <div className="button-row">
+                <Link className="button" to="/inscription">
+                  Créer mon compte
+                </Link>
+                <Link className="button secondary" to="/connexion">
+                  J’ai déjà un compte
+                </Link>
+              </div>
+            </>
+          ) : (
+            <p>Chargement…</p>
+          )}
         </div>
       </main>
     </PublicLayout>
@@ -4638,14 +4798,42 @@ function SharedApplication() {
                       / {a.questions.length} réponses reçues · échanges mis à
                       jour après le partage.
                     </p>
-                    {a.questions.map((q: any) => (
-                      <div key={q.id}>
-                        <h3>{q.body}</h3>
-                        <p className="preline">
-                          {q.answer || "En attente de réponse"}
-                        </p>
-                      </div>
-                    ))}
+                    {a.questions.map((q: any) =>
+                      a.canRevoke ? (
+                        // côté startup : on répond ici, là où l'email du financeur renvoie
+                        <form
+                          key={q.id}
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            const f = new FormData(e.currentTarget);
+                            run(async () => {
+                              await api("/questions/" + q.id, "PUT", {
+                                answer: f.get("answer"),
+                              });
+                              setTick((t) => t + 1);
+                            }, "Réponse transmise au financeur");
+                          }}
+                        >
+                          <h3>{q.body}</h3>
+                          <textarea
+                            name="answer"
+                            defaultValue={q.answer || ""}
+                            required
+                            aria-label={"Votre réponse : " + q.body}
+                          />
+                          <button className="button secondary" disabled={busy}>
+                            {q.answer ? "Modifier ma réponse" : "Répondre"}
+                          </button>
+                        </form>
+                      ) : (
+                        <div key={q.id}>
+                          <h3>{q.body}</h3>
+                          <p className="preline">
+                            {q.answer || "En attente de réponse"}
+                          </p>
+                        </div>
+                      ),
+                    )}
                   </div>
                 )}
                 {requirements.map((r) => (
@@ -4829,7 +5017,7 @@ function Root() {
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get("code");
     if (code && /^(START|FUND)-[A-F0-9]+$/.test(code))
-      sessionStorage.setItem("fundroad-code", code);
+      localStorage.setItem("fundroad-code", code);
   }, []);
   return (
     <ToastContext.Provider value={setToast}>
