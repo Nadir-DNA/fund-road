@@ -1361,6 +1361,8 @@ function AuthPage() {
       else localStorage.removeItem("fundroad-profil");
     } catch {}
   }, [signup, location.search]);
+  const { data: cfg } = useLoad("/config");
+  const googleAuth = Boolean((cfg as any)?.googleAuth);
   const { run, busy } = useAction();
   const [error, setError] = useState("");
   // adresse à confirmer : pas de session tant que le lien reçu par email n'est pas ouvert
@@ -1511,6 +1513,32 @@ function AuthPage() {
             {busy ? "Connexion…" : signup ? "Créer mon compte" : "Se connecter"}
             <ArrowRight size={17} />
           </button>
+          {signup && (
+            <p className="muted">
+              En créant un compte, vous acceptez les{" "}
+              <Link to="/cgv">conditions générales</Link> et la{" "}
+              <Link to="/confidentialite">politique de confidentialité</Link>.
+            </p>
+          )}
+          {/* le bouton Google n'apparaît que si les identifiants OAuth sont configurés */}
+          {googleAuth && (
+            <button
+              type="button"
+              className="button secondary"
+              disabled={busy}
+              onClick={() =>
+                run(async () => {
+                  const r = await api("/auth/sign-in/social", "POST", {
+                    provider: "google",
+                    callbackURL: apresConnexion(),
+                  });
+                  if (r?.url) window.location.assign(r.url);
+                })
+              }
+            >
+              Continuer avec Google
+            </button>
+          )}
           <p>
             {signup ? "Déjà inscrit ?" : "Pas encore de compte ?"}{" "}
             <Link to={signup ? "/connexion" : "/inscription"}>
@@ -4800,6 +4828,35 @@ function Billing() {
     </>
   );
 }
+// QR code de l'URI TOTP : la bibliothèque n'est chargée qu'à l'ouverture du réglage,
+// et la clé ne quitte jamais le navigateur (aucun service externe).
+function CodeQR({ uri }: { uri: string }) {
+  const [src, setSrc] = useState("");
+  useEffect(() => {
+    let actif = true;
+    import("qrcode")
+      .then((m) =>
+        m.toString(uri, { type: "svg", margin: 1, width: 220 }).then((svg) => {
+          if (actif)
+            setSrc("data:image/svg+xml;utf8," + encodeURIComponent(svg));
+        }),
+      )
+      .catch(() => {});
+    return () => {
+      actif = false;
+    };
+  }, [uri]);
+  return src ? (
+    <img
+      src={src}
+      width={220}
+      height={220}
+      alt="QR code à scanner avec votre application d’authentification"
+    />
+  ) : (
+    <p className="muted">Préparation du QR code…</p>
+  );
+}
 function Security() {
   const { me } = useContext(WorkspaceContext);
   const { run, busy } = useAction();
@@ -4842,17 +4899,106 @@ function Security() {
         {setup && (
           <>
             <p>
-              Ajoutez cette URI dans votre application d’authentification.
+              Scannez ce QR code avec votre application d’authentification.
               Conservez vos codes de secours dans un endroit sûr.
             </p>
-            <code className="breakall">{setup.totpURI}</code>
+            <CodeQR uri={setup.totpURI} />
+            <details>
+              <summary>Ou saisir la clé à la main</summary>
+              <code className="breakall">{setup.totpURI}</code>
+            </details>
             <pre>{setup.backupCodes?.join("\n")}</pre>
             <Link to="/double-auth">Confirmer avec un code →</Link>
           </>
         )}
       </form>
+      <ChangerNom />
+      <ChangerMotDePasse />
       <SupprimerCompte />
     </>
+  );
+}
+// Nom affiché dans l'espace et les e-mails
+function ChangerNom() {
+  const { me, refresh } = useContext(WorkspaceContext);
+  const { run, busy } = useAction();
+  return (
+    <form
+      className="panel form-panel"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const f = new FormData(e.currentTarget);
+        run(async () => {
+          await api("/auth/update-user", "POST", { name: f.get("name") });
+          refresh();
+        }, "Nom mis à jour");
+      }}
+    >
+      <h2>Votre nom</h2>
+      <p>Il apparaît dans votre espace et dans les messages envoyés par Fund Road.</p>
+      <label>
+        Nom affiché
+        <input
+          name="name"
+          defaultValue={me.user.name || ""}
+          required
+          minLength={2}
+          maxLength={100}
+        />
+      </label>
+      <button className="button secondary" disabled={busy}>
+        Enregistrer mon nom
+      </button>
+    </form>
+  );
+}
+// Mot de passe : better-auth vérifie l'ancien avant d'accepter le nouveau
+function ChangerMotDePasse() {
+  const { run, busy } = useAction();
+  const [fait, setFait] = useState(false);
+  return (
+    <form
+      className="panel form-panel"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const f = new FormData(e.currentTarget);
+        const formulaire = e.currentTarget;
+        run(async () => {
+          await api("/auth/change-password", "POST", {
+            currentPassword: f.get("currentPassword"),
+            newPassword: f.get("newPassword"),
+          });
+          formulaire.reset();
+          setFait(true);
+        }, "Mot de passe changé");
+      }}
+    >
+      <h2>Changer de mot de passe</h2>
+      {fait && <p className="muted">Mot de passe mis à jour.</p>}
+      <label>
+        Mot de passe actuel
+        <input
+          name="currentPassword"
+          type="password"
+          required
+          autoComplete="current-password"
+        />
+      </label>
+      <label>
+        Nouveau mot de passe
+        <input
+          name="newPassword"
+          type="password"
+          required
+          minLength={12}
+          autoComplete="new-password"
+        />
+        <small>12 caractères minimum.</small>
+      </label>
+      <button className="button secondary" disabled={busy}>
+        Changer mon mot de passe
+      </button>
+    </form>
   );
 }
 const libellesRoles: Record<string, string> = {

@@ -137,6 +137,9 @@ app.get("/api/config", async () => ({
   aiReady: Boolean(config.apiKey && config.model),
   mailReady: mailReady(),
   billingReady: Boolean(process.env.STRIPE_SECRET_KEY),
+  googleAuth: Boolean(
+    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
+  ),
   advisorOrg: config.advisorOrg || null,
   pilot: !config.production,
   requirements,

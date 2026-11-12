@@ -338,4 +338,15 @@ test("A13.1 : un ticket sans source datée devient « Non communiqué »", async
   assert.equal(criteria.ticketAffiche({}), "Non communiqué");
   assert.equal(criteria.ticketAffiche(null), "Non communiqué");
 });
-
+// A21 — aucun bouton Google mort
+test("A21.1 : le bouton Google n'existe que si les identifiants sont configurés", () => {
+  const auth = readFileSync(new URL("../server/auth.ts", import.meta.url), "utf8");
+  const config = readFileSync(new URL("../server/index.ts", import.meta.url), "utf8");
+  const app = readFileSync(new URL("../app/main.tsx", import.meta.url), "utf8");
+  assert.ok(auth.includes("process.env.GOOGLE_CLIENT_ID"));
+  assert.ok(auth.includes("process.env.GOOGLE_CLIENT_SECRET"));
+  assert.ok(config.includes("googleAuth:"));
+  assert.ok(app.includes("{googleAuth && ("));
+  // le lien CGV est présent sous le bouton d'inscription
+  assert.ok(app.includes('to="/cgv"'));
+});
