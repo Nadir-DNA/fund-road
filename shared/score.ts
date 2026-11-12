@@ -154,8 +154,9 @@ export function score(state: DossierState) {
     completed: completed.length,
     total: requirements.length,
     missing,
-    conflicts: state.conflicts,
-    attestable: missing.length === 0 && state.conflicts.length === 0,
+    // un état partagé ne porte pas les contradictions de l'IA : on ne casse pas le calcul
+    conflicts: state.conflicts || [],
+    attestable: missing.length === 0 && (state.conflicts || []).length === 0,
   };
 }
 export function canAttest(

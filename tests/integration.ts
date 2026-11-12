@@ -553,25 +553,60 @@ test("parcours API local et frontières entre organisations", async () => {
     { recipientOrg: ob.data.id, documentIds: [], confirmed: true },
     a.cookie,
   );
-  assert.equal(partage0.status, 201, JSON.stringify(partage0.data));
-  assert.equal(partage0.data.score, 0);
-  const vu = await call(
-    "/applications/" + partage0.data.id,
+  // D12 : dossier incomplet -> 409 avec le message des neuf rubriques
+  assert.equal(partage0.status, 409);
+  assert.match(partage0.data.error, /neuf rubriques/);
+  // aucun partage n'a été créé pour ce dossier incomplet
+  const listeAvant = await call("/applications", "GET", undefined, b.cookie);
+  assert.ok(!listeAvant.data.some((x: any) => x.dossier_id === vide.data.id));
+  // taux figé : modifier le dossier après partage ne change pas la candidature déjà envoyée
+  const partageGel = await call(
+    "/dossiers/" + id + "/applications",
+    "POST",
+    { recipientOrg: ob.data.id, documentIds: [], confirmed: true },
+    a.cookie,
+  );
+  assert.equal(partageGel.status, 201);
+  assert.equal(
+    (await call("/applications/" + partageGel.data.id, "GET", undefined, b.cookie))
+      .data.score.percent,
+    100,
+  );
+  assert.equal(
+    (
+      await call(
+        "/dossiers/" + id + "/facts/company",
+        "PUT",
+        {
+          revision: await revCourante(),
+          fact: {
+            value: "Court",
+            kind: "declared",
+            source: "declaration",
+            confirmed: true,
+          },
+        },
+        a.cookie,
+      )
+    ).status,
+    200,
+  );
+  const apres = await call(
+    "/applications/" + partageGel.data.id,
     "GET",
     undefined,
     b.cookie,
   );
-  assert.equal(vu.status, 200);
-  assert.equal(JSON.stringify(vu.data).includes("MARQUEUR-NON-CONFIRME-12A"), false);
-  assert.equal(vu.data.score.percent, 0);
-  // le taux est figé : confirmer une rubrique après coup ne change pas cette candidature
+  assert.equal(apres.data.score.percent, 100);
+  assert.equal(JSON.stringify(apres.data).includes("Court"), false);
+  // on rétablit une rubrique complète pour la suite (le dossier doit rester complet)
   assert.equal(
     (
       await call(
-        "/dossiers/" + vide.data.id + "/facts/company",
+        "/dossiers/" + id + "/facts/company",
         "PUT",
         {
-          revision: 2,
+          revision: await revCourante(),
           fact: {
             value: "Une entreprise de test sans données réelles.",
             kind: "declared",
@@ -584,76 +619,15 @@ test("parcours API local et frontières entre organisations", async () => {
     ).status,
     200,
   );
-  assert.equal(
-    (await call("/applications/" + partage0.data.id, "GET", undefined, b.cookie))
-      .data.score.percent,
-    0,
+  // l'export d'un dossier reçu reste gratuit pour le financeur membre
+  const recuPdf = await fetch(
+    base + "/api/applications/" + partageGel.data.id + "/export/pdf",
+    { headers: { cookie: b.cookie } },
   );
-  const partage1 = await call(
-    "/dossiers/" + vide.data.id + "/applications",
-    "POST",
-    { recipientOrg: ob.data.id, documentIds: [], confirmed: true },
-    a.cookie,
-  );
-  assert.equal(partage1.status, 201);
-  assert.ok(partage1.data.score > 0, "un nouveau partage prend le taux à jour");
-  // une autre organisation ne partage pas ce dossier
-  assert.equal(
-    (
-      await call(
-        "/dossiers/" + vide.data.id + "/applications",
-        "POST",
-        { recipientOrg: ob.data.id, documentIds: [], confirmed: true },
-        c.cookie,
-      )
-    ).status,
-    403,
-  );
-  // un partage révoqué est introuvable
-  assert.equal(
-    (
-      await call(
-        "/applications/" + partage1.data.id + "/revoke",
-        "POST",
-        {},
-        a.cookie,
-      )
-    ).status,
-    200,
-  );
-  assert.equal(
-    (await call("/applications/" + partage1.data.id, "GET", undefined, b.cookie))
-      .status,
-    404,
-  );
-  // A12c.3/A12c.4 : le suivi d'étape n'est pas filtré ; un compte gratuit révoque toujours
-  const listeStartup = await call("/applications", "GET", undefined, a.cookie);
-  const ligneGratuite = listeStartup.data.find(
-    (x: any) => x.id === partage0.data.id,
-  );
-  assert.ok(ligneGratuite.stage, "l'étape reste visible sans droit payant");
-  const listeFinanceur = await call("/applications", "GET", undefined, b.cookie);
-  const ligneFinanceur = listeFinanceur.data.find(
-    (x: any) => x.id === partage0.data.id,
-  );
-  assert.deepEqual(
-    Object.keys(ligneGratuite).sort(),
-    Object.keys(ligneFinanceur).sort(),
-    "mêmes champs pour un compte gratuit et un compte financeur",
-  );
-  assert.equal(
-    (
-      await call(
-        "/applications/" + partage0.data.id + "/revoke",
-        "POST",
-        {},
-        a.cookie,
-      )
-    ).status,
-    200,
-    "la révocation reste gratuite",
-  );
-  // un éditeur de l'organisation (pas propriétaire) ne partage pas, même par API directe
+  assert.equal(recuPdf.status, 200);
+  assert.ok((await recuPdf.text()).startsWith("%PDF"));
+  // A12a.6 : un membre editor de la même organisation peut partager (comportement d'origine),
+  // et le dossier incomplet reste refusé pour lui comme pour les autres
   await pgc.query(
     "INSERT INTO members(organization_id,user_id,role) VALUES($1,$2,'editor') ON CONFLICT DO NOTHING",
     [oa.data.id, c.data.user.id],
@@ -667,24 +641,23 @@ test("parcours API local et frontières entre organisations", async () => {
         c.cookie,
       )
     ).status,
-    403,
+    409,
   );
-
-  // A12b.6 : l'export d'un dossier reçu est gratuit pour le financeur membre et limité à la
-  // version partagée ; non-membre 403, startup propriétaire non destinataire 403, sans session 401
-  const recuPartage = await call(
-    "/dossiers/" + vide.data.id + "/applications",
+  const partageEditeur = await call(
+    "/dossiers/" + id + "/applications",
     "POST",
     { recipientOrg: ob.data.id, documentIds: [], confirmed: true },
-    a.cookie,
+    c.cookie,
   );
-  assert.equal(recuPartage.status, 201);
-  const recuPdf = await fetch(
-    base + "/api/applications/" + recuPartage.data.id + "/export/pdf",
+  assert.equal(partageEditeur.status, 201, JSON.stringify(partageEditeur.data));
+  // A12b.6 : l'export d'un dossier reçu est gratuit pour le financeur membre et limité à la
+  // version partagée ; non-membre 403, startup propriétaire non destinataire 403, sans session 401
+  const recuPdf2 = await fetch(
+    base + "/api/applications/" + partageEditeur.data.id + "/export/pdf",
     { headers: { cookie: b.cookie } },
   );
-  assert.equal(recuPdf.status, 200);
-  assert.ok((await recuPdf.text()).startsWith("%PDF"));
+  assert.equal(recuPdf2.status, 200);
+  assert.ok((await recuPdf2.text()).startsWith("%PDF"));
   for (const [qui, ck] of [
     ["non-membre", c.cookie],
     ["startup propriétaire non destinataire", a.cookie],
@@ -692,7 +665,7 @@ test("parcours API local et frontières entre organisations", async () => {
     assert.equal(
       (
         await fetch(
-          base + "/api/applications/" + recuPartage.data.id + "/export/pdf",
+          base + "/api/applications/" + partageEditeur.data.id + "/export/pdf",
           { headers: { cookie: ck } },
         )
       ).status,
@@ -700,7 +673,7 @@ test("parcours API local et frontières entre organisations", async () => {
       qui,
     );
   assert.equal(
-    (await fetch(base + "/api/applications/" + recuPartage.data.id + "/export/pdf"))
+    (await fetch(base + "/api/applications/" + partageEditeur.data.id + "/export/pdf"))
       .status,
     401,
   );

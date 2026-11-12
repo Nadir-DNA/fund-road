@@ -308,17 +308,23 @@ test("A12c.1 : seuls les exports changent de camp ; révocation et suivi restent
   assert.equal(gratuit.includes("Exports PDF et Word"), false);
   assert.ok(payant.includes("Exports PDF et Word"));
   assert.equal(payant.includes("Partages révocables et suivi des étapes"), false);
+  // D12 : l'offre gratuite ne promet plus de partager un dossier incomplet
+  assert.equal(gratuit.includes("même incomplet"), false);
+  assert.ok(gratuit.includes("Dossier de financement complet"));
 });
 
-test("A12c.3/A12c.5 : partage incomplet autorisé, aucune restriction d’étape ajoutée", () => {
+test("A12c.3/A12c.5 : partage réservé aux dossiers complets, aucune restriction d’étape", () => {
   const app = readFileSync(new URL("../app/main.tsx", import.meta.url), "utf8");
   const serveur = readFileSync(new URL("../server/index.ts", import.meta.url), "utf8");
-  // plus de blocage « neuf rubriques » : le taux part avec la version
-  assert.equal(serveur.includes("score(d.state).attestable"), false);
-  assert.ok(serveur.includes("Seul le propriétaire du dossier peut le partager"));
-  // le suivi d'étape n'est pas filtré : la route renvoie les mêmes champs à tous
+  // D12 : le serveur garde le refus 409 tant que les neuf rubriques ne sont pas confirmées
+  assert.ok(serveur.includes("score(d.state).attestable"));
+  assert.equal(serveur.includes("Seul le propriétaire du dossier peut le partager"), false);
+  // aucune restriction d'étape ajoutée
   assert.equal(serveur.includes("Étape : offre payante"), false);
   assert.equal(app.includes("Étape : offre payante"), false);
+  // le formulaire bloque le partage et liste les rubriques manquantes une par une
+  assert.ok(app.includes("const partageBloque = !d.score.attestable || questionsEnAttente;"));
+  assert.ok(app.includes("Le partage demande les"));
 });
 
 // A13 — ticket affiché seulement avec une source

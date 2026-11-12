@@ -1243,9 +1243,9 @@ function Pricing() {
       price: "0 €",
       unit: "",
       features: [
-        "Dossier de financement, même incomplet",
+        "Dossier de financement complet, envoi aux financeurs",
         "Dépôt de vos pièces",
-        "Annuaire et envoi aux financeurs",
+        "Annuaire des financeurs",
         "Une analyse IA offerte chaque mois",
         "Partages révocables et suivi des étapes",
       ],
@@ -3530,6 +3530,7 @@ function ShareForm({ dossier: d }: { dossier: any }) {
   const questionsEnAttente =
     d.recipientProgress.completed < d.recipientProgress.total;
   const manquantes = d.score.missing || [];
+  const partageBloque = !d.score.attestable || questionsEnAttente;
   return (
     <form
       className="panel form-panel"
@@ -3619,13 +3620,19 @@ function ShareForm({ dossier: d }: { dossier: any }) {
       {manquantes.length > 0 && (
         <div className="notice">
           <p>
-            Le financeur recevra un dossier à {d.score.percent} % (
-            {d.score.completed} rubriques confirmées sur {d.score.total}).
+            Le partage demande les {d.score.total} rubriques confirmées :{" "}
+            {d.score.completed} sur {d.score.total} aujourd’hui (
+            {d.score.percent} %).
           </p>
-          <p>
-            Rubriques non confirmées, envoyées « à compléter » :{" "}
-            {manquantes.map((m: any) => m.label).join(", ")}.
-          </p>
+          <ul>
+            {manquantes.map((m: any) => (
+              <li key={m.id}>
+                <Link to={"/app/dossiers/" + d.id + "?onglet=dossier"}>
+                  {m.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
       {questionsEnAttente && (
@@ -3633,7 +3640,7 @@ function ShareForm({ dossier: d }: { dossier: any }) {
           Répondez aux questions du destinataire avant le partage.
         </p>
       )}
-      <button className="button" disabled={busy || questionsEnAttente}>
+      <button className="button" disabled={busy || partageBloque}>
         Partager cette version <Send size={17} />
       </button>
     </form>

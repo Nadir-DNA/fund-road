@@ -983,15 +983,13 @@ app.post("/api/dossiers/:id/applications", async (req: any, reply) => {
     ).rows[0];
     if (!exists) fail(400, "Organisation destinataire invalide");
   }
-  // le partage d'un dossier incomplet est autorisé (D12) ; seul le propriétaire partage
-  const roleProprietaire = (
-    await db.query(
-      "SELECT role FROM members WHERE user_id=$1 AND organization_id=$2",
-      [u.id, d.organization_id],
-    )
-  ).rows[0];
-  if (roleProprietaire?.role !== "owner")
-    fail(403, "Seul le propriétaire du dossier peut le partager");
+  // D12 (dernier arbitrage) : le partage reste réservé aux dossiers complets, ce sont les
+  // tarifs qui sont corrigés ; tout membre de l'organisation peut partager (comportement d'origine)
+  if (!score(d.state).attestable)
+    fail(
+      409,
+      "Complétez et confirmez les neuf rubriques, sans conflit, avant le partage",
+    );
   if (org) {
     const unanswered = Number(
       (
