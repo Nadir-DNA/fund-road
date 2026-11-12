@@ -113,11 +113,14 @@ export async function api(url: string, method = "GET", body?: any) {
   }
   if (!r.ok)
     throw new Error(
-      (r.status === 429 && "Trop de tentatives. Patientez quelques secondes puis réessayez.") ||
+      (r.status === 429 &&
+        "Trop de tentatives. Patientez quelques secondes puis réessayez.") ||
         messagesAuth[data.code] ||
         // erreurs de validation : le détail du champ plutôt que « Données invalides » seul
         (Array.isArray(data.details) &&
-          data.details.map((d: string) => d.split(": ").slice(1).join(": ")).join(" · ")) ||
+          data.details
+            .map((d: string) => d.split(": ").slice(1).join(": "))
+            .join(" · ")) ||
         data.error?.message ||
         data.error ||
         data.message ||
@@ -128,12 +131,15 @@ export async function api(url: string, method = "GET", body?: any) {
 // La bibliothèque d'authentification répond en anglais : messages traduits par code
 const messagesAuth: Record<string, string> = {
   INVALID_EMAIL_OR_PASSWORD: "Adresse email ou mot de passe incorrect.",
-  USER_ALREADY_EXISTS: "Un compte existe déjà avec cette adresse. Connectez-vous.",
-  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: "Un compte existe déjà avec cette adresse. Connectez-vous.",
+  USER_ALREADY_EXISTS:
+    "Un compte existe déjà avec cette adresse. Connectez-vous.",
+  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL:
+    "Un compte existe déjà avec cette adresse. Connectez-vous.",
   PASSWORD_TOO_SHORT: "Mot de passe trop court : 12 caractères minimum.",
   PASSWORD_TOO_LONG: "Mot de passe trop long.",
   INVALID_EMAIL: "Adresse email invalide.",
-  EMAIL_NOT_VERIFIED: "Confirmez d’abord votre adresse avec le lien reçu par email.",
+  EMAIL_NOT_VERIFIED:
+    "Confirmez d’abord votre adresse avec le lien reçu par email.",
   INVALID_TOKEN: "Lien expiré ou déjà utilisé. Refaites une demande.",
   INVALID_CODE: "Code incorrect.",
   INVALID_TWO_FACTOR_CODE: "Code incorrect.",
@@ -187,9 +193,13 @@ function useAction() {
 }
 // Le sélecteur de couleur exige un hexadécimal : on lit le pixel rendu du jeton --color-accent (oklch non relu par fillStyle)
 function accentParDefaut() {
-  const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+  const c = document
+    .createElement("canvas")
+    .getContext("2d", { willReadFrequently: true });
   if (!c) return "#000000";
-  c.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--color-accent");
+  c.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(
+    "--color-accent",
+  );
   c.fillRect(0, 0, 1, 1);
   const [r, g, b] = c.getImageData(0, 0, 1, 1).data;
   return "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
@@ -881,8 +891,8 @@ function Landing() {
         <section className="cta-band">
           <div>
             <h2 data-split>
-              Votre copilote pour construire, structurer et financer votre
-              startup.
+              Un dossier clair et sourcé, prêt à être examiné par les
+              financeurs.
             </h2>
             <Link className="button accent" to="/inscription">
               Créer mon dossier <ArrowRight size={17} />
@@ -967,7 +977,10 @@ function FinanceursPage() {
               <div>
                 <p>{f.intro}</p>
                 <div className="hero-actions">
-                  <Link className="button accent" to="/inscription?profil=financeur">
+                  <Link
+                    className="button accent"
+                    to="/inscription?profil=financeur"
+                  >
                     Créer mon espace financeur <ArrowRight size={17} />
                   </Link>
                   <Link className="button ghost" to="/annuaire">
@@ -1328,7 +1341,10 @@ function PasswordPage() {
             rétablirons votre accès.
           </p>
         )}
-        <button className="button" disabled={busy || (!reset && cfg && !cfg.mailReady)}>
+        <button
+          className="button"
+          disabled={busy || (!reset && cfg && !cfg.mailReady)}
+        >
           Continuer
         </button>
       </form>
@@ -1339,11 +1355,10 @@ type Workspace = { me: any; org: any; refresh: () => void };
 const WorkspaceContext = createContext<Workspace>(null as any);
 const links = [
   ["/app", "Vue d’ensemble", LayoutDashboard],
-  ["/app/dossiers", "Mes dossiers", FolderOpen],
   ["/app/candidatures", "Candidatures", Send],
   ["/app/annuaire", "Annuaire", Search],
   ["/app/portail", "Mon organisation", Building2],
-  ["/app/partenaires", "Recommandations", Gift],
+  ["/app/partenaires", "Parrainage", Gift],
   ["/app/facturation", "Facturation", CreditCard],
   ["/app/securite", "Sécurité", ShieldCheck],
 ] as const;
@@ -1353,6 +1368,7 @@ function Shell() {
     [open, setOpen] = useState(false);
   const { data: me, error } = useLoad("/me", tick);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const org =
     me?.organizations.find((o: any) => o.id === orgId) || me?.organizations[0];
   if (error)
@@ -1402,6 +1418,12 @@ function Shell() {
                 key={to}
                 to={to}
                 end={to === "/app"}
+                // la vue d'ensemble liste les dossiers : elle reste active sur leurs pages
+                className={
+                  to === "/app" && pathname.startsWith("/app/dossiers")
+                    ? "active"
+                    : undefined
+                }
                 onClick={() => setOpen(false)}
               >
                 <Icon size={18} />
@@ -1499,9 +1521,10 @@ function Onboarding() {
     <>
       <div className="page-heading">
         <div>
-          <h1>À chaque projet, son espace</h1>
+          <h1>Créez votre espace</h1>
           <p>
-            Créez votre organisation pour préparer ou examiner des dossiers.
+            Une organisation pour préparer vos dossiers ou examiner ceux qu’on
+            vous adresse. Le type est pré-rempli d’après votre inscription.
           </p>
         </div>
       </div>
@@ -1621,35 +1644,37 @@ function Dashboard({ all = false }: { all?: boolean }) {
           </button>
         </form>
       )}
-      <div className="stat-grid">
-        <div>
-          <span>Dossiers en préparation</span>
-          <strong>{rows.length.toString().padStart(2, "0")}</strong>
-          <small>Dans votre organisation</small>
+      {rows.length > 0 && (
+        <div className="stat-grid">
+          <div>
+            <span>Dossiers en préparation</span>
+            <strong>{rows.length.toString().padStart(2, "0")}</strong>
+            <small>Dans votre organisation</small>
+          </div>
+          <div>
+            <span>Progression moyenne</span>
+            <strong>
+              {rows.length
+                ? Math.round(
+                    rows.reduce((n, d) => n + d.score.percent, 0) / rows.length,
+                  )
+                : 0}
+              <em>%</em>
+            </strong>
+            <small>Informations confirmées</small>
+          </div>
+          <div>
+            <span>Rubriques à compléter</span>
+            <strong>
+              {rows
+                .reduce((n, d) => n + d.score.missing.length, 0)
+                .toString()
+                .padStart(2, "0")}
+            </strong>
+            <small>Des prochaines étapes concrètes</small>
+          </div>
         </div>
-        <div>
-          <span>Progression moyenne</span>
-          <strong>
-            {rows.length
-              ? Math.round(
-                  rows.reduce((n, d) => n + d.score.percent, 0) / rows.length,
-                )
-              : 0}
-            <em>%</em>
-          </strong>
-          <small>Informations confirmées</small>
-        </div>
-        <div>
-          <span>Rubriques à compléter</span>
-          <strong>
-            {rows
-              .reduce((n, d) => n + d.score.missing.length, 0)
-              .toString()
-              .padStart(2, "0")}
-          </strong>
-          <small>Des prochaines étapes concrètes</small>
-        </div>
-      </div>
+      )}
       <section>
         <div className="section-title">
           <h2>Vos dossiers de financement</h2>
@@ -1795,7 +1820,10 @@ function DepotAnalyse({
       (f) => !ignores.includes(f) && !tropLourds.includes(f),
     );
     const noms = (l: File[]) =>
-      l.slice(0, 3).map((f) => f.name).join(", ") + (l.length > 3 ? "…" : "");
+      l
+        .slice(0, 3)
+        .map((f) => f.name)
+        .join(", ") + (l.length > 3 ? "…" : "");
     if (!valides.length)
       return toast(
         tropLourds.length
@@ -1912,9 +1940,18 @@ function DepotAnalyse({
           <div className="progression-tete">
             {/* seule l'étape est annoncée aux lecteurs d'écran, pas chaque pourcentage */}
             <strong role="status">{etape}</strong>
-            <span className="tnum" aria-hidden="true">{pct} %</span>
+            <span className="tnum" aria-hidden="true">
+              {pct} %
+            </span>
           </div>
-          <div className="bar" role="progressbar" aria-label="Progression" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+          <div
+            className="bar"
+            role="progressbar"
+            aria-label="Progression"
+            aria-valuenow={pct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
             <span style={{ width: pct + "%" }} />
           </div>
         </div>
@@ -2199,8 +2236,14 @@ function DossierPage() {
                 <ul className="attestations">
                   {d.attestations.map((x: any) => (
                     <li key={x.id}>
-                      <a href={"/verification/" + x.id} target="_blank" rel="noreferrer">
-                        Attestation du {new Date(x.created_at).toLocaleDateString("fr")} (version {x.revision})
+                      <a
+                        href={"/verification/" + x.id}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Attestation du{" "}
+                        {new Date(x.created_at).toLocaleDateString("fr")}{" "}
+                        (version {x.revision})
                       </a>
                       {x.revoked_at ? (
                         <Badge>Révoquée</Badge>
@@ -2209,9 +2252,15 @@ function DossierPage() {
                           className="button secondary small"
                           disabled={busy}
                           onClick={() =>
-                            confirm("Révoquer cette attestation ? Sa page publique l’indiquera.") &&
+                            confirm(
+                              "Révoquer cette attestation ? Sa page publique l’indiquera.",
+                            ) &&
                             run(async () => {
-                              await api("/attestations/" + x.id + "/revoke", "POST", {});
+                              await api(
+                                "/attestations/" + x.id + "/revoke",
+                                "POST",
+                                {},
+                              );
                               refresh();
                             })
                           }
@@ -2735,7 +2784,11 @@ function EligibilityTab({
     </div>
   );
 }
-const statutsPoint = { ok: "Démontré", partiel: "Partiel", absent: "Absent" } as const;
+const statutsPoint = {
+  ok: "Démontré",
+  partiel: "Partiel",
+  absent: "Absent",
+} as const;
 // Revue d'une rubrique : niveau, points de contrôle, faiblesses, questions attendues, action prioritaire
 function RegardInvestisseur({ c }: { c: CritiqueRubrique }) {
   return (
@@ -2778,7 +2831,10 @@ function RegardInvestisseur({ c }: { c: CritiqueRubrique }) {
 // Lecture globale du dossier, sur la vue d'ensemble
 function LectureInvestisseur({ c }: { c: Critique }) {
   const compte = Object.values(c.rubriques).reduce(
-    (n: Record<string, number>, x) => ({ ...n, [x.niveau]: (n[x.niveau] || 0) + 1 }),
+    (n: Record<string, number>, x) => ({
+      ...n,
+      [x.niveau]: (n[x.niveau] || 0) + 1,
+    }),
     {},
   );
   return (
@@ -2825,9 +2881,9 @@ function LectureInvestisseur({ c }: { c: Critique }) {
         </>
       )}
       <small>
-        Relecture automatique de la démonstration du dossier, sur le modèle
-        d’un comité d’investissement. Elle ne juge ni les personnes ni vos
-        chances de financement.
+        Relecture automatique de la démonstration du dossier, sur le modèle d’un
+        comité d’investissement. Elle ne juge ni les personnes ni vos chances de
+        financement.
       </small>
     </div>
   );
@@ -3456,7 +3512,10 @@ function Applications() {
               </time>
               <Badge>
                 {a.recipient_org
-                  ? { ...etapes(a.recipient_kind), ...(a.recipient_kind !== "incubator" && { new: "Reçu" }) }[a.stage as string]
+                  ? {
+                      ...etapes(a.recipient_kind),
+                      ...(a.recipient_kind !== "incubator" && { new: "Reçu" }),
+                    }[a.stage as string]
                   : a.status === "submitted"
                     ? "Envoyé"
                     : "Non envoyé"}
@@ -3935,8 +3994,8 @@ function Billing() {
         <div>
           <h1>Offre et facturation</h1>
           <p>
-            Paiement sécurisé par Stripe. Aucune commission sur les
-            financements obtenus.
+            Paiement sécurisé par Stripe. Aucune commission sur les financements
+            obtenus.
           </p>
         </div>
         <button
@@ -3962,14 +4021,19 @@ function Billing() {
               : billing?.entitlement?.offer_name || "Découverte"}
           </h3>
           <Badge>
-            {{ active: "Active", past_due: "Paiement en échec", cancelled: "Résiliée" }[
-              billing?.entitlement?.status as string
-            ] || (billing?.entitlement ? billing.entitlement.status : "Gratuite")}
+            {{
+              active: "Active",
+              past_due: "Paiement en échec",
+              cancelled: "Résiliée",
+            }[billing?.entitlement?.status as string] ||
+              (billing?.entitlement ? billing.entitlement.status : "Gratuite")}
           </Badge>
         </div>
         <p>
           {billing?.usage?.analyses || 0} analyse(s) ce mois-ci
-          {billing?.entitlement?.quota ? ` sur ${billing.entitlement.quota}` : ""}
+          {billing?.entitlement?.quota
+            ? ` sur ${billing.entitlement.quota}`
+            : ""}
           {billing?.entitlement?.expires_at &&
             ` · accès jusqu’au ${new Date(billing.entitlement.expires_at).toLocaleDateString("fr")}`}
           .
@@ -4098,10 +4162,10 @@ function SupprimerCompte() {
     >
       <h2>Supprimer mon compte</h2>
       <p>
-        Vos dossiers, documents, versions et partages sont effacés. Les
-        factures sont conservées pour les obligations comptables. Si vous
-        possédez une organisation avec d’autres membres, transférez-en d’abord
-        la propriété depuis la page Mon organisation.
+        Vos dossiers, documents, versions et partages sont effacés. Les factures
+        sont conservées pour les obligations comptables. Si vous possédez une
+        organisation avec d’autres membres, transférez-en d’abord la propriété
+        depuis la page Mon organisation.
       </p>
       <label>
         Confirmez votre mot de passe

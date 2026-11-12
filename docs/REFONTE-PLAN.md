@@ -24,10 +24,19 @@ Le frontend tient dans `app/main.tsx` (4 696 lignes) et `app/style.css` (2 812 l
 ## Étapes de correction
 
 - [x] **1. Charte** : constats 1 à 4.
-- [ ] **2. Accueil** : constat 5.
-- [ ] **3. Tableau de bord et navigation** : constats 6 et 7.
-- [ ] **4. Onboarding** : constat 8.
+- [x] **2. Accueil** : constat 5.
+- [x] **3. Tableau de bord et navigation** : constats 6 et 7.
+- [x] **4. Onboarding** : constat 8, corrigé à la baisse (voir journal).
 
 ## Journal
 
 - **Étape 1 (charte)** : `.fund-kind` sans capitales ni espacement ; accent par défaut lu depuis `--color-accent` au lieu de `#eb743c` ; libellés écrits en casse normale dans le source (plus de `text-transform` + `::first-letter`), y compris « Regard investisseur », « Extrait source », « Compléments tirés des documents » ; styles inline `paddingTop` remplacés par `.section-suite`. Build OK, 42 tests OK.
+- **Étape 2 (accueil)** : l'appel final ne promet plus de « financer » : « Un dossier clair et sourcé, prêt à être examiné par les financeurs. », cohérent avec le héros et la vision. Build OK, 42 tests OK.
+- **Étape 3 (tableau de bord, navigation)** : compteurs masqués tant qu'aucun dossier n'existe ; « Recommandations » devient « Parrainage » ; l'entrée en doublon « Mes dossiers » est retirée (la route `/app/dossiers` reste), « Vue d'ensemble » restant active sur les pages de dossier. Build OK, 42 tests OK.
+- **Étape 4 (onboarding)** : constat 8 surestimé. Le type est déjà pré-rempli depuis l'inscription, qui ne distingue que « financeur » du reste ; le sélecteur reste donc nécessaire pour choisir entre fonds, angel, réseau, subvention. Seul le titre vague « À chaque projet, son espace » est remplacé par « Créez votre espace », avec l'explication du pré-remplissage. Build OK, 42 tests OK.
+
+## Reste à faire (hors de cette passe)
+
+- Pas vérifié dans un navigateur : aucun test e2e lancé (`npm run test:e2e` demande l'application et sa base locale). Les changements d'écran sont validés par build et tests unitaires seulement.
+- Captures `public/screens/` non régénérées : elles montrent peut-être l'ancienne navigation.
+- Non traités : parcours de candidature et pages internes du dossier, pas audités en détail dans cette passe.
