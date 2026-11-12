@@ -58,13 +58,23 @@ test("requêtes de mesure : définitions et exclusions (base jetable)", async (t
   // Une offre pilote « once » à 0 € n'est jamais un payant, même en cadence « once ».
   assert.equal(await one("clients_payants"), 2);
 
+  // KPI-2 : un droit expiré n'est plus compté (même règle que le quota du produit) : pilote expiré = 0 pilote, abonnement expiré = 0 payant.
+  const piloteExpire = await org("pilote-expire"), payeExpire = await org("paye-expire");
+  await db.query("INSERT INTO entitlements(organization_id,offer_id,status,expires_at) VALUES($1,'pilote','active', now() - interval '1 day')", [piloteExpire]);
+  await db.query("INSERT INTO entitlements(organization_id,offer_id,status,customer_id,subscription_id,expires_at) VALUES($1,'dossier','active','cus_old','sub_old2', now() - interval '1 day')", [payeExpire]);
+  assert.deepEqual([await one("clients_payants"), await one("pilotes_actifs")], [2, 1], "droits expirés non comptés");
+  // Un droit encore valide (expiration future) reste compté.
+  const piloteValide = await org("pilote-valide");
+  await db.query("INSERT INTO entitlements(organization_id,offer_id,status,expires_at) VALUES($1,'pilote','active', now() + interval '60 days')", [piloteValide]);
+  assert.equal(await one("pilotes_actifs"), 2);
+
   // Exclusion de l'équipe PAR IDENTIFIANT : une organisation de même nom qu'une externe n'est pas exclue.
   const equipe = await org("equipe"), externe = await org("equipe");   // même nom, identifiants différents
   const today = new Date().toISOString().slice(0, 10);
   const day = (await db.query("SELECT (now() AT TIME ZONE 'Europe/Paris')::date::text AS d")).rows[0].d as string;
   const before = await one("organisations_externes_jour", day, [equipe]);
-  assert.equal(before, 6, "6 organisations externes (pilote, paye, sans-abo, annule, achat-unique, externe), l'équipe exclue par identifiant");
-  assert.equal(await one("organisations_externes_jour", day, [equipe, externe]), 5);
+  assert.equal(before, 9, "9 organisations externes (pilote, paye, sans-abo, annule, achat-unique, 3 expiré/valide, externe), l'équipe exclue par identifiant");
+  assert.equal(await one("organisations_externes_jour", day, [equipe, externe]), 8);
   void today;
 
   // Utilisateurs : l'équipe (membre d'une organisation d'équipe) est exclue, un utilisateur sans organisation compte.

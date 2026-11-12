@@ -5,16 +5,18 @@
 -- (uuid[], JAMAIS des noms). Dans Cockpit, $2 s'écrit en clair dans l'indicateur : ARRAY['<uuid>', …]::uuid[].
 
 -- name: clients_payants
--- Définition : droit actif d'une offre à PRIX > 0, lié à un paiement Stripe : un abonnement (subscription_id) OU un achat unique
+-- Définition : droit actif ET NON EXPIRÉ d'une offre à PRIX > 0, lié à un paiement Stripe : un abonnement (subscription_id) OU un achat unique
 -- (offre de cadence « once », ouverte en mode « payment » : le webhook signé n'écrit alors que customer_id, subscription_id reste nul).
 -- Un droit n'est créé que par le webhook signé avec payment_status='paid' ; l'offre « pilote » à 0 € et toute attribution manuelle
 -- d'une offre à abonnement (scripts/offrir-acces.ts ne crée que des droits pilote) ne sont pas comptées.
 SELECT count(*) FROM entitlements e JOIN offers o ON o.id=e.offer_id
-WHERE e.status='active' AND o.price_cents>0 AND (e.subscription_id IS NOT NULL OR o.cadence='once');
+WHERE e.status='active' AND (e.expires_at IS NULL OR e.expires_at>now())   -- même règle que le quota du produit (server/index.ts)
+  AND o.price_cents>0 AND (e.subscription_id IS NOT NULL OR o.cadence='once');
 
 -- name: pilotes_actifs
 SELECT count(*) FROM entitlements e JOIN offers o ON o.id=e.offer_id
-WHERE e.status='active' AND o.price_cents=0 AND o.id='pilote';
+WHERE e.status='active' AND (e.expires_at IS NULL OR e.expires_at>now())   -- le pilote dure 90 jours : un droit expiré n'est plus compté
+  AND o.price_cents=0 AND o.id='pilote';
 
 -- name: comptes_utilisateurs_externes_jour
 -- Utilisateurs inscrits ce jour-là, hors membres d'une organisation d'équipe (un utilisateur sans organisation compte).
