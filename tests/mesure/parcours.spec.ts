@@ -62,9 +62,9 @@ test("M3 : inscription → activation → Checkout test abandonné ; lignes de b
     await page.getByRole("button", { name: "Choisir cette offre" }).first().click();
     await expect(page.getByText("Page de paiement de test")).toBeVisible();
     await expect.poll(() => stack.searchtide.rows().some((r) => r.name === "checkout_ouvert")).toBe(true);
-    // Retour sur la page de retour SANS paiement : l'événement est émis, la base montre 0 paiement (preuve que paiement_ok n'est pas un paiement).
+    // Retour sur la page de retour SANS paiement : l'événement est émis, la base montre 0 paiement (preuve que paiement_retour n'est pas un paiement).
     await page.goto("/app/facturation?success=1");
-    await expect.poll(() => stack.searchtide.rows().some((r) => r.name === "paiement_ok")).toBe(true);
+    await expect.poll(() => stack.searchtide.rows().some((r) => r.name === "paiement_retour")).toBe(true);
 
     // Lignes de base (faits) et événements reçus.
     const n = async (sql: string) => Number((await stack.db.query(sql)).rows[0].count);
@@ -85,7 +85,7 @@ test("M3 : inscription → activation → Checkout test abandonné ; lignes de b
 
     expect(base).toEqual({ comptes_utilisateurs: 1, comptes_confirmes: 1, organisations: 1, dossiers: 1, documents_prets: 1, analyses_reussies: 1, droits_payants: 0, paiements_recus: 0 });
     expect(stack.stripe.calls, "un seul appel Stripe, simulé : ouverture d'une session Checkout ; aucun autre").toEqual(["POST /v1/checkout/sessions"]);
-    for (const name of ["compte_cree", "dossier_cree", "analyse_ok", "checkout_ouvert", "paiement_ok"]) {
+    for (const name of ["compte_cree", "dossier_cree", "analyse_ok", "checkout_ouvert", "paiement_retour"]) {
       const found = events.filter((e) => e.name === name);
       expect(found.length, `${name} reçu une seule fois par le Searchtide jetable`).toBe(1);
       expect([found[0].utm_source, found[0].utm_medium, found[0].utm_campaign], `${name} : campagne attribuée`).toEqual(["linkedin", "prospection", "pilotes"]);

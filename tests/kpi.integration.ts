@@ -31,7 +31,7 @@ test("requêtes de mesure : définitions et exclusions (base jetable)", async (t
   const org = async (name: string) => (await db.query("INSERT INTO organizations(id,name,kind,slug) VALUES($1,$2,'startup',$3) RETURNING id", [randomUUID(), name, name + randomUUID().slice(0, 4)])).rows[0].id as string;
   const user = async (verified: boolean) => { const id = randomUUID(); await db.query(`INSERT INTO "user"(id,name,email,"emailVerified","createdAt","updatedAt") VALUES($1,'n',$2,$3,now(),now())`, [id, id + "@exemple.test", verified]); return id; };
   const entitle = (o: string, offer: string, status: string, sub: string | null) => db.query("INSERT INTO entitlements(organization_id,offer_id,status,subscription_id) VALUES($1,$2,$3,$4)", [o, offer, status, sub]);
-  await db.query("INSERT INTO offers(id,label,price_cents,cadence,quota,active) VALUES ('pilote','Pilote',0,'once',99,true),('dossier','Dossier',14900,'quarter',10,true) ON CONFLICT(id) DO UPDATE SET price_cents=EXCLUDED.price_cents");
+  await db.query("INSERT INTO offers(id,label,price_cents,cadence,quota,active) VALUES ('pilote','Pilote',0,'once',99,true),('dossier','Dossier',14900,'quarter',10,true) ON CONFLICT(id) DO UPDATE SET price_cents=EXCLUDED.price_cents, cadence=EXCLUDED.cadence");
   const [pil, paye, sansAbo, annule] = [await org("pilote"), await org("paye"), await org("sans-abo"), await org("annule")];
 
   // M1 — sur base vide : 0 payant, 0 pilote.
@@ -50,13 +50,21 @@ test("requêtes de mesure : définitions et exclusions (base jetable)", async (t
   await entitle(paye, "dossier", "active", "sub_live");
   assert.deepEqual([await one("clients_payants"), await one("pilotes_actifs")], [1, 1]);
 
+  // Achat unique payé (offre « once » à prix > 0 : mode paiement, le webhook n'écrit que customer_id) = 1 payant de plus.
+  await db.query("INSERT INTO offers(id,label,price_cents,cadence,quota,active) VALUES ('achat','Achat unique',9900,'once',5,true)");
+  const unique = await org("achat-unique");
+  await db.query("INSERT INTO entitlements(organization_id,offer_id,status,customer_id,subscription_id) VALUES($1,'achat','active','cus_test',NULL)", [unique]);
+  assert.deepEqual([await one("clients_payants"), await one("pilotes_actifs")], [2, 1], "achat unique payé = payant ; l'offre trimestrielle attribuée à la main sans abonnement reste à 0");
+  // Une offre pilote « once » à 0 € n'est jamais un payant, même en cadence « once ».
+  assert.equal(await one("clients_payants"), 2);
+
   // Exclusion de l'équipe PAR IDENTIFIANT : une organisation de même nom qu'une externe n'est pas exclue.
   const equipe = await org("equipe"), externe = await org("equipe");   // même nom, identifiants différents
   const today = new Date().toISOString().slice(0, 10);
   const day = (await db.query("SELECT (now() AT TIME ZONE 'Europe/Paris')::date::text AS d")).rows[0].d as string;
   const before = await one("organisations_externes_jour", day, [equipe]);
-  assert.equal(before, 5, "5 organisations externes (pilote, paye, sans-abo, annule, externe), l'équipe exclue par identifiant");
-  assert.equal(await one("organisations_externes_jour", day, [equipe, externe]), 4);
+  assert.equal(before, 6, "6 organisations externes (pilote, paye, sans-abo, annule, achat-unique, externe), l'équipe exclue par identifiant");
+  assert.equal(await one("organisations_externes_jour", day, [equipe, externe]), 5);
   void today;
 
   // Utilisateurs : l'équipe (membre d'une organisation d'équipe) est exclue, un utilisateur sans organisation compte.

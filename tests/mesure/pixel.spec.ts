@@ -75,9 +75,9 @@ test("M2 : cinq événements — nom fixe, aucune charge utile, campagne conserv
   await page.getByRole("link", { name: "Facturation" }).first().click();
   await page.getByRole("button", { name: "Choisir cette offre" }).click();
   await expect(page).toHaveURL(/success=1/);
-  await expect.poll(names).toContain("paiement_ok");
+  await expect.poll(names).toContain("paiement_retour");
 
-  const expected = ["compte_cree", "dossier_cree", "analyse_ok", "checkout_ouvert", "paiement_ok"];
+  const expected = ["compte_cree", "dossier_cree", "analyse_ok", "checkout_ouvert", "paiement_retour"];
   for (const e of expected) {
     const found = hits.filter((h) => h.name === e);
     expect(found.length, `${e} envoyé une seule fois`).toBe(1);

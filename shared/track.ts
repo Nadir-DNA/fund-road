@@ -8,7 +8,7 @@ export const TRACK_EVENTS = [
   "dossier_cree",     // le serveur a créé un dossier
   "analyse_ok",       // une analyse vue « en cours » est passée à « terminée » sur le serveur
   "checkout_ouvert",  // le serveur a ouvert une session de paiement : redirection vers Stripe
-  "paiement_ok",      // arrivée sur la page de retour (success=1) : pas une confirmation, seul le webhook en fait foi
+  "paiement_retour",      // arrivée sur la page de retour (success=1) : pas une confirmation, seul le webhook en fait foi
 ] as const;
 export type TrackName = (typeof TRACK_EVENTS)[number];
 
