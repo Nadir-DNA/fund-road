@@ -1,0 +1,44 @@
+# Mesure de l'entonnoir — runbook
+
+Périmètre : **mesure seulement**. Aucun prix, paiement, webhook ni schéma de base modifié. Le pixel est celui de Searchtide déjà présent dans `index.html` (aucun nouveau script).
+
+## 1. Événements du pixel (noms fixes, aucune charge utile)
+Le pixel n'envoie que **l'URL, le référent, la langue et le nom**. Jamais : nom de dossier, texte ou nom de document, e-mail, identifiant d'organisation, montant, secret.
+
+| Événement | Émis | Réserve |
+|---|---|---|
+| `compte_cree` | après la réponse de succès de l'inscription | l'e-mail reste à confirmer ; la base fait foi |
+| `dossier_cree` | après la création d'un dossier | |
+| `analyse_ok` | quand une analyse vue « en cours » devient « terminée » dans la page ouverte | invisible si l'utilisateur a quitté la page : la base fait foi |
+| `checkout_ouvert` | après la réponse du serveur qui ouvre la session de paiement | ni offre ni montant |
+| `paiement_ok` | à l'arrivée sur la page de retour (`success=1`) | **n'est pas une confirmation de paiement** ; seul le webhook en fait foi |
+| `cta-entete-inscription`, `cta-accueil-creer-dossier`, `cta-financeurs-inscription`, `cta-tarifs-inscription` | au clic (attribut `data-searchtide`) | |
+
+## 2. Attribution (UTM)
+Les liens de prospection portent `utm_source`, `utm_medium`, `utm_campaign` (le segment : `incubateurs`, `ba`, `no-code`…), par exemple `https://fund-road.com/?utm_source=linkedin&utm_medium=prospection&utm_campaign=incubateurs`.
+`Link`, `NavLink` et `useNavigate` (`app/links.tsx`) gardent ces trois paramètres dans l'adresse des navigations vers `/inscription`, `/connexion` et `/app` ; le lien de confirmation par e-mail les garde dans `callbackURL`. La campagne est retenue pour la visite (`sessionStorage`, effacé à la fermeture de l'onglet) : **aucun cookie, aucune colonne**. Limite : si l'utilisateur ouvre le lien de confirmation dans un autre navigateur, la campagne est perdue.
+
+## 3. Équipe et trafic automatisé
+- **Équipe** : ouvrir **une fois par navigateur** `https://fund-road.com/?searchtide=ignore` ; ensuite plus aucune visite n'est envoyée. Annuler : `?searchtide=track`.
+- **Robots** : le filtre existant reste tel quel (agent utilisateur reconnu, `navigator.webdriver`). **Aucun pays ni type d'appareil n'est jamais exclu** (testé : un visiteur hors France sur ordinateur est compté).
+- On publie deux nombres (`docs/mesure/visites.sql`, `node scripts/visites-engagees.mjs <copie.db> fund-road.com <du> <au>`) : **visites** (visiteur-jour) et **visites engagées** (≥ 1 `cta-…` ou ≥ 2 pages). Le reste est « **trafic non confirmé** » : ce n'est pas un diagnostic de robot.
+
+## 4. KPI et requêtes en lecture seule (`docs/mesure/requetes.sql`)
+| KPI | Définition |
+|---|---|
+| **Clients payants** | droit actif d'une offre à prix > 0 lié à un abonnement Stripe (`o.price_cents>0 AND e.subscription_id IS NOT NULL`) |
+| **Pilotes actifs** | droit actif de l'offre `pilote` à 0 € |
+| Comptes utilisateurs / confirmés / organisations / dossiers / analyses réussies (par jour) | faits de la base, **hors équipe/test** : exclusion par **identifiant d'organisation** (`$2`, liste d'`uuid`), jamais par nom |
+| **Dossiers activés** (protocole des pilotes) | compte vérifié, ≥ 1 document prêt, **≥ 5 faits `confirmed: true` avec `source` non vide** dans `dossiers.state->'facts'` (un objet par rubrique `{value, source, confirmed, kind, quote}`), **0 conflit** (`state->'conflicts'` vide) |
+
+Faits qui ne sont **pas** dans la base de Fund Road : les **sessions Checkout ouvertes** et les **paiements du jour** se lisent chez Stripe, en lecture seule (`GET /v1/checkout/sessions`, `/v1/charges`). La base ne garde que le stock d'abonnements actifs (« Clients payants »).
+Exécution à la main : `psql … -c "BEGIN READ ONLY; <requête>; ROLLBACK;"`. Aucune requête ne sélectionne de nom, d'e-mail ni de contenu (testé).
+
+## 5. Canal « search » à 0 — cause mesurée
+Mesure sur le site en ligne (`node scripts/mesure-canal-search.mjs`, Chromium réel, arrivée avec un référent Google) : sur `fund-road.com` le référent est reçu ; sur **`www.fund-road.com`** (qui redirige en 301 vers l'adresse canonique) il est **perdu**, parce que la réponse de redirection portait `Referrer-Policy: no-referrer`. La CSP ne bloque pas le pixel (aucune violation). Les clics Google comptés sur `https://www.fund-road.com/` devenaient donc « direct ». Correction : en-tête `strict-origin-when-cross-origin` **sur cette seule redirection** (`server/index.ts`) ; les pages gardent `no-referrer`. À vérifier après mise en ligne en relançant le script (le second cas doit afficher `https://www.google.com/`).
+Limite : Search Console ne donne pas la page de chaque clic Google côté pixel ; la cause est établie par la mesure du mécanisme, pas rattachée clic par clic aux 2 clics du 10/11.
+
+## 6. Rejouer les vérifications
+- `npm test` (tests purs) · `npx tsc -p tsconfig.v2.json --noEmit` · `npx vite build`.
+- `npm run test:mesure` : événements, absence de charge utile, UTM, `?searchtide=ignore`, robot (M2/M4), parcours réel de bout en bout sur pile jetable (M3) et référent (M5). Demande un Postgres **local** (`DATABASE_URL` de `.env.local`) et Searchtide dans `~/projects/searchtide` (variable `SEARCHTIDE_DIR`). La pile est créée puis supprimée ; Stripe, l'IA et le SMTP sont simulés ; l'appel vers `api.stripe.com` est refusé s'il n'est pas redirigé vers le faux Stripe.
+- `npm run test:kpi` : requêtes de mesure sur une base jetable (M1).
