@@ -1,0 +1,115 @@
+// M2 / M4 (côté navigateur) : le VRAI script du pixel Searchtide (copie identique à celui servi par Cockpit, voir fixtures/)
+// reçoit les événements ; on lit ce qu'il envoie réellement au serveur de suivi. Aucune API réelle : tout est simulé.
+import { readFileSync } from "node:fs";
+import { expect, test, type Page } from "@playwright/test";
+
+const TRACKER = readFileSync(new URL("./fixtures/searchtide-tracker.js", import.meta.url), "utf8");
+const SECRETS = ["Dossier-Secret-ABC", "pilote@exemple.test", "org-secret-uuid", "14900", "document-secret.pdf"];
+type Hit = { site: string; url: string; referrer: string; lang: string; name?: string };
+
+/** Sert le vrai pixel et capture ses envois ; navigator.webdriver est masqué pour que le pixel (qui s'arrête sinon) s'exécute. */
+async function withPixel(page: Page, o: { webdriver?: boolean } = {}) {
+  const hits: Hit[] = [];
+  await page.route("https://stats.nadirdaoudi.com/script.js", (r) => r.fulfill({ status: 200, contentType: "text/javascript", body: TRACKER }));
+  // sendBeacon n'est pas toujours visible de page.route : on lit les requêtes émises (le domaine est de toute façon coupé du réseau).
+  page.on("request", (r) => { if (r.url() === "https://stats.nadirdaoudi.com/api/collect") hits.push(JSON.parse(r.postData() || "{}")); });
+  await page.route("https://stats.nadirdaoudi.com/api/collect", (r) => r.fulfill({ status: 204 }));
+  if (!o.webdriver) await page.addInitScript(() => Object.defineProperty(navigator, "webdriver", { get: () => false }));
+  return hits;
+}
+const json = (body: unknown, status = 200) => ({ status, contentType: "application/json", body: JSON.stringify(body) });
+
+test("M2 : cinq événements — nom fixe, aucune charge utile, campagne conservée de l'arrivée à la page de retour", async ({ page }) => {
+  const hits = await withPixel(page);
+  const state = { org: null as any, dossiers: [] as any[], gets: 0, signup: null as any };
+  await page.route("**/api/**", async (route) => {
+    const req = route.request(); const { pathname } = new URL(req.url()); const m = req.method();
+    if (pathname === "/api/auth/sign-up/email") { state.signup = JSON.parse(req.postData() || "{}"); return route.fulfill(json({ token: null, user: {} })); }
+    if (pathname === "/api/me") return route.fulfill(json({ user: { name: "Pilote Test", email: "pilote@exemple.test" }, organizations: state.org ? [state.org] : [] }));
+    if (pathname === "/api/organizations" && m === "POST") { state.org = { id: "org-secret-uuid", name: "Startup test", kind: "startup" }; return route.fulfill(json(state.org, 201)); }
+    if (pathname === "/api/dossiers" && m === "POST") { const d = { id: "d1", organization_id: "org-secret-uuid", name: "Dossier-Secret-ABC", goal: "grant", updated_at: "2026-11-12T00:00:00Z", score: { percent: 0, completed: 0, total: 10, missing: [] } }; state.dossiers.push(d); return route.fulfill(json(d, 201)); }
+    if (pathname === "/api/dossiers") return route.fulfill(json(state.dossiers));
+    if (pathname === "/api/dossiers/d1") {
+      state.gets += 1;   // l'analyse est vue « en cours » aux deux premières lectures, puis « terminée » : le serveur répond
+      const status = state.gets <= 2 ? "running" : "done";
+      return route.fulfill(json({ ...state.dossiers[0], documents: [{ id: "doc1", name: "document-secret.pdf", status: "ready" }], jobs: [{ id: "j1", kind: "analysis", status }], evaluations: [], questions: [], versions: [], applications: [], state: { facts: {}, conflicts: [], summary: "" }, score: { percent: 0, completed: 0, total: 10, missing: [], conflicts: [], attestable: false } }));
+    }
+    if (pathname === "/api/offers") return route.fulfill(json([{ id: "dossier", label: "Dossier financement", price_cents: 14900, cadence: "quarter", active: true }]));
+    if (pathname === "/api/billing/checkout") return route.fulfill(json({ url: "http://127.0.0.1:5191/app/facturation?success=1" }));   // jamais Stripe
+    if (pathname.startsWith("/api/billing/")) return route.fulfill(json({}));
+    return route.fulfill(json([]));
+  });
+  const names = () => hits.map((h) => h.name);
+
+  // Arrivée par un lien de campagne ; clic sur le CTA d'en-tête (navigation interne vers /inscription).
+  await page.goto("/?utm_source=linkedin&utm_medium=prospection&utm_campaign=incubateurs");
+  await page.locator('[data-searchtide="cta-entete-inscription"]').click();
+  await expect(page).toHaveURL(/\/inscription\?.*utm_campaign=incubateurs/);
+  await page.getByLabel("Votre nom").fill("Pilote Test");
+  await page.getByLabel("Adresse email").fill("pilote@exemple.test");
+  await page.getByLabel("Mot de passe").fill("un-mot-de-passe-solide-1");
+  await page.getByRole("button", { name: "Créer mon compte" }).click();
+  await expect(page.getByText("Vérifiez votre boîte mail")).toBeVisible();
+  expect(state.signup.callbackURL, "le lien de confirmation garde la campagne").toMatch(/^\/app\?.*utm_source=linkedin.*utm_campaign=incubateurs/);
+
+  // Lien reçu par e-mail (simulé) → espace, organisation, dossier.
+  await page.goto(state.signup.callbackURL);
+  await page.getByLabel("Nom de votre organisation").fill("Startup test");
+  await page.getByRole("button", { name: /Créer mon espace/ }).click();
+  await page.getByRole("button", { name: /Nouveau dossier/ }).click();
+  await page.getByLabel("Nom du projet").fill("Dossier-Secret-ABC");
+  await page.locator("form.inline-form button").last().click();
+  await expect.poll(names).toContain("dossier_cree");
+  await expect.poll(names, { timeout: 15_000 }).toContain("analyse_ok");
+
+  // Paiement : Checkout ouvert, puis retour (simulé) sur la page de retour.
+  await page.getByRole("link", { name: "Facturation" }).first().click();
+  await page.getByRole("button", { name: "Choisir cette offre" }).click();
+  await expect(page).toHaveURL(/success=1/);
+  await expect.poll(names).toContain("paiement_ok");
+
+  const expected = ["compte_cree", "dossier_cree", "analyse_ok", "checkout_ouvert", "paiement_ok"];
+  for (const e of expected) {
+    const found = hits.filter((h) => h.name === e);
+    expect(found.length, `${e} envoyé une seule fois`).toBe(1);
+    const h = found[0];
+    expect(Object.keys(h).sort(), `${e} : le pixel n'envoie que ces champs`).toEqual(["lang", "name", "referrer", "site", "url"]);
+    expect(h.site).toBe("fund-road.com");
+    const q = new URL(h.url).searchParams;
+    expect([q.get("utm_source"), q.get("utm_medium"), q.get("utm_campaign")], `${e} : campagne conservée`).toEqual(["linkedin", "prospection", "incubateurs"]);
+  }
+  expect(hits.some((h) => h.name === "cta-entete-inscription"), "clic sur un CTA mesuré").toBe(true);
+  // Aucune donnée de dossier, d'organisation, de document, d'e-mail ni de montant dans AUCUN corps envoyé au pixel.
+  const all = JSON.stringify(hits);
+  for (const secret of SECRETS) expect(all, `fuite : ${secret}`).not.toContain(secret);
+});
+
+test("M4 : ?searchtide=ignore → plus aucune visite, même après rechargement ; ?searchtide=track annule", async ({ page }) => {
+  const hits = await withPixel(page);
+  await page.route("**/api/**", (r) => r.fulfill(json([])));
+  await page.goto("/?searchtide=ignore");
+  await page.goto("/tarifs"); await page.goto("/financeurs"); await page.reload();
+  await page.waitForTimeout(500);
+  expect(hits, "aucune visite après ignore").toEqual([]);
+  await page.goto("/?searchtide=track");
+  await expect.poll(() => hits.length).toBeGreaterThan(0);
+});
+
+test("M4 : navigateur automatisé (navigator.webdriver) → aucune visite envoyée par le pixel", async ({ page }) => {
+  const hits = await withPixel(page, { webdriver: true });
+  await page.route("**/api/**", (r) => r.fulfill(json([])));
+  await page.goto("/"); await page.goto("/tarifs");
+  await page.waitForTimeout(500);
+  expect(hits).toEqual([]);
+});
+
+test("sans script de suivi (bloqueur) : le parcours fonctionne, aucune erreur", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.route("https://stats.nadirdaoudi.com/**", (r) => r.abort());
+  await page.route("**/api/**", (r) => r.fulfill(json([])));
+  await page.goto("/inscription?utm_source=x");
+  await page.getByLabel("Votre nom").fill("A");
+  await expect(page.getByLabel("Votre nom")).toHaveValue("A");
+  expect(errors).toEqual([]);
+});
