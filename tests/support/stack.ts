@@ -8,6 +8,7 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import pg from "pg";
+import { visites } from "../../scripts/visites-engagees.mjs";
 import { startFakeAI, startFakeStripe, startSmtpSink } from "./fakes.ts";
 
 export const API_PORT = 3184;   // port attendu par le proxy de vite.config.ts
@@ -67,6 +68,8 @@ export async function startStack(o: { checkoutUrl: string; appUrl?: string }) {
     searchtide: { base: searchtide, cookie, siteId: site.id,
       /** Événements reçus par le Searchtide jetable : nom, campagne, canal, page. */
       traffic: async () => ((await (await fetch(`${searchtide}/api/sites/${site.id}/traffic?days=1`, { headers: { cookie } })).json()) as any),
+      /** Visites / visites engagées du jour (même requête que le runbook). */
+      visites: () => { const d = new Date().toISOString().slice(0, 10); return visites(stDb, "fund-road.com", d, d) as { visites: number; visites_engagees: number; trafic_non_confirme: number }; },
       /** Lignes exactes reçues (lecture seule de la base temporaire du Searchtide jetable). */
       rows: () => { const d = new DatabaseSync(stDb, { readOnly: true }); try { return d.prepare("SELECT type, name, path, channel, utm_source, utm_medium, utm_campaign FROM events ORDER BY id").all() as Record<string, string | null>[]; } finally { d.close(); } },
     },

@@ -88,6 +88,10 @@ test("M3 : inscription → activation → Checkout test abandonné ; lignes de b
       expect([found[0].utm_source, found[0].utm_medium, found[0].utm_campaign], `${name} : campagne attribuée`).toEqual(["linkedin", "prospection", "pilotes"]);
     }
     expect(events.some((e) => e.name === "cta-entete-inscription")).toBe(true);
+    // Visites : un seul visiteur, engagé (CTA cliqué et plusieurs pages) ; la requête du runbook donne 1 / 1 / 0.
+    const v = stack.searchtide.visites();
+    console.log("VISITES", JSON.stringify(v));
+    expect(v).toEqual({ visites: 1, visites_engagees: 1, trafic_non_confirme: 0 });
   } finally {
     const diag = stack.apiLog.join("").split("\n").filter((l) => /"level":50|Stripe|rror/.test(l)).slice(-6).map((l) => l.slice(0, 400));
     if (diag.length) console.log("JOURNAL_API", JSON.stringify(diag));
