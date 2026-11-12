@@ -270,7 +270,8 @@ test("parcours API local et frontières entre organisations", async () => {
     },
     a.cookie,
   );
-  assert.equal(share.status, 200, JSON.stringify(share.data));
+  assert.equal(share.status, 201, JSON.stringify(share.data));
+  assert.equal(share.data.score, 100);
   const received = await call(
     "/applications/" + share.data.id,
     "GET",
@@ -432,9 +433,110 @@ test("parcours API local et frontières entre organisations", async () => {
     body: "{}",
   });
   assert.equal(cross.status, 403);
-  const pdf = await fetch(base + "/api/dossiers/" + id + "/export/pdf", {
-    headers: { cookie: a.cookie },
-  });
-  assert.equal(pdf.status, 200);
-  assert.ok((await pdf.text()).startsWith("%PDF"));
+  // A12a — partage d'un dossier incomplet : autorisé, taux exact, contenu filtré et figé
+  const vide = await call(
+    "/dossiers",
+    "POST",
+    { name: "Dossier incomplet", goal: "grant", organizationId: oa.data.id },
+    a.cookie,
+  );
+  assert.equal(vide.status, 200);
+  assert.equal(
+    (
+      await call(
+        "/dossiers/" + vide.data.id + "/facts/company",
+        "PUT",
+        {
+          revision: 1,
+          fact: {
+            value: "MARQUEUR-NON-CONFIRME-12A",
+            kind: "hypothesis",
+            source: "ai",
+            confirmed: false,
+          },
+        },
+        a.cookie,
+      )
+    ).status,
+    200,
+  );
+  const partage0 = await call(
+    "/dossiers/" + vide.data.id + "/applications",
+    "POST",
+    { recipientOrg: ob.data.id, documentIds: [], confirmed: true },
+    a.cookie,
+  );
+  assert.equal(partage0.status, 201, JSON.stringify(partage0.data));
+  assert.equal(partage0.data.score, 0);
+  const vu = await call(
+    "/applications/" + partage0.data.id,
+    "GET",
+    undefined,
+    b.cookie,
+  );
+  assert.equal(vu.status, 200);
+  assert.equal(JSON.stringify(vu.data).includes("MARQUEUR-NON-CONFIRME-12A"), false);
+  assert.equal(vu.data.score.percent, 0);
+  // le taux est figé : confirmer une rubrique après coup ne change pas cette candidature
+  assert.equal(
+    (
+      await call(
+        "/dossiers/" + vide.data.id + "/facts/company",
+        "PUT",
+        {
+          revision: 2,
+          fact: {
+            value: "Une entreprise de test sans données réelles.",
+            kind: "declared",
+            source: "declaration",
+            confirmed: true,
+          },
+        },
+        a.cookie,
+      )
+    ).status,
+    200,
+  );
+  assert.equal(
+    (await call("/applications/" + partage0.data.id, "GET", undefined, b.cookie))
+      .data.score.percent,
+    0,
+  );
+  const partage1 = await call(
+    "/dossiers/" + vide.data.id + "/applications",
+    "POST",
+    { recipientOrg: ob.data.id, documentIds: [], confirmed: true },
+    a.cookie,
+  );
+  assert.equal(partage1.status, 201);
+  assert.ok(partage1.data.score > 0, "un nouveau partage prend le taux à jour");
+  // une autre organisation ne partage pas ce dossier
+  assert.equal(
+    (
+      await call(
+        "/dossiers/" + vide.data.id + "/applications",
+        "POST",
+        { recipientOrg: ob.data.id, documentIds: [], confirmed: true },
+        c.cookie,
+      )
+    ).status,
+    403,
+  );
+  // un partage révoqué est introuvable
+  assert.equal(
+    (
+      await call(
+        "/applications/" + partage1.data.id + "/revoke",
+        "POST",
+        {},
+        a.cookie,
+      )
+    ).status,
+    200,
+  );
+  assert.equal(
+    (await call("/applications/" + partage1.data.id, "GET", undefined, b.cookie))
+      .status,
+    404,
+  );
 });

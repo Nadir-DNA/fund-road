@@ -3458,9 +3458,10 @@ function ShareForm({ dossier: d }: { dossier: any }) {
   const { data: financers } = useLoad<any[]>("/directory");
   const { run, busy } = useAction();
   const navigate = useNavigate();
-  const incomplete =
-    !d.score.attestable ||
+  // 12a : un dossier incomplet se partage ; seules les questions du destinataire bloquent
+  const questionsEnAttente =
     d.recipientProgress.completed < d.recipientProgress.total;
+  const manquantes = d.score.missing || [];
   return (
     <form
       className="panel form-panel"
@@ -3547,13 +3548,24 @@ function ShareForm({ dossier: d }: { dossier: any }) {
         <input type="checkbox" required />
         Je confirme le destinataire et les pièces sélectionnées.
       </label>
-      {incomplete && (
+      {manquantes.length > 0 && (
+        <div className="notice">
+          <p>
+            Le financeur recevra un dossier à {d.score.percent} % (
+            {d.score.completed} rubriques confirmées sur {d.score.total}).
+          </p>
+          <p>
+            Rubriques non confirmées, envoyées « à compléter » :{" "}
+            {manquantes.map((m: any) => m.label).join(", ")}.
+          </p>
+        </div>
+      )}
+      {questionsEnAttente && (
         <p className="muted">
-          Confirmez les neuf rubriques et répondez aux questions du destinataire
-          avant le partage.
+          Répondez aux questions du destinataire avant le partage.
         </p>
       )}
-      <button className="button" disabled={busy || incomplete}>
+      <button className="button" disabled={busy || questionsEnAttente}>
         Partager cette version <Send size={17} />
       </button>
     </form>

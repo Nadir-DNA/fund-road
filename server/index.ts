@@ -16,6 +16,7 @@ import {
   score,
   canAttest,
   emptyState,
+  etatPartage,
   requirements,
   dossierInput,
   organizationInput,
@@ -36,7 +37,8 @@ const app = Fastify({
   bodyLimit: 1024 * 1024,
 });
 await app.register(rateLimit, {
-  max: 120,
+  // même valeur par défaut en production ; les suites de test peuvent la relever
+  max: Number(process.env.RATE_LIMIT_MAX || 120),
   timeWindow: "1 minute",
   // derrière un tunnel Cloudflare, toutes les requêtes arrivent du tunnel : on limite par visiteur
   keyGenerator: (req) =>
@@ -922,7 +924,7 @@ app.get("/api/applications", async (req) => {
     )
   ).rows;
 });
-app.post("/api/dossiers/:id/applications", async (req: any) => {
+app.post("/api/dossiers/:id/applications", async (req: any, reply) => {
   const u = await user(req);
   const d = await dossier(u.id, req.params.id, true);
   const b = z
@@ -958,11 +960,15 @@ app.post("/api/dossiers/:id/applications", async (req: any) => {
     ).rows[0];
     if (!exists) fail(400, "Organisation destinataire invalide");
   }
-  if (!score(d.state).attestable)
-    fail(
-      409,
-      "Complétez et confirmez les neuf rubriques, sans conflit, avant le partage",
-    );
+  // le partage d'un dossier incomplet est autorisé (D12) ; seul le propriétaire partage
+  const roleProprietaire = (
+    await db.query(
+      "SELECT role FROM members WHERE user_id=$1 AND organization_id=$2",
+      [u.id, d.organization_id],
+    )
+  ).rows[0];
+  if (roleProprietaire?.role !== "owner")
+    fail(403, "Seul le propriétaire du dossier peut le partager");
   if (org) {
     const unanswered = Number(
       (
@@ -1080,7 +1086,9 @@ app.post("/api/dossiers/:id/applications", async (req: any) => {
       fail(502, "Le dossier est enregistré, mais l’email n’a pas été envoyé");
     }
   }
-  return { id };
+  // le taux part avec la réponse : c'est celui de la version figée, pas celui du dossier en cours
+  reply.code(201);
+  return { id, score: score(d.state).percent };
 });
 app.get("/api/applications/:id", async (req: any) => {
   const u = await user(req);
@@ -1145,6 +1153,8 @@ app.get("/api/applications/:id", async (req: any) => {
   const fit = destinataire ? orgProgram(destinataire) : null;
   return {
     ...a,
+    // seules les rubriques confirmées sortent de la version partagée (12a)
+    snapshot: { ...a.snapshot, state: etatPartage(a.snapshot.state) },
     documents: docs,
     notes,
     questions,
@@ -1197,7 +1207,7 @@ app.get("/api/applications/:id/export/:format", async (req: any, reply) => {
         )
       ).rows
     : [];
-  return exportDossier(nom, a.snapshot.state, format, {
+  return exportDossier(nom, etatPartage(a.snapshot.state), format, {
     documents,
     programs: await resolvePrograms(a.snapshot.state.programs),
     version: a.snapshot.revision,

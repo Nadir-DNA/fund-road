@@ -262,3 +262,39 @@ test("A8.1/A8.2 : l'e-mail part après le passage à « done », jamais sur éch
   assert.ok(echec > mail, "l'échec est traité après, sans envoi");
   assert.equal(worker.split("notifyOrg(").length - 1, 1, "un seul envoi par job");
 });
+
+// A12a — ce qui sort d'un dossier partagé
+test("A12a.2 : une rubrique non confirmée ne sort jamais, une confirmée sort avec sa citation", async () => {
+  const domain = await import("../shared/domain.ts");
+  const etat = domain.etatPartage({
+    facts: {
+      company: {
+        value: "Fondée en 2024",
+        confirmed: true,
+        quote: "créée en mars 2024",
+        source: "doc-1",
+      },
+      team: { value: "MARQUEUR-NON-CONFIRME", source: "ai" },
+      market: { value: "Brouillon", confirmed: false },
+      traction: { value: "12 clients payants", confirmed: true, source: "declaration" },
+    },
+    critique: { rubriques: { team: "MARQUEUR-CRITIQUE" } },
+    summary: "MARQUEUR-SYNTHESE",
+    conflicts: ["MARQUEUR-CONFLIT"],
+    programs: ["x"],
+  });
+  const sortie = JSON.stringify(etat);
+  assert.equal(sortie.includes("MARQUEUR-NON-CONFIRME"), false);
+  assert.equal(sortie.includes("MARQUEUR-CRITIQUE"), false);
+  assert.equal(etat.facts.company.quote, "créée en mars 2024");
+  assert.equal(etat.facts.company.source, "doc-1");
+  assert.equal(etat.facts.traction.value, "12 clients payants");
+  // la rubrique reste connue, sans contenu : la vue affiche « à compléter »
+  assert.deepEqual(etat.facts.team, {});
+  assert.deepEqual(etat.facts.market, {});
+  // la synthèse et les contradictions de l'IA ne sortent pas non plus
+  assert.equal("summary" in etat, false);
+  assert.equal("conflicts" in etat, false);
+  // le reste de l'état n'est pas perdu (programmes, déclarations)
+  assert.deepEqual(etat.programs, ["x"]);
+});

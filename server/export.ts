@@ -91,11 +91,13 @@ function contenu(name: string, state: DossierState, docs: { id: string; name: st
         { t: "source", texte: "Repris tel quel du fichier déposé : chiffres et hypothèses du porteur, non vérifiés par Fund Road." },
       );
   }
-  b.push(
-    { t: "titre", texte: "Points à clarifier" },
-    { t: "source", texte: "Contradictions relevées par IA entre les documents." },
-    { t: "texte", texte: state.conflicts.join("\n") || "Aucune contradiction relevée entre les documents." },
-  );
+  // un état partagé n'a ni synthèse ni contradictions : on n'imprime pas de section vide
+  if (Array.isArray(state.conflicts))
+    b.push(
+      { t: "titre", texte: "Points à clarifier" },
+      { t: "source", texte: "Contradictions relevées par IA entre les documents." },
+      { t: "texte", texte: state.conflicts.join("\n") || "Aucune contradiction relevée entre les documents." },
+    );
   return b;
 }
 
