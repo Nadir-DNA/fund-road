@@ -1,8 +1,16 @@
 import { Document, Packer, Paragraph } from "docx";
-import test from "node:test";
+import test, { after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { Client } from "pg";
 import { requirements } from "../shared/domain.ts";
+// fixtures de droits : la base de test est jetable (DATABASE_URL du serveur de test)
+const pgc = new Client({ connectionString: process.env.DATABASE_URL });
+await pgc.connect();
+// ne jamais garder le processus en vie après un échec
+after(async () => {
+  await pgc.end();
+});
 const base = "http://127.0.0.1:3184";
 async function call(url: string, method = "GET", body?: any, cookie = "") {
   const r = await fetch(base + "/api" + url, {
@@ -433,6 +441,75 @@ test("parcours API local et frontières entre organisations", async () => {
     body: "{}",
   });
   assert.equal(cross.status, 403);
+  // A12b : l'export de son propre dossier est payant ; sans droit, aucun octet de fichier
+  const pdfGratuit = await fetch(base + "/api/dossiers/" + id + "/export/pdf", {
+    headers: { cookie: a.cookie },
+  });
+  assert.equal(pdfGratuit.status, 403);
+  assert.equal((await pdfGratuit.text()).startsWith("%PDF"), false);
+  // sans session, 401 ; autre organisation, 403
+  assert.equal(
+    (await fetch(base + "/api/dossiers/" + id + "/export/pdf")).status,
+    401,
+  );
+  assert.equal(
+    (
+      await fetch(base + "/api/dossiers/" + id + "/export/pdf", {
+        headers: { cookie: b.cookie },
+      })
+    ).status,
+    403,
+  );
+  // droit attribué à la main sur une offre à abonnement, sans subscription_id : pas d'export
+  await pgc.query(
+    "INSERT INTO entitlements(organization_id,offer_id,status,expires_at) VALUES($1,'fund','active',now()+interval '30 days') ON CONFLICT (organization_id) DO UPDATE SET offer_id='fund',status='active',subscription_id=NULL,expires_at=now()+interval '30 days'",
+    [oa.data.id],
+  );
+  assert.equal(
+    (
+      await fetch(base + "/api/dossiers/" + id + "/export/pdf", {
+        headers: { cookie: a.cookie },
+      })
+    ).status,
+    403,
+  );
+  // achat unique payant : export autorisé, PDF servi
+  await pgc.query(
+    "UPDATE entitlements SET offer_id='dossier',subscription_id=NULL,expires_at=now()+interval '90 days' WHERE organization_id=$1",
+    [oa.data.id],
+  );
+  const pdfPaye = await fetch(base + "/api/dossiers/" + id + "/export/pdf", {
+    headers: { cookie: a.cookie },
+  });
+  assert.equal(pdfPaye.status, 200);
+  assert.ok((await pdfPaye.text()).startsWith("%PDF"));
+  // pilote à 0 € : pas d'export
+  await pgc.query(
+    "UPDATE entitlements SET offer_id='pilote',expires_at=now()+interval '90 days' WHERE organization_id=$1",
+    [oa.data.id],
+  );
+  assert.equal(
+    (
+      await fetch(base + "/api/dossiers/" + id + "/export/pdf", {
+        headers: { cookie: a.cookie },
+      })
+    ).status,
+    403,
+  );
+  // droit expiré : pas d'export non plus
+  await pgc.query(
+    "UPDATE entitlements SET offer_id='dossier',expires_at=now()-interval '1 day' WHERE organization_id=$1",
+    [oa.data.id],
+  );
+  assert.equal(
+    (
+      await fetch(base + "/api/dossiers/" + id + "/export/pdf", {
+        headers: { cookie: a.cookie },
+      })
+    ).status,
+    403,
+  );
+
   // A12a — partage d'un dossier incomplet : autorisé, taux exact, contenu filtré et figé
   const vide = await call(
     "/dossiers",

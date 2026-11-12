@@ -817,6 +817,23 @@ app.get("/api/dossiers/:id/export/:format", async (req: any, reply) => {
   const u = await user(req);
   const d = await dossier(u.id, req.params.id);
   const format = z.enum(["pdf", "docx"]).parse(req.params.format);
+  // 12b : l'export de son propre dossier est la fonction payante. Définition unique de
+  // « payant » : droit actif non expiré, offre payante, abonnement ou achat unique.
+  const droit = (
+    await db.query(
+      `SELECT 1 FROM entitlements e JOIN offers f ON f.id=e.offer_id
+        WHERE e.organization_id=$1 AND e.status='active'
+          AND (e.expires_at IS NULL OR e.expires_at>now())
+          AND f.price_cents>0
+          AND (e.subscription_id IS NOT NULL OR f.cadence='once')`,
+      [d.organization_id],
+    )
+  ).rowCount;
+  if (!droit)
+    fail(
+      403,
+      "Les exports PDF et Word sont réservés à l’offre payante. Votre dossier reste accessible et partageable ; voir la page Facturation.",
+    );
   reply
     .type(
       format === "pdf"
