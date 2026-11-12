@@ -320,6 +320,7 @@ test("A12c.3/A12c.5 : partage incomplet autorisé, aucune restriction d’étape
   assert.equal(serveur.includes("Étape : offre payante"), false);
   assert.equal(app.includes("Étape : offre payante"), false);
 });
+
 // A13 — ticket affiché seulement avec une source
 test("A13.1 : un ticket sans source datée devient « Non communiqué »", async () => {
   const criteria = await import("../shared/criteria.ts");
@@ -338,6 +339,7 @@ test("A13.1 : un ticket sans source datée devient « Non communiqué »", async
   assert.equal(criteria.ticketAffiche({}), "Non communiqué");
   assert.equal(criteria.ticketAffiche(null), "Non communiqué");
 });
+
 // A21 — aucun bouton Google mort
 test("A21.1 : le bouton Google n'existe que si les identifiants sont configurés", () => {
   const auth = readFileSync(new URL("../server/auth.ts", import.meta.url), "utf8");

@@ -1,5 +1,6 @@
-// Icônes Font Awesome (libre, open source) exposées sous les noms déjà utilisés dans l'app
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// Icônes Font Awesome (libre, open source) exposées sous les noms déjà utilisés dans l'app.
+// Rendu SVG direct depuis la définition : ni la bibliothèque de rendu ni son cœur ne partent
+// dans le bundle, seuls les tracés utilisés (mêmes icônes, même licence).
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
   faArrowRight,
@@ -41,13 +42,21 @@ import {
 
 const icon =
   (def: IconDefinition) =>
-  ({ size = 18 }: { size?: number }) => (
-    <FontAwesomeIcon
-      icon={def}
-      style={{ width: size, height: size }}
-      aria-hidden="true"
-    />
-  );
+  ({ size = 18 }: { size?: number }) => {
+    const [w, h, , , tracé] = def.icon;
+    const d = Array.isArray(tracé) ? tracé[0] : tracé;
+    return (
+      <svg
+        viewBox={`0 0 ${w} ${h}`}
+        style={{ width: size, height: size }}
+        fill="currentColor"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path d={d} />
+      </svg>
+    );
+  };
 
 export const ArrowRight = icon(faArrowRight);
 export const ArrowUpRight = icon(faArrowRight);
