@@ -21,6 +21,10 @@ Conséquence assumée : sans consentement, une page rechargée perd la campagne 
 
 ## 2 bis. E-mail de confirmation d'inscription
 L'écran demande lui-même l'envoi du lien juste après l'inscription : si l'envoi échoue (SMTP en panne), il affiche « E-mail non envoyé… » et l'événement serveur `mail.verification_failed` (code technique, jamais l'adresse) est journalisé ; « Renvoyer le lien » est proposé sur cet écran et après un refus de connexion « adresse non confirmée » ; la route est limitée à 3 demandes par minute (message « Trop de tentatives »). Aucun changement du transport, de `MAIL_FROM` ni du DNS. Distinct de l'alias Gmail `hello@fund-road.com` utilisé pour la prospection.
+Points à connaître :
+- **Inscription par l'API seule** (onglet fermé ou script en échec juste après l'inscription) : aucun e-mail n'est envoyé (`sendOnSignUp: false`) ; la personne se récupère en se connectant (« Renvoyer le lien de confirmation »).
+- **La limite de 3 demandes par minute dépend de l'adresse lue** : en production `BEHIND_CLOUDFLARE=1` (seul `cf-connecting-ip` fait foi, `X-Forwarded-For` usurpé ne la contourne pas) ; la protection repose donc sur le **tunnel** : le port local de la machine ne doit jamais être exposé, car un `cf-connecting-ip` usurpé y contournerait la limite. Sans `BEHIND_CLOUDFLARE`, un `X-Forwarded-For` usurpé la contourne.
+- **Limite par adresse** : plusieurs pilotes derrière la même adresse peuvent se bloquer une minute.
 
 ## 3. Équipe et trafic automatisé
 - **Équipe** : ouvrir **une fois par navigateur** `https://fund-road.com/?searchtide=ignore` ; ensuite plus aucune visite n'est envoyée. Annuler : `?searchtide=track`.
