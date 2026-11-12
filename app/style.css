@@ -2965,3 +2965,30 @@ legend {
   font-size: var(--text-sm);
   color: var(--color-ink-2);
 }
+
+/* Preuve sociale factuelle : chiffres dérivés des données publiées */
+.preuve-factuelle {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.25rem clamp(1rem, 4vw, 3rem);
+  border-top: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+  border-bottom: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+}
+.preuve-factuelle ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.preuve-factuelle li {
+  font-size: 0.95rem;
+}
+.preuve-factuelle strong {
+  font-size: 1.15rem;
+}
+.preuve-factuelle p {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+}

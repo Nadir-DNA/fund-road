@@ -149,6 +149,14 @@ export function formatTicket(min?: number | null, max?: number | null) {
   if (min) return `dès ${euros(min)}`;
   return "";
 }
+// D13 : un ticket ne s'affiche qu'avec une source datée ; sinon « Non communiqué »,
+// jamais « 0 € » ni une estimation. Une valeur inconnue reste hors du tri numérique.
+export const ticketAffiche = (c: any): string => {
+  const valeur = formatTicket(c?.ticketMin, c?.ticketMax) || String(c?.ticket || "");
+  const sources = c?.sources || {};
+  const source = Object.keys(sources).some((k) => k.startsWith("ticket"));
+  return valeur && source ? valeur : "Non communiqué";
+};
 const liste = (v: unknown) => (Array.isArray(v) ? v.join(", ") : String(v || ""));
 
 // Critères lisibles, qu'ils soient structurés (listes, montants) ou d'anciennes fiches en texte libre

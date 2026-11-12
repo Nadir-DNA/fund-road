@@ -320,3 +320,22 @@ test("A12c.3/A12c.5 : partage incomplet autorisé, aucune restriction d’étape
   assert.equal(serveur.includes("Étape : offre payante"), false);
   assert.equal(app.includes("Étape : offre payante"), false);
 });
+// A13 — ticket affiché seulement avec une source
+test("A13.1 : un ticket sans source datée devient « Non communiqué »", async () => {
+  const criteria = await import("../shared/criteria.ts");
+  assert.equal(
+    criteria.ticketAffiche({ ticketMin: 500000, ticketMax: 2000000 }),
+    "Non communiqué",
+  );
+  assert.equal(
+    criteria.ticketAffiche({
+      ticketMin: 500000,
+      ticketMax: 2000000,
+      sources: { ticketMin: { url: "https://exemple.fr", citation: "500 k€" } },
+    }),
+    "500 k€ à 2 M€",
+  );
+  assert.equal(criteria.ticketAffiche({}), "Non communiqué");
+  assert.equal(criteria.ticketAffiche(null), "Non communiqué");
+});
+

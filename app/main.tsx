@@ -78,6 +78,7 @@ import {
   regions,
   resume,
   secteurs,
+  ticketAffiche,
   stades,
   types,
   type TypeFinanceur,
@@ -691,6 +692,43 @@ function animerVitrine(reduce: boolean) {
     },
   );
 }
+// D14 : preuve sociale factuelle, calculée à l'affichage depuis les données publiées.
+// Aucun témoignage, logo ou chiffre inventé : sans données, la bande ne s'affiche pas.
+function PreuveFactuelle() {
+  const { data } = useLoad<any[]>("/directory");
+  const financeurs = data?.length || 0;
+  const programmes = programs.length;
+  const dates = [
+    ...programs.map((p) => p.verifiedAt),
+    ...Object.values(editorial).map((p) => p.date),
+  ]
+    .filter(Boolean)
+    .sort();
+  const maj = dates.at(-1);
+  if (!financeurs || !programmes) return null;
+  return (
+    <section className="preuve-factuelle" aria-label="Le référentiel en chiffres">
+      <ul>
+        <li>
+          <strong>{financeurs}</strong> financeurs référencés
+        </li>
+        <li>
+          <strong>{programmes}</strong> programmes et aides couverts
+        </li>
+        {maj && (
+          <li>
+            Référentiel vérifié le{" "}
+            <time dateTime={maj}>{new Date(maj).toLocaleDateString("fr")}</time>
+          </li>
+        )}
+      </ul>
+      <p className="muted">
+        Aucun témoignage pour l’instant : Fund Road n’a pas encore d’utilisateur
+        réel. Nous n’en publierons qu’avec un accord écrit.
+      </p>
+    </section>
+  );
+}
 function Landing() {
   const ref = useRef<HTMLElement>(null);
   useGsap(ref, animerVitrine);
@@ -765,6 +803,7 @@ function Landing() {
             </figure>
           </div>
         </section>
+        <PreuveFactuelle />
         <section className="section" id="fonctionnement">
           <div className="section-head">
             <span className="kicker">Comment ça marche</span>
@@ -3692,7 +3731,7 @@ function Directory({ embedded = false }: { embedded?: boolean }) {
                     <dt>
                       <Coins size={13} /> Ticket
                     </dt>
-                    <dd>{resume(o.criteria).ticket || "À préciser"}</dd>
+                    <dd>{ticketAffiche(o.criteria)}</dd>
                   </div>
                   <div>
                     <dt>
@@ -4997,7 +5036,7 @@ function Portal() {
               <div>
                 <dl className="portal-facts">
                   {[
-                    [Coins, "Ticket", resume(c).ticket],
+                    [Coins, "Ticket", ticketAffiche(c)],
                     [Seedling, "Stade", resume(c).stage],
                     [MapPin, "Zone", resume(c).geography],
                     [Building2, "Secteurs", resume(c).sectors],
@@ -5006,7 +5045,7 @@ function Portal() {
                       <dt>
                         <Icon size={14} /> {t}
                       </dt>
-                      <dd>{v || "À préciser"}</dd>
+                      <dd>{v || "Non communiqué"}</dd>
                     </div>
                   ))}
                 </dl>
