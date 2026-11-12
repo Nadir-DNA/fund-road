@@ -84,17 +84,23 @@ import {
 } from "../shared/criteria";
 import {
   confirmationEnLot,
+  csvPipeline,
+  filtrerPipeline,
   filtrerProgrammes,
   libelleDroit,
   libelleJob,
   libelleRecompense,
+  menuPour,
   ongletDepuisUrl,
   parametresOnglet,
   propositionsRelues,
   trierAnnuaire,
+  trierPipeline,
   trierProgrammes,
   trisAnnuaire,
+  trisPipeline,
   type TriAnnuaire,
+  type TriPipeline,
 } from "../shared/ui";
 import "./fonts.css";
 import "./style.css";
@@ -1530,16 +1536,17 @@ function PasswordPage() {
 }
 type Workspace = { me: any; org: any; refresh: () => void };
 const WorkspaceContext = createContext<Workspace>(null as any);
-const links = [
-  ["/app", "Vue d’ensemble", LayoutDashboard],
-  ["/app/dossiers", "Mes dossiers", FolderOpen],
-  ["/app/candidatures", "Candidatures", Send],
-  ["/app/annuaire", "Annuaire", Search],
-  ["/app/portail", "Mon organisation", Building2],
-  ["/app/partenaires", "Recommandations", Gift],
-  ["/app/facturation", "Facturation", CreditCard],
-  ["/app/securite", "Sécurité", ShieldCheck],
-] as const;
+// Icônes des entrées de menu ; la liste et les libellés viennent de shared/ui.ts
+const iconesMenu: Record<string, typeof LayoutDashboard> = {
+  "/app": LayoutDashboard,
+  "/app/dossiers": FolderOpen,
+  "/app/candidatures": Send,
+  "/app/annuaire": Search,
+  "/app/portail": Building2,
+  "/app/partenaires": Gift,
+  "/app/facturation": CreditCard,
+  "/app/securite": ShieldCheck,
+};
 // Invité sur un dossier, sans organisation : ses dossiers, et la possibilité d'en créer une
 const liensInvite = [
   ["/app", "Dossiers partagés", FolderOpen],
@@ -1567,7 +1574,11 @@ function Shell() {
     );
   if (!me) return <div className="loading">Chargement de votre espace…</div>;
   const menu: readonly (readonly [string, string, typeof LayoutDashboard])[] =
-    org ? links : liensInvite;
+    org
+      ? menuPour(org.kind, Boolean(org.paid)).map(
+          ([to, label]) => [to, label, iconesMenu[to] || LayoutDashboard] as const,
+        )
+      : liensInvite;
   return (
     <WorkspaceContext.Provider
       value={{ me, org, refresh: () => setTick((t) => t + 1) }}
@@ -1696,6 +1707,10 @@ function Shell() {
                 <Route path="partenaires" element={<Partners />} />
                 <Route path="facturation" element={<Billing />} />
                 <Route path="securite" element={<Security />} />
+                <Route
+                  path="partages/:id"
+                  element={<SharedApplication embedded />}
+                />
                 <Route path="*" element={<Empty title="Page introuvable" />} />
               </Routes>
             )}
@@ -3661,17 +3676,73 @@ const orgKindLabels: Record<string, string> = {
 function Pipeline() {
   const { org, me } = useContext(WorkspaceContext);
   const [tick, setTick] = useState(0),
-    [filter, setFilter] = useState("all");
+    [filter, setFilter] = useState("all"),
+    [recherche, setRecherche] = useState(""),
+    [tri, setTri] = useState<TriPipeline>("date"),
+    [invitation, setInvitation] = useState(false),
+    [lienCopie, setLienCopie] = useState(false);
   const { data, error } = useLoad<any>(
     `/organizations/${org.id}/pipeline`,
     tick,
   );
   const { run, busy } = useAction();
+  const toast = useContext(ToastContext);
   const rows: any[] = data?.rows || [];
   const active = rows.filter((r) => r.stage !== "declined");
-  const shown = rows.filter((r) => filter === "all" || r.stage === filter);
+  // filtre d'étape, recherche puis tri : l'export reprend exactement ces lignes
+  const shown = trierPipeline(
+    filtrerPipeline(
+      rows.filter((r) => filter === "all" || r.stage === filter),
+      recherche,
+    ),
+    tri,
+  );
   const avg = (xs: number[]) =>
     xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0;
+  const lien = location.origin + "/fonds/" + org.slug;
+  // mise en route : les trois étapes qui rendent le pipeline utile
+  const etapesFaites = [
+    { fait: Boolean(data?.criteria), texte: "Renseignez vos critères d’investissement", to: "/app/portail" },
+    { fait: Boolean(org.logo), texte: "Ajoutez le logo de votre organisation", to: "/app/portail" },
+    { fait: rows.some((r) => r.source === "application"), texte: "Recevez une première candidature" },
+  ];
+  const reste = etapesFaites.filter((e) => !e.fait).length;
+  const copier = async () => {
+    try {
+      await navigator.clipboard.writeText(lien);
+      setLienCopie(true);
+      toast("Lien copié");
+    } catch {
+      toast("Copie impossible : sélectionnez le lien affiché à la main.");
+    }
+  };
+  const exporter = () => {
+    const url = URL.createObjectURL(
+      new Blob([csvPipeline(shown)], { type: "text/csv;charset=utf-8" }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "pipeline.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const inviter = (f: FormData) =>
+    run(async () => {
+      // un dossier au nom de la startup, puis l'invitation : un seul geste, pas d'organisation créée
+      const d = await api("/dossiers", "POST", {
+        organizationId: org.id,
+        name: String(f.get("name")),
+        goal: String(f.get("goal") || "investment"),
+      });
+      await api("/invitations", "POST", {
+        organizationId: org.id,
+        dossierId: d.id,
+        email: String(f.get("email")),
+        role: "editor",
+      });
+      setInvitation(false);
+      setTick((t) => t + 1);
+    }, "Dossier créé et invitation envoyée");
   return (
     <>
       <div className="page-heading">
@@ -3683,15 +3754,78 @@ function Pipeline() {
           </p>
         </div>
         <div className="button-row">
-          <Link className="button secondary" to="/app/portail">
-            Mes critères
-          </Link>
-          <Link className="button" to={"/fonds/" + org.slug} target="_blank">
-            Mon lien de candidature <ArrowUpRight size={16} />
-          </Link>
+          <button className="button secondary" onClick={copier}>
+            <Link2 size={16} /> {lienCopie ? "Lien copié" : "Copier mon lien"}
+          </button>
+          <button
+            className="button"
+            onClick={() => setInvitation((x) => !x)}
+          >
+            <Plus size={16} /> Inviter une startup
+          </button>
         </div>
       </div>
       <ErrorBox text={error} />
+      {invitation && (
+        <form
+          className="panel form-panel"
+          onSubmit={(e) => {
+            e.preventDefault();
+            inviter(new FormData(e.currentTarget));
+          }}
+        >
+          <h2>Inviter une startup</h2>
+          <p>
+            Le dossier est créé dans votre espace et l’invitation part dans le
+            même geste. Aucune organisation n’est créée pour la startup.
+          </p>
+          <label>
+            Nom de la startup
+            <input name="name" required minLength={2} maxLength={150} />
+          </label>
+          <label>
+            Objectif
+            <select name="goal">
+              <option value="investment">Investissement</option>
+              <option value="grant">Subvention</option>
+            </select>
+          </label>
+          <label>
+            Adresse e-mail du contact
+            <input name="email" type="email" required />
+          </label>
+          <div className="button-row">
+            <button className="button" disabled={busy}>
+              <Send size={16} /> Créer le dossier et inviter
+            </button>
+            <button
+              type="button"
+              className="button secondary"
+              onClick={() => setInvitation(false)}
+            >
+              Annuler
+            </button>
+          </div>
+        </form>
+      )}
+      {reste > 0 && (
+        <div className="panel">
+          <div className="section-title">
+            <h3>Mise en route</h3>
+            <Badge>
+              {etapesFaites.length - reste} / {etapesFaites.length}
+            </Badge>
+          </div>
+          <ol className="mise-en-route">
+            {etapesFaites.map((e) => (
+              <li key={e.texte} className={e.fait ? "fait" : ""}>
+                {e.fait ? <Check size={15} /> : <Clock size={15} />}
+                {e.to ? <Link to={e.to}>{e.texte}</Link> : e.texte}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
       <div className="stat-grid">
         <div>
           <span>Startups suivies</span>
@@ -3741,12 +3875,38 @@ function Pipeline() {
           </button>
         ))}
       </div>
+      <div className="filtres">
+        <input
+          type="search"
+          aria-label="Rechercher une startup"
+          placeholder="Rechercher une startup…"
+          value={recherche}
+          onChange={(e) => setRecherche(e.target.value)}
+        />
+        <select
+          aria-label="Trier le pipeline"
+          value={tri}
+          onChange={(e) => setTri(e.target.value as TriPipeline)}
+        >
+          {trisPipeline.map(([valeur, libelle]) => (
+            <option key={valeur} value={valeur}>
+              {libelle}
+            </option>
+          ))}
+        </select>
+        <button className="button secondary" onClick={exporter} disabled={!shown.length}>
+          <Download size={16} /> Exporter ({shown.length})
+        </button>
+      </div>
       {!shown.length ? (
         <div className="panel">
           <Empty title="Aucune startup ici pour le moment">
-            Partagez le lien de votre portail ou invitez une startup à compléter
-            son dossier.
+            Invitez une startup avec son nom et son e-mail : son dossier est
+            créé et elle reçoit le lien d’accès.
           </Empty>
+          <button className="button" onClick={() => setInvitation(true)}>
+            <Plus size={16} /> Inviter une startup
+          </button>
         </div>
       ) : (
         <div className="pipeline">
@@ -4061,10 +4221,14 @@ function OrganizationPage() {
               await api("/organizations/" + org.id, "PUT", {
                 theme: {
                   name: f.get("name"),
-                  accent: f.get("accent"),
+                  // startup : pas de couleur de portail, on garde la valeur existante
+                  accent: f.get("accent") || org.theme.accent || "#eb743c",
                   intro: f.get("intro"),
                 },
-                criteria: lireCriteres(f, org.kind),
+                // startup : aucun critère à enregistrer, ceux du financeur restent intacts
+                ...(org.kind !== "startup" && {
+                  criteria: lireCriteres(f, org.kind),
+                }),
               });
               refresh();
             }, "Organisation mise à jour");
@@ -4080,36 +4244,41 @@ function OrganizationPage() {
             />
           </label>
           <label>
-            Couleur d’accent
-            <input
-              type="color"
-              name="accent"
-              defaultValue={org.theme.accent || "#eb743c"}
-            />
-          </label>
-          <label>
             Présentation
             <textarea name="intro" defaultValue={org.theme.intro || ""} />
           </label>
-          <h2>Thèse et critères</h2>
-          <ChampsCriteres kind={org.kind} c={org.criteria} />
-          <label>
-            Questions spécifiques — une par ligne
-            <textarea
-              name="questions"
-              defaultValue={(org.criteria.questions || []).join("\n")}
-            />
-          </label>
-          <label>
-            Pièces demandées — une par ligne
-            <textarea
-              name="documents"
-              placeholder={
-                "Pitch deck\nPrévisionnel financier sur 3 ans\nTable de capitalisation"
-              }
-              defaultValue={(org.criteria.documents || []).join("\n")}
-            />
-          </label>
+          {/* thèse, critères, questions, pièces et couleur du portail : financeurs seulement */}
+          {org.kind !== "startup" && (
+            <>
+              <label>
+                Couleur d’accent
+                <input
+                  type="color"
+                  name="accent"
+                  defaultValue={org.theme.accent || "#eb743c"}
+                />
+              </label>
+              <h2>Thèse et critères</h2>
+              <ChampsCriteres kind={org.kind} c={org.criteria} />
+              <label>
+                Questions spécifiques — une par ligne
+                <textarea
+                  name="questions"
+                  defaultValue={(org.criteria.questions || []).join("\n")}
+                />
+              </label>
+              <label>
+                Pièces demandées — une par ligne
+                <textarea
+                  name="documents"
+                  placeholder={
+                    "Pitch deck\nPrévisionnel financier sur 3 ans\nTable de capitalisation"
+                  }
+                  defaultValue={(org.criteria.documents || []).join("\n")}
+                />
+              </label>
+            </>
+          )}
           <button className="button" disabled={busy || org.role !== "owner"}>
             Enregistrer <Check size={16} />
           </button>
@@ -4953,23 +5122,43 @@ function Invitation() {
     </PublicLayout>
   );
 }
-function SharedApplication() {
+function SharedApplication({ embedded = false }: { embedded?: boolean }) {
   const { id } = useParams();
   const [tick, setTick] = useState(0);
   const { data: a, error } = useLoad("/applications/" + id, tick);
   const { run, busy } = useAction();
-  return (
-    <PublicLayout>
-      <main className="section">
-        <ErrorBox text={error} />
-        {a && (
-          <>
-            <div className="page-heading">
-              <div>
+  // source d'une citation : le nom du document partagé quand il est connu
+  const source = (source?: string) => {
+    if (!source || source.startsWith("declaration")) return "Votre déclaration";
+    const doc = a?.documents?.find((d: any) => d.id === source);
+    return doc ? "Extrait de " + doc.name : "Extrait du dossier";
+  };
+  const body = (
+    <>
+      <ErrorBox text={error} />
+      {a && (
+        <>
+          <div className="page-heading">
+            <div>
+              {a.canReview ? (
+                <Link className="backlink" to="/app">
+                  ← Pipeline
+                </Link>
+              ) : (
                 <div className="eyebrow">DOSSIER PARTAGÉ · VERSION DATÉE</div>
-                <h1>{a.snapshot.name}</h1>
-                <p>{a.message}</p>
-              </div>
+              )}
+              <h1>{a.snapshot.name}</h1>
+              <p>{a.message}</p>
+            </div>
+            <div className="button-row">
+              {a.canReview && (
+                <a
+                  className="button secondary"
+                  href={"/api/applications/" + id + "/export/pdf"}
+                >
+                  <Download size={16} /> PDF
+                </a>
+              )}
               {a.canRevoke && (
                 <button
                   className="button secondary"
@@ -4984,133 +5173,199 @@ function SharedApplication() {
                 </button>
               )}
             </div>
-            <div className="content-grid">
-              <section>
-                {a.questions?.length > 0 && (
-                  <div className="panel">
-                    <h2>Compléments demandés par ce financeur</h2>
-                    <p>
-                      {a.questions.filter((q: any) => q.answer?.trim()).length}{" "}
-                      / {a.questions.length} réponses reçues · échanges mis à
-                      jour après le partage.
-                    </p>
-                    {a.questions.map((q: any) =>
-                      a.canRevoke ? (
-                        // côté startup : on répond ici, là où l'email du financeur renvoie
-                        <form
-                          key={q.id}
-                          onSubmit={(e) => {
-                            e.preventDefault();
-                            const f = new FormData(e.currentTarget);
-                            run(async () => {
-                              await api("/questions/" + q.id, "PUT", {
-                                answer: f.get("answer"),
-                              });
-                              setTick((t) => t + 1);
-                            }, "Réponse transmise au financeur");
-                          }}
-                        >
-                          <h3>{q.body}</h3>
-                          <textarea
-                            name="answer"
-                            defaultValue={q.answer || ""}
-                            required
-                            aria-label={"Votre réponse : " + q.body}
-                          />
-                          <button className="button secondary" disabled={busy}>
-                            {q.answer ? "Modifier ma réponse" : "Répondre"}
-                          </button>
-                        </form>
-                      ) : (
-                        <div key={q.id}>
-                          <h3>{q.body}</h3>
-                          <p className="preline">
-                            {q.answer || "En attente de réponse"}
-                          </p>
-                        </div>
-                      ),
-                    )}
-                  </div>
-                )}
-                {requirements.map((r) => (
+          </div>
+          {a.canReview && a.score && (
+            <div className="panel">
+              <div className="section-title">
+                <h3>Complétude de la version partagée</h3>
+                <Badge good={a.score.percent === 100}>
+                  {a.score.percent} %
+                </Badge>
+              </div>
+              <div className="bar">
+                <span style={{ width: a.score.percent + "%" }} />
+              </div>
+              {a.score.missing?.length > 0 && (
+                <p className="smalltext">
+                  Dossier incomplet :{" "}
+                  {a.score.missing.map((m: any) => m.label).join(", ")}. Seules
+                  les rubriques confirmées au partage sont affichées.
+                </p>
+              )}
+              {a.fit && (
+                <p>
+                  Adéquation à vos critères :{" "}
+                  <strong>{a.fit.percent} %</strong> ·{" "}
+                  {verdicts[a.fit.verdict]?.[1] || "Évaluation en cours"}
+                </p>
+              )}
+              <label>
+                Étape de cette candidature
+                <select
+                  value={a.stage}
+                  disabled={busy}
+                  onChange={(e) =>
+                    run(async () => {
+                      await api("/applications/" + id + "/stage", "PUT", {
+                        stage: e.target.value,
+                      });
+                      setTick((t) => t + 1);
+                    }, "Étape mise à jour")
+                  }
+                >
+                  {Object.entries(etapes(a.recipient_kind)).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
+          <div className="content-grid">
+            <section>
+              {a.questions?.length > 0 && (
+                <div className="panel">
+                  <h2>Compléments demandés par ce financeur</h2>
+                  <p>
+                    {a.questions.filter((q: any) => q.answer?.trim()).length} /{" "}
+                    {a.questions.length} réponses reçues · échanges mis à jour
+                    après le partage.
+                  </p>
+                  {a.questions.map((q: any) =>
+                    a.canRevoke ? (
+                      // côté startup : on répond ici, là où l'email du financeur renvoie
+                      <form
+                        key={q.id}
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const f = new FormData(e.currentTarget);
+                          run(async () => {
+                            await api("/questions/" + q.id, "PUT", {
+                              answer: f.get("answer"),
+                            });
+                            setTick((t) => t + 1);
+                          }, "Réponse transmise au financeur");
+                        }}
+                      >
+                        <h3>{q.body}</h3>
+                        <textarea
+                          name="answer"
+                          defaultValue={q.answer || ""}
+                          required
+                          aria-label={"Votre réponse : " + q.body}
+                        />
+                        <button className="button secondary" disabled={busy}>
+                          {q.answer ? "Modifier ma réponse" : "Répondre"}
+                        </button>
+                      </form>
+                    ) : (
+                      <div key={q.id}>
+                        <h3>{q.body}</h3>
+                        <p className="preline">
+                          {q.answer || "En attente de réponse"}
+                        </p>
+                      </div>
+                    ),
+                  )}
+                </div>
+              )}
+              {requirements.map((r) => {
+                const fact = a.snapshot.state.facts[r.id];
+                return (
                   <div className="panel" key={r.id}>
                     <h3>{r.label}</h3>
-                    {proposeParIA(a.snapshot.state.facts[r.id]) && (
+                    {proposeParIA(fact) && (
                       <Badge>Proposé par l’IA · Non confirmé par la startup</Badge>
                     )}
-                    <p className="preline">
-                      {a.snapshot.state.facts[r.id]?.value || "À compléter"}
-                    </p>
+                    <p className="preline">{fact?.value || "À compléter"}</p>
+                    {fact?.quote && (
+                      <blockquote>
+                        <small>{source(fact.source)}</small>
+                        « {fact.quote} »
+                      </blockquote>
+                    )}
                   </div>
+                );
+              })}
+            </section>
+            <aside>
+              <div className="panel">
+                <h3>Pièces partagées</h3>
+                {a.documents.map((d: any) => (
+                  <a
+                    className="document-row"
+                    href={`/api/applications/${id}/documents/${d.id}`}
+                    key={d.id}
+                  >
+                    <FileText size={18} />
+                    {d.name}
+                    <Download size={16} />
+                  </a>
                 ))}
-              </section>
-              <aside>
-                <div className="panel">
-                  <h3>Pièces partagées</h3>
-                  {a.documents.map((d: any) => (
-                    <a
-                      className="document-row"
-                      href={`/api/applications/${id}/documents/${d.id}`}
-                      key={d.id}
-                    >
-                      <FileText size={18} />
-                      {d.name}
-                      <Download size={16} />
-                    </a>
-                  ))}
-                </div>
-                {a.canReview && (
-                  <>
-                    <form
-                      className="panel"
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        const f = new FormData(e.currentTarget);
-                        run(async () => {
-                          await api("/applications/" + id + "/notes", "POST", {
-                            body: f.get("body"),
-                          });
-                          setTick((t) => t + 1);
-                        }, "Note privée enregistrée");
-                      }}
-                    >
-                      <h3>Notes privées de votre équipe</h3>
-                      {a.notes.map((n: any) => (
-                        <p key={n.id}>{n.body}</p>
-                      ))}
-                      <textarea name="body" required />
-                      <button className="button secondary" disabled={busy}>
-                        Ajouter une note
-                      </button>
-                    </form>
-                    <form
-                      className="panel"
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        const f = new FormData(e.currentTarget);
-                        run(async () => {
-                          await api(
-                            "/applications/" + id + "/questions",
-                            "POST",
-                            { body: f.get("body") },
-                          );
-                          setTick((t) => t + 1);
-                        }, "Question ajoutée au dossier");
-                      }}
-                    >
-                      <h3>Demander un complément</h3>
-                      <textarea name="body" required minLength={5} />
-                      <button className="button" disabled={busy}>
-                        Transmettre la question
-                      </button>
-                    </form>
-                  </>
-                )}
-              </aside>
-            </div>
-          </>
-        )}
-      </main>
+              </div>
+              {a.canReview && (
+                <>
+                  <form
+                    className="panel"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const f = new FormData(e.currentTarget);
+                      run(async () => {
+                        await api("/applications/" + id + "/notes", "POST", {
+                          body: f.get("body"),
+                        });
+                        setTick((t) => t + 1);
+                      }, "Note privée enregistrée");
+                    }}
+                  >
+                    <h3>Notes privées de votre équipe</h3>
+                    {a.notes.map((n: any) => (
+                      <div className="note-row" key={n.id}>
+                        <p>{n.body}</p>
+                        <small>
+                          {n.author || "Équipe"} ·{" "}
+                          {new Date(n.created_at).toLocaleDateString("fr")}
+                        </small>
+                      </div>
+                    ))}
+                    <textarea name="body" required />
+                    <button className="button secondary" disabled={busy}>
+                      Ajouter une note
+                    </button>
+                  </form>
+                  <form
+                    className="panel"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const f = new FormData(e.currentTarget);
+                      run(async () => {
+                        await api("/applications/" + id + "/questions", "POST", {
+                          body: f.get("body"),
+                        });
+                        setTick((t) => t + 1);
+                      }, "Question ajoutée au dossier");
+                    }}
+                  >
+                    <h3>Demander un complément</h3>
+                    <textarea name="body" required minLength={5} />
+                    <button className="button" disabled={busy}>
+                      Transmettre la question
+                    </button>
+                  </form>
+                </>
+              )}
+            </aside>
+          </div>
+        </>
+      )}
+    </>
+  );
+  return embedded ? (
+    body
+  ) : (
+    <PublicLayout>
+      <main className="section">{body}</main>
     </PublicLayout>
   );
 }

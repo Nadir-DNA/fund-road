@@ -154,3 +154,92 @@ test("A5b.2 : aucune confirmation en lot tant qu’une contradiction n’est pas
   assert.deepEqual(ui.confirmationEnLot(facts, ["company", "team"], 1), []);
   assert.deepEqual(ui.confirmationEnLot(undefined, ["company"], 2), []);
 });
+
+// A10 — pipeline financeur : recherche, tri, export identique à l'écran
+const ligne = (startup: string, fit: number | null, date: string) => ({
+  startup,
+  name: startup + " SAS",
+  score: { percent: 50 },
+  fit: fit === null ? null : { percent: fit, verdict: "eligible" },
+  stage: "new",
+  created_at: date,
+  source: "application",
+});
+test("A10.3 : recherche et tri du pipeline", () => {
+  const rows = [
+    ligne("Alpha", 40, "2026-11-01T00:00:00Z"),
+    ligne("Beta", 90, "2026-11-05T00:00:00Z"),
+    ligne("Gamma", null, "2026-11-03T00:00:00Z"),
+  ];
+  assert.deepEqual(
+    ui.filtrerPipeline(rows, "bet").map((r) => r.startup),
+    ["Beta"],
+  );
+  assert.equal(ui.filtrerPipeline(rows, "").length, 3);
+  assert.deepEqual(
+    ui.trierPipeline(rows, "fit").map((r) => r.startup),
+    ["Beta", "Alpha", "Gamma"],
+  );
+  assert.deepEqual(
+    ui.trierPipeline(rows, "date").map((r) => r.startup),
+    ["Beta", "Gamma", "Alpha"],
+  );
+  assert.deepEqual(
+    ui.trierPipeline(rows, "nom").map((r) => r.startup),
+    ["Alpha", "Beta", "Gamma"],
+  );
+});
+
+test("A10.3 : l'export CSV reprend exactement les lignes affichées", () => {
+  const rows = [ligne("Alpha", 40, "2026-11-01T00:00:00Z")];
+  const lignes = ui.csvPipeline(rows).split("\n");
+  assert.equal(lignes.length, 2);
+  assert.ok(lignes[0].includes("Startup"));
+  assert.ok(lignes[1].includes('"Alpha"'));
+  assert.ok(lignes[1].includes('"50"'));
+  assert.equal(ui.csvPipeline([]).split("\n").length, 1);
+});
+
+// A9.1 — deux profils × présence d'un droit payant
+test("A9.1 : le menu d'une startup est inchangé", () => {
+  const menu = ui.menuPour("startup", false).map(([to]: any) => to);
+  assert.deepEqual(menu, [
+    "/app",
+    "/app/dossiers",
+    "/app/candidatures",
+    "/app/annuaire",
+    "/app/portail",
+    "/app/partenaires",
+    "/app/facturation",
+    "/app/securite",
+  ]);
+  assert.deepEqual(ui.menuPour("startup", true).map(([to]: any) => to), menu);
+});
+
+test("A9.1 : un financeur sans droit payant ne voit pas la facturation", () => {
+  const menu = ui.menuPour("fund", false).map(([to]: any) => to);
+  assert.deepEqual(menu, ["/app", "/app/candidatures", "/app/portail", "/app/securite"]);
+  assert.ok(!menu.includes("/app/dossiers"));
+  assert.ok(!menu.includes("/app/annuaire"));
+  assert.ok(!menu.includes("/app/partenaires"));
+  assert.ok(!menu.includes("/app/facturation"));
+});
+
+test("A9.1 : un financeur avec droit payant voit la facturation en dernier", () => {
+  const menu = ui.menuPour("fund", true).map(([to]: any) => to);
+  assert.deepEqual(menu, [
+    "/app",
+    "/app/candidatures",
+    "/app/portail",
+    "/app/securite",
+    "/app/facturation",
+  ]);
+  // tous les types de financeur suivent la même règle
+  for (const kind of ["angel", "network", "grant", "incubator"])
+    assert.deepEqual(ui.menuPour(kind, false).map(([to]: any) => to), [
+      "/app",
+      "/app/candidatures",
+      "/app/portail",
+      "/app/securite",
+    ]);
+});

@@ -141,9 +141,19 @@ app.get("/api/config", async () => ({
 }));
 app.get("/api/me", async (req) => {
   const u = await user(req);
+  // paid : la définition unique de « payant » (droit actif non expiré, offre payante,
+  // abonnement ou achat unique) — elle sert au menu du financeur et aux exports
   const orgs = (
     await db.query(
-      "SELECT o.*,m.role FROM organizations o JOIN members m ON m.organization_id=o.id WHERE m.user_id=$1 ORDER BY o.created_at",
+      `SELECT o.*,m.role,EXISTS(
+         SELECT 1 FROM entitlements e JOIN offers f ON f.id=e.offer_id
+          WHERE e.organization_id=o.id AND e.status='active'
+            AND (e.expires_at IS NULL OR e.expires_at>now())
+            AND f.price_cents>0
+            AND (e.subscription_id IS NOT NULL OR f.cadence='once')
+       ) AS paid
+         FROM organizations o JOIN members m ON m.organization_id=o.id
+        WHERE m.user_id=$1 ORDER BY o.created_at`,
       [u.id],
     )
   ).rows;
@@ -185,14 +195,14 @@ app.put("/api/organizations/:id", async (req: any) => {
   const { kind } = (
     await db.query("SELECT kind FROM organizations WHERE id=$1", [req.params.id])
   ).rows[0];
+  // une startup n'a ni thèse ni critères : le champ est facultatif et, absent, inchangé
   const b = z
-    .object({ theme: themeInput, criteria: criteriaInput(kind) })
+    .object({ theme: themeInput, criteria: criteriaInput(kind).optional() })
     .parse(req.body);
-  await db.query("UPDATE organizations SET theme=$2,criteria=$3 WHERE id=$1", [
-    req.params.id,
-    b.theme,
-    b.criteria,
-  ]);
+  await db.query(
+    "UPDATE organizations SET theme=$2,criteria=COALESCE($3,criteria) WHERE id=$1",
+    [req.params.id, b.theme, b.criteria ?? null],
+  );
   await audit(u.id, req.params.id, "organization.updated", req.params.id);
   return { ok: true };
 });
@@ -1088,7 +1098,7 @@ app.get("/api/applications/:id", async (req: any) => {
   const notes = m
     ? (
         await db.query(
-          "SELECT id,body,created_at FROM notes WHERE application_id=$1 AND organization_id=$2 ORDER BY created_at",
+          'SELECT n.id,n.body,n.created_at,u.name AS author FROM notes n LEFT JOIN "user" u ON u.id=n.author_id WHERE n.application_id=$1 AND n.organization_id=$2 ORDER BY n.created_at',
           [a.id, a.recipient_org],
         )
       ).rows
@@ -1099,6 +1109,16 @@ app.get("/api/applications/:id", async (req: any) => {
       [a.id],
     )
   ).rows;
+  // le financeur membre voit le taux figé de la version partagée et son adéquation,
+  // calculée avec la même fonction que le pipeline
+  const destinataire = m
+    ? (
+        await db.query("SELECT * FROM organizations WHERE id=$1", [
+          a.recipient_org,
+        ])
+      ).rows[0]
+    : null;
+  const fit = destinataire ? orgProgram(destinataire) : null;
   return {
     ...a,
     documents: docs,
@@ -1106,7 +1126,58 @@ app.get("/api/applications/:id", async (req: any) => {
     questions,
     canReview: Boolean(m),
     canRevoke: source,
+    ...(m
+      ? {
+          score: score(a.snapshot.state),
+          fit:
+            fit && fit.criteria.length
+              ? programScore(
+                  fit,
+                  a.snapshot.state.eligibility?.[fit.id],
+                )
+              : null,
+          recipient_kind: destinataire?.kind || null,
+        }
+      : {}),
   };
+});
+app.get("/api/applications/:id/export/:format", async (req: any, reply) => {
+  const u = await user(req);
+  const format = z.enum(["pdf", "docx"]).parse(req.params.format);
+  const a = (
+    await db.query(
+      "SELECT a.*,v.snapshot FROM applications a JOIN versions v ON v.id=a.version_id WHERE a.id=$1",
+      [req.params.id],
+    )
+  ).rows[0];
+  if (!a || a.revoked_at) fail(404, "Partage indisponible");
+  if (!a.recipient_org) fail(403, "Réservé au financeur destinataire");
+  // membre du destinataire seulement ; gratuit, et limité à la version partagée
+  await member(u.id, a.recipient_org);
+  const nom = a.snapshot.name || "dossier";
+  reply
+    .type(
+      format === "pdf"
+        ? "application/pdf"
+        : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+    .header(
+      "Content-Disposition",
+      `attachment; filename="${slugify(nom) || "dossier"}.${format}"`,
+    );
+  const documents = a.document_ids?.length
+    ? (
+        await db.query(
+          "SELECT id,name,CASE WHEN name ~* '\\.xlsx$' THEN extracted END AS extracted FROM documents WHERE id=ANY($1::uuid[])",
+          [a.document_ids],
+        )
+      ).rows
+    : [];
+  return exportDossier(nom, a.snapshot.state, format, {
+    documents,
+    programs: await resolvePrograms(a.snapshot.state.programs),
+    version: a.snapshot.revision,
+  });
 });
 app.post("/api/applications/:id/revoke", async (req: any) => {
   const u = await user(req);

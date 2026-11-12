@@ -131,6 +131,81 @@ const dateVerification = (o: any) => {
   return Number.isFinite(d) ? d : 0;
 };
 
+// Menus par profil : la liste est décidée ici, le rendu ne fait que la suivre.
+// Un financeur n'a ni dossiers de startup, ni annuaire, ni recommandations ; la facturation
+// ne s'affiche que s'il a un droit payant (elle est gratuite sinon).
+export type EntreeMenu = readonly [string, string];
+const MENU_STARTUP: readonly EntreeMenu[] = [
+  ["/app", "Vue d’ensemble"],
+  ["/app/dossiers", "Mes dossiers"],
+  ["/app/candidatures", "Candidatures"],
+  ["/app/annuaire", "Annuaire"],
+  ["/app/portail", "Mon organisation"],
+  ["/app/partenaires", "Recommandations"],
+  ["/app/facturation", "Facturation"],
+  ["/app/securite", "Sécurité"],
+];
+const MENU_FINANCEUR: readonly EntreeMenu[] = [
+  ["/app", "Pipeline"],
+  ["/app/candidatures", "Candidatures"],
+  ["/app/portail", "Mon organisation"],
+  ["/app/securite", "Sécurité"],
+];
+export function menuPour(kind?: string, paid = false): readonly EntreeMenu[] {
+  if (!kind || kind === "startup") return MENU_STARTUP;
+  return paid
+    ? [...MENU_FINANCEUR, ["/app/facturation", "Facturation"] as EntreeMenu]
+    : MENU_FINANCEUR;
+}
+
+// Pipeline financeur : recherche, tri et lignes exportées identiques à l'écran
+export type TriPipeline = "date" | "fit" | "nom";
+export const trisPipeline: readonly (readonly [TriPipeline, string])[] = [
+  ["date", "Date de réception"],
+  ["fit", "Adéquation"],
+  ["nom", "Nom"],
+];
+const nomPipeline = (r: any) => String(r?.startup || r?.name || "");
+export function filtrerPipeline<T>(rows: readonly T[], recherche: string): T[] {
+  const t = recherche.trim().toLowerCase();
+  if (!t) return [...rows];
+  return rows.filter((r: any) =>
+    [r.startup, r.name].join(" ").toLowerCase().includes(t),
+  );
+}
+export function trierPipeline<T>(rows: readonly T[], tri: TriPipeline): T[] {
+  const copie = [...rows];
+  if (tri === "nom")
+    return copie.sort((a, b) => nomPipeline(a).localeCompare(nomPipeline(b), "fr"));
+  if (tri === "fit")
+    return copie.sort((a: any, b: any) => {
+      const x = typeof a.fit?.percent === "number" ? a.fit.percent : null;
+      const y = typeof b.fit?.percent === "number" ? b.fit.percent : null;
+      if (x === null && y === null) return 0;
+      if (x === null) return 1;
+      if (y === null) return -1;
+      return y - x;
+    });
+  return copie.sort(
+    (a: any, b: any) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0),
+  );
+}
+// Export CSV du tableau affiché : mêmes lignes, aucune colonne en plus
+export function csvPipeline(rows: readonly any[]): string {
+  const echappe = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const lignes = [
+    ["Startup", "Dossier", "Complétude", "Adéquation", "Étape"],
+    ...rows.map((r) => [
+      r.startup || "Startup invitée",
+      r.name || "",
+      r.score?.percent ?? "",
+      r.fit?.percent ?? "",
+      r.stage || "",
+    ]),
+  ];
+  return lignes.map((l) => l.map(echappe).join(";")).join("\n");
+}
+
 // Programmes : recherche libre (nom, opérateur, type, résumé) et suggestions
 // ordonnées selon l'objectif du dossier
 export function filtrerProgrammes<T extends { name?: string; operator?: string; kind?: string; summary?: string }>(
