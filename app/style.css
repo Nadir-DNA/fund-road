@@ -167,6 +167,36 @@ svg {
   min-height: 38px;
   padding: var(--space-2xs) var(--space-sm);
 }
+.button.danger {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: #fff;
+}
+.button.danger:hover {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  filter: brightness(0.92);
+}
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: var(--space-md);
+  background: oklch(0% 0 0 / 0.45);
+}
+.confirm-dialog {
+  width: min(480px, 100%);
+  display: grid;
+  gap: var(--space-sm);
+}
+.confirm-dialog p {
+  margin: 0;
+}
+.confirm-dialog .button-row {
+  justify-content: flex-end;
+}
 .button-row {
   display: flex;
   gap: var(--space-2xs);
@@ -1103,6 +1133,34 @@ legend {
   min-width: 32px;
   min-height: 32px;
   color: var(--color-night-text);
+}
+/* Erreur d'action : reste affichée jusqu'à la prochaine action ou fermeture */
+.action-error {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-danger);
+  color: #fff;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  box-shadow: var(--shadow-lg);
+}
+.action-error span {
+  flex: 1;
+}
+.action-error button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  color: #fff;
 }
 .loading {
   padding: var(--space-3xl) var(--space-lg);

@@ -15,6 +15,7 @@ import {
   Route,
   useParams,
   useLocation,
+  useSearchParams,
 } from "react-router-dom";
 import { Link, NavLink, useNavigate } from "./links.tsx";
 import { captureUtm, firstTime, keepUtm, persistUtm, track } from "./track.ts";
@@ -81,6 +82,20 @@ import {
   types,
   type TypeFinanceur,
 } from "../shared/criteria";
+import {
+  confirmationEnLot,
+  filtrerProgrammes,
+  libelleDroit,
+  libelleJob,
+  libelleRecompense,
+  ongletDepuisUrl,
+  parametresOnglet,
+  propositionsRelues,
+  trierAnnuaire,
+  trierProgrammes,
+  trisAnnuaire,
+  type TriAnnuaire,
+} from "../shared/ui";
 import "./fonts.css";
 import "./style.css";
 import { publicCopy, faq, pageMeta, financeursPage } from "../shared/content";
@@ -168,25 +183,72 @@ function useLoad<T = any>(url: string, dep: any = 0) {
   return { data, error };
 }
 const ToastContext = createContext<(message: string) => void>(() => {});
+// Erreur d'action : affichée en haut de page, persistante, jamais en toast
+const ErreurContext = createContext<(message: string) => void>(() => {});
+// busy, erreur persistante du dernier formulaire, et succès en toast court
 function useAction() {
   const toast = useContext(ToastContext);
+  const afficherErreur = useContext(ErreurContext);
   const [busy, setBusy] = useState(false);
+  const [erreur, setErreur] = useState("");
   return {
     busy,
+    erreur,
     run: async (fn: () => Promise<any>, success?: string) => {
       setBusy(true);
+      setErreur("");
+      afficherErreur("");
       try {
         const r = await fn();
         if (success) toast(success);
         return r;
       } catch (e: any) {
-        toast(e.message);
+        // une erreur ne disparaît pas par minuterie : elle reste affichée
+        const message = e.message || "L’action a échoué.";
+        setErreur(message);
+        afficherErreur(message);
         return null;
       } finally {
         setBusy(false);
       }
     },
   };
+}
+// Confirmation dans l'application, avec le nom de l'objet concerné
+function ConfirmDialog({
+  texte,
+  confirmer,
+  onConfirm,
+  onCancel,
+  busy = false,
+}: {
+  texte: string;
+  confirmer: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  busy?: boolean;
+}) {
+  return (
+    <div className="confirm-overlay" role="presentation" onClick={onCancel}>
+      <div
+        className="panel confirm-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Confirmation"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p>{texte}</p>
+        <div className="button-row">
+          <button className="button secondary" onClick={onCancel}>
+            Annuler
+          </button>
+          <button className="button danger" disabled={busy} onClick={onConfirm}>
+            {confirmer}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 const Logo = ({ light = false }: { light?: boolean }) => (
   <Link to="/" className={"logo" + (light ? " light" : "")}>
@@ -2146,12 +2208,19 @@ function DepotAnalyse({
 function DossierPage() {
   const { id } = useParams();
   const [tick, setTick] = useState(0),
-    [tab, setTab] = useState("overview"),
-    [attestation, setAttestation] = useState("");
+    [attestation, setAttestation] = useState(""),
+    [suppression, setSuppression] = useState(false),
+    [revocation, setRevocation] = useState("");
+  const [params, setParams] = useSearchParams();
+  // l'onglet vit dans l'URL : un rechargement ou un lien d'e-mail le conserve
+  const tab = ongletDepuisUrl("?" + params.toString());
+  const setTab = (key: string) =>
+    setParams(parametresOnglet(key), { replace: true });
   const { data: d, error } = useLoad("/dossiers/" + id, tick);
   const { data: cfg } = useLoad("/config");
   const { run, busy } = useAction();
   const { org } = useContext(WorkspaceContext);
+  const toast = useContext(ToastContext);
   const navigate = useNavigate();
   const refresh = () => setTick((t) => t + 1);
   useEffect(() => {
@@ -2174,7 +2243,16 @@ function DossierPage() {
       analysesVues.current.set(j.id, j.status);
     }
   }, [d]);
-  if (!d) return <ErrorBox text={error || "Chargement…"} />;
+  // chargement distinct de l'erreur : un dossier en cours de chargement n'est pas une erreur
+  if (!d) return error ? <ErrorBox text={error} /> : <div className="loading">Chargement du dossier…</div>;
+  // propositions de l'analyse relues mais pas encore confirmées (bouton groupé).
+  // A5b.2 : un conflit bloque la confirmation en lot, il n'est rattaché à aucune rubrique.
+  const conflits = (d.state.conflicts || []).length;
+  const propositions = confirmationEnLot(
+    d.state.facts,
+    requirements.map((r) => r.id),
+    conflits,
+  );
   return (
     <>
       <Link className="backlink" to="/app/dossiers">
@@ -2204,21 +2282,42 @@ function DossierPage() {
             <button
               className="button secondary"
               disabled={busy}
-              onClick={() =>
-                confirm(
-                  `Supprimer définitivement « ${d.name} », ses documents, ses versions et ses partages ? Cette action est irréversible.`,
-                ) &&
-                run(async () => {
-                  await api("/dossiers/" + id, "DELETE");
-                  navigate("/app/dossiers");
-                }, "Dossier supprimé")
-              }
+              onClick={() => setSuppression(true)}
             >
               Supprimer
             </button>
           )}
         </div>
       </div>
+      {suppression && (
+        <ConfirmDialog
+          texte={`Supprimer définitivement « ${d.name} », ses documents, ses versions et ses partages ? Cette action est irréversible.`}
+          confirmer="Supprimer le dossier"
+          busy={busy}
+          onCancel={() => setSuppression(false)}
+          onConfirm={() =>
+            run(async () => {
+              await api("/dossiers/" + id, "DELETE");
+              navigate("/app/dossiers");
+            }, "Dossier supprimé")
+          }
+        />
+      )}
+      {revocation && (
+        <ConfirmDialog
+          texte="Révoquer cette attestation ? Sa page publique indiquera qu’elle n’est plus valable."
+          confirmer="Révoquer l’attestation"
+          busy={busy}
+          onCancel={() => setRevocation("")}
+          onConfirm={() =>
+            run(async () => {
+              await api("/attestations/" + revocation + "/revoke", "POST", {});
+              setRevocation("");
+              refresh();
+            }, "Attestation révoquée")
+          }
+        />
+      )}
       <div className="tabs">
         {[
           ["overview", "Vue d’ensemble"],
@@ -2421,13 +2520,7 @@ function DossierPage() {
                         <button
                           className="button secondary small"
                           disabled={busy}
-                          onClick={() =>
-                            confirm("Révoquer cette attestation ? Sa page publique l’indiquera.") &&
-                            run(async () => {
-                              await api("/attestations/" + x.id + "/revoke", "POST", {});
-                              refresh();
-                            })
-                          }
+                          onClick={() => setRevocation(x.id)}
                         >
                           Révoquer
                         </button>
@@ -2505,6 +2598,45 @@ function DossierPage() {
                 <Badge>Synthèse IA · À relire</Badge>
                 <h3>En quelques mots</h3>
                 <p className="preline">{d.state.summary}</p>
+              </div>
+            )}
+            {tab === "dossier" && (propositions.length > 0 || conflits > 0) && (
+              <div className="panel">
+                {conflits > 0 ? (
+                  <p>
+                    Résolvez les contradictions avant de confirmer en lot :{" "}
+                    {conflits} contradiction{conflits > 1 ? "s" : ""} à
+                    trancher dans les rubriques concernées.
+                  </p>
+                ) : (
+                  <p>
+                    {propositions.length} proposition
+                    {propositions.length > 1 ? "s" : ""} de l’analyse relue
+                    {propositions.length > 1 ? "s" : ""} : confirmez-les d’un
+                    geste. Vos textes en cours de saisie ne sont pas modifiés.
+                  </p>
+                )}
+                <button
+                  className="button secondary"
+                  disabled={busy || conflits > 0}
+                  onClick={async () => {
+                    const r = await run(() =>
+                      api(`/dossiers/${id}/facts/confirm`, "POST", {
+                        revision: d.revision,
+                        ids: propositions,
+                      }),
+                    );
+                    if (r?.confirmed) {
+                      refresh();
+                      toast(
+                        `${r.confirmed} rubrique${r.confirmed > 1 ? "s" : ""} confirmée${r.confirmed > 1 ? "s" : ""}`,
+                      );
+                    }
+                  }}
+                >
+                  <Check size={16} /> Confirmer les {propositions.length}{" "}
+                  propositions relues
+                </button>
               </div>
             )}
             {requirements
@@ -2590,14 +2722,8 @@ function DossierPage() {
             key={j.id}
             className={j.status === "failed" ? "error-text" : ""}
           >
-            {j.kind === "analysis" ? "Analyse IA" : "Extraction"} :{" "}
-            {j.status === "done"
-              ? "terminée"
-              : j.status === "running"
-                ? "en cours"
-                : j.status === "queued"
-                  ? "en attente"
-                  : j.error}
+            {libelleJob(j.kind, j.status)}
+            {j.status === "failed" && j.error ? ` — ${j.error}` : ""}
           </span>
         ))}
       </div>
@@ -2637,6 +2763,10 @@ function EligibilityTab({
   const { data: cfg } = useLoad("/config");
   const { run, busy } = useAction();
   const [openId, setOpenId] = useState("");
+  // recherche libre dans les programmes ; suggestions triées selon l'objectif du dossier
+  const [recherche, setRecherche] = useState("");
+  // réponses enregistrées depuis la dernière vérification : une seule relance les prend toutes
+  const [enAttente, setEnAttente] = useState(0);
   const evals: any[] = d.evaluations;
   const current = evals.find((e) => e.program.id === openId) || evals[0];
   const analyzing = d.jobs.some(
@@ -2646,6 +2776,19 @@ function EligibilityTab({
   const available = (list || []).filter(
     (x) => !evals.some((e) => e.program.id === x.id),
   );
+  const suggestions = trierProgrammes(
+    filtrerProgrammes(available, recherche),
+    d.goal,
+  ).slice(0, 8);
+  const ajouter = (id: string) =>
+    run(async () => {
+      await api(`/dossiers/${d.id}/programs/${encodeURIComponent(id)}`, "PUT", {
+        revision: d.revision,
+      });
+      setOpenId(id);
+      setRecherche("");
+      refresh();
+    }, "Ajouté. Lancez la vérification.");
   const answered = (id: string) => d.state.declarations?.[id] || "";
   return (
     <div className="content-grid">
@@ -2658,65 +2801,63 @@ function EligibilityTab({
               disabled={
                 busy || analyzing || !evals.length || !d.documents.length
               }
-              onClick={() =>
-                run(async () => {
+              onClick={async () => {
+                const r = await run(async () => {
                   await api(`/dossiers/${d.id}/analyze`, "POST", {});
                   refresh();
-                }, "Vérification lancée pour tous les programmes")
-              }
+                }, "Vérification lancée pour tous les programmes");
+                if (r !== null) setEnAttente(0);
+              }}
             >
-              {analyzing ? "Vérification en cours…" : "Tout vérifier"}
+              {analyzing ? "Vérification en cours…" : "Vérifier l’éligibilité"}
             </button>
           </div>
           <p>
             Évaluez le même dossier face à plusieurs subventions, prêts,
             concours ou financeurs. Chaque évaluation a son propre verdict.
           </p>
+          {enAttente > 0 && (
+            <p className="notice-line">
+              {enAttente} réponse{enAttente > 1 ? "s" : ""} enregistrée
+              {enAttente > 1 ? "s" : ""} : elles seront prises en compte au
+              prochain clic sur « Vérifier l’éligibilité », une seule fois.
+            </p>
+          )}
           <label>
             Ajouter un programme ou un financeur
-            <select
-              value=""
-              disabled={busy}
-              onChange={(e) => {
-                const id = e.target.value;
-                if (!id) return;
-                run(async () => {
-                  await api(
-                    `/dossiers/${d.id}/programs/${encodeURIComponent(id)}`,
-                    "PUT",
-                    { revision: d.revision },
-                  );
-                  setOpenId(id);
-                  refresh();
-                }, "Ajouté. Lancez la vérification.");
-              }}
-            >
-              <option value="">Choisir…</option>
-              {[
-                "Subvention",
-                "Prêt",
-                "Concours",
-                "Subvention et fonds propres",
-              ].map((kind) => (
-                <optgroup
-                  key={kind}
-                  label={
-                    kind === "Subvention et fonds propres"
-                      ? "Financeurs et programmes en fonds propres"
-                      : kind + "s"
-                  }
-                >
-                  {available
-                    .filter((x) => x.kind === kind)
-                    .map((x) => (
-                      <option key={x.id} value={x.id}>
-                        {x.name} · {x.operator}
-                      </option>
-                    ))}
-                </optgroup>
-              ))}
-            </select>
+            <input
+              type="search"
+              value={recherche}
+              onChange={(e) => setRecherche(e.target.value)}
+              placeholder="Nom, opérateur, type…"
+              aria-label="Rechercher un programme ou un financeur"
+            />
           </label>
+          {suggestions.length > 0 ? (
+            <ul className="suggestions">
+              {suggestions.map((x) => (
+                <li key={x.id}>
+                  <button
+                    className="textbutton"
+                    disabled={busy}
+                    onClick={() => ajouter(x.id)}
+                  >
+                    {x.name}
+                    <small>
+                      {" "}
+                      · {x.operator} · {x.kind}
+                    </small>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">
+              {recherche
+                ? `Aucun programme ne correspond à « ${recherche} ».`
+                : "Tous les programmes disponibles sont déjà ajoutés."}
+            </p>
+          )}
           {evals.length > 0 && (
             <div className="eval-list">
               {evals.map((e) => (
@@ -2831,17 +2972,18 @@ function EligibilityTab({
               <form
                 className={"panel criterion " + c.result.status}
                 key={current.program.id + c.id + ":" + d.revision}
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
                   const f = new FormData(e.currentTarget);
-                  run(async () => {
+                  const r = await run(async () => {
                     await api(
                       `/dossiers/${d.id}/declarations/${encodeURIComponent(c.id)}`,
                       "PUT",
                       { revision: d.revision, answer: f.get("answer") },
                     );
                     refresh();
-                  }, "Réponse enregistrée. Relancez la vérification pour la prendre en compte.");
+                  }, "Réponse enregistrée");
+                  if (r !== null) setEnAttente((n) => n + 1);
                 }}
               >
                 <div className="criterion-head">
@@ -3288,8 +3430,9 @@ function ShareForm({ dossier: d }: { dossier: any }) {
 function Directory({ embedded = false }: { embedded?: boolean }) {
   const { data, error } = useLoad<any[]>("/directory");
   const [search, setSearch] = useState("");
+  const [tri, setTri] = useState<TriAnnuaire>("nom");
   const [f, setF] = useState({ type: "", secteur: "", stade: "", region: "" });
-  const rows = data?.filter(
+  const filtres = data?.filter(
     (o) =>
       [
         o.theme.name || o.name,
@@ -3303,12 +3446,14 @@ function Directory({ embedded = false }: { embedded?: boolean }) {
       correspond(o.criteria, f),
   );
   // secteur choisi : les spécialistes de ce secteur avant les généralistes (tri stable)
-  if (f.secteur && rows)
-    rows.sort(
+  if (f.secteur && filtres)
+    filtres.sort(
       (a, b) =>
         Number(!(a.criteria?.sectors || []).includes(f.secteur)) -
         Number(!(b.criteria?.sectors || []).includes(f.secteur)),
     );
+  // le tri choisi ne classe jamais un ticket inconnu à 0
+  const rows = filtres && trierAnnuaire(filtres, tri);
   const filtre = (
     key: keyof typeof f,
     label: string,
@@ -3358,8 +3503,24 @@ function Directory({ embedded = false }: { embedded?: boolean }) {
         {filtre("secteur", "Tous les secteurs", parNom(secteurs))}
         {filtre("stade", "Tous les stades", parNom(stades))}
         {filtre("region", "Toutes les régions", parNom(regions))}
+        <select
+          aria-label="Trier les financeurs"
+          value={tri}
+          onChange={(e) => setTri(e.target.value as TriAnnuaire)}
+        >
+          {trisAnnuaire.map(([valeur, libelle]) => (
+            <option key={valeur} value={valeur}>
+              {libelle}
+            </option>
+          ))}
+        </select>
       </div>
       <ErrorBox text={error} />
+      {rows && (
+        <p className="muted resultat-count">
+          {plural(rows.length, "financeur")} pour cette recherche
+        </p>
+      )}
       {!rows?.length ? (
         <div className="panel">
           <Empty title="Aucun financeur pour cette recherche">
@@ -3868,6 +4029,10 @@ function OrganizationPage() {
     tick,
   );
   const { run, busy } = useAction();
+  // action en attente de confirmation : boîte de dialogue interne, jamais celle du navigateur
+  const [confirmation, setConfirmation] = useState<
+    { action: "owner" | "retrait"; membre: any } | null
+  >(null);
   return (
     <>
       <div className="page-heading">
@@ -3965,15 +4130,7 @@ function OrganizationPage() {
                   <button
                     className="button secondary small rendre-proprietaire"
                     onClick={() =>
-                      confirm(
-                        `Rendre ${m.name} propriétaire de ${org.name} ? Vous deviendrez éditeur.`,
-                      ) &&
-                      run(async () => {
-                        await api(`/organizations/${org.id}/owner`, "PUT", {
-                          userId: m.user_id,
-                        });
-                        location.reload();
-                      })
+                      setConfirmation({ action: "owner", membre: m })
                     }
                   >
                     Rendre propriétaire
@@ -3982,15 +4139,9 @@ function OrganizationPage() {
                 {m.role !== "owner" && org.role === "owner" && (
                   <button
                     className="iconbutton"
-                    aria-label="Retirer ce membre"
+                    aria-label={"Retirer " + m.name}
                     onClick={() =>
-                      run(async () => {
-                        await api(
-                          `/organizations/${org.id}/members/${m.user_id}`,
-                          "DELETE",
-                        );
-                        setTick((t) => t + 1);
-                      })
+                      setConfirmation({ action: "retrait", membre: m })
                     }
                   >
                     <X size={16} />
@@ -4075,6 +4226,39 @@ function OrganizationPage() {
           </div>
         </aside>
       </div>
+      {confirmation && (
+        <ConfirmDialog
+          texte={
+            confirmation.action === "owner"
+              ? `Rendre ${confirmation.membre.name} propriétaire de ${org.name} ? Vous deviendrez éditeur.`
+              : `Retirer ${confirmation.membre.name} de l’équipe de ${org.name} ? Cette personne perdra l’accès aux dossiers de l’organisation.`
+          }
+          confirmer={
+            confirmation.action === "owner"
+              ? "Rendre propriétaire"
+              : "Retirer ce membre"
+          }
+          busy={busy}
+          onCancel={() => setConfirmation(null)}
+          onConfirm={() =>
+            run(async () => {
+              if (confirmation.action === "owner") {
+                await api(`/organizations/${org.id}/owner`, "PUT", {
+                  userId: confirmation.membre.user_id,
+                });
+                location.reload();
+                return;
+              }
+              await api(
+                `/organizations/${org.id}/members/${confirmation.membre.user_id}`,
+                "DELETE",
+              );
+              setConfirmation(null);
+              setTick((t) => t + 1);
+            })
+          }
+        />
+      )}
     </>
   );
 }
@@ -4160,7 +4344,7 @@ function Partners() {
                 </span>
                 <strong>{(r.amount_cents / 100).toFixed(2)} €</strong>
                 <small>{r.terms_version || "Conditions à vérifier"}</small>
-                <Badge>{r.status}</Badge>
+                <Badge>{libelleRecompense(r.status)}</Badge>
               </div>
             ))
           )}
@@ -4223,9 +4407,9 @@ function Billing() {
               : billing?.entitlement?.offer_name || "Découverte"}
           </h3>
           <Badge>
-            {{ active: "Active", past_due: "Paiement en échec", cancelled: "Résiliée" }[
-              billing?.entitlement?.status as string
-            ] || (billing?.entitlement ? billing.entitlement.status : "Gratuite")}
+            {billing?.entitlement
+              ? libelleDroit(billing.entitlement.status)
+              : "Gratuite"}
           </Badge>
         </div>
         <p>
@@ -4340,39 +4524,49 @@ const libellesRoles: Record<string, string> = {
 };
 function SupprimerCompte() {
   const { run, busy } = useAction();
+  const [motDePasse, setMotDePasse] = useState("");
+  const [confirmation, setConfirmation] = useState(false);
   return (
-    <form
-      className="panel form-panel"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const f = new FormData(e.currentTarget);
-        if (
-          !confirm(
-            "Supprimer définitivement votre compte, vos dossiers et leurs documents ? Cette action est irréversible.",
-          )
-        )
-          return;
-        run(async () => {
-          await api("/me/delete", "POST", { password: f.get("password") });
-          location.href = "/";
-        });
-      }}
-    >
-      <h2>Supprimer mon compte</h2>
-      <p>
-        Vos dossiers, documents, versions et partages sont effacés. Les
-        factures sont conservées pour les obligations comptables. Si vous
-        possédez une organisation avec d’autres membres, transférez-en d’abord
-        la propriété depuis la page Mon organisation.
-      </p>
-      <label>
-        Confirmez votre mot de passe
-        <input name="password" type="password" required />
-      </label>
-      <button className="button secondary" disabled={busy}>
-        Supprimer mon compte
-      </button>
-    </form>
+    <>
+      <form
+        className="panel form-panel"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const f = new FormData(e.currentTarget);
+          setMotDePasse(String(f.get("password")));
+          setConfirmation(true);
+        }}
+      >
+        <h2>Supprimer mon compte</h2>
+        <p>
+          Vos dossiers, documents, versions et partages sont effacés. Les
+          factures sont conservées pour les obligations comptables. Si vous
+          possédez une organisation avec d’autres membres, transférez-en d’abord
+          la propriété depuis la page Mon organisation.
+        </p>
+        <label>
+          Confirmez votre mot de passe
+          <input name="password" type="password" required />
+        </label>
+        <button className="button secondary" disabled={busy}>
+          Supprimer mon compte
+        </button>
+      </form>
+      {confirmation && (
+        <ConfirmDialog
+          texte="Supprimer définitivement votre compte, vos dossiers et leurs documents ? Cette action est irréversible."
+          confirmer="Supprimer mon compte"
+          busy={busy}
+          onCancel={() => setConfirmation(false)}
+          onConfirm={() =>
+            run(async () => {
+              await api("/me/delete", "POST", { password: motDePasse });
+              location.href = "/";
+            })
+          }
+        />
+      )}
+    </>
   );
 }
 function TwoFactor() {
@@ -4638,7 +4832,9 @@ function Portal() {
                   <h3>Candidater auprès de {name}</h3>
                   <p>
                     Préparez votre dossier sur Fund Road, puis envoyez-le par le
-                    canal officiel du financeur.
+                    canal officiel {o.applicationUrl ? "ci-dessous" : `de ${name}`} :
+                    la plateforme ne transmet pas les candidatures à ce
+                    financeur.
                   </p>
                   <Link className="button" to="/inscription">
                     Préparer mon dossier <ArrowRight size={16} />
@@ -5008,6 +5204,7 @@ function ScrollTop() {
 }
 function Root() {
   const [toast, setToast] = useState("");
+  const [erreur, setErreur] = useState("");
   useEffect(() => {
     if (toast) {
       const t = setTimeout(() => setToast(""), 6500);
@@ -5021,7 +5218,8 @@ function Root() {
   }, []);
   return (
     <ToastContext.Provider value={setToast}>
-      <BrowserRouter>
+      <ErreurContext.Provider value={setErreur}>
+        <BrowserRouter>
         <ScrollTop />
         <Consentement />
         <Routes>
@@ -5076,7 +5274,21 @@ function Root() {
             </button>
           </div>
         )}
-      </BrowserRouter>
+        {/* erreur d'action : persistante, en haut de la page, jamais un toast */}
+        {erreur && (
+          <div className="action-error" role="alert">
+            <AlertCircle size={18} />
+            <span>{erreur}</span>
+            <button
+              onClick={() => setErreur("")}
+              aria-label="Fermer le message d’erreur"
+            >
+              <X size={17} />
+            </button>
+          </div>
+        )}
+        </BrowserRouter>
+      </ErreurContext.Provider>
     </ToastContext.Provider>
   );
 }

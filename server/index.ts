@@ -568,6 +568,43 @@ app.put("/api/dossiers/:id/facts/:key", async (req: any) => {
   if (!r.rowCount) fail(409, "Modification concurrente");
   return { ok: true };
 });
+app.post("/api/dossiers/:id/facts/confirm", async (req: any) => {
+  const u = await user(req);
+  const b = z
+    .object({
+      revision: z.number().int(),
+      ids: z.array(z.string()).max(requirements.length),
+    })
+    .parse(req.body);
+  const d = await dossier(u.id, req.params.id, true);
+  if (b.revision !== d.revision)
+    fail(409, "Le dossier a changé. Rechargez-le.");
+  const facts = { ...d.state.facts };
+  let confirmed = 0;
+  for (const id of b.ids) {
+    const f = facts[id];
+    // seulement une proposition existante, non confirmée, non saisie à la main :
+    // ce bouton ne remplit aucune rubrique vide et n'invente aucune valeur
+    if (
+      !f ||
+      f.confirmed ||
+      !String(f.value || "").trim() ||
+      String(f.source || "").startsWith("declaration")
+    )
+      continue;
+    facts[id] = { ...f, confirmed: true };
+    confirmed++;
+  }
+  if (!confirmed) return { confirmed: 0 };
+  const state = { ...d.state, facts };
+  delete state.checkedRevision;
+  const r = await db.query(
+    "UPDATE dossiers SET state=$2,revision=revision+1,updated_at=now() WHERE id=$1 AND revision=$3",
+    [d.id, state, b.revision],
+  );
+  if (!r.rowCount) fail(409, "Modification concurrente");
+  return { confirmed };
+});
 app.post("/api/dossiers/:id/documents", async (req: any) => {
   const u = await user(req);
   const d = await dossier(u.id, req.params.id, true);
