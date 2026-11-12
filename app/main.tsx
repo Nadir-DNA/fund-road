@@ -17,7 +17,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { Link, NavLink, useNavigate } from "./links.tsx";
-import { captureUtm, keepUtm, track } from "./track.ts";
+import { captureUtm, firstTime, keepUtm, persistUtm, track } from "./track.ts";
 import { editorial } from "../shared/editorial.generated.ts";
 import { profileTitle, slugify, showAidesLink } from "../shared/seo.ts";
 import { programs } from "../shared/programs.ts";
@@ -4066,10 +4066,7 @@ function Billing() {
   // Page de retour de Stripe : mesurée une seule fois par arrivée. Ce n'est PAS une confirmation de paiement (le webhook en fait foi).
   useEffect(() => {
     if (new URLSearchParams(location.search).get("success") !== "1") return;
-    try {
-      if (sessionStorage.getItem("fundroad-paiement-ok")) return;
-      sessionStorage.setItem("fundroad-paiement-ok", "1");
-    } catch {}
+    if (!firstTime("paiement-ok")) return;   // un rechargement ne compte pas deux fois (mémoire ; sessionStorage après consentement)
     track("paiement_ok");
   }, []);
   const [code, setCode] = useState(
@@ -4786,6 +4783,7 @@ function Consentement() {
     try {
       localStorage.setItem(CHOIX_COOKIES, v);
     } catch {}
+    persistUtm();   // la campagne n'est gardée dans l'onglet qu'après acceptation
     setChoix(v);
   };
   return (

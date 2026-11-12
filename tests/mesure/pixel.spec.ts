@@ -17,10 +17,19 @@ async function withPixel(page: Page, o: { webdriver?: boolean } = {}) {
   if (!o.webdriver) await page.addInitScript(() => Object.defineProperty(navigator, "webdriver", { get: () => false }));
   return hits;
 }
+/** Simule un visiteur qui a ACCEPTÉ la mesure d'audience (clé du bandeau) ; Google Analytics, chargé alors par le site, est coupé du réseau. */
+async function accepterMesure(page: Page) {
+  await page.addInitScript(() => localStorage.setItem("fundroad-cookies", "oui"));
+  await coupeGoogle(page);
+}
+async function coupeGoogle(page: Page) {
+  await page.route(/https:\/\/([^/]*\.)?(googletagmanager|google-analytics)\.com\/.*/, (r) => r.abort());
+}
 const json = (body: unknown, status = 200) => ({ status, contentType: "application/json", body: JSON.stringify(body) });
 
-test("M2 : cinq événements — nom fixe, aucune charge utile, campagne conservée de l'arrivée à la page de retour", async ({ page }) => {
+test("M2 : cinq événements — nom fixe, aucune charge utile, campagne conservée de l'arrivée à la page de retour (mesure acceptée)", async ({ page }) => {
   const hits = await withPixel(page);
+  await accepterMesure(page);
   const state = { org: null as any, dossiers: [] as any[], gets: 0, signup: null as any };
   await page.route("**/api/**", async (route) => {
     const req = route.request(); const { pathname } = new URL(req.url()); const m = req.method();
@@ -112,4 +121,34 @@ test("sans script de suivi (bloqueur) : le parcours fonctionne, aucune erreur", 
   await page.getByLabel("Votre nom").fill("A");
   await expect(page.getByLabel("Votre nom")).toHaveValue("A");
   expect(errors).toEqual([]);
+});
+
+test("consentement : aucune écriture avant le choix ; campagne attribuée de l'arrivée à l'inscription (mémoire) ; sessionStorage seulement après acceptation", async ({ page }) => {
+  const hits = await withPixel(page);
+  await coupeGoogle(page);
+  await page.route("**/api/**", (r) => r.fulfill(json({})));
+  const stockage = () => page.evaluate(() => ({ local: Object.keys(localStorage).filter((k) => k.startsWith("fundroad")), session: Object.keys(sessionStorage).filter((k) => k.startsWith("fundroad")) }));
+
+  await page.goto("/?utm_source=linkedin&utm_medium=prospection&utm_campaign=incubateurs");
+  expect(await stockage(), "navigateur neuf, aucun choix : rien d'écrit").toEqual({ local: [], session: [] });
+
+  // Landing → inscription : la campagne vient de la mémoire de la page, sans aucun stockage.
+  await page.locator('[data-searchtide="cta-entete-inscription"]').click();
+  await expect(page).toHaveURL(/\/inscription\?.*utm_campaign=incubateurs/);
+  await page.getByLabel("Votre nom").fill("Pilote Test");
+  await page.getByLabel("Adresse email").fill("pilote@exemple.test");
+  await page.getByLabel("Mot de passe").fill("un-mot-de-passe-solide-1");
+  await page.getByRole("button", { name: "Créer mon compte" }).click();
+  await expect(page.getByRole("heading", { name: "Vérifiez votre boîte mail" })).toBeVisible();
+  await expect.poll(() => hits.map((h) => h.name)).toContain("compte_cree");
+  const compte = hits.find((h) => h.name === "compte_cree")!;
+  expect([new URL(compte.url).searchParams.get("utm_source"), new URL(compte.url).searchParams.get("utm_campaign")], "attribuée sans consentement").toEqual(["linkedin", "incubateurs"]);
+  expect(await stockage(), "toujours rien d'écrit après l'inscription").toEqual({ local: [], session: [] });
+
+  // Après acceptation : la campagne est gardée dans l'onglet (sessionStorage), jamais en localStorage ni en cookie.
+  await page.getByRole("button", { name: "Accepter" }).click();
+  await expect.poll(async () => (await stockage()).session).toContain("fundroad-utm");
+  const apres = await stockage();
+  expect(apres.local, "localStorage : uniquement le choix du bandeau").toEqual(["fundroad-cookies"]);
+  expect(await page.evaluate(() => document.cookie)).toBe("");
 });

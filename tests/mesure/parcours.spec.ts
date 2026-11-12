@@ -22,6 +22,9 @@ test("M3 : inscription → activation → Checkout test abandonné ; lignes de b
       void fetch(`${stack.searchtide.base}/api/collect`, { method: "POST", headers: { "content-type": "text/plain;charset=UTF-8", "user-agent": UA, "x-forwarded-for": "198.51.100.7" }, body: r.postData() ?? "" });
     });
     await page.addInitScript(() => Object.defineProperty(navigator, "webdriver", { get: () => false }));
+    // Visiteur qui a accepté la mesure d'audience (sinon la campagne ne survit pas aux rechargements) ; Google Analytics coupé du réseau.
+    await page.addInitScript(() => localStorage.setItem("fundroad-cookies", "oui"));
+    await page.route(/https:\/\/([^/]*\.)?(googletagmanager|google-analytics)\.com\/.*/, (r) => r.abort());
     await page.route("http://localhost:5191/__checkout-test", (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<h1>Page de paiement de test (Stripe simulé)</h1>" }));
 
     // 1. Arrivée par une campagne, inscription par l'interface.
