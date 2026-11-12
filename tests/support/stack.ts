@@ -21,7 +21,7 @@ const waitFor = async (probe: () => Promise<boolean>, what: string, ms = 30_000)
   throw new Error(`${what} : délai dépassé`);
 };
 
-export async function startStack(o: { checkoutUrl: string }) {
+export async function startStack(o: { checkoutUrl: string; appUrl?: string }) {
   const admin = process.env.DATABASE_URL!;
   if (!/127\.0\.0\.1|localhost/.test(admin)) throw new Error("Refus : cette pile n'utilise qu'un Postgres local (DATABASE_URL de .env.local)");
   if (!existsSync(join(SEARCHTIDE_DIR, "server", "index.ts"))) throw new Error(`Searchtide introuvable dans ${SEARCHTIDE_DIR} (variable SEARCHTIDE_DIR)`);
@@ -33,7 +33,7 @@ export async function startStack(o: { checkoutUrl: string }) {
   const secret = randomUUID() + randomUUID();
   const stripe = await startFakeStripe(o.checkoutUrl), ai = await startFakeAI(), sink = await startSmtpSink();
   const dataDir = mkdtempSync(join(tmpdir(), "fr-stack-"));
-  const base = { PATH, HOME: process.env.HOME || tmpdir(), NODE_ENV: "development", DATABASE_URL: databaseUrl, BETTER_AUTH_SECRET: secret, APP_URL: `http://localhost:5191`, DATA_DIR: join(dataDir, "documents") };
+  const base = { PATH, HOME: process.env.HOME || tmpdir(), NODE_ENV: "development", DATABASE_URL: databaseUrl, BETTER_AUTH_SECRET: secret, APP_URL: o.appUrl ?? `http://localhost:5191`, DATA_DIR: join(dataDir, "documents") };
   execFileSync("npx", ["tsx", "server/migrate.ts"], { env: base, stdio: "pipe" });
   const db = new pg.Client({ connectionString: databaseUrl }); await db.connect();
   await db.query("INSERT INTO offers(id,label,price_cents,cadence,quota,stripe_price_id,active) VALUES ('pilote','Pilote',0,'once',99,NULL,true),('dossier','Dossier financement',14900,'quarter',10,'price_test_fake',true) ON CONFLICT(id) DO UPDATE SET stripe_price_id=EXCLUDED.stripe_price_id, active=true");

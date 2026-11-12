@@ -91,7 +91,9 @@ app.setErrorHandler((e: any, _req, reply) => {
 const canonicalHost = new URL(config.baseURL).host;
 app.addHook("onRequest", async (req, reply) => {
   if (req.headers.host === "www." + canonicalHost)
-    return reply.redirect(config.baseURL + req.url, 301);
+    // Sans cet en-tête, la politique globale « no-referrer » efface le référent au saut de la redirection : un visiteur venu de
+    // Google sur www devenait « direct » (mesuré). Origine seulement vers un autre site ; les pages gardent « no-referrer ».
+    return reply.header("referrer-policy", "strict-origin-when-cross-origin").redirect(config.baseURL + req.url, 301);
 });
 app.addHook("onRequest", async (req, reply) => {
   if (
