@@ -1235,24 +1235,51 @@ function AuthPage() {
   const [error, setError] = useState("");
   // adresse à confirmer : pas de session tant que le lien reçu par email n'est pas ouvert
   const [aConfirmer, setAConfirmer] = useState("");
+  // Envoi du lien de confirmation : « cours » → « ok » ou « echec » (visible), renvoi possible (limité en débit par le serveur)
+  const [envoi, setEnvoi] = useState<"" | "cours" | "ok" | "echec">("");
+  const [messageEnvoi, setMessageEnvoi] = useState("");
+  const [nonConfirme, setNonConfirme] = useState("");
+  async function envoyerLien(email: string) {
+    setEnvoi("cours");
+    setMessageEnvoi("");
+    try {
+      await api("/auth/send-verification-email", "POST", { email, callbackURL: keepUtm("/app") });
+      setEnvoi("ok");
+    } catch (e: any) {
+      setEnvoi("echec");
+      setMessageEnvoi(
+        String(e?.message || "").startsWith("Trop de tentatives")
+          ? e.message
+          : "E-mail non envoyé. Réessayez dans un instant ou écrivez à contact@fund-road.com.",
+      );
+    }
+  }
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     setError("");
     const result = await run(async () => {
-      const r = await api(
-        signup ? "/auth/sign-up/email" : "/auth/sign-in/email",
-        "POST",
-        {
-          name: f.get("name"),
-          email: f.get("email"),
-          password: f.get("password"),
-          ...(signup && { callbackURL: keepUtm("/app") }),
-        },
-      );
+      let r;
+      try {
+        r = await api(
+          signup ? "/auth/sign-up/email" : "/auth/sign-in/email",
+          "POST",
+          {
+            name: f.get("name"),
+            email: f.get("email"),
+            password: f.get("password"),
+            ...(signup && { callbackURL: keepUtm("/app") }),
+          },
+        );
+      } catch (err: any) {
+        // Connexion avant confirmation : on propose de renvoyer le lien plutôt qu'une impasse
+        if (!signup && err?.message === messagesAuth.EMAIL_NOT_VERIFIED) setNonConfirme(String(f.get("email")));
+        throw err;
+      }
       if (signup) track("compte_cree");   // après la réponse de succès du serveur
       if (signup && !r.token) {
         setAConfirmer(String(f.get("email")));
+        void envoyerLien(String(f.get("email")));
         return null;
       }
       if (r.twoFactorRedirect) {
@@ -1280,15 +1307,30 @@ function AuthPage() {
           <div className="auth-card" role="status">
             <Badge>Dernière étape</Badge>
             <h2>Vérifiez votre boîte mail</h2>
-            <p>
-              Un lien de confirmation vient d’être envoyé à{" "}
-              <strong>{aConfirmer}</strong>. Ouvrez-le pour activer votre compte
-              : vous serez connecté directement.
-            </p>
+            {envoi === "echec" ? (
+              <p role="alert">
+                {messageEnvoi} Votre compte est créé : renvoyez le lien pour
+                l’activer.
+              </p>
+            ) : (
+              <p>
+                {envoi === "cours" ? "Envoi du lien de confirmation à " : "Un lien de confirmation vient d’être envoyé à "}
+                <strong>{aConfirmer}</strong>. Ouvrez-le pour activer votre
+                compte : vous serez connecté directement.
+              </p>
+            )}
             <p className="smalltext">
-              Rien reçu ? Regardez dans les indésirables, ou écrivez à
-              contact@fund-road.com.
+              Rien reçu ? Regardez dans les indésirables, renvoyez le lien, ou
+              écrivez à contact@fund-road.com.
             </p>
+            <button
+              type="button"
+              className="button secondary"
+              disabled={envoi === "cours"}
+              onClick={() => void envoyerLien(aConfirmer)}
+            >
+              Renvoyer le lien
+            </button>
           </div>
         ) : (
         <form className="auth-card" onSubmit={submit}>
@@ -1296,6 +1338,22 @@ function AuthPage() {
             {signup ? "Bienvenue sur Fund Road" : "Heureux de vous retrouver"}
           </Badge>
           <h2>{signup ? "Créer votre compte" : "Se connecter"}</h2>
+          {nonConfirme && (
+            <p role="status" className="smalltext">
+              Votre adresse n’est pas encore confirmée.{" "}
+              <button
+                type="button"
+                className="button small ghost"
+                onClick={() => {
+                  setAConfirmer(nonConfirme);
+                  setNonConfirme("");
+                  void envoyerLien(nonConfirme);
+                }}
+              >
+                Renvoyer le lien de confirmation
+              </button>
+            </p>
+          )}
           {signup && (
             <label>
               Votre nom

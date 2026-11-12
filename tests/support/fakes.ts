@@ -47,10 +47,13 @@ export async function startFakeAI() {
   return { port, calls, close: () => new Promise<void>((r) => server.close(() => r())) };
 }
 
-/** Faux SMTP : accepte tout, garde chaque message (texte brut) pour en extraire le lien de confirmation. Aucun envoi réel. */
+/** Faux SMTP : accepte tout, garde chaque message (texte brut) pour en extraire le lien de confirmation. Aucun envoi réel.
+ *  pause() coupe le serveur (les envois échouent), resume() le rétablit sur le même port. */
 export async function startSmtpSink() {
   const mails: string[] = [];
+  const sockets = new Set<net.Socket>();
   const server = net.createServer((s) => {
+    sockets.add(s); s.on("close", () => sockets.delete(s)); s.on("error", () => {});
     let inData = false, buf = "";
     const w = (t: string) => s.write(t + "\r\n");
     w("220 sink ESMTP");
@@ -67,5 +70,10 @@ export async function startSmtpSink() {
     });
   });
   const port = await listen(server);
-  return { port, mails, close: () => new Promise<void>((r) => server.close(() => r())) };
+  return {
+    port, mails,
+    pause: () => new Promise<void>((r) => { for (const s of sockets) s.destroy(); server.close(() => r()); }),
+    resume: () => new Promise<void>((r) => server.listen(port, "127.0.0.1", () => r())),
+    close: () => new Promise<void>((r) => { for (const s of sockets) s.destroy(); server.close(() => r()); }),
+  };
 }

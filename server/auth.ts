@@ -21,15 +21,23 @@ export const auth = betterAuth({
     },
   },
   emailVerification: {
-    sendOnSignUp: mailReady(),
+    // Le lien est demandé explicitement par l'écran juste après l'inscription (POST /auth/send-verification-email) : l'échec d'envoi
+    // devient visible pour l'utilisateur au lieu de rester dans un journal. La route est limitée en débit (3 par minute) par better-auth.
+    sendOnSignUp: false,
     // le lien de confirmation ouvre directement l'espace (callbackURL envoyée à l'inscription)
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
-      await mail(
-        user.email,
-        "Confirmer votre compte Fund Road",
-        `Bonjour,\n\nBienvenue sur Fund Road. Confirmez votre adresse en ouvrant ce lien :\n${url}\n\nSi vous n’avez pas créé de compte, ignorez ce message.`,
-      );
+      try {
+        await mail(
+          user.email,
+          "Confirmer votre compte Fund Road",
+          `Bonjour,\n\nBienvenue sur Fund Road. Confirmez votre adresse en ouvrant ce lien :\n${url}\n\nSi vous n’avez pas créé de compte, ignorez ce message.`,
+        );
+      } catch (e: any) {
+        // Événement journalisé : nom fixe et code technique seulement, jamais l'adresse du destinataire.
+        console.error(JSON.stringify({ event: "mail.verification_failed", code: e?.code ?? e?.statusCode ?? "inconnu" }));
+        throw e;
+      }
     },
   },
   plugins: [twoFactor()],
