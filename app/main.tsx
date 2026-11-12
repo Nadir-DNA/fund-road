@@ -13,12 +13,11 @@ import {
   BrowserRouter,
   Routes,
   Route,
-  Link,
-  NavLink,
-  useNavigate,
   useParams,
   useLocation,
 } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "./links.tsx";
+import { captureUtm, keepUtm, track } from "./track.ts";
 import { editorial } from "../shared/editorial.generated.ts";
 import { profileTitle, slugify, showAidesLink } from "../shared/seo.ts";
 import { programs } from "../shared/programs.ts";
@@ -329,7 +328,7 @@ function PublicLayout({
           <div className="nav-actions">
             <BasculeTheme />
             <Link to="/connexion">Connexion</Link>
-            <Link className="button small accent" to="/inscription">
+            <Link className="button small accent" data-searchtide="cta-entete-inscription" to="/inscription">
               Commencer
             </Link>
           </div>
@@ -654,7 +653,7 @@ function Landing() {
                   fonds, cite chaque source et vous montre ce qui manque.
                 </p>
                 <div className="hero-actions">
-                  <Link className="button accent" to="/inscription">
+                  <Link className="button accent" data-searchtide="cta-accueil-creer-dossier" to="/inscription">
                     Créer mon dossier <ArrowRight size={17} />
                   </Link>
                   <a
@@ -980,7 +979,7 @@ function FinanceursPage() {
               <div>
                 <p>{f.intro}</p>
                 <div className="hero-actions">
-                  <Link className="button accent" to="/inscription?profil=financeur">
+                  <Link className="button accent" data-searchtide="cta-financeurs-inscription" to="/inscription?profil=financeur">
                     Créer mon espace financeur <ArrowRight size={17} />
                   </Link>
                   <Link className="button ghost" to="/annuaire">
@@ -1199,6 +1198,7 @@ function Pricing() {
               </ul>
               <Link
                 className={"button" + (p.featured ? "" : " secondary")}
+                data-searchtide="cta-tarifs-inscription"
                 to="/inscription"
               >
                 {p.cta} <ArrowRight size={16} />
@@ -1247,9 +1247,10 @@ function AuthPage() {
           name: f.get("name"),
           email: f.get("email"),
           password: f.get("password"),
-          ...(signup && { callbackURL: "/app" }),
+          ...(signup && { callbackURL: keepUtm("/app") }),
         },
       );
+      if (signup) track("compte_cree");   // après la réponse de succès du serveur
       if (signup && !r.token) {
         setAConfirmer(String(f.get("email")));
         return null;
@@ -1649,6 +1650,7 @@ function Dashboard({ all = false }: { all?: boolean }) {
                 recipientOrg: storedRecipient()?.id,
               });
               sessionStorage.removeItem("fundroad-recipient");
+              track("dossier_cree");   // après la réponse de succès du serveur ; aucun nom de dossier envoyé
               navigate("/app/dossiers/" + d.id);
             });
           }}
@@ -2013,6 +2015,17 @@ function DossierPage() {
       return;
     const t = setInterval(refresh, 2500);
     return () => clearInterval(t);
+  }, [d]);
+  // analyse_ok : une analyse vue « en attente/en cours » dans cette page passe à « terminée » sur le serveur.
+  // Une analyse déjà terminée à l'ouverture de la page ne produit rien (la base fait foi pour ces cas).
+  const analysesVues = useRef(new Map<string, string>());
+  useEffect(() => {
+    for (const j of d?.jobs ?? []) {
+      if (j.kind !== "analysis") continue;
+      const avant = analysesVues.current.get(j.id);
+      if (avant && avant !== "done" && j.status === "done") track("analyse_ok");
+      analysesVues.current.set(j.id, j.status);
+    }
   }, [d]);
   if (!d) return <ErrorBox text={error || "Chargement…"} />;
   return (
@@ -3992,6 +4005,15 @@ function Billing() {
   const { data: offers } = useLoad<any[]>("/offers");
   const { data: billing, error } = useLoad("/billing/" + org.id);
   const { run, busy } = useAction();
+  // Page de retour de Stripe : mesurée une seule fois par arrivée. Ce n'est PAS une confirmation de paiement (le webhook en fait foi).
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("success") !== "1") return;
+    try {
+      if (sessionStorage.getItem("fundroad-paiement-ok")) return;
+      sessionStorage.setItem("fundroad-paiement-ok", "1");
+    } catch {}
+    track("paiement_ok");
+  }, []);
   const [code, setCode] = useState(
     sessionStorage.getItem("fundroad-code") || "",
   );
@@ -4070,6 +4092,7 @@ function Billing() {
                       offerId: o.id,
                       code: code || undefined,
                     });
+                    track("checkout_ouvert");   // session ouverte côté serveur ; ni offre ni montant envoyés
                     window.location.assign(r.url);
                   })
                 }
@@ -4813,4 +4836,5 @@ function Root() {
     </ToastContext.Provider>
   );
 }
+captureUtm();
 createRoot(document.getElementById("root")!).render(<Root />);
