@@ -923,10 +923,6 @@ legend {
   color: var(--color-accent-2);
   margin-bottom: var(--space-3xs);
   display: block;
-  text-transform: lowercase;
-}
-.eyebrow::first-letter {
-  text-transform: uppercase;
 }
 .eyebrow > span {
   display: none;
@@ -1154,10 +1150,6 @@ legend {
   font-weight: 600;
   color: var(--color-ink-3);
   margin: 0 var(--space-xs) var(--space-2xs);
-  text-transform: lowercase;
-}
-.nav-label::first-letter {
-  text-transform: uppercase;
 }
 .sidebar nav {
   display: flex;
@@ -1258,10 +1250,6 @@ legend {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-ink-2);
-  text-transform: lowercase;
-}
-.workspace-header > span::first-letter {
-  text-transform: uppercase;
 }
 .workspace-header > div {
   display: flex;
@@ -2263,10 +2251,8 @@ legend {
   letter-spacing: -0.02em;
 }
 .fund-kind {
-  font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: var(--text-sm);
+  font-weight: 650;
   color: var(--color-accent-2);
 }
 .fund-intro {
@@ -2809,4 +2795,9 @@ legend {
 .lecture-niveaux {
   color: var(--color-ink-3);
   font-size: var(--text-sm);
+}
+
+/* Section qui suit directement la précédente */
+.section.section-suite {
+  padding-top: 0;
 }

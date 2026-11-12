@@ -185,6 +185,15 @@ function useAction() {
     },
   };
 }
+// Le sélecteur de couleur exige un hexadécimal : on lit le pixel rendu du jeton --color-accent (oklch non relu par fillStyle)
+function accentParDefaut() {
+  const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+  if (!c) return "#000000";
+  c.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--color-accent");
+  c.fillRect(0, 0, 1, 1);
+  const [r, g, b] = c.getImageData(0, 0, 1, 1).data;
+  return "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
+}
 const Logo = ({ light = false }: { light?: boolean }) => (
   <Link to="/" className={"logo" + (light ? " light" : "")}>
     <img
@@ -758,7 +767,7 @@ function Landing() {
             ))}
           </div>
         </section>
-        <section className="section" style={{ paddingTop: 0 }}>
+        <section className="section section-suite">
           <div className="section-head">
             <span className="kicker">Fonctionnalités</span>
             <h2 data-split>
@@ -1020,7 +1029,7 @@ function FinanceursPage() {
             ))}
           </div>
         </section>
-        <section className="section" style={{ paddingTop: 0 }}>
+        <section className="section section-suite">
           <div className="section-head">
             <span className="kicker">Pourquoi Fund Road</span>
             <h2 data-split>Pensé pour la façon dont vous investissez.</h2>
@@ -1386,7 +1395,7 @@ function Shell() {
               ))}
             </select>
           </div>
-          <small className="nav-label">VOTRE ESPACE</small>
+          <small className="nav-label">Votre espace</small>
           <nav>
             {links.map(([to, label, Icon]) => (
               <NavLink
@@ -1435,14 +1444,14 @@ function Shell() {
               <Menu />
             </button>
             <span>
-              ESPACE{" "}
+              Espace{" "}
               {!org
                 ? ""
                 : org.kind === "startup"
-                  ? "ENTREPRENEUR"
+                  ? "entrepreneur"
                   : org.kind === "incubator"
-                    ? "INCUBATEUR"
-                    : "FINANCEUR"}
+                    ? "incubateur"
+                    : "financeur"}
             </span>
             <div>
               <BasculeTheme />
@@ -2732,7 +2741,7 @@ function RegardInvestisseur({ c }: { c: CritiqueRubrique }) {
   return (
     <div className={"regard " + c.niveau}>
       <div className="regard-tete">
-        <small>REGARD INVESTISSEUR</small>
+        <small>Regard investisseur</small>
         <Badge good={c.niveau === "solide"}>{niveaux[c.niveau]}</Badge>
       </div>
       {c.constats.length > 0 && (
@@ -2860,13 +2869,13 @@ function FactEditor({
       />
       {fact?.quote && (
         <blockquote>
-          <small>EXTRAIT SOURCE</small>
+          <small>Extrait source</small>
           {fact.quote}
         </blockquote>
       )}
       {fact?.details?.length > 0 && (
         <div className="complements">
-          <small>COMPLÉMENTS TIRÉS DES DOCUMENTS</small>
+          <small>Compléments tirés des documents</small>
           <ul>
             {fact.details.map((d: any) => (
               <li key={d.quote}>
@@ -3658,7 +3667,7 @@ function OrganizationPage() {
             <input
               type="color"
               name="accent"
-              defaultValue={org.theme.accent || "#eb743c"}
+              defaultValue={org.theme.accent || accentParDefaut()}
             />
           </label>
           <label>
@@ -4417,7 +4426,7 @@ function SharedApplication() {
           <>
             <div className="page-heading">
               <div>
-                <div className="eyebrow">DOSSIER PARTAGÉ · VERSION DATÉE</div>
+                <div className="eyebrow">Dossier partagé · version datée</div>
                 <h1>{a.snapshot.name}</h1>
                 <p>{a.message}</p>
               </div>
