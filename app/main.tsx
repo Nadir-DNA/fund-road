@@ -1208,6 +1208,7 @@ function Pricing() {
         "Dépôt de vos pièces",
         "Annuaire et envoi aux financeurs",
         "Une analyse IA offerte chaque mois",
+        "Partages révocables et suivi des étapes",
       ],
       cta: "Commencer gratuitement",
     },
@@ -1216,11 +1217,11 @@ function Pricing() {
       label: dossier?.label || "Dossier financement",
       price: dossier ? dossier.price_cents / 100 + " €" : "—",
       unit: " / 90 jours, résiliable",
+      // seuls les exports changent de camp : révocation et suivi restent gratuits (12/11)
       features: [
         "Analyses IA de vos documents",
         "Critères des aides et des financeurs",
         "Exports PDF et Word",
-        "Partages révocables et suivi des étapes",
       ],
       cta: dossier?.active ? "Choisir" : "Ouverture prochaine",
       featured: true,

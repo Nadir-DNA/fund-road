@@ -446,6 +446,16 @@ test("parcours API local et frontières entre organisations", async () => {
     headers: { cookie: a.cookie },
   });
   assert.equal(pdfGratuit.status, 403);
+  // A12b.2 : aucun paramètre client ne lève le contrôle
+  assert.equal(
+    (
+      await fetch(
+        base + "/api/dossiers/" + id + "/export/pdf?paid=1&format=pdf",
+        { headers: { cookie: a.cookie, "x-paid": "1" } },
+      )
+    ).status,
+    403,
+  );
   assert.equal((await pdfGratuit.text()).startsWith("%PDF"), false);
   // sans session, 401 ; autre organisation, 403
   assert.equal(
@@ -615,5 +625,83 @@ test("parcours API local et frontières entre organisations", async () => {
     (await call("/applications/" + partage1.data.id, "GET", undefined, b.cookie))
       .status,
     404,
+  );
+  // A12c.3/A12c.4 : le suivi d'étape n'est pas filtré ; un compte gratuit révoque toujours
+  const listeStartup = await call("/applications", "GET", undefined, a.cookie);
+  const ligneGratuite = listeStartup.data.find(
+    (x: any) => x.id === partage0.data.id,
+  );
+  assert.ok(ligneGratuite.stage, "l'étape reste visible sans droit payant");
+  const listeFinanceur = await call("/applications", "GET", undefined, b.cookie);
+  const ligneFinanceur = listeFinanceur.data.find(
+    (x: any) => x.id === partage0.data.id,
+  );
+  assert.deepEqual(
+    Object.keys(ligneGratuite).sort(),
+    Object.keys(ligneFinanceur).sort(),
+    "mêmes champs pour un compte gratuit et un compte financeur",
+  );
+  assert.equal(
+    (
+      await call(
+        "/applications/" + partage0.data.id + "/revoke",
+        "POST",
+        {},
+        a.cookie,
+      )
+    ).status,
+    200,
+    "la révocation reste gratuite",
+  );
+  // un éditeur de l'organisation (pas propriétaire) ne partage pas, même par API directe
+  await pgc.query(
+    "INSERT INTO members(organization_id,user_id,role) VALUES($1,$2,'editor') ON CONFLICT DO NOTHING",
+    [oa.data.id, c.data.user.id],
+  );
+  assert.equal(
+    (
+      await call(
+        "/dossiers/" + vide.data.id + "/applications",
+        "POST",
+        { recipientOrg: ob.data.id, documentIds: [], confirmed: true },
+        c.cookie,
+      )
+    ).status,
+    403,
+  );
+
+  // A12b.6 : l'export d'un dossier reçu est gratuit pour le financeur membre et limité à la
+  // version partagée ; non-membre 403, startup propriétaire non destinataire 403, sans session 401
+  const recuPartage = await call(
+    "/dossiers/" + vide.data.id + "/applications",
+    "POST",
+    { recipientOrg: ob.data.id, documentIds: [], confirmed: true },
+    a.cookie,
+  );
+  assert.equal(recuPartage.status, 201);
+  const recuPdf = await fetch(
+    base + "/api/applications/" + recuPartage.data.id + "/export/pdf",
+    { headers: { cookie: b.cookie } },
+  );
+  assert.equal(recuPdf.status, 200);
+  assert.ok((await recuPdf.text()).startsWith("%PDF"));
+  for (const [qui, ck] of [
+    ["non-membre", c.cookie],
+    ["startup propriétaire non destinataire", a.cookie],
+  ] as const)
+    assert.equal(
+      (
+        await fetch(
+          base + "/api/applications/" + recuPartage.data.id + "/export/pdf",
+          { headers: { cookie: ck } },
+        )
+      ).status,
+      403,
+      qui,
+    );
+  assert.equal(
+    (await fetch(base + "/api/applications/" + recuPartage.data.id + "/export/pdf"))
+      .status,
+    401,
   );
 });

@@ -934,12 +934,15 @@ app.get(
 );
 app.get("/api/applications", async (req) => {
   const u = await user(req);
-  return (
+  const rows = (
     await db.query(
-      "SELECT DISTINCT a.*,d.name,COALESCE(i.name,r.theme->>'name',r.name) AS investor_name,r.kind AS recipient_kind FROM applications a JOIN dossiers d ON d.id=a.dossier_id JOIN versions v ON v.id=a.version_id LEFT JOIN investors i ON i.id=a.investor_id LEFT JOIN organizations r ON r.id=a.recipient_org LEFT JOIN members m ON m.organization_id=d.organization_id OR m.organization_id=a.recipient_org LEFT JOIN contributors c ON c.dossier_id=d.id WHERE (m.user_id=$1 OR c.user_id=$1 OR lower(a.recipient_email)=lower($2)) AND a.revoked_at IS NULL ORDER BY a.created_at DESC",
+      "SELECT DISTINCT a.*,d.name,d.organization_id,COALESCE(i.name,r.theme->>'name',r.name) AS investor_name,r.kind AS recipient_kind FROM applications a JOIN dossiers d ON d.id=a.dossier_id JOIN versions v ON v.id=a.version_id LEFT JOIN investors i ON i.id=a.investor_id LEFT JOIN organizations r ON r.id=a.recipient_org LEFT JOIN members m ON m.organization_id=d.organization_id OR m.organization_id=a.recipient_org LEFT JOIN contributors c ON c.dossier_id=d.id WHERE (m.user_id=$1 OR c.user_id=$1 OR lower(a.recipient_email)=lower($2)) AND a.revoked_at IS NULL ORDER BY a.created_at DESC",
       [u.id, u.email],
     )
   ).rows;
+  // décision du 12/11 (Franky, ambiguïté tranchée) : révocation et suivi des étapes restent
+  // gratuits pour tous ; seuls les exports changent de camp. Aucune restriction ici.
+  return rows;
 });
 app.post("/api/dossiers/:id/applications", async (req: any, reply) => {
   const u = await user(req);

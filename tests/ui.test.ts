@@ -298,3 +298,25 @@ test("A12a.2 : une rubrique non confirmée ne sort jamais, une confirmée sort a
   // le reste de l'état n'est pas perdu (programmes, déclarations)
   assert.deepEqual(etat.programs, ["x"]);
 });
+
+// A12c — la grille reflète les droits
+test("A12c.1 : seuls les exports changent de camp ; révocation et suivi restent gratuits", () => {
+  const app = readFileSync(new URL("../app/main.tsx", import.meta.url), "utf8");
+  const gratuit = app.slice(app.indexOf('label: "Découverte"'), app.indexOf('label: dossier?.label'));
+  const payant = app.slice(app.indexOf('label: dossier?.label'), app.indexOf('label: "Fonds, business angels'));
+  assert.ok(gratuit.includes("Partages révocables et suivi des étapes"));
+  assert.equal(gratuit.includes("Exports PDF et Word"), false);
+  assert.ok(payant.includes("Exports PDF et Word"));
+  assert.equal(payant.includes("Partages révocables et suivi des étapes"), false);
+});
+
+test("A12c.3/A12c.5 : partage incomplet autorisé, aucune restriction d’étape ajoutée", () => {
+  const app = readFileSync(new URL("../app/main.tsx", import.meta.url), "utf8");
+  const serveur = readFileSync(new URL("../server/index.ts", import.meta.url), "utf8");
+  // plus de blocage « neuf rubriques » : le taux part avec la version
+  assert.equal(serveur.includes("score(d.state).attestable"), false);
+  assert.ok(serveur.includes("Seul le propriétaire du dossier peut le partager"));
+  // le suivi d'étape n'est pas filtré : la route renvoie les mêmes champs à tous
+  assert.equal(serveur.includes("Étape : offre payante"), false);
+  assert.equal(app.includes("Étape : offre payante"), false);
+});
