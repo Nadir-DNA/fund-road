@@ -9,14 +9,17 @@ Le pixel n'envoie que **l'URL, le référent, la langue et le nom**. Jamais : no
 |---|---|---|
 | `compte_cree` | après la réponse de succès de l'inscription | l'e-mail reste à confirmer ; la base fait foi |
 | `dossier_cree` | après la création d'un dossier | |
-| `analyse_ok` | quand une analyse vue « en cours » devient « terminée » dans la page ouverte | invisible si l'utilisateur a quitté la page : la base fait foi |
+| `analyse_ok` | quand une analyse vue « en cours » devient « terminée » dans la page ouverte | invisible si l'utilisateur a quitté la page : la base fait foi. **Il n'existe pas d'événement « activé »** : l'activation d'un pilote se mesure dans la base (requête `dossiers_actives`) |
 | `checkout_ouvert` | après la réponse du serveur qui ouvre la session de paiement | ni offre ni montant |
 | `paiement_ok` | à l'arrivée sur la page de retour (`success=1`) | **n'est pas une confirmation de paiement** ; seul le webhook en fait foi |
 | `cta-entete-inscription`, `cta-accueil-creer-dossier`, `cta-financeurs-inscription`, `cta-tarifs-inscription` | au clic (attribut `data-searchtide`) | |
 
 ## 2. Attribution (UTM)
 Les liens de prospection portent `utm_source`, `utm_medium`, `utm_campaign` (le segment : `incubateurs`, `ba`, `no-code`…), par exemple `https://fund-road.com/?utm_source=linkedin&utm_medium=prospection&utm_campaign=incubateurs`.
-`Link`, `NavLink` et `useNavigate` (`app/links.tsx`) gardent ces trois paramètres dans l'adresse des navigations vers `/inscription`, `/connexion` et `/app` ; le lien de confirmation par e-mail les garde dans `callbackURL`. La campagne est retenue pour la visite (`sessionStorage`, effacé à la fermeture de l'onglet) : **aucun cookie, aucune colonne**. Limite : si l'utilisateur ouvre le lien de confirmation dans un autre navigateur, la campagne est perdue.
+`Link`, `NavLink` et `useNavigate` (`app/links.tsx`) gardent ces trois paramètres dans l'adresse des navigations vers `/inscription`, `/connexion` et `/app` ; le lien de confirmation par e-mail les garde dans `callbackURL`. La campagne est retenue pour la visite en cours (`sessionStorage`, propre à l'onglet, effacé à sa fermeture) : **aucun cookie, aucun `localStorage`, aucune colonne, rien côté serveur, pas de conservation sur 30 jours** (la première version gardait 30 jours : abandonnée pour respecter la spec). Limite : si l'utilisateur ouvre le lien de confirmation dans un autre navigateur, la campagne est perdue.
+
+## 2 bis. E-mail de confirmation d'inscription
+L'écran demande lui-même l'envoi du lien juste après l'inscription : si l'envoi échoue (SMTP en panne), il affiche « E-mail non envoyé… » et l'événement serveur `mail.verification_failed` (code technique, jamais l'adresse) est journalisé ; « Renvoyer le lien » est proposé sur cet écran et après un refus de connexion « adresse non confirmée » ; la route est limitée à 3 demandes par minute (message « Trop de tentatives »). Aucun changement du transport, de `MAIL_FROM` ni du DNS. Distinct de l'alias Gmail `hello@fund-road.com` utilisé pour la prospection.
 
 ## 3. Équipe et trafic automatisé
 - **Équipe** : ouvrir **une fois par navigateur** `https://fund-road.com/?searchtide=ignore` ; ensuite plus aucune visite n'est envoyée. Annuler : `?searchtide=track`.
@@ -26,7 +29,7 @@ Les liens de prospection portent `utm_source`, `utm_medium`, `utm_campaign` (le 
 ## 4. KPI et requêtes en lecture seule (`docs/mesure/requetes.sql`)
 | KPI | Définition |
 |---|---|
-| **Clients payants** | droit actif d'une offre à prix > 0 lié à un abonnement Stripe (`o.price_cents>0 AND e.subscription_id IS NOT NULL`) |
+| **Clients payants** | droit `status='active'` d'une offre à **prix > 0** **lié à un abonnement Stripe** (`subscription_id` renseigné) : un simple `customer_id` sans abonnement ne suffit pas, l'offre `pilote` et toute attribution manuelle sont exclues. Le statut est posé par le webhook Stripe (`active` → `past_due` → `cancelled`). **Limites** : la requête ne regarde pas `expires_at` (variante possible : `AND (e.expires_at IS NULL OR e.expires_at>now())`, comme le contrôle de quota du serveur) et ne distingue pas un abonnement à 100 % de remise ; le **MRR Stripe** reste la référence monétaire |
 | **Pilotes actifs** | droit actif de l'offre `pilote` à 0 € |
 | Comptes utilisateurs / confirmés / organisations / dossiers / analyses réussies (par jour) | faits de la base, **hors équipe/test** : exclusion par **identifiant d'organisation** (`$2`, liste d'`uuid`), jamais par nom |
 | **Dossiers activés** (protocole des pilotes) | compte vérifié, ≥ 1 document prêt, **≥ 5 faits `confirmed: true` avec `source` non vide** dans `dossiers.state->'facts'` (un objet par rubrique `{value, source, confirmed, kind, quote}`), **0 conflit** (`state->'conflicts'` vide) |
