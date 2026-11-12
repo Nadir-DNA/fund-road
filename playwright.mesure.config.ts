@@ -9,6 +9,6 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: "list",
-  use: { launchOptions: { args: ["--host-resolver-rules=MAP stats.nadirdaoudi.com 127.0.0.1:9"] }, baseURL: "http://127.0.0.1:5191", viewport: { width: 1440, height: 1000 }, trace: "retain-on-failure", screenshot: "only-on-failure" },
+  use: { launchOptions: { args: ["--host-resolver-rules=MAP stats.nadirdaoudi.com 127.0.0.1:9"] }, baseURL: "http://localhost:5191", viewport: { width: 1440, height: 1000 }, trace: "retain-on-failure", screenshot: "only-on-failure" },
   webServer: { command: "npx vite --host 127.0.0.1 --port 5191", url: "http://127.0.0.1:5191/", reuseExistingServer: false, timeout: 60_000 },
 });
