@@ -243,3 +243,22 @@ test("A9.1 : un financeur avec droit payant voit la facturation en dernier", () 
       "/app/securite",
     ]);
 });
+
+// A7/A8 — analyse : plus de lancement automatique, un seul e-mail par job terminé
+test("A7.1 : aucun lancement d'analyse sans clic", () => {
+  const app = readFileSync(new URL("../app/main.tsx", import.meta.url), "utf8");
+  assert.equal(app.includes("L’analyse se lance automatiquement"), false);
+  assert.ok(app.includes("Lancer l’analyse sur ces"));
+  // l'ancien enchaînement automatique après dépôt a disparu
+  assert.equal(app.includes("setAuto("), false);
+});
+
+test("A8.1/A8.2 : l'e-mail part après le passage à « done », jamais sur échec", () => {
+  const worker = readFileSync(new URL("../server/worker.ts", import.meta.url), "utf8");
+  const done = worker.indexOf('UPDATE jobs SET status=\'done\'');
+  const mail = worker.indexOf("notifyOrg(");
+  const echec = worker.lastIndexOf("UPDATE jobs SET status='failed'");
+  assert.ok(done > 0 && mail > done, "l'e-mail doit suivre la mise à « done »");
+  assert.ok(echec > mail, "l'échec est traité après, sans envoi");
+  assert.equal(worker.split("notifyOrg(").length - 1, 1, "un seul envoi par job");
+});

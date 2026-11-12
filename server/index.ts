@@ -275,7 +275,8 @@ app.get("/api/dossiers", async (req) => {
   const u = await user(req);
   const rows = (
     await db.query(
-      "SELECT DISTINCT d.* FROM dossiers d LEFT JOIN members m ON m.organization_id=d.organization_id LEFT JOIN contributors c ON c.dossier_id=d.id WHERE m.user_id=$1 OR c.user_id=$1 ORDER BY d.updated_at DESC",
+      // dernière analyse réussie : l'alerte de fin ne dépend pas de l'e-mail
+      "SELECT DISTINCT d.*, (SELECT j.id FROM jobs j WHERE j.dossier_id=d.id AND j.kind='analysis' AND j.status='done' ORDER BY j.created_at DESC LIMIT 1) AS analyse_id, (SELECT j.created_at FROM jobs j WHERE j.dossier_id=d.id AND j.kind='analysis' AND j.status='done' ORDER BY j.created_at DESC LIMIT 1) AS analyse_at FROM dossiers d LEFT JOIN members m ON m.organization_id=d.organization_id LEFT JOIN contributors c ON c.dossier_id=d.id WHERE m.user_id=$1 OR c.user_id=$1 ORDER BY d.updated_at DESC",
       [u.id],
     )
   ).rows;
@@ -364,6 +365,8 @@ app.get("/api/dossiers/:id", async (req: any) => {
   return {
     ...d,
     score: score(d.state),
+    // solde d'analyses du mois, affiché avant tout lancement
+    ...(await quotaAnalyses(d.organization_id)),
     documents: docs,
     jobs,
     questions,
@@ -721,6 +724,27 @@ app.get("/api/documents/:id", async (req: any, reply) => {
     .type("application/octet-stream");
   return readFile(doc.path);
 });
+// Analyses du mois et quota du droit actif : une seule définition, utilisée par la fiche dossier
+async function quotaAnalyses(organizationId: string) {
+  const entitlement = (
+    await db.query(
+      "SELECT o.quota FROM entitlements e JOIN offers o ON o.id=e.offer_id WHERE e.organization_id=$1 AND e.status='active' AND (e.expires_at IS NULL OR e.expires_at>now())",
+      [organizationId],
+    )
+  ).rows[0];
+  const quota =
+    entitlement?.quota ??
+    (config.production ? config.freeQuota : config.pilotQuota);
+  const usage = Number(
+    (
+      await db.query(
+        "SELECT count(*) FROM jobs j JOIN dossiers d ON d.id=j.dossier_id WHERE d.organization_id=$1 AND j.kind='analysis' AND j.status IN ('queued','running','done') AND j.created_at>=date_trunc('month',now())",
+        [organizationId],
+      )
+    ).rows[0].count,
+  );
+  return { usage, quota };
+}
 app.post("/api/dossiers/:id/analyze", async (req: any) => {
   const u = await user(req);
   const d = await dossier(u.id, req.params.id, true);

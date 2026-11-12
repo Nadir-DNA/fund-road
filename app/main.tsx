@@ -135,8 +135,8 @@ export async function api(url: string, method = "GET", body?: any) {
   } catch {
     throw new Error("Réponse serveur illisible");
   }
-  if (!r.ok)
-    throw new Error(
+  if (!r.ok) {
+    const erreur: any = new Error(
       (r.status === 429 && "Trop de tentatives. Patientez quelques secondes puis réessayez.") ||
         messagesAuth[data.code] ||
         // erreurs de validation : le détail du champ plutôt que « Données invalides » seul
@@ -147,6 +147,10 @@ export async function api(url: string, method = "GET", body?: any) {
         data.message ||
         "Action impossible",
     );
+    // le statut sert à distinguer un quota épuisé (402) d'une autre erreur
+    erreur.status = r.status;
+    throw erreur;
+  }
   return data;
 }
 // La bibliothèque d'authentification répond en anglais : messages traduits par code
@@ -1723,6 +1727,7 @@ function Shell() {
 function Onboarding() {
   const { refresh } = useContext(WorkspaceContext);
   const { run, busy } = useAction();
+  const toast = useContext(ToastContext);
   const navigate = useNavigate();
   return (
     <>
@@ -1739,19 +1744,40 @@ function Onboarding() {
         onSubmit={(e) => {
           e.preventDefault();
           const f = new FormData(e.currentTarget);
+          const name = String(f.get("name") || "");
+          const kind = String(f.get("kind") || "startup");
+          const goal = String(f.get("goal") || "investment");
           run(async () => {
-            await api("/organizations", "POST", {
-              name: f.get("name"),
-              kind: f.get("kind"),
-            });
-            // depuis « Créer mon organisation » (invité), on repart de l'accueil de l'espace
-            navigate("/app");
-            refresh();
+            const org = await api("/organizations", "POST", { name, kind });
+            if (kind !== "startup") {
+              // un financeur ne crée pas de dossier pour lui-même
+              refresh();
+              navigate("/app");
+              return;
+            }
+            try {
+              // un seul formulaire : le nom n'est pas demandé deux fois
+              const d = await api("/dossiers", "POST", {
+                organizationId: org.id,
+                name,
+                goal,
+              });
+              refresh();
+              navigate("/app/dossiers/" + d.id + "?onglet=documents");
+            } catch (err: any) {
+              // l'organisation reste créée : l'accueil de l'espace propose de créer le dossier
+              toast(
+                (err?.message || "Le dossier n’a pas pu être créé.") +
+                  " Votre organisation est créée : créez votre dossier depuis l’accueil.",
+              );
+              refresh();
+              navigate("/app");
+            }
           });
         }}
       >
         <label>
-          Nom de votre organisation
+          Nom de votre entreprise ou organisation
           <input
             name="name"
             placeholder="Votre startup, fonds ou réseau"
@@ -1770,12 +1796,36 @@ function Onboarding() {
             <option value="incubator">Un incubateur / accélérateur</option>
           </select>
         </label>
+        <label>
+          Votre objectif
+          <select name="goal" defaultValue="investment">
+            <option value="investment">Investissement</option>
+            <option value="grant">Subvention</option>
+          </select>
+        </label>
         <button disabled={busy} className="button">
           Créer mon espace <ArrowRight size={16} />
         </button>
       </form>
     </>
   );
+}
+// Alerte de fin d'analyse : vue par la startup ou pas encore (aucune dépendance à l'e-mail)
+const CLE_ANALYSE = "fundroad-analyse-vue";
+function analyseVue(dossierId: string, jobId: string) {
+  try {
+    const v = JSON.parse(localStorage.getItem(CLE_ANALYSE) || "{}");
+    return v[dossierId] === jobId;
+  } catch {
+    return false;
+  }
+}
+function marquerAnalyseVue(dossierId: string, jobId: string) {
+  try {
+    const v = JSON.parse(localStorage.getItem(CLE_ANALYSE) || "{}");
+    v[dossierId] = jobId;
+    localStorage.setItem(CLE_ANALYSE, JSON.stringify(v));
+  } catch {}
 }
 // localStorage (lien de confirmation dans un autre onglet) ; un choix de plus de 7 jours est ignoré
 function storedRecipient(): { id: string; name: string } | null {
@@ -1982,6 +2032,12 @@ function DossierCard({ d }: { d: any }) {
       <div className="bar">
         <span style={{ width: d.score.percent + "%" }} />
       </div>
+      {d.analyse_at && !analyseVue(d.id, d.analyse_id) && (
+        <Badge good>
+          Analyse terminée le{" "}
+          {new Date(d.analyse_at).toLocaleDateString("fr")}
+        </Badge>
+      )}
       <div className="dossier-bottom">
         <span>
           {d.score.completed} rubriques confirmées sur {d.score.total}
@@ -2036,9 +2092,9 @@ function DepotAnalyse({
     total: number;
     nom: string;
   } | null>(null);
-  // nombre de documents attendus avant de lancer l'analyse (0 : rien en attente)
-  const [auto, setAuto] = useState(0);
   const [survol, setSurvol] = useState(false);
+  const [erreurAnalyse, setErreurAnalyse] = useState("");
+  const [quotaAtteint, setQuotaAtteint] = useState(false);
   const [maintenant, setMaintenant] = useState(Date.now());
   const docs: any[] = d.documents;
   const lus = docs.filter((x) => x.status !== "queued").length;
@@ -2052,16 +2108,20 @@ function DepotAnalyse({
     const t = setInterval(() => setMaintenant(Date.now()), 1000);
     return () => clearInterval(t);
   }, [analyseEnCours]);
-  // analyse lancée seule dès que tous les documents déposés sont visibles et lus
-  useEffect(() => {
-    if (!auto || envoi || docs.length < auto || enLecture || analyseEnCours)
-      return;
-    setAuto(0);
-    if (!aiReady || !docs.some((x) => x.status === "ready")) return;
-    api("/dossiers/" + d.id + "/analyze", "POST", {})
-      .then(refresh)
-      .catch((e) => toast(e.message));
-  }, [auto, envoi, docs.length, enLecture, analyseEnCours]);
+  // plus aucun lancement automatique : le clic est toujours nécessaire
+  const prets = docs.filter((x) => x.status === "ready").length;
+  const restantes = Math.max(0, Number(d.quota ?? 0) - Number(d.usage ?? 0));
+  const lancer = async () => {
+    setErreurAnalyse("");
+    setQuotaAtteint(false);
+    try {
+      await api("/dossiers/" + d.id + "/analyze", "POST", {});
+      refresh();
+    } catch (e: any) {
+      setErreurAnalyse(e.message);
+      if (e.status === 402) setQuotaAtteint(true);
+    }
+  };
   const deposer = async (fichiers: File[]) => {
     const ignores = fichiers.filter(
       (f) => !formatsAcceptes.test(f.name) || f.name.startsWith("."),
@@ -2094,7 +2154,6 @@ function DepotAnalyse({
         .catch((e) => erreurs.push(`${f.name} : ${e.message}`));
     }
     setEnvoi(null);
-    setAuto(docs.length + deposes);
     refresh();
     toast(
       [
@@ -2131,9 +2190,6 @@ function DepotAnalyse({
         : ecoule > DUREE_ANALYSE
           ? "Analyse IA en cours : encore quelques instants"
           : "Analyse IA en cours (estimation, environ 2 à 3 min)";
-  } else if (auto) {
-    pct = 35;
-    etape = "Lancement de l’analyse";
   }
   const actif = !!etape;
   // entre deux étapes, la liste des documents arrive après le lancement : la barre ne recule jamais
@@ -2161,7 +2217,7 @@ function DepotAnalyse({
         <span className="button secondary small">Choisir des fichiers</span>
         <span>
           PDF (même scannés), Word, PowerPoint, Excel · 20 Mo par fichier · 30
-          documents maximum. L’analyse se lance automatiquement.
+          documents maximum. L’analyse ne part qu’après votre clic.
         </span>
         <input
           type="file"
@@ -2186,6 +2242,49 @@ function DepotAnalyse({
           }}
         />
       </label>
+      {!actif && (
+        <div className="depot-lancement">
+          <p className="solde-analyses">
+            {restantes > 0
+              ? `${restantes} analyse${restantes > 1 ? "s" : ""} restante${restantes > 1 ? "s" : ""} ce mois-ci`
+              : "Aucune analyse restante ce mois-ci"}
+            {" · "}
+            {prets} document{prets > 1 ? "s" : ""} prêt{prets > 1 ? "s" : ""} à
+            analyser
+          </p>
+          <button
+            className="button"
+            disabled={!prets || restantes === 0 || !aiReady}
+            onClick={lancer}
+          >
+            <Sparkles size={16} /> Lancer l’analyse sur ces {prets} document
+            {prets > 1 ? "s" : ""}
+          </button>
+          {!aiReady && (
+            <small className="muted">
+              L’analyse automatique n’est pas encore ouverte.
+            </small>
+          )}
+          {restantes === 0 && (
+            <p className="notice-line">
+              Quota du mois atteint.{" "}
+              <Link to="/app/facturation">Voir les offres et la facturation</Link>
+            </p>
+          )}
+          {quotaAtteint && (
+            <div className="notice">
+              <div>
+                <strong>Quota d’analyses épuisé</strong>
+                <p>{erreurAnalyse}</p>
+                <Link className="button small" to="/app/facturation">
+                  Passer à l’offre Dossier
+                </Link>
+              </div>
+            </div>
+          )}
+          {erreurAnalyse && !quotaAtteint && <ErrorBox text={erreurAnalyse} />}
+        </div>
+      )}
       {actif && (
         <div className="progression">
           <div className="progression-tete">
@@ -2238,6 +2337,17 @@ function DossierPage() {
   const toast = useContext(ToastContext);
   const navigate = useNavigate();
   const refresh = () => setTick((t) => t + 1);
+  const derniereAnalyse = d?.jobs?.find((j: any) => j.kind === "analysis");
+  // fin d'analyse : titre d'onglet « ✓ Analyse terminée », restauré en quittant la page
+  useEffect(() => {
+    if (!d || derniereAnalyse?.status !== "done") return;
+    const avant = document.title;
+    document.title = "✓ Analyse terminée";
+    marquerAnalyseVue(d.id, derniereAnalyse.id);
+    return () => {
+      document.title = avant;
+    };
+  }, [d?.id, derniereAnalyse?.id, derniereAnalyse?.status]);
   useEffect(() => {
     if (
       !d?.jobs.some((j: any) => ["queued", "running"].includes(j.status)) &&
@@ -2279,6 +2389,13 @@ function DossierPage() {
           <p>
             Version {d.revision} · Vos informations, organisées pour avancer.
           </p>
+          {derniereAnalyse?.status === "done" && (
+            <p className="smalltext">
+              <Badge good>Analyse terminée</Badge> le{" "}
+              {new Date(derniereAnalyse.created_at).toLocaleDateString("fr")} ·
+              relisez et confirmez les rubriques proposées.
+            </p>
+          )}
         </div>
         <div className="button-row">
           <a

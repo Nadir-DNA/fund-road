@@ -2954,3 +2954,14 @@ legend {
 .note-row small {
   color: var(--color-ink-3);
 }
+.depot-lancement {
+  display: grid;
+  gap: var(--space-2xs);
+  margin-top: var(--space-sm);
+  justify-items: start;
+}
+.solde-analyses {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-ink-2);
+}

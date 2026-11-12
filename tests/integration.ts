@@ -60,12 +60,14 @@ test("parcours API local et frontières entre organisations", async () => {
         {
           theme: { name: "Fonds test", accent: "#2354d1", intro: "Recette" },
           criteria: {
-            sectors: "SaaS",
-            stage: "Amorçage",
-            geography: "France",
-            ticket: "100 k€",
+            sectors: ["Logiciel / SaaS"],
+            stages: ["Amorçage"],
+            regions: ["France entière"],
+            ticketMin: 100000,
+            ticketMax: 2000000,
             exclusions: "",
             questions: ["Quel est votre revenu récurrent mensuel ?"],
+            documents: [],
           },
         },
         b.cookie,
@@ -89,6 +91,46 @@ test("parcours API local et frontières entre organisations", async () => {
   const intake = (await call("/dossiers/" + id, "GET", undefined, a.cookie))
     .data;
   assert.equal(intake.recipientProgress.total, 1);
+  // A17b : répondre à des critères ne consomme aucune analyse ; seule une relance en consomme une
+  const quotaAvant = (await call("/dossiers/" + id, "GET", undefined, a.cookie))
+    .data.usage;
+  const programmes = (await call("/programs", "GET", undefined, a.cookie)).data;
+  assert.ok(programmes.length > 0);
+  const programme = programmes[0];
+  const revCourante = async () =>
+    (await call("/dossiers/" + id, "GET", undefined, a.cookie)).data.revision;
+  assert.equal(
+    (
+      await call(
+        "/dossiers/" + id + "/programs/" + encodeURIComponent(programme.id),
+        "PUT",
+        { revision: await revCourante() },
+        a.cookie,
+      )
+    ).status,
+    200,
+  );
+  const criteres = programme.criteria.slice(0, 4).map((c: any) => c.id);
+  assert.equal(criteres.length, 4);
+  for (const [i, critere] of criteres.entries())
+    assert.equal(
+      (
+        await call(
+          "/dossiers/" + id + "/declarations/" + critere,
+          "PUT",
+          {
+            revision: await revCourante(),
+            answer: "Réponse " + (i + 1) + " au critère " + critere,
+          },
+          a.cookie,
+        )
+      ).status,
+      200,
+    );
+  assert.equal(
+    (await call("/dossiers/" + id, "GET", undefined, a.cookie)).data.usage,
+    quotaAvant,
+  );
   assert.equal(intake.recipientProgress.completed, 0);
   assert.equal(
     (
@@ -117,7 +159,7 @@ test("parcours API local et frontières entre organisations", async () => {
         "/dossiers/" + id + "/facts/company",
         "PUT",
         {
-          revision: 1,
+          revision: await revCourante(),
           fact: {
             value: "Une entreprise de test sans données réelles.",
             kind: "declared",
@@ -254,7 +296,7 @@ test("parcours API local et frontières entre organisations", async () => {
     received.data.questions[0].answer,
     "Réponse préparée avant le partage",
   );
-  assert.equal(received.data.criteria_snapshot.sectors, "SaaS");
+  assert.deepEqual(received.data.criteria_snapshot.sectors, ["Logiciel / SaaS"]);
   const question = received.data.questions[0];
   assert.equal(
     (
