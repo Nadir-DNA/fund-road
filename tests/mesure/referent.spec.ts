@@ -4,12 +4,12 @@
 // référent pour une autre raison) sur www.localhost, redirigé par le serveur vers l'adresse canonique.
 import { expect, test } from "@playwright/test";
 import http from "node:http";
-import { API_PORT, startStack } from "../support/stack.ts";
+import { API_PORT, startStack, WEB_ORIGIN } from "../support/stack.ts";
 
 test.setTimeout(120_000);
 
 test("M5 : la redirection 301 vers l'adresse canonique garde le référent de recherche (et la page, elle, reste en no-referrer)", async ({ page }) => {
-  const stack = await startStack({ checkoutUrl: "http://localhost:5191/__checkout-test", appUrl: `http://localhost:${API_PORT}` })   // canonique = le serveur lui-même;
+  const stack = await startStack({ checkoutUrl: `${WEB_ORIGIN}/__checkout-test`, appUrl: `http://localhost:${API_PORT}` })   // canonique = le serveur lui-même;
   try {
     // 1. En-tête de la réponse de redirection (appel HTTP direct, Host www.).
     const redirect = await new Promise<http.IncomingMessage>((resolve, reject) => {

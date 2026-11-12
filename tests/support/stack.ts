@@ -11,7 +11,11 @@ import pg from "pg";
 import { visites } from "../../scripts/visites-engagees.mjs";
 import { startFakeAI, startFakeStripe, startSmtpSink } from "./fakes.ts";
 
-export const API_PORT = 3184;   // port attendu par le proxy de vite.config.ts
+// Ports configurables (MESURE_API_PORT, MESURE_WEB_PORT) : deux exécutions peuvent tourner en parallèle. Le lanceur (scripts/test-mesure.mjs)
+// choisit deux ports libres s'ils ne sont pas donnés ; valeurs par défaut hors lanceur : 3184 (API, attendu par vite.config.ts) et 5191.
+export const API_PORT = Number(process.env.MESURE_API_PORT || 3184);
+export const WEB_PORT = Number(process.env.MESURE_WEB_PORT || 5191);
+export const WEB_ORIGIN = `http://localhost:${WEB_PORT}`;
 export const SEARCHTIDE_DIR = process.env.SEARCHTIDE_DIR || join(process.env.HOME || "", "projects", "searchtide");
 const PATH = process.env.PATH || "";
 
@@ -34,7 +38,7 @@ export async function startStack(o: { checkoutUrl: string; appUrl?: string }) {
   const secret = randomUUID() + randomUUID();
   const stripe = await startFakeStripe(o.checkoutUrl), ai = await startFakeAI(), sink = await startSmtpSink();
   const dataDir = mkdtempSync(join(tmpdir(), "fr-stack-"));
-  const base = { PATH, HOME: process.env.HOME || tmpdir(), NODE_ENV: "development", DATABASE_URL: databaseUrl, BETTER_AUTH_SECRET: secret, APP_URL: o.appUrl ?? `http://localhost:5191`, DATA_DIR: join(dataDir, "documents") };
+  const base = { PATH, HOME: process.env.HOME || tmpdir(), NODE_ENV: "development", DATABASE_URL: databaseUrl, BETTER_AUTH_SECRET: secret, APP_URL: o.appUrl ?? WEB_ORIGIN, DATA_DIR: join(dataDir, "documents") };
   execFileSync("npx", ["tsx", "server/migrate.ts"], { env: base, stdio: "pipe" });
   const db = new pg.Client({ connectionString: databaseUrl }); await db.connect();
   await db.query("INSERT INTO offers(id,label,price_cents,cadence,quota,stripe_price_id,active) VALUES ('pilote','Pilote',0,'once',99,NULL,true),('dossier','Dossier financement',14900,'quarter',10,'price_test_fake',true) ON CONFLICT(id) DO UPDATE SET stripe_price_id=EXCLUDED.stripe_price_id, active=true");

@@ -1,7 +1,7 @@
 // MAIL-1 / MAIL-2 : l'envoi du lien de confirmation. SMTP en panne = message visible (et événement journalisé), « Renvoyer le lien »
 // envoie un nouveau mail sans créer de second utilisateur, limitation de débit visible. Pile jetable, faux SMTP : aucun envoi réel.
 import { expect, test, type Page } from "@playwright/test";
-import { startStack } from "../support/stack.ts";
+import { startStack, WEB_ORIGIN } from "../support/stack.ts";
 
 test.setTimeout(150_000);
 const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
@@ -18,7 +18,7 @@ async function inscrire(page: Page, email: string) {
 }
 
 test("MAIL : envoi unique à l'inscription, « Renvoyer le lien » = nouveau mail sans nouvel utilisateur, connexion avant confirmation, limite de débit", async ({ page }) => {
-  const stack = await startStack({ checkoutUrl: "http://localhost:5191/__checkout-test" });
+  const stack = await startStack({ checkoutUrl: `${WEB_ORIGIN}/__checkout-test` });
   try {
     await inscrire(page, "un@exemple.test");
     await expect.poll(() => stack.sink.mails.length, { timeout: 30_000 }).toBe(1);   // marge : premier envoi à froid
@@ -49,7 +49,7 @@ test("MAIL : envoi unique à l'inscription, « Renvoyer le lien » = nouveau mai
 });
 
 test("MAIL : SMTP en panne → message visible et événement journalisé ; SMTP rétabli → « Renvoyer le lien » envoie le mail ; aucun doublon d'utilisateur", async ({ page }) => {
-  const stack = await startStack({ checkoutUrl: "http://localhost:5191/__checkout-test" });
+  const stack = await startStack({ checkoutUrl: `${WEB_ORIGIN}/__checkout-test` });
   try {
     await stack.sink.pause();
     await inscrire(page, "panne@exemple.test");

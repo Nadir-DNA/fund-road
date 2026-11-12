@@ -3,7 +3,7 @@
 // compte créé → e-mail de confirmation → espace → dossier → document SYNTHÉTIQUE analysé → Checkout test ouvert puis abandonné.
 import { Document, Packer, Paragraph } from "docx";
 import { expect, test } from "@playwright/test";
-import { startStack } from "../support/stack.ts";
+import { startStack, WEB_ORIGIN } from "../support/stack.ts";
 
 const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";   // le pixel écarte « HeadlessChrome »
 test.use({ userAgent: UA });
@@ -12,7 +12,7 @@ test.setTimeout(180_000);
 const qp = (raw: string) => raw.replace(/=\r?\n/g, "").replace(/=([0-9A-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
 
 test("M3 : inscription → activation → Checkout test abandonné ; lignes de base ET événements reçus ; aucun appel Stripe live", async ({ page }) => {
-  const stack = await startStack({ checkoutUrl: "http://localhost:5191/__checkout-test" });
+  const stack = await startStack({ checkoutUrl: `${WEB_ORIGIN}/__checkout-test` });
   try {
     // Le pixel de la page est servi par le Searchtide jetable ; ses envois lui sont transmis (domaine de production coupé du réseau).
     const script = await (await fetch(`${stack.searchtide.base}/script.js`)).text();
@@ -25,7 +25,7 @@ test("M3 : inscription → activation → Checkout test abandonné ; lignes de b
     // Visiteur qui a accepté la mesure d'audience (sinon la campagne ne survit pas aux rechargements) ; Google Analytics coupé du réseau.
     await page.addInitScript(() => localStorage.setItem("fundroad-cookies", "oui"));
     await page.route(/https:\/\/([^/]*\.)?(googletagmanager|google-analytics)\.com\/.*/, (r) => r.abort());
-    await page.route("http://localhost:5191/__checkout-test", (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<h1>Page de paiement de test (Stripe simulé)</h1>" }));
+    await page.route(`${WEB_ORIGIN}/__checkout-test`, (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<h1>Page de paiement de test (Stripe simulé)</h1>" }));
 
     // 1. Arrivée par une campagne, inscription par l'interface.
     await page.goto("/?utm_source=linkedin&utm_medium=prospection&utm_campaign=pilotes");
@@ -39,7 +39,7 @@ test("M3 : inscription → activation → Checkout test abandonné ; lignes de b
     // 2. E-mail de confirmation reçu par le faux SMTP ; le lien porte la campagne dans son adresse de retour.
     await expect.poll(() => stack.sink.mails.length, { timeout: 15_000 }).toBeGreaterThan(0);
     const mail = qp(stack.sink.mails[0]);
-    const link = /https?:\/\/localhost:5191\/api\/auth\/verify-email\S+/.exec(mail)?.[0];
+    const link = new RegExp(`${WEB_ORIGIN.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}/api/auth/verify-email\\S+`).exec(mail)?.[0];
     expect(link, "lien de confirmation dans l'e-mail").toBeTruthy();
     expect(decodeURIComponent(link!)).toMatch(/callbackURL=\/app\?.*utm_campaign=pilotes/);
     await page.goto(link!);

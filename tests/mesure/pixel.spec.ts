@@ -2,6 +2,7 @@
 // reçoit les événements ; on lit ce qu'il envoie réellement au serveur de suivi. Aucune API réelle : tout est simulé.
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+import { WEB_ORIGIN } from "../support/stack.ts";
 
 const TRACKER = readFileSync(new URL("./fixtures/searchtide-tracker.js", import.meta.url), "utf8");
 const SECRETS = ["Dossier-Secret-ABC", "pilote@exemple.test", "org-secret-uuid", "14900", "document-secret.pdf"];
@@ -44,7 +45,7 @@ test("M2 : cinq événements — nom fixe, aucune charge utile, campagne conserv
       return route.fulfill(json({ ...state.dossiers[0], documents: [{ id: "doc1", name: "document-secret.pdf", status: "ready" }], jobs: [{ id: "j1", kind: "analysis", status }], evaluations: [], questions: [], versions: [], applications: [], state: { facts: {}, conflicts: [], summary: "" }, score: { percent: 0, completed: 0, total: 10, missing: [], conflicts: [], attestable: false } }));
     }
     if (pathname === "/api/offers") return route.fulfill(json([{ id: "dossier", label: "Dossier financement", price_cents: 14900, cadence: "quarter", active: true }]));
-    if (pathname === "/api/billing/checkout") return route.fulfill(json({ url: "http://localhost:5191/app/facturation?success=1" }));   // jamais Stripe
+    if (pathname === "/api/billing/checkout") return route.fulfill(json({ url: `${WEB_ORIGIN}/app/facturation?success=1` }));   // jamais Stripe
     if (pathname.startsWith("/api/billing/")) return route.fulfill(json({}));
     return route.fulfill(json([]));
   });
