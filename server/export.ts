@@ -42,7 +42,7 @@ export function tableaux(extrait: string) {
   }
   return feuilles.filter((f) => f.lignes.length >= 2).map((f) => ({ ...f, lignes: f.lignes.slice(0, 40) }));
 }
-function contenu(name: string, state: DossierState, docs: { id: string; name: string; extracted?: string }[], programs: Program[], version?: number) {
+export function contenu(name: string, state: DossierState, docs: { id: string; name: string; extracted?: string }[], programs: Program[], version?: number) {
   const s = score(state);
   const proposees = requirements.filter((r) => state.facts[r.id]).length;
   const nomDoc = (id: string) => docs.find((d) => d.id === id)?.name || "document fourni";
