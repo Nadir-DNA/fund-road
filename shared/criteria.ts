@@ -152,10 +152,17 @@ export function formatTicket(min?: number | null, max?: number | null) {
 // D13 : un ticket ne s'affiche qu'avec une source datée ; sinon « Non communiqué »,
 // jamais « 0 € » ni une estimation. Une valeur inconnue reste hors du tri numérique.
 export const ticketAffiche = (c: any): string => {
-  const valeur = formatTicket(c?.ticketMin, c?.ticketMax) || String(c?.ticket || "");
+  // chaque borne n'est affichée que si elle porte sa propre source : un min sourcé ne légitime pas
+  // un max non sourcé (et inversement)
   const sources = c?.sources || {};
-  const source = Object.keys(sources).some((k) => k.startsWith("ticket"));
-  return valeur && source ? valeur : "Non communiqué";
+  const min = sources.ticketMin ? Number(c?.ticketMin) : NaN;
+  const max = sources.ticketMax ? Number(c?.ticketMax) : NaN;
+  const valeur =
+    formatTicket(
+      Number.isFinite(min) && min > 0 ? min : undefined,
+      Number.isFinite(max) && max > 0 ? max : undefined,
+    ) || (sources.ticket ? String(c?.ticket || "") : "");
+  return valeur || "Non communiqué";
 };
 const liste = (v: unknown) => (Array.isArray(v) ? v.join(", ") : String(v || ""));
 

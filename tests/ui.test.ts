@@ -349,13 +349,30 @@ test("A13.1 : un ticket sans source datée devient « Non communiqué »", async
     criteria.ticketAffiche({ ticketMin: 500000, ticketMax: 2000000 }),
     "Non communiqué",
   );
+  const deuxSources = {
+    ticketMin: { url: "https://exemple.fr", citation: "500 k€" },
+    ticketMax: { url: "https://exemple.fr", citation: "2 M€" },
+  };
+  assert.equal(
+    criteria.ticketAffiche({ ticketMin: 500000, ticketMax: 2000000, sources: deuxSources }),
+    "500 k€ à 2 M€",
+  );
+  // une seule borne sourcée : seule celle-là s'affiche
   assert.equal(
     criteria.ticketAffiche({
       ticketMin: 500000,
       ticketMax: 2000000,
       sources: { ticketMin: { url: "https://exemple.fr", citation: "500 k€" } },
     }),
-    "500 k€ à 2 M€",
+    "dès 500 k€",
+  );
+  assert.equal(
+    criteria.ticketAffiche({
+      ticketMin: 500000,
+      ticketMax: 2000000,
+      sources: { ticketMax: { url: "https://exemple.fr", citation: "2 M€" } },
+    }),
+    "jusqu’à 2 M€",
   );
   assert.equal(criteria.ticketAffiche({}), "Non communiqué");
   assert.equal(criteria.ticketAffiche(null), "Non communiqué");
