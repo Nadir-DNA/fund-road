@@ -2,6 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 const ui = await import("../shared/ui.ts");
+// l'espace connecté vit dans app/espace.tsx (chargé à la demande) : lire les deux sources
+const sourceApp = () =>
+  readFileSync(new URL("../app/main.tsx", import.meta.url), "utf8") +
+  readFileSync(new URL("../app/espace.tsx", import.meta.url), "utf8");
+
 
 // A5b — bouton groupé : seules les propositions relues et non vides sont confirmées
 test("A5b.1/A5b.2 : seules les propositions non confirmées et non vides sont retenues", () => {
@@ -246,7 +251,7 @@ test("A9.1 : un financeur avec droit payant voit la facturation en dernier", () 
 
 // A7/A8 — analyse : plus de lancement automatique, un seul e-mail par job terminé
 test("A7.1 : aucun lancement d'analyse sans clic", () => {
-  const app = readFileSync(new URL("../app/main.tsx", import.meta.url), "utf8");
+  const app = sourceApp();
   assert.equal(app.includes("L’analyse se lance automatiquement"), false);
   assert.ok(app.includes("Lancer l’analyse sur ces"));
   // l'ancien enchaînement automatique après dépôt a disparu
@@ -314,7 +319,7 @@ test("A12c.1 : seuls les exports changent de camp ; révocation et suivi restent
 });
 
 test("A12c.3/A12c.5 : partage réservé aux dossiers complets, aucune restriction d’étape", () => {
-  const app = readFileSync(new URL("../app/main.tsx", import.meta.url), "utf8");
+  const app = sourceApp();
   const serveur = readFileSync(new URL("../server/index.ts", import.meta.url), "utf8");
   // D12 : le serveur garde le refus 409 tant que les neuf rubriques ne sont pas confirmées
   assert.ok(serveur.includes("score(d.state).attestable"));
