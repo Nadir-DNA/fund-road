@@ -77,10 +77,20 @@ test("A16.1 : aucun confirm() natif dans l'application", () => {
 });
 
 // A20 — annuaire : compteur et tri, ticket inconnu hors du tri numérique
+// A13.2 : un ticket n'est « connu » que s'il porte une source
 const financeur = (name: string, ticketMin?: number, verifiedAt?: string) => ({
   name,
   theme: { name },
-  criteria: ticketMin === undefined ? {} : { ticketMin },
+  criteria:
+    ticketMin === undefined
+      ? {}
+      : {
+          ticketMin,
+          sources:
+            ticketMin > 0
+              ? { ticketMin: { url: "https://exemple.fr", citation: "dès " + ticketMin + " €" } }
+              : {},
+        },
   verifiedAt,
 });
 test("A20.2 : tri stable, ticket inconnu après les tickets connus", () => {
@@ -362,4 +372,17 @@ test("A21.1 : le bouton Google n'existe que si les identifiants sont configurés
   assert.ok(app.includes("{googleAuth && ("));
   // le lien CGV est présent sous le bouton d'inscription
   assert.ok(app.includes('to="/cgv"'));
+});
+
+// A13.2 — une borne sans source ne classe pas la fiche
+test("A13.2 : le tri par ticket ignore les bornes non sourcées", () => {
+  const sources = { ticketMin: { url: "https://x.fr", citation: "dès 100 k€ par tour" } };
+  const avec = { name: "Sourcé", criteria: { ticketMin: 100000, sources } };
+  const sans = { name: "Non sourcé", criteria: { ticketMin: 50000 } };
+  const maxSeul = { name: "Max sans source", criteria: { ticketMax: 9000000 } };
+  assert.equal(ui.ticketConnu(avec), 100000);
+  assert.equal(ui.ticketConnu(sans), null);
+  assert.equal(ui.ticketConnu(maxSeul), null);
+  const tri = ui.trierAnnuaire([sans, maxSeul, avec] as any[], "ticket-asc");
+  assert.deepEqual(tri.map((x: any) => x.name), ["Sourcé", "Non sourcé", "Max sans source"]);
 });

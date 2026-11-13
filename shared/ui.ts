@@ -101,10 +101,12 @@ export const trisAnnuaire: readonly (readonly [TriAnnuaire, string])[] = [
 ];
 export const ticketConnu = (o: any): number | null => {
   const c = o?.criteria || {};
+  // A13.2 : une borne sans source ne classe pas la fiche — elle s'affiche « Non communiqué »
+  const sources = c.sources || {};
   const min = Number(c.ticketMin);
-  if (Number.isFinite(min) && min > 0) return min;
+  if (sources.ticketMin && Number.isFinite(min) && min > 0) return min;
   const max = Number(c.ticketMax);
-  if (Number.isFinite(max) && max > 0) return max;
+  if (sources.ticketMax && Number.isFinite(max) && max > 0) return max;
   return null;
 };
 const nomAffiche = (o: any) => String(o?.theme?.name || o?.name || "");
