@@ -144,3 +144,43 @@ test("logos : repli sur l'icône Apple standard, formats vérifiés aux octets",
   const html = (async () => new Response("<html>pas une image</html>")) as typeof fetch;
   assert.equal(await chercherLogo("https://y.fr/", html), null, "une page HTML n'est pas un logo");
 });
+
+// Provenance : l'import conserve les sources validées et refuse une provenance invalide
+test("import : les sources d'un critère sont conservées et validées", () => {
+  const ok = lireFiche({
+    nom: "Fonds X",
+    type: "fund",
+    source_url: "https://x.fr",
+    criteria: {
+      ticketMin: 100000,
+      sources: {
+        ticketMin: { url: "https://x.fr/tickets", citation: "Nous investissons dès 100 k€." },
+      },
+    },
+  });
+  assert.equal(ok.erreur, undefined);
+  assert.deepEqual(ok.fiche!.criteria.sources.ticketMin, {
+    url: "https://x.fr/tickets",
+    citation: "Nous investissons dès 100 k€.",
+  });
+  // une URL non https est refusée
+  const mauvaiseUrl = lireFiche({
+    nom: "Fonds X",
+    type: "fund",
+    source_url: "https://x.fr",
+    criteria: { sources: { ticketMin: { url: "http://x.fr", citation: "citation assez longue" } } },
+  });
+  assert.match(mauvaiseUrl.erreur!, /https/);
+  // une citation trop courte est refusée
+  const courte = lireFiche({
+    nom: "Fonds X",
+    type: "fund",
+    source_url: "https://x.fr",
+    criteria: { sources: { ticketMin: { url: "https://x.fr", citation: "court" } } },
+  });
+  assert.match(courte.erreur!, /citation/);
+  // sans sources, la fiche reste valide et n'ajoute pas de clé vide
+  const sans = lireFiche({ nom: "Fonds X", type: "fund", source_url: "https://x.fr", criteria: {} });
+  assert.equal(sans.erreur, undefined);
+  assert.equal("sources" in sans.fiche!.criteria, false);
+});
