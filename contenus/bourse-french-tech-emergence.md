@@ -94,6 +94,9 @@ L'État, sur des fonds du Programme d'investissement d'avenir (PIA4) ou du Fonds
 
 ## Pour aller plus loin
 
+- [IncubAlliance](/fonds/incuballiance) : incubateur technologique de Paris-Saclay, de l'idée au prototype, en Île-de-France.
+- [Linksium](/fonds/linksium) : société d'accélération du transfert de technologies de Grenoble Alpes, spécialisée en deeptech.
+- [Angels Santé](/fonds/angels-sante) : réseau de business angels santé, medtech et biotech, du pré-amorçage à l'amorçage.
 - [Bourse French Tech](bourse-french-tech.md) : jusqu'à 30 000 € pour un projet innovant.
 - [Bourse French Tech Lab](bourse-french-tech-lab.md) : avant la création, via un organisme de recherche membre d'un comité de valorisation.
 - [Concours i-Lab](/fonds/concours-i-lab) : jusqu'à 600 000 €, dans la limite de 60 % des dépenses éligibles.

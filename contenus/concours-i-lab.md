@@ -92,6 +92,9 @@ La Bourse French Tech finance une maturation en guichet, jusqu'à 30 000 €. i-
 
 ## Pour aller plus loin
 
+- [Agoranov](/fonds/agoranov) : incubateur public parisien, de l'idée au prototype, en Île-de-France.
+- [Wilco](/fonds/wilco) : accélérateur francilien, du prototype à l'amorçage.
+- [Supernova Invest](/fonds/supernova-invest) : fonds spécialisé deeptech et industrie, de l'amorçage à la série B.
 - [Concours i-Nov](/aides/concours-i-nov) : le concours pour une PME existante, projet de 1 à 5 M€.
 - [Bourse French Tech](bourse-french-tech.md) : jusqu'à 30 000 € pour une entreprise de moins d'un an.
 - [Bourse French Tech Émergence](bourse-french-tech-emergence.md) : jusqu'à 90 000 € pour la deeptech.

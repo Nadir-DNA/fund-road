@@ -94,6 +94,9 @@ Non, Bpifrance indique l'absence de frais de dossier et de frais d'instruction.
 
 ## Pour aller plus loin
 
+- [Fonds parisien pour l'innovation](/fonds/fonds-parisien-pour-l-innovation) : jusqu'à 30 000 € pour une startup d'un incubateur labellisé à Paris, au stade prototype ou pré-amorçage.
+- [Paris Business Angels](/fonds/paris-business-angels) : réseau de business angels national, tickets de 150 k€ à 1 M€ du pré-amorçage à la série A, avec un focus deeptech et IA.
+- [IoT Valley](/fonds/iot-valley) : avance jusqu'à 30 000 € et accompagnement à Toulouse, du prototype à l'amorçage.
 - [Bourse French Tech Émergence](bourse-french-tech-emergence.md) : jusqu'à 90 000 € pour un projet deeptech.
 - [Bourse French Tech Lab](bourse-french-tech-lab.md) : avant la création, via un organisme de recherche membre d'un comité de valorisation.
 - [Concours i-Lab](/fonds/concours-i-lab) : le concours national de création d'entreprises technologiques.

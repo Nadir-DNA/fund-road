@@ -95,6 +95,9 @@ Non : la fiche Bpifrance la classe hors aide d'État.
 
 ## Pour aller plus loin
 
+- [Pulsalys](/fonds/pulsalys) : incubateur et accélérateur deeptech de l'Université de Lyon, de l'idée au prototype.
+- [Atlanpole](/fonds/atlanpole) : technopole et incubateur de Nantes, de l'idée au pré-amorçage, en Pays de la Loire.
+- [DECA-BFC](/fonds/deca-bfc) : incubateur de la recherche publique en Bourgogne-Franche-Comté, spécialisé deeptech.
 - [Bourse French Tech](bourse-french-tech.md) : jusqu'à 30 000 € pour une entreprise de moins d'un an.
 - [Bourse French Tech Émergence](bourse-french-tech-emergence.md) : jusqu'à 90 000 € pour un projet deeptech.
 - [Concours i-Lab](/fonds/concours-i-lab) : le concours national de création d'entreprises technologiques.
