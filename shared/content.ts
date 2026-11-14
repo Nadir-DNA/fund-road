@@ -50,7 +50,7 @@ export const publicCopy: Record<
       ["Documents et dossiers", "Documents déposés, textes extraits, rubriques, versions, partages et notes. Finalité : préparer et partager votre dossier. Base légale : exécution du contrat. Durée : jusqu’à la suppression du dossier ou du compte."],
       ["Analyse par l’IA", "Quand vous lancez une analyse ou partagez un dossier avec un financeur dont les critères sont évalués, le texte extrait de vos documents (jamais les fichiers) est transmis à notre fournisseur d’IA, Mistral AI (France), et traité sur des serveurs situés dans l’Union européenne. Si Mistral AI est indisponible, la requête est reprise par Google (modèle Gemini), qui peut la traiter hors de l’Union européenne dans le cadre du Data Privacy Framework UE–États-Unis. Ni l’un ni l’autre n’utilise ces données pour entraîner ses modèles. Aucune analyse n’est lancée sans votre action."],
       ["Facturation", "Achats et factures, traités avec Stripe. Base légale : obligation légale. Durée : 10 ans."],
-      ["Mesure d’audience", "Google Analytics, uniquement après votre accord dans la bannière cookies. Durée des cookies : 14 mois au plus. Modifiable à tout moment via « Gérer les cookies »."],
+      ["Mesure d’audience", "Google Analytics et une mesure interne Fund Road, uniquement après votre accord dans la bannière cookies. Google Analytics : cookies de 14 mois au plus. Mesure interne : aucun cookie ; un repère de campagne est gardé dans l’onglet et effacé à sa fermeture ; les événements envoyés ne contiennent ni nom, ni adresse, ni contenu de dossier. La mesure interne est exploitée par l’éditeur lui-même, sans sous-traitant supplémentaire. Modifiable à tout moment via « Gérer les cookies »."],
       ["Sécurité et sauvegardes", "Connexions chiffrées, mots de passe hachés, contrôle des fichiers déposés, accès cloisonné par organisation et par dossier, journal des actions sensibles. Sauvegarde quotidienne conservée 14 jours."],
       ["Destinataires", "Vous seul et les membres de votre organisation, puis les financeurs ou contacts avec lesquels vous partagez un dossier, limités aux pièces choisies et à la version partagée. Sous-traitants techniques : Cloudflare (acheminement réseau), Mistral AI (IA), Google (IA de secours), Stripe (paiement), Google (mesure d’audience, sur accord). Aucune donnée n’est vendue."],
       ["Vos droits", "Accès, rectification, effacement, limitation, opposition et portabilité. Votre compte se supprime vous-même depuis la page Sécurité ; les autres demandes s’adressent à contact@fund-road.com et sont traitées sous un mois. Vous pouvez saisir la CNIL (cnil.fr)."],
@@ -164,7 +164,7 @@ export const publicCopy: Record<
       ],
       [
         "Mesure d’audience",
-        "Google Analytics n’est chargé qu’après votre accord, donné ou refusé dans la bannière. Vous pouvez changer d’avis à tout moment avec le lien « Gérer les cookies » en bas de chaque page.",
+        "Deux mesures — Google Analytics et une mesure interne Fund Road — ne sont chargées qu’après votre accord, donné ou refusé dans la bannière. La mesure interne enregistre la page, la page d’origine, la langue et l’étape atteinte (inscription, dossier, analyse), jamais le contenu d’un dossier ; elle ne dépose pas de cookie, seulement un repère de campagne dans l’onglet, effacé à sa fermeture. Vous pouvez changer d’avis à tout moment avec « Gérer les cookies ».",
       ],
     ],
   },

@@ -2625,8 +2625,11 @@ function Consentement() {
       aria-label="Cookies de mesure d’audience"
     >
       <p>
-        Nous mesurons l’audience du site avec Google Analytics, uniquement si
-        vous l’acceptez. <Link to="/confiance">En savoir plus</Link>
+        Nous mesurons l’audience du site — Google Analytics et une mesure interne
+        Fund Road — uniquement si vous l’acceptez. Nous enregistrons la page, la
+        page d’origine, la langue et l’étape atteinte (inscription, dossier,
+        analyse), jamais le contenu de vos dossiers.{" "}
+        <Link to="/confiance">En savoir plus</Link>
       </p>
       <div className="button-row">
         <button
