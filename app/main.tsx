@@ -24,7 +24,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { Link, NavLink, useNavigate } from "./links.tsx";
-import { captureUtm, firstTime, keepUtm, persistUtm, track } from "./track.ts";
+import { captureUtm, chargerMesure, firstTime, keepUtm, oublierMesure, persistUtm, track } from "./track.ts";
 import { editorial } from "../shared/editorial.generated.ts";
 import { profileTitle, slugify, showAidesLink } from "../shared/seo.ts";
 import { programs } from "../shared/programs.ts";
@@ -2588,6 +2588,8 @@ function revoirCookies() {
   try {
     localStorage.removeItem(CHOIX_COOKIES);
   } catch {}
+  // la campagne et les marqueurs de visite ne survivent pas au retrait du choix
+  oublierMesure();
   // sinon Google Analytics réécrit son cookie avant le rechargement
   (window as any)["ga-disable-" + GA_ID] = true;
   document.cookie
@@ -2601,7 +2603,12 @@ function revoirCookies() {
 function Consentement() {
   const [choix, setChoix] = useState(lireChoixCookies);
   useEffect(() => {
-    if (choix === "oui") chargerAnalytics();
+    if (choix === "oui") {
+      chargerAnalytics();
+      chargerMesure();   // le pixel Searchtide n'est chargé qu'après un accord explicite
+    } else if (choix === "non") {
+      oublierMesure();   // après refus : aucun envoi, aucun identifiant stocké
+    }
   }, [choix]);
   if (choix) return null;
   const choisir = (v: string) => {

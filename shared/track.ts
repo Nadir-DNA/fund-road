@@ -12,6 +12,9 @@ export const TRACK_EVENTS = [
 ] as const;
 export type TrackName = (typeof TRACK_EVENTS)[number];
 
+/** La mesure d'audience n'est autorisée que par un choix explicite « oui » ; avant tout choix, rien. */
+export const mesureAutorisee = (choix: string | null | undefined): boolean => choix === "oui";
+
 export type Utm = Record<string, string>;
 
 /** UTM d'une adresse : trois clés connues, valeur ≤ 100 caractères, caractères sûrs. */

@@ -362,6 +362,7 @@ function Onboarding() {
                 name,
                 goal,
               });
+              track("dossier_cree");   // premier dossier créé par l'onboarding : même événement que le formulaire
               refresh();
               navigate("/app/dossiers/" + d.id + "?onglet=documents");
             } catch (err: any) {

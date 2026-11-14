@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { TRACK_EVENTS, UTM_KEYS, parseUtm, pickUtm, withUtm } from "../shared/track.ts";
+import { TRACK_EVENTS, UTM_KEYS, mesureAutorisee, parseUtm, pickUtm, withUtm } from "../shared/track.ts";
 
 test("événements : exactement les cinq noms fixes, sans donnée personnelle", () => {
   assert.deepEqual([...TRACK_EVENTS], ["compte_cree", "dossier_cree", "analyse_ok", "checkout_ouvert", "paiement_retour"]);
@@ -32,4 +32,12 @@ test("withUtm : ajoute les UTM manquants, ne touche pas une adresse qui en a dé
   assert.equal(withUtm("/app?success=1#h", { utm_campaign: "c" }), "/app?success=1&utm_campaign=c#h");
   assert.equal(withUtm("/x?utm_source=deja", u), "/x?utm_source=deja");
   assert.equal(withUtm("/app", null), "/app");
+});
+
+test("consentement : seul un « oui » explicite autorise la mesure ; refus et absence de choix non", () => {
+  assert.equal(mesureAutorisee("oui"), true);
+  assert.equal(mesureAutorisee("non"), false);
+  assert.equal(mesureAutorisee(null), false);
+  assert.equal(mesureAutorisee(undefined), false);
+  assert.equal(mesureAutorisee(""), false);
 });
