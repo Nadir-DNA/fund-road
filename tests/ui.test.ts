@@ -317,8 +317,8 @@ test("A12a.2 : une rubrique non confirmée ne sort jamais, une confirmée sort a
 // A12c — la grille reflète les droits
 test("A12c.1 : seuls les exports changent de camp ; révocation et suivi restent gratuits", () => {
   const app = readFileSync(new URL("../app/main.tsx", import.meta.url), "utf8");
-  const gratuit = app.slice(app.indexOf('label: "Découverte"'), app.indexOf('label: dossier?.label'));
-  const payant = app.slice(app.indexOf('label: dossier?.label'), app.indexOf('label: "Fonds, business angels'));
+  const gratuit = app.slice(app.indexOf('label: "Découverte"'), app.indexOf('label: "Offre complète"'));
+  const payant = app.slice(app.indexOf('label: "Offre complète"'), app.indexOf('label: "Fonds, business angels'));
   assert.ok(gratuit.includes("Partages révocables et suivi des étapes"));
   assert.equal(gratuit.includes("Exports PDF et Word"), false);
   assert.ok(payant.includes("Exports PDF et Word"));

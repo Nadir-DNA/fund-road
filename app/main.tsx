@@ -1293,6 +1293,7 @@ function Pricing() {
       label: "Découverte",
       price: "0 €",
       unit: "",
+      includes: "",
       features: [
         "Dossier de financement complet, envoi aux financeurs",
         "Dépôt de vos pièces",
@@ -1304,15 +1305,12 @@ function Pricing() {
     },
     {
       badge: "Startups",
-      label: dossier?.label || "Dossier financement",
+      label: "Offre complète",
       price: dossier ? dossier.price_cents / 100 + " €" : "—",
       unit: " / 90 jours, résiliable",
       // seuls les exports changent de camp : révocation et suivi restent gratuits (12/11)
-      features: [
-        "Analyses IA de vos documents",
-        "Critères des aides et des financeurs",
-        "Exports PDF et Word",
-      ],
+      includes: "Tout Découverte, plus :",
+      features: ["Exports PDF et Word de vos dossiers"],
       cta: dossier?.active ? "Choisir" : "Ouverture prochaine",
       featured: true,
     },
@@ -1321,6 +1319,7 @@ function Pricing() {
       label: "Fonds, business angels, incubateurs",
       price: "0 €",
       unit: " pendant le lancement",
+      includes: "",
       features: [
         "Suivi de vos startups et de leur complétude",
         "Vos critères, questions et pièces demandées",
@@ -1336,9 +1335,10 @@ function Pricing() {
       <main className="section info-page">
         <h1>Un prix simple, selon votre rôle</h1>
         <p className="lead">
-          Les startups commencent gratuitement et paient quand le dossier
-          compte. Les financeurs et incubateurs sont gratuits pendant le
-          lancement.
+          Les startups commencent gratuitement : dossier complet, envoi aux
+          financeurs et suivi. L’offre complète ajoute les exports PDF et Word,
+          à 149 € tous les 90 jours, résiliable. Les financeurs et incubateurs
+          sont gratuits pendant le lancement.
         </p>
         <ErrorBox text={error} />
         <div className="pricing-grid">
@@ -1353,6 +1353,7 @@ function Pricing() {
                 {p.price}
                 <small>{p.unit}</small>
               </div>
+              {p.includes && <p className="muted">{p.includes}</p>}
               <ul>
                 {p.features.map((f) => (
                   <li key={f}>
@@ -1370,6 +1371,17 @@ function Pricing() {
             </article>
           ))}
         </div>
+        <p className="muted">
+          Le partage d’un dossier exige les neuf rubriques confirmées, sans
+          contradiction ; les rubriques manquantes sont listées dans
+          l’application.
+        </p>
+        <p className="muted">
+          Paiement par carte. L’offre complète est à 149 € tous les 90 jours,
+          renouvellement automatique, résiliable à tout moment ; à l’expiration,
+          vos dossiers restent accessibles et partageables, seuls les exports
+          sont désactivés.
+        </p>
         <p className="muted">
           Aucune commission sur les levées ni sur les subventions obtenues.
           TVA non applicable, article 293 B du CGI.{" "}

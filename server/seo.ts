@@ -169,15 +169,17 @@ type Offer = { name: string; price: number; unit: string; description: string };
 /** Corps SSR de /tarifs : premier écran aligné sur le client, puis la liste des prix (hors écran). */
 export function tarifsBody(offers: Offer[]) {
   return `${nav}<main class="section info-page"><h1>Un prix simple, selon votre rôle</h1>
-      <p class="lead">Les startups commencent gratuitement et paient quand le dossier compte. Les financeurs et incubateurs sont gratuits pendant le lancement.</p>
-      <h3>Découverte</h3><ul><li>Dossier de financement, même incomplet</li><li>Dépôt de vos pièces</li><li>Annuaire et envoi aux financeurs</li><li>Une analyse IA offerte chaque mois</li></ul>
-      <h3>Dossier financement</h3><ul><li>Analyses IA de vos documents</li><li>Critères des aides et des financeurs</li><li>Exports PDF et Word</li><li>Partages révocables et suivi des étapes</li></ul>
+      <p class="lead">Les startups commencent gratuitement : dossier complet, envoi aux financeurs et suivi. L’offre complète ajoute les exports PDF et Word, à 149 € tous les 90 jours, résiliable. Les financeurs et incubateurs sont gratuits pendant le lancement.</p>
+      <h3>Découverte</h3><ul><li>Dossier de financement complet, envoi aux financeurs</li><li>Dépôt de vos pièces</li><li>Annuaire des financeurs</li><li>Une analyse IA offerte chaque mois</li><li>Partages révocables et suivi des étapes</li></ul>
+      <h3>Offre complète</h3><p>Tout Découverte, plus :</p><ul><li>Exports PDF et Word de vos dossiers</li></ul>
       <h3>Fonds, business angels, incubateurs</h3><ul><li>Suivi de vos startups et de leur complétude</li><li>Vos critères, questions et pièces demandées</li><li>Adéquation calculée à chaque dossier reçu</li><li>Notes privées d’équipe</li></ul>
       <dl class="tarifs-offres">
         <dt>Découverte</dt><dd>0 €</dd>
         ${offers.filter((o) => o.name !== "Découverte").map((o) => `<dt>${esc(o.name)}</dt><dd>${o.price} €${esc(o.unit)}</dd>`).join("")}
         <dt>Fonds, business angels et incubateurs</dt><dd>0 € pendant le lancement</dd>
       </dl>
+      <p>Le partage d’un dossier exige les neuf rubriques confirmées, sans contradiction ; les rubriques manquantes sont listées dans l’application.</p>
+      <p>Paiement par carte. L’offre complète est à 149 € tous les 90 jours, renouvellement automatique, résiliable à tout moment ; à l’expiration, vos dossiers restent accessibles et partageables, seuls les exports sont désactivés.</p>
       <p>Aucune commission sur les levées ni sur les subventions obtenues. TVA non applicable, article 293 B du CGI.</p></main>`;
 }
 
@@ -429,16 +431,16 @@ async function priced() {
       price: 0,
       unit: "",
       description:
-        "Dossier même incomplet, dépôt des pièces, annuaire et envoi aux financeurs, une analyse IA offerte par mois.",
+        "Dossier de financement complet, envoi aux financeurs, dépôt des pièces, annuaire, une analyse IA offerte chaque mois.",
     },
     ...(dossier
       ? [
           {
-            name: dossier.label,
+            name: "Offre complète",
             price: dossier.price_cents / 100,
-            unit: " tous les 90 jours, résiliable à tout moment",
+            unit: " / 90 jours, résiliable",
             description:
-              "Analyses IA, critères des aides et des financeurs, exports PDF et Word, partages révocables.",
+              "Tout Découverte, plus : exports PDF et Word de vos dossiers.",
           },
         ]
       : []),
@@ -452,12 +454,17 @@ export const software = (offers: Awaited<ReturnType<typeof priced>>) => ({
   operatingSystem: "Web",
   inLanguage: "fr-FR",
   url: abs("/"),
-  offers: offers.map((o) => ({
-    "@type": "Offer",
-    name: o.name,
-    price: o.price,
-    priceCurrency: "EUR",
-  })),
+  offers: offers.map((o) => {
+    // l'offre payante porte le nom et la description exacts affichés sur /tarifs
+    const libelle = `Offre complète : exports PDF et Word, ${o.price} € tous les 90 jours`;
+    return {
+      "@type": "Offer",
+      name: o.price > 0 ? libelle : o.name,
+      ...(o.price > 0 ? { description: libelle } : {}),
+      price: o.price,
+      priceCurrency: "EUR",
+    };
+  }),
 });
 
 // Pages applicatives : jamais indexées
