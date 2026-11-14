@@ -26,14 +26,9 @@ test("SEO : page de fonds propre au financeur et échappée", () => {
 });
 test("SEO : titres et descriptions dans les longueurs affichées par Google", async () => {
   const { pageMeta } = await import("../shared/content.ts");
-  // /tarifs : texte exact validé par Franky le 14/11 (décision #5, 149 € / 90 jours) ;
-  // 66 et 195 caractères, Google peut tronquer l'affichage.
-  const exact = new Set(["/tarifs"]);
   for (const [path, m] of Object.entries(pageMeta)) {
-    const titre = exact.has(path) ? 70 : 60;
-    const description = exact.has(path) ? 200 : 160;
-    assert.ok(m.title.length <= titre, `${path} titre ${m.title.length}`);
-    assert.ok(m.description.length <= description, `${path} description ${m.description.length}`);
+    assert.ok(m.title.length <= 60, `${path} titre ${m.title.length}`);
+    assert.ok(m.description.length <= 160, `${path} description ${m.description.length}`);
   }
   const html = renderProfile(index, {
     id: "f2",

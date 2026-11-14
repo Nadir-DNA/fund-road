@@ -304,10 +304,9 @@ export const pageMeta: Record<string, { title: string; description: string }> =
         "Déposez business plan et deck : Fund Road structure un dossier de financement sourcé, montre ce qui manque et vous aide à le partager aux fonds.",
     },
     "/tarifs": {
-      title: "Tarifs Fund Road : gratuit pour commencer, 149 € tous les 90 jours",
-      // Texte exact validé par Franky le 14/11 (décision #5) ; 195 caractères, Google peut tronquer.
+      title: "Tarifs Fund Road : gratuit pour commencer, 149 € / 90 jours",
       description:
-        "Découverte gratuite : dossier de financement complet, envoi aux financeurs, suivi. Offre complète à 149 € tous les 90 jours pour les exports PDF et Word. Financeurs gratuits pendant le lancement.",
+        "Découverte gratuite : dossier de financement complet, envoi aux financeurs, suivi. Offre complète à 149 €/90 jours, exports PDF et Word. Financeurs gratuits.",
     },
     "/annuaire": {
       title: "Annuaire des fonds et business angels | Fund Road",
