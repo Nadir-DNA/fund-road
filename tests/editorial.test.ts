@@ -9,7 +9,7 @@ const texte = (html: string) => html
 
 test("Contenus éditoriaux : métadonnées, HTML, FAQ alignée et liens internes", () => {
   const entries = Object.entries(editorial);
-  assert.equal(entries.length, 11);
+  assert.equal(entries.length, 16);
   for (const [url, p] of entries) {
     assert.ok(url.startsWith("/"), url);
     assert.ok(p.title.length <= 60, `${url} titre ${p.title.length}`);
@@ -17,7 +17,7 @@ test("Contenus éditoriaux : métadonnées, HTML, FAQ alignée et liens internes
     assert.ok(p.html.length > 3000, `${url} HTML trop court`);
     assert.ok(p.html.includes(`<h1>`) === false, `${url} : le H1 est fourni séparément`);
     assert.ok(!/\.md\)/.test(p.html), `${url} : lien Markdown non réécrit`);
-    assert.ok(p.html.includes("<table>"), `${url} : tableau attendu`);
+    if (!url.startsWith("/ressources/")) assert.ok(p.html.includes("<table>"), `${url} : tableau attendu`); // les guides n'en ont pas toujours
     assert.equal(p.faq?.["@type"], "FAQPage", url);
     const visible = texte(p.html);
     for (const q of p.faq.mainEntity) {
@@ -38,6 +38,16 @@ test("Contenus éditoriaux : métadonnées, HTML, FAQ alignée et liens internes
   assert.ok(editorial["/aides/pret-honneur-reseau-entreprendre"]);
   assert.ok(editorial["/fonds/concours-i-lab"]);
   assert.ok(editorial["/aides/concours-i-nov"]);
+  for (const g of ["erreurs-bourse-french-tech", "business-plan-subvention", "monter-un-dossier-de-subvention", "dossier-bpifrance", "prestations-pass-pi"])
+    assert.ok(editorial["/ressources/" + g], g);
+});
+
+test("Guides /ressources : chaque lien interne pointe vers une page publiée (aucun 404 entre les guides)", () => {
+  const publiees = new Set(Object.keys(editorial));
+  const guides = Object.entries(editorial).filter(([u]) => u.startsWith("/ressources/"));
+  assert.equal(guides.length, 5);
+  for (const [url, p] of guides)
+    for (const m of p.html.matchAll(/href="(\/ressources\/[^"#?]+)"/g)) assert.ok(publiees.has(m[1]), `${url} -> ${m[1]}`);
 });
 
 test("Validation : toutes les pages intégrées sont validées et la migration sauve les ressources existantes", async () => {

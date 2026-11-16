@@ -285,6 +285,7 @@ function editorialPage(path: string): Page | null {
   if (!e?.validated) return null;
   const trail: [string, string][] = path.startsWith("/fonds/")
     ? [["Annuaire des financeurs", "/annuaire"], [e.h1, path]]
+    : path.startsWith("/ressources/") ? [["Guides", "/ressources"], [e.h1, path]]
     : path === "/aides" ? [["Aides publiques", "/aides"]] : [["Aides publiques", "/aides"], [e.h1, path]];
   return {
     path,
@@ -295,6 +296,10 @@ function editorialPage(path: string): Page | null {
     body: `<main>${nav}<article><h1>${esc(e.h1)}</h1>${e.html}</article></main>`,
   };
 }
+
+/** Guides /ressources/* validés, dans l'ordre du fichier généré. */
+const editorialGuides = () =>
+  Object.entries(editorial).filter(([p, e]) => p.startsWith("/ressources/") && e.validated);
 
 // Pages publiques fixes : textes partagés avec l'interface (shared/content.ts)
 async function staticPage(path: string): Promise<Page | null> {
@@ -405,15 +410,19 @@ async function staticPage(path: string): Promise<Page | null> {
           )
         ).rows
       : [];
-  const extra = resourceRows
+  // Guides éditoriaux validés (contenus-seo) : listés sur /ressources avec ceux de la base
+  const guides = key === "ressources" ? editorialGuides() : [];
+  const extra = [
+    ...guides.map(([p, e]) => `<li><a href="${p}">${esc(e.h1)}</a> · ${esc(e.description)}</li>`),
+    ...resourceRows
     .map(
       (r: any) =>
         `<li><a href="/ressources/${esc(r.slug)}">${esc(r.title)}</a> · ${esc(r.excerpt)}</li>`,
     )
-    .join("");
+    ].join("");
   return {
     ...base,
-    ...(key === "ressources" && resourceRows.length === 0 ? { robots: "noindex,follow" } : {}),
+    ...(key === "ressources" && resourceRows.length === 0 && guides.length === 0 ? { robots: "noindex,follow" } : {}),
     ld: [crumbs([[copy.title, path]])],
     body: `<main>${nav}<h1>${esc(copy.title)}</h1><p>${esc(copy.intro)}</p>
     ${copy.items.map(([t, d]) => `<h2>${esc(t)}</h2><p>${esc(d)}</p>`).join("")}
@@ -494,6 +503,8 @@ export function registerSeo(app: FastifyInstance, index: string) {
   // Pas de doublon indexable : l'ancienne URL de ressource renvoie vers le hub /aides
   app.get("/ressources/aides", async (_req, reply) => reply.redirect("/aides", 301));
   app.get("/ressources/:slug", async (req: any, reply) => {
+    const guide = editorialPage("/ressources/" + req.params.slug);
+    if (guide) return html(reply).send(renderPage(index, guide));
     const r = (
       await db.query(
         "SELECT slug,title,excerpt,body FROM content_pages WHERE slug=$1 AND validated=true",
@@ -580,9 +591,10 @@ export function registerSeo(app: FastifyInstance, index: string) {
     ).rows.map((r) => "/ressources/" + r.slug);
     const pages = [
       ...Object.keys(pageMeta).filter(
-        (p) => (!editorial[p] || editorial[p].validated) && (p !== "/ressources" || ressources.length > 0),
+        (p) => (!editorial[p] || editorial[p].validated) && (p !== "/ressources" || ressources.length > 0 || editorialGuides().length > 0),
       ),
       ...(await listProfiles()).map((p) => "/fonds/" + p.slug),
+      ...editorialGuides().map(([p]) => p),
       ...ressources,
     ];
     // date de dernière vérification des fiches d'annuaire, pour que Google repasse sur les fiches mises à jour
