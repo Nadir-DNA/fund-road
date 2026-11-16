@@ -1,7 +1,7 @@
 ---
 url: /aides/concours-i-nov
 title: "Concours i-Nov : projet de 1 à 5 M€, jusqu'à 45 % financés"
-meta_description: "Concours i-Nov : projets de R&D de 1 à 5 M€, 45 % financés pour une petite entreprise, dont 60 % de subvention. Conditions, thèmes et vagues."
+meta_description: "Concours i-Nov : projets de R&D de 1 à 5 M€, jusqu'à 45 % financés pour une petite entreprise, 60 % en subvention et 40 % en avance récupérable."
 h1: "Concours i-Nov"
 statut: prêt-à-intégrer
 date_verification: 2026-11-10
@@ -9,7 +9,7 @@ date_verification: 2026-11-10
 
 # Concours i-Nov
 
-Le concours i-Nov finance des projets de R&D d'envergure, portés par une seule PME, pour un coût total compris entre **1 et 5 M€**. Il est financé par France 2030 et opéré par Bpifrance en collaboration avec l'ADEME.
+Le concours i-Nov finance des projets de R&D d'envergure, portés par une seule PME, pour un coût total compris entre **1 et 5 M€**. Il est financé par France 2030 ; l'appel à projets indique deux contacts, Bpifrance et l'ADEME.
 
 C'est un concours à vagues, qui vise une entreprise existante, contrairement aux bourses de maturation.
 
@@ -30,7 +30,7 @@ Source : appel à projets « Concours d'innovation i-Nov », [bpifrance.fr](http
 
 Trois points à retenir avant de calculer :
 
-1. **Le taux s'applique au coût total du projet**, pas à un montant forfaitaire. Un projet à 2 M€ financé à 45 % représente 900 000 € d'aide publique, dont une partie remboursable.
+1. **Le taux est un taux maximum d'intervention**, pas un montant forfaitaire. Un projet à 2 M€ financé au taux maximum de 45 % représente 900 000 € d'aide publique, dont une partie remboursable.
 2. **L'avance récupérable n'est pas une subvention.** 40 % du financement est une avance, à rembourser selon les modalités du contrat.
 3. **Le seuil de 1 M€ de dépenses est un plancher.** Pour les thématiques « Transports, mobilités, villes et bâtiments durables » et « Énergies, ressources et milieux naturels », les porteurs sous 1 M€ sont invités à contacter l'ADEME pour identifier un autre dispositif.
 
@@ -47,7 +47,7 @@ Pour les deux dernières thématiques, les porteurs dont le budget est inférieu
 
 ## Qui peut candidater
 
-- **Une PME unique**, au sens européen, porteuse de l'intégralité du projet : le concours ne finance pas les projets collaboratifs.
+- **Une PME unique**, porteuse de l'intégralité du projet : le concours est ouvert aux projets mono-partenaires.
 - **Un projet d'innovation** à fort potentiel, avec une valeur ajoutée démontrée.
 - **Un dossier complet et déposé dans les délais**, sur la plateforme Bpifrance.
 - **Un impact économique** démontré, une capacité du porteur à mener le projet, et une performance environnementale prise en compte dans l'évaluation.
@@ -61,25 +61,25 @@ Le concours fonctionne par **vagues successives**, chacune avec sa date de clôt
 ## Ce que le jury attend
 
 - **Un caractère innovant et une valeur ajoutée démontrés**, avec un impact économique.
-- **Un projet de R&D, pas de déploiement commercial**, avec des jalons crédibles pour 1 à 5 M€.
+- **Un projet de recherche, développement et innovation** dont les coûts totaux se situent entre 1 et 5 M€.
 - **Une capacité d'exécution** : équipe, partenaires techniques, planning.
-- **Un impact mesurable** : retombées économiques et performance environnementale.
+- **Un impact économique et une performance environnementale**, critères de sélection publiés.
 
 ## Ce qu'il faut préparer
 
-- **Le cahier des charges de la vague 14** : il fixe les thématiques, les critères et les pièces.
+- **Le cahier des charges de la vague 14** : il détaille les thématiques.
 - **Le programme de R&D** : contenu technique, jalons, livrables, durée.
 - **Le budget** : dépenses éligibles, coût total dans la fourchette 1-5 M€, plan de financement.
 - **La grille d'impact** : un guide est publié avec le dossier de candidature.
 
 ## Les erreurs qui font échouer le dossier
 
-1. **Candidater avec un projet sous 1 M€.** Le plancher est explicite : en dessous, ce n'est pas le bon dispositif. Pour les thématiques « Transports, mobilités, villes et bâtiments durables » et « Énergies, ressources et milieux naturels », l'ADEME renvoie vers d'autres financements.
+1. **Candidater avec un projet sous 1 M€.** Le plancher est explicite : en dessous, ce n'est pas le bon dispositif. Pour les thématiques « Transports, mobilités, villes et bâtiments durables » et « Énergies, ressources et milieux naturels », les porteurs sont invités à contacter l'ADEME, en lien avec Bpifrance.
 2. **Présenter un projet collaboratif.** i-Nov finance un porteur unique.
 3. **Confondre aide et subvention.** 40 % du financement est une avance récupérable, à rembourser.
 4. **Se fier à une date de clôture ancienne.** Une date reprise d'une vague précédente ne vaut pas pour la vague suivante.
 5. **Négliger la performance environnementale.** C'est un critère de sélection publié, pas un bonus.
-6. **Déposer hors plateforme.** Le dépôt se fait exclusivement sur la plateforme Bpifrance (Picxel).
+6. **Déposer hors plateforme.** Le dépôt se fait exclusivement sur la plateforme Bpifrance.
 
 ## i-Lab ou i-Nov ?
 
@@ -89,7 +89,7 @@ Le concours fonctionne par **vagues successives**, chacune avec sa date de clôt
 | Coût du projet | pas de plancher publié | 1 à 5 M€ |
 | Aide maximale | 600 000 € (édition 2022), 60 % des dépenses éligibles | 45 % (PE) ou 35 % (ME) du coût total |
 | Forme | subvention | 60 % subvention, 40 % avance récupérable |
-| Objet | créer l'entreprise et finaliser le produit | financer un projet de R&D d'envergure |
+| Objet | soutenir la création d'entreprises de technologies innovantes | financer un projet de R&D d'envergure |
 
 ## Questions fréquentes
 
@@ -97,7 +97,7 @@ Le concours fonctionne par **vagues successives**, chacune avec sa date de clôt
 Selon le cahier des charges de la vague 14 (2024), le projet doit coûter entre 1 et 5 M€. L'aide couvre jusqu'à 45 % du coût pour une petite entreprise et 35 % pour une moyenne entreprise, sous forme de 60 % de subvention et 40 % d'avance récupérable.
 
 **Qui peut candidater au concours i-Nov ?**
-Une PME unique, au sens européen, porteuse d'un projet de R&D mono-partenaire dans l'une des quatre thématiques de la vague 14.
+Une PME unique, porteuse d'un projet de R&D mono-partenaire dans l'une des quatre thématiques de la vague 14.
 
 **Quelles sont les thématiques du concours i-Nov ?**
 Numérique ; santé ; transports, mobilités, villes et bâtiments durables ; énergies, ressources et milieux naturels.
@@ -118,7 +118,7 @@ La page officielle consultée le 10/11/2026 ne publiait que la vague 14, close l
 
 ## Sources
 
-- Bpifrance, appel à projets « Concours d'innovation i-Nov » : coût total de 1 à 5 M€, durée de 12 à 36 mois, quatre thématiques, critères d'éligibilité, taux de 45 % (petite entreprise) et 35 % (moyenne entreprise), financement à 60 % en subvention et 40 % en avance récupérable, dépôt sur la plateforme Bpifrance. Lu le 10/11/2026.
+- Bpifrance, appel à projets « Concours d'innovation i-Nov » : coût total de 1 à 5 M€, durée de 12 à 36 mois, quatre thématiques, critères d'éligibilité, taux de 45 % (petite entreprise) et 35 % (moyenne entreprise), financement à 60 % en subvention et 40 % en avance récupérable, dépôt sur la plateforme Bpifrance, financé par le plan France 2030 ; contacts Bpifrance et ADEME. Relu le 16/11/2026.
 - Vague 14 (2024) : ouverte du 10 juillet au 1er octobre 2024, close ; aucune vague postérieure publiée au 10/11/2026.
 
 ```json
@@ -139,7 +139,7 @@ La page officielle consultée le 10/11/2026 ne publiait que la vague 14, close l
       "name": "Qui peut candidater au concours i-Nov ?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Une PME unique, au sens européen, porteuse d'un projet de R&D mono-partenaire dans l'une des quatre thématiques de la vague 14."
+        "text": "Une PME unique, porteuse d'un projet de R&D mono-partenaire dans l'une des quatre thématiques de la vague 14."
       }
     },
     {
