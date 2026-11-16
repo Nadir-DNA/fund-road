@@ -17,14 +17,14 @@ export async function registerContent(app: FastifyInstance) {
     async () =>
       (
         await db.query(
-          "SELECT slug,title,excerpt,published_at FROM content_pages ORDER BY published_at DESC",
+          "SELECT slug,title,excerpt,published_at FROM content_pages WHERE validated=true ORDER BY published_at DESC",
         )
       ).rows,
   );
   app.get("/api/resources/:slug", async (req: any) => {
     const page = (
       await db.query(
-        "SELECT slug,title,excerpt,body,source_url,published_at FROM content_pages WHERE slug=$1",
+        "SELECT slug,title,excerpt,body,source_url,published_at FROM content_pages WHERE slug=$1 AND validated=true",
         [req.params.slug],
       )
     ).rows[0];
@@ -76,7 +76,7 @@ export async function registerContent(app: FastifyInstance) {
         fail(400, "Ressource éditoriale requise");
       if (row.status !== "pending") fail(409, "Contenu déjà traité");
       await c.query(
-        "INSERT INTO content_pages(id,legacy_id,slug,title,excerpt,body,source_url) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(legacy_id) DO UPDATE SET slug=$3,title=$4,excerpt=$5,body=$6,source_url=$7,updated_at=now()",
+        "INSERT INTO content_pages(id,legacy_id,slug,title,excerpt,body,source_url,validated) VALUES($1,$2,$3,$4,$5,$6,$7,true) ON CONFLICT(legacy_id) DO UPDATE SET slug=$3,title=$4,excerpt=$5,body=$6,source_url=$7,validated=true,updated_at=now()",
         [randomUUID(), row.id, b.slug, b.title, b.excerpt, b.body, b.sourceUrl],
       );
       await c.query(
@@ -115,7 +115,7 @@ export async function registerContent(app: FastifyInstance) {
         fail(400, "Financeur requis");
       if (row.status !== "pending") fail(409, "Contenu déjà traité");
       await c.query(
-        `INSERT INTO investors(id,name,kind,description,sectors,stage,geography,ticket,source_url,application_url,verified_at,active,slug) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,now(),true,$11) ON CONFLICT(id) DO UPDATE SET name=$2,kind=$3,description=$4,sectors=$5,stage=$6,geography=$7,ticket=$8,source_url=$9,application_url=$10,verified_at=now(),active=true,slug=COALESCE(investors.slug,$11)`,
+        `INSERT INTO investors(id,name,kind,description,sectors,stage,geography,ticket,source_url,application_url,verified_at,updated_at,active,slug) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,now(),now(),true,$11) ON CONFLICT(id) DO UPDATE SET name=$2,kind=$3,description=$4,sectors=$5,stage=$6,geography=$7,ticket=$8,source_url=$9,application_url=$10,verified_at=now(),updated_at=now(),active=true,slug=COALESCE(investors.slug,$11)`,
         [
           row.id,
           b.name,

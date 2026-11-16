@@ -21,6 +21,16 @@ const base = z.object({
   candidature_url: https.nullable().optional(),
 });
 export type Fiche = z.infer<typeof base> & { criteria: any };
+// Provenance d'un champ de critère : la citation doit être vérifiable (même règle que l'extraction)
+export const sourcesInput = z
+  .record(
+    z.string().max(40),
+    z.object({
+      url: z.string().trim().url().refine((u) => u.startsWith("https://"), "adresse https requise"),
+      citation: z.string().trim().min(8).max(2000),
+    }),
+  )
+  .refine((s) => Object.keys(s).length <= 40, "trop de sources");
 
 // Valide une fiche brute ; les critères dépendent du type (champs propres aux fonds, incubateurs…)
 // null vaut absence (habitude des réponses générées) ; apostrophe droite tolérée dans les zones
@@ -37,7 +47,17 @@ export function lireFiche(brut: unknown): { fiche?: Fiche; erreur?: string } {
     return { erreur: c.error.issues.map((i) => `criteria.${i.path.join(".")} : ${i.message}`).join(" ; ") };
   const { ticketMin, ticketMax } = c.data;
   if (ticketMin && ticketMax && ticketMin > ticketMax) return { erreur: "criteria : ticketMin supérieur à ticketMax" };
-  return { fiche: { ...b.data, criteria: c.data } };
+  // la provenance voyage avec la fiche : sans elle, un import effacerait les valeurs sourcées
+  const sources = sourcesInput.safeParse(crit.sources ?? {});
+  if (!sources.success)
+    return { erreur: sources.error.issues.map((i) => `criteria.sources.${i.path.join(".")} : ${i.message}`).join(" ; ") };
+  const provenance = Object.keys(sources.data).length ? { sources: sources.data } : {};
+  // « notables » (références citées) est enrichi par l'extraction : l'import ne doit pas l'effacer
+  const notables = z.array(z.string().trim().min(2).max(200)).max(50).safeParse(crit.notables ?? []);
+  if (!notables.success)
+    return { erreur: notables.error.issues.map((i) => `criteria.notables.${i.path.join(".")} : ${i.message}`).join(" ; ") };
+  const references = notables.data.length ? { notables: notables.data } : {};
+  return { fiche: { ...b.data, criteria: { ...c.data, ...provenance, ...references } } };
 }
 
 const normaliser = (s: string) =>
@@ -97,14 +117,17 @@ export async function enregistrer(f: Fiche, verifiee: boolean) {
     verifiee,
   ];
   if (existant) {
+    // verified_at date la vérification des critères, pas la dernière écriture : un import qui
+    // ne fait que retrouver le nom sur la page ne la renouvelle pas
     await db.query(
-      "UPDATE investors SET name=$2,kind=$3,description=$4,sectors=$5,stage=$6,geography=$7,ticket=$8,source_url=$9,application_url=$10,criteria=$11,website=$12,active=$13,verified_at=CASE WHEN $13 THEN now() ELSE verified_at END,slug=COALESCE(slug,$14) WHERE id=$1",
+      "UPDATE investors SET name=$2,kind=$3,description=$4,sectors=$5,stage=$6,geography=$7,ticket=$8,source_url=$9,application_url=$10,criteria=$11,website=$12,active=$13,updated_at=now(),slug=COALESCE(slug,$14) WHERE id=$1",
       [existant.id, ...valeurs, await uniqueSlug(f.nom)],
     );
     return "mis à jour";
   }
   await db.query(
-    "INSERT INTO investors(id,name,kind,description,sectors,stage,geography,ticket,source_url,application_url,criteria,website,active,verified_at,slug) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,CASE WHEN $13 THEN now() END,$14)",
+    // une fiche importée n'est pas une fiche dont les critères ont été vérifiés : pas de date inventée
+    "INSERT INTO investors(id,name,kind,description,sectors,stage,geography,ticket,source_url,application_url,criteria,website,active,verified_at,updated_at,slug) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NULL,now(),$14)",
     [randomUUID(), ...valeurs, await uniqueSlug(f.nom)],
   );
   return "créé";

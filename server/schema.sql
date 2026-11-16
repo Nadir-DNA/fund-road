@@ -58,3 +58,14 @@ ALTER TABLE investors ADD COLUMN IF NOT EXISTS website text;
 ALTER TABLE investors ADD COLUMN IF NOT EXISTS logo jsonb;
 -- Offre gratuite attribuée à la main (pilotes, équipe) : pas de paiement Stripe, quota d'analyses élevé
 INSERT INTO offers VALUES ('pilote','Pilote offert',0,'once',50,NULL,false) ON CONFLICT DO NOTHING;
+
+ALTER TABLE investors ADD COLUMN IF NOT EXISTS updated_at timestamptz;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='content_pages' AND column_name='validated') THEN
+    ALTER TABLE content_pages ADD COLUMN validated boolean NOT NULL DEFAULT false;
+    -- Une seule fois : les ressources déjà publiées restent visibles.
+    UPDATE content_pages SET validated = true;
+  END IF;
+END $$;

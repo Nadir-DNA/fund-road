@@ -35,3 +35,30 @@ test("export : un tableur déposé devient un tableau, formules et lignes isolé
   const docx = (await exportDossier("Tableur", emptyState(), "docx", extra)) as Buffer;
   assert.equal(docx.subarray(0, 2).toString(), "PK");
 });
+
+// A12a.2 — la version partagée ne porte ni synthèse ni contradictions, le dossier propre si
+test("export : le PDF d'une version partagée n'imprime ni synthèse ni contradictions", async () => {
+  const { etatPartage } = await import("../shared/domain.ts");
+  const { contenu } = await import("../server/export.ts");
+  const state = emptyState();
+  state.summary = "MARQUEUR-SYNTHESE";
+  state.conflicts = ["MARQUEUR-CONFLIT"];
+  state.facts.company = {
+    value: "Fondée en 2024",
+    source: "doc1",
+    quote: "créée en mars 2024",
+    kind: "document",
+    confirmed: true,
+  };
+  const extra = { documents: [{ id: "doc1", name: "bp.docx" }], programs: [], version: 1 };
+  const propre = JSON.stringify(contenu("Dossier", state, extra.documents, [], 1));
+  assert.ok(propre.includes("MARQUEUR-SYNTHESE"));
+  assert.ok(propre.includes("MARQUEUR-CONFLIT"));
+  const partage = JSON.stringify(
+    contenu("Dossier", etatPartage(state), extra.documents, [], 1),
+  );
+  assert.equal(partage.includes("MARQUEUR-SYNTHESE"), false);
+  assert.equal(partage.includes("MARQUEUR-CONFLIT"), false);
+  // la rubrique confirmée reste présente
+  assert.ok(partage.includes("Fondée en 2024"));
+});

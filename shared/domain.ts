@@ -26,6 +26,33 @@ export const dossierInput = z.object({
   organizationId: z.string().uuid(),
   recipientOrg: z.string().uuid().optional(),
 });
+// Ce qui sort d'un dossier partagé : uniquement les rubriques confirmées, avec leur valeur,
+// leur citation et leur source. Une proposition non confirmée, un brouillon ou une rubrique en
+// conflit ne sortent jamais, même vides de sens : la clé reste, sans contenu.
+export function etatPartage(state: any): any {
+  const facts = Object.fromEntries(
+    Object.entries<any>(state?.facts || {}).map(([id, f]) => [
+      id,
+      f && f.confirmed
+        ? {
+            value: f.value ?? "",
+            ...(f.quote ? { quote: f.quote } : {}),
+            ...(f.source ? { source: f.source } : {}),
+            confirmed: true,
+          }
+        : {},
+    ]),
+  );
+  // la critique, la synthèse et les contradictions de l'IA commentent des rubriques, y compris
+  // non confirmées : elles ne sortent jamais d'un partage (12a.2)
+  const {
+    critique: _critique,
+    summary: _summary,
+    conflicts: _conflicts,
+    ...reste
+  } = state || {};
+  return { ...reste, facts };
+}
 export const organizationInput = z.object({
   name: z.string().trim().min(2).max(100),
   kind: z.enum(["startup", "angel", "fund", "network", "grant", "incubator"]),

@@ -1,5 +1,6 @@
 import { db, transaction } from "./db.ts";
-import "./config.ts";
+import { config } from "./config.ts";
+import { notifyOrg } from "./mail.ts";
 import { extract } from "./extract.ts";
 import { analyze, evaluate } from "./ai.ts";
 import { orgProgram } from "../shared/programs.ts";
@@ -135,6 +136,20 @@ while (!stopping) {
       });
     }
     await db.query("UPDATE jobs SET status='done' WHERE id=$1", [job.id]);
+    // un seul message par job d'analyse terminé ; un échec d'envoi ne bloque pas le job
+    if (job.kind === "analysis" && job.dossier_id) {
+      const d = (
+        await db.query("SELECT organization_id,name FROM dossiers WHERE id=$1", [
+          job.dossier_id,
+        ])
+      ).rows[0];
+      if (d)
+        notifyOrg(
+          d.organization_id,
+          "Votre dossier est analysé",
+          `L’analyse de « ${d.name} » est terminée. Relisez et confirmez les rubriques proposées :\n${config.baseURL}/app/dossiers/${job.dossier_id}?onglet=dossier\n\nAucun contenu de vos documents n’est inclus dans ce message.`,
+        ).catch((e) => console.error("Notification non envoyée", e.message));
+    }
   } catch (e) {
     const error = (
       e instanceof Error ? e.message : "Traitement impossible"

@@ -15,6 +15,12 @@ export const config = {
   aiBaseURL: (
     process.env.OPENAI_BASE_URL || "https://api.openai.com/v1"
   ).replace(/\/$/, ""),
+  // fournisseur de secours, utilisé seulement si le principal échoue (panne, saturation, délai)
+  fallback: {
+    model: process.env.AI_FALLBACK_MODEL || "",
+    apiKey: process.env.AI_FALLBACK_API_KEY || "",
+    aiBaseURL: (process.env.AI_FALLBACK_BASE_URL || "").replace(/\/$/, ""),
+  },
   pilotQuota: Number(process.env.PILOT_ANALYSES || 3),
   // offre Découverte : analyses IA offertes chaque mois sans abonnement
   freeQuota: Number(process.env.FREE_ANALYSES ?? 1),

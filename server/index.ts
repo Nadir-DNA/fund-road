@@ -16,6 +16,7 @@ import {
   score,
   canAttest,
   emptyState,
+  etatPartage,
   requirements,
   dossierInput,
   organizationInput,
@@ -36,7 +37,8 @@ const app = Fastify({
   bodyLimit: 1024 * 1024,
 });
 await app.register(rateLimit, {
-  max: 120,
+  // même valeur par défaut en production ; les suites de test peuvent la relever
+  max: Number(process.env.RATE_LIMIT_MAX || 120),
   timeWindow: "1 minute",
   // derrière un tunnel Cloudflare, toutes les requêtes arrivent du tunnel : on limite par visiteur
   keyGenerator: (req) =>
@@ -56,7 +58,8 @@ await app.register(helmet, {
     directives: {
       defaultSrc: ["'self'"],
       // Google Analytics, chargé côté client seulement après consentement
-      scriptSrc: ["'self'", "https://www.googletagmanager.com"],
+      // Searchtide (mesure d'audience sans cookie)
+      scriptSrc: ["'self'", "https://www.googletagmanager.com", "https://stats.nadirdaoudi.com"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       fontSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https://*.google-analytics.com", "https://*.googletagmanager.com"],
@@ -65,6 +68,7 @@ await app.register(helmet, {
         "https://*.google-analytics.com",
         "https://*.analytics.google.com",
         "https://*.googletagmanager.com",
+        "https://stats.nadirdaoudi.com",
       ],
       frameAncestors: ["'none'"],
     },
@@ -89,7 +93,9 @@ app.setErrorHandler((e: any, _req, reply) => {
 const canonicalHost = new URL(config.baseURL).host;
 app.addHook("onRequest", async (req, reply) => {
   if (req.headers.host === "www." + canonicalHost)
-    return reply.redirect(config.baseURL + req.url, 301);
+    // Sans cet en-tête, la politique globale « no-referrer » efface le référent au saut de la redirection : un visiteur venu de
+    // Google sur www devenait « direct » (mesuré). Origine seulement vers un autre site ; les pages gardent « no-referrer ».
+    return reply.header("referrer-policy", "strict-origin-when-cross-origin").redirect(config.baseURL + req.url, 301);
 });
 app.addHook("onRequest", async (req, reply) => {
   if (
@@ -131,15 +137,28 @@ app.get("/api/config", async () => ({
   aiReady: Boolean(config.apiKey && config.model),
   mailReady: mailReady(),
   billingReady: Boolean(process.env.STRIPE_SECRET_KEY),
+  googleAuth: Boolean(
+    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
+  ),
   advisorOrg: config.advisorOrg || null,
   pilot: !config.production,
   requirements,
 }));
 app.get("/api/me", async (req) => {
   const u = await user(req);
+  // paid : la définition unique de « payant » (droit actif non expiré, offre payante,
+  // abonnement ou achat unique) — elle sert au menu du financeur et aux exports
   const orgs = (
     await db.query(
-      "SELECT o.*,m.role FROM organizations o JOIN members m ON m.organization_id=o.id WHERE m.user_id=$1 ORDER BY o.created_at",
+      `SELECT o.*,m.role,EXISTS(
+         SELECT 1 FROM entitlements e JOIN offers f ON f.id=e.offer_id
+          WHERE e.organization_id=o.id AND e.status='active'
+            AND (e.expires_at IS NULL OR e.expires_at>now())
+            AND f.price_cents>0
+            AND (e.subscription_id IS NOT NULL OR f.cadence='once')
+       ) AS paid
+         FROM organizations o JOIN members m ON m.organization_id=o.id
+        WHERE m.user_id=$1 ORDER BY o.created_at`,
       [u.id],
     )
   ).rows;
@@ -151,6 +170,14 @@ app.get("/api/me", async (req) => {
       twoFactorEnabled: (u as any).twoFactorEnabled,
     },
     organizations: orgs,
+    // invité sur un dossier sans avoir d'organisation : l'espace s'ouvre quand même
+    contributor: Boolean(
+      (
+        await db.query("SELECT 1 FROM contributors WHERE user_id=$1 LIMIT 1", [
+          u.id,
+        ])
+      ).rowCount,
+    ),
   };
 });
 app.post("/api/organizations", async (req) => {
@@ -173,14 +200,14 @@ app.put("/api/organizations/:id", async (req: any) => {
   const { kind } = (
     await db.query("SELECT kind FROM organizations WHERE id=$1", [req.params.id])
   ).rows[0];
+  // une startup n'a ni thèse ni critères : le champ est facultatif et, absent, inchangé
   const b = z
-    .object({ theme: themeInput, criteria: criteriaInput(kind) })
+    .object({ theme: themeInput, criteria: criteriaInput(kind).optional() })
     .parse(req.body);
-  await db.query("UPDATE organizations SET theme=$2,criteria=$3 WHERE id=$1", [
-    req.params.id,
-    b.theme,
-    b.criteria,
-  ]);
+  await db.query(
+    "UPDATE organizations SET theme=$2,criteria=COALESCE($3,criteria) WHERE id=$1",
+    [req.params.id, b.theme, b.criteria ?? null],
+  );
   await audit(u.id, req.params.id, "organization.updated", req.params.id);
   return { ok: true };
 });
@@ -253,7 +280,8 @@ app.get("/api/dossiers", async (req) => {
   const u = await user(req);
   const rows = (
     await db.query(
-      "SELECT DISTINCT d.* FROM dossiers d LEFT JOIN members m ON m.organization_id=d.organization_id LEFT JOIN contributors c ON c.dossier_id=d.id WHERE m.user_id=$1 OR c.user_id=$1 ORDER BY d.updated_at DESC",
+      // dernière analyse réussie : l'alerte de fin ne dépend pas de l'e-mail
+      "SELECT DISTINCT d.*, (SELECT j.id FROM jobs j WHERE j.dossier_id=d.id AND j.kind='analysis' AND j.status='done' ORDER BY j.created_at DESC LIMIT 1) AS analyse_id, (SELECT j.created_at FROM jobs j WHERE j.dossier_id=d.id AND j.kind='analysis' AND j.status='done' ORDER BY j.created_at DESC LIMIT 1) AS analyse_at FROM dossiers d LEFT JOIN members m ON m.organization_id=d.organization_id LEFT JOIN contributors c ON c.dossier_id=d.id WHERE m.user_id=$1 OR c.user_id=$1 ORDER BY d.updated_at DESC",
       [u.id],
     )
   ).rows;
@@ -342,6 +370,8 @@ app.get("/api/dossiers/:id", async (req: any) => {
   return {
     ...d,
     score: score(d.state),
+    // solde d'analyses du mois, affiché avant tout lancement
+    ...(await quotaAnalyses(d.organization_id)),
     documents: docs,
     jobs,
     questions,
@@ -556,6 +586,43 @@ app.put("/api/dossiers/:id/facts/:key", async (req: any) => {
   if (!r.rowCount) fail(409, "Modification concurrente");
   return { ok: true };
 });
+app.post("/api/dossiers/:id/facts/confirm", async (req: any) => {
+  const u = await user(req);
+  const b = z
+    .object({
+      revision: z.number().int(),
+      ids: z.array(z.string()).max(requirements.length),
+    })
+    .parse(req.body);
+  const d = await dossier(u.id, req.params.id, true);
+  if (b.revision !== d.revision)
+    fail(409, "Le dossier a changé. Rechargez-le.");
+  const facts = { ...d.state.facts };
+  let confirmed = 0;
+  for (const id of b.ids) {
+    const f = facts[id];
+    // seulement une proposition existante, non confirmée, non saisie à la main :
+    // ce bouton ne remplit aucune rubrique vide et n'invente aucune valeur
+    if (
+      !f ||
+      f.confirmed ||
+      !String(f.value || "").trim() ||
+      String(f.source || "").startsWith("declaration")
+    )
+      continue;
+    facts[id] = { ...f, confirmed: true };
+    confirmed++;
+  }
+  if (!confirmed) return { confirmed: 0 };
+  const state = { ...d.state, facts };
+  delete state.checkedRevision;
+  const r = await db.query(
+    "UPDATE dossiers SET state=$2,revision=revision+1,updated_at=now() WHERE id=$1 AND revision=$3",
+    [d.id, state, b.revision],
+  );
+  if (!r.rowCount) fail(409, "Modification concurrente");
+  return { confirmed };
+});
 app.post("/api/dossiers/:id/documents", async (req: any) => {
   const u = await user(req);
   const d = await dossier(u.id, req.params.id, true);
@@ -662,6 +729,27 @@ app.get("/api/documents/:id", async (req: any, reply) => {
     .type("application/octet-stream");
   return readFile(doc.path);
 });
+// Analyses du mois et quota du droit actif : une seule définition, utilisée par la fiche dossier
+async function quotaAnalyses(organizationId: string) {
+  const entitlement = (
+    await db.query(
+      "SELECT o.quota FROM entitlements e JOIN offers o ON o.id=e.offer_id WHERE e.organization_id=$1 AND e.status='active' AND (e.expires_at IS NULL OR e.expires_at>now())",
+      [organizationId],
+    )
+  ).rows[0];
+  const quota =
+    entitlement?.quota ??
+    (config.production ? config.freeQuota : config.pilotQuota);
+  const usage = Number(
+    (
+      await db.query(
+        "SELECT count(*) FROM jobs j JOIN dossiers d ON d.id=j.dossier_id WHERE d.organization_id=$1 AND j.kind='analysis' AND j.status IN ('queued','running','done') AND j.created_at>=date_trunc('month',now())",
+        [organizationId],
+      )
+    ).rows[0].count,
+  );
+  return { usage, quota };
+}
 app.post("/api/dossiers/:id/analyze", async (req: any) => {
   const u = await user(req);
   const d = await dossier(u.id, req.params.id, true);
@@ -732,6 +820,23 @@ app.get("/api/dossiers/:id/export/:format", async (req: any, reply) => {
   const u = await user(req);
   const d = await dossier(u.id, req.params.id);
   const format = z.enum(["pdf", "docx"]).parse(req.params.format);
+  // 12b : l'export de son propre dossier est la fonction payante. Définition unique de
+  // « payant » : droit actif non expiré, offre payante, abonnement ou achat unique.
+  const droit = (
+    await db.query(
+      `SELECT 1 FROM entitlements e JOIN offers f ON f.id=e.offer_id
+        WHERE e.organization_id=$1 AND e.status='active'
+          AND (e.expires_at IS NULL OR e.expires_at>now())
+          AND f.price_cents>0
+          AND (e.subscription_id IS NOT NULL OR f.cadence='once')`,
+      [d.organization_id],
+    )
+  ).rowCount;
+  if (!droit)
+    fail(
+      403,
+      "Les exports PDF et Word sont réservés à l’offre payante. Votre dossier reste accessible et partageable ; voir la page Facturation.",
+    );
   reply
     .type(
       format === "pdf"
@@ -832,14 +937,17 @@ app.get(
 );
 app.get("/api/applications", async (req) => {
   const u = await user(req);
-  return (
+  const rows = (
     await db.query(
-      "SELECT DISTINCT a.*,d.name,COALESCE(i.name,r.theme->>'name',r.name) AS investor_name,r.kind AS recipient_kind FROM applications a JOIN dossiers d ON d.id=a.dossier_id JOIN versions v ON v.id=a.version_id LEFT JOIN investors i ON i.id=a.investor_id LEFT JOIN organizations r ON r.id=a.recipient_org LEFT JOIN members m ON m.organization_id=d.organization_id OR m.organization_id=a.recipient_org LEFT JOIN contributors c ON c.dossier_id=d.id WHERE (m.user_id=$1 OR c.user_id=$1 OR lower(a.recipient_email)=lower($2)) AND a.revoked_at IS NULL ORDER BY a.created_at DESC",
+      "SELECT DISTINCT a.*,d.name,d.organization_id,COALESCE(i.name,r.theme->>'name',r.name) AS investor_name,r.kind AS recipient_kind FROM applications a JOIN dossiers d ON d.id=a.dossier_id JOIN versions v ON v.id=a.version_id LEFT JOIN investors i ON i.id=a.investor_id LEFT JOIN organizations r ON r.id=a.recipient_org LEFT JOIN members m ON m.organization_id=d.organization_id OR m.organization_id=a.recipient_org LEFT JOIN contributors c ON c.dossier_id=d.id WHERE (m.user_id=$1 OR c.user_id=$1 OR lower(a.recipient_email)=lower($2)) AND a.revoked_at IS NULL ORDER BY a.created_at DESC",
       [u.id, u.email],
     )
   ).rows;
+  // décision du 12/11 (Franky, ambiguïté tranchée) : révocation et suivi des étapes restent
+  // gratuits pour tous ; seuls les exports changent de camp. Aucune restriction ici.
+  return rows;
 });
-app.post("/api/dossiers/:id/applications", async (req: any) => {
+app.post("/api/dossiers/:id/applications", async (req: any, reply) => {
   const u = await user(req);
   const d = await dossier(u.id, req.params.id, true);
   const b = z
@@ -875,6 +983,8 @@ app.post("/api/dossiers/:id/applications", async (req: any) => {
     ).rows[0];
     if (!exists) fail(400, "Organisation destinataire invalide");
   }
+  // D12 (dernier arbitrage) : le partage reste réservé aux dossiers complets, ce sont les
+  // tarifs qui sont corrigés ; tout membre de l'organisation peut partager (comportement d'origine)
   if (!score(d.state).attestable)
     fail(
       409,
@@ -997,7 +1107,9 @@ app.post("/api/dossiers/:id/applications", async (req: any) => {
       fail(502, "Le dossier est enregistré, mais l’email n’a pas été envoyé");
     }
   }
-  return { id };
+  // le taux part avec la réponse : c'est celui de la version figée, pas celui du dossier en cours
+  reply.code(201);
+  return { id, score: score(d.state).percent };
 });
 app.get("/api/applications/:id", async (req: any) => {
   const u = await user(req);
@@ -1039,7 +1151,7 @@ app.get("/api/applications/:id", async (req: any) => {
   const notes = m
     ? (
         await db.query(
-          "SELECT id,body,created_at FROM notes WHERE application_id=$1 AND organization_id=$2 ORDER BY created_at",
+          'SELECT n.id,n.body,n.created_at,u.name AS author FROM notes n LEFT JOIN "user" u ON u.id=n.author_id WHERE n.application_id=$1 AND n.organization_id=$2 ORDER BY n.created_at',
           [a.id, a.recipient_org],
         )
       ).rows
@@ -1050,14 +1162,77 @@ app.get("/api/applications/:id", async (req: any) => {
       [a.id],
     )
   ).rows;
+  // le financeur membre voit le taux figé de la version partagée et son adéquation,
+  // calculée avec la même fonction que le pipeline
+  const destinataire = m
+    ? (
+        await db.query("SELECT * FROM organizations WHERE id=$1", [
+          a.recipient_org,
+        ])
+      ).rows[0]
+    : null;
+  const fit = destinataire ? orgProgram(destinataire) : null;
   return {
     ...a,
+    // seules les rubriques confirmées sortent de la version partagée (12a)
+    snapshot: { ...a.snapshot, state: etatPartage(a.snapshot.state) },
     documents: docs,
     notes,
     questions,
     canReview: Boolean(m),
     canRevoke: source,
+    ...(m
+      ? {
+          score: score(a.snapshot.state),
+          fit:
+            fit && fit.criteria.length
+              ? programScore(
+                  fit,
+                  a.snapshot.state.eligibility?.[fit.id],
+                )
+              : null,
+          recipient_kind: destinataire?.kind || null,
+        }
+      : {}),
   };
+});
+app.get("/api/applications/:id/export/:format", async (req: any, reply) => {
+  const u = await user(req);
+  const format = z.enum(["pdf", "docx"]).parse(req.params.format);
+  const a = (
+    await db.query(
+      "SELECT a.*,v.snapshot FROM applications a JOIN versions v ON v.id=a.version_id WHERE a.id=$1",
+      [req.params.id],
+    )
+  ).rows[0];
+  if (!a || a.revoked_at) fail(404, "Partage indisponible");
+  if (!a.recipient_org) fail(403, "Réservé au financeur destinataire");
+  // membre du destinataire seulement ; gratuit, et limité à la version partagée
+  await member(u.id, a.recipient_org);
+  const nom = a.snapshot.name || "dossier";
+  reply
+    .type(
+      format === "pdf"
+        ? "application/pdf"
+        : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+    .header(
+      "Content-Disposition",
+      `attachment; filename="${slugify(nom) || "dossier"}.${format}"`,
+    );
+  const documents = a.document_ids?.length
+    ? (
+        await db.query(
+          "SELECT id,name,CASE WHEN name ~* '\\.xlsx$' THEN extracted END AS extracted FROM documents WHERE id=ANY($1::uuid[])",
+          [a.document_ids],
+        )
+      ).rows
+    : [];
+  return exportDossier(nom, etatPartage(a.snapshot.state), format, {
+    documents,
+    programs: await resolvePrograms(a.snapshot.state.programs),
+    version: a.snapshot.revision,
+  });
 });
 app.post("/api/applications/:id/revoke", async (req: any) => {
   const u = await user(req);
@@ -1160,7 +1335,8 @@ app.post("/api/invitations/:token/accept", async (req: any) => {
     await c.query("UPDATE invitations SET accepted_at=now() WHERE id=$1", [
       i.id,
     ]);
-    return { ok: true };
+    // dossierId : l'invité arrive directement sur le dossier auquel il contribue
+    return { ok: true, dossierId: i.dossier_id || null };
   });
 });
 app.get("/api/organizations/:id/members", async (req: any) => {
@@ -1268,6 +1444,17 @@ app.put("/api/questions/:id", async (req: any) => {
     q.id,
     b.answer,
   ]);
+  // le financeur n'a pas à rouvrir chaque dossier pour voir une réponse
+  if (q.application_id && q.answer !== b.answer) {
+    const nom = (
+      await db.query("SELECT name FROM dossiers WHERE id=$1", [q.dossier_id])
+    ).rows[0]?.name;
+    notifyOrg(
+      q.organization_id,
+      `Réponse reçue sur le dossier « ${nom} »`,
+      `${q.body}\n\n${b.answer}\n\nConsulter : ${config.baseURL}/partages/${q.application_id}`,
+    ).catch(() => {});
+  }
   return { ok: true };
 });
 app.get("/api/applications/:id/documents/:doc", async (req: any, reply) => {
@@ -1321,6 +1508,11 @@ try {
     wildcard: false,
     // l'accueil est servi par registerSeo, avec ses balises
     index: false,
+    setHeaders(reply, filePath) {
+      // noms hachés par Vite : cache long et immuable
+      if (filePath.includes(`${path.sep}assets${path.sep}`))
+        reply.header("Cache-Control", "public, max-age=31536000, immutable");
+    },
   });
   registerSeo(app, await readFile(path.resolve("dist/index.html"), "utf8"));
 } catch {}

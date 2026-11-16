@@ -167,6 +167,36 @@ svg {
   min-height: 38px;
   padding: var(--space-2xs) var(--space-sm);
 }
+.button.danger {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: #fff;
+}
+.button.danger:hover {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  filter: brightness(0.92);
+}
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: var(--space-md);
+  background: oklch(0% 0 0 / 0.45);
+}
+.confirm-dialog {
+  width: min(480px, 100%);
+  display: grid;
+  gap: var(--space-sm);
+}
+.confirm-dialog p {
+  margin: 0;
+}
+.confirm-dialog .button-row {
+  justify-content: flex-end;
+}
 .button-row {
   display: flex;
   gap: var(--space-2xs);
@@ -1104,6 +1134,33 @@ legend {
   min-height: 32px;
   color: var(--color-night-text);
 }
+/* Erreur d'action : reste affichée jusqu'à la prochaine action ou fermeture */.action-error {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-danger);
+  color: #fff;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  box-shadow: var(--shadow-lg);
+}
+.action-error span {
+  flex: 1;
+}
+.action-error button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  color: #fff;
+}
 .loading {
   padding: var(--space-3xl) var(--space-lg);
   text-align: center;
@@ -1336,6 +1393,7 @@ legend {
 }
 .section-title {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-sm);
@@ -2809,4 +2867,128 @@ legend {
 .lecture-niveaux {
   color: var(--color-ink-3);
   font-size: var(--text-sm);
+}
+
+/* Pages juridiques : lecture continue, largeur de texte confortable */
+.legal {
+  max-width: 46rem;
+}
+.legal section {
+  margin-top: var(--space-md);
+}
+.legal h2 {
+  font-size: var(--text-lg);
+  margin: 0 0 var(--space-2xs);
+}
+
+/* Pages éditoriales validées (contenus-seo) */
+.editorial h2 { margin-top: 2rem; }
+.editorial h3 { margin-top: 1.4rem; }
+.editorial table { width: 100%; border-collapse: collapse; margin: 1.2rem 0; font-size: .95em; }
+.editorial th, .editorial td { border: 1px solid var(--color-line, #ddd); padding: .5rem .6rem; text-align: left; vertical-align: top; }
+.editorial th { background: var(--color-paper-3, #f5f5f5); }
+.editorial ul, .editorial ol { margin: .6rem 0 1rem 1.2rem; }
+.editorial li { margin: .25rem 0; }
+
+/* Accueil : accès direct aux aides et programmes */
+.home-aides-list { display: flex; flex-wrap: wrap; gap: .5rem 1.4rem; padding: 0; list-style: none; margin-top: .8rem; }
+.home-aides-list a { text-decoration: underline; }
+
+/* ---------- Correctifs audit UX ---------- */
+.mise-en-route {
+  display: grid;
+  gap: var(--space-2xs);
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+.mise-en-route li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-size: var(--text-sm);
+  color: var(--color-ink-2);
+}
+.mise-en-route li.fait {
+  color: var(--color-ink-3);
+  text-decoration: line-through;
+}
+.suggestions {
+  display: grid;
+  gap: 2px;
+  margin: var(--space-2xs) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.suggestions .textbutton {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  padding: var(--space-2xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+}
+.suggestions .textbutton:hover {
+  background: var(--color-paper-3);
+}
+.suggestions small {
+  color: var(--color-ink-3);
+  font-weight: 400;
+}
+.notice-line {
+  padding: var(--space-2xs) var(--space-sm);
+  border-left: 3px solid var(--color-brand);
+  background: var(--color-paper-3);
+  font-size: var(--text-sm);
+}
+.resultat-count {
+  margin: var(--space-2xs) 0 var(--space-sm);
+  font-size: var(--text-sm);
+}
+.note-row {
+  padding: var(--space-2xs) 0;
+  border-bottom: 1px solid var(--color-rule);
+}
+.note-row p {
+  margin: 0;
+}
+.note-row small {
+  color: var(--color-ink-3);
+}
+.depot-lancement {
+  display: grid;
+  gap: var(--space-2xs);
+  margin-top: var(--space-sm);
+  justify-items: start;
+}
+.solde-analyses {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-ink-2);
+}
+
+/* Preuve sociale factuelle : chiffres dérivés des données publiées */
+.preuve-factuelle {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.25rem clamp(1rem, 4vw, 3rem);
+  border-top: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+  border-bottom: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+}
+.preuve-factuelle ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.preuve-factuelle li {
+  font-size: 0.95rem;
+}
+.preuve-factuelle strong {
+  font-size: 1.15rem;
+}
+.preuve-factuelle p {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
 }

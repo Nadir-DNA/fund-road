@@ -2,6 +2,14 @@ import type { FastifyInstance } from "fastify";
 import { db } from "./db.ts";
 import { config } from "./config.ts";
 import { details, libelleCritere, resume } from "../shared/criteria.ts";
+import { editorial } from "../shared/editorial.generated.ts";
+import { profileTitle, profileDescription, slugify, showAidesLink } from "../shared/seo.ts";
+import { programFaq, profileFaq } from "../shared/faq.ts";
+
+export { slugify };
+
+export { profileTitle, profileDescription };
+import { programs, type Program } from "../shared/programs.ts";
 import {
   pageMeta,
   publicCopy,
@@ -9,14 +17,6 @@ import {
   financeursPage,
 } from "../shared/content.ts";
 
-export const slugify = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 60) || "financeur";
 // URL lisible (« /fonds/capital-demo ») ; suffixe numérique seulement en cas d'homonyme
 export async function uniqueSlug(name: string) {
   const base = slugify(name);
@@ -109,6 +109,7 @@ type Page = {
   ld?: object[];
   image?: string;
   ogType?: string;
+  robots?: string;
 };
 const abs = (path: string) => config.baseURL + path;
 const crumbs = (items: [string, string][]) => ({
@@ -136,7 +137,7 @@ export function renderPage(index: string, p: Page) {
   const url = abs(p.path);
   const image = p.image || abs("/brand/og.jpg");
   const head = `<title>${esc(p.title)}</title>
-    <meta name="description" content="${esc(p.description)}" />
+    <meta name="description" content="${esc(p.description)}" />${p.robots ? `\n    <meta name="robots" content="${esc(p.robots)}" />` : ""}
     <link rel="canonical" href="${esc(url)}" />
     <meta property="og:site_name" content="Fund Road" />
     <meta property="og:locale" content="fr_FR" />
@@ -145,7 +146,12 @@ export function renderPage(index: string, p: Page) {
     <meta property="og:description" content="${esc(p.description)}" />
     <meta property="og:url" content="${esc(url)}" />
     <meta property="og:image" content="${esc(image)}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${esc(p.title)}" />
+    <meta name="twitter:description" content="${esc(p.description)}" />
+    <meta name="twitter:image" content="${esc(image)}" />
     ${p.ld?.length ? `<script type="application/ld+json">${JSON.stringify(p.ld).replace(/</g, "\\u003c")}</script>` : ""}`;
   return index
     .replace(/<title>[\s\S]*?<\/title>/, "")
@@ -153,19 +159,55 @@ export function renderPage(index: string, p: Page) {
     .replace("</head>", head + "\n  </head>")
     .replace('<div id="root"></div>', `<div id="root">${p.body}</div>`);
 }
-const nav = `<nav><a href="/">Fund Road</a> · <a href="/entrepreneurs">Entrepreneurs</a> · <a href="/financeurs">Financeurs</a> · <a href="/annuaire">Annuaire des financeurs</a> · <a href="/tarifs">Tarifs</a> · <a href="/referentiel">Référentiel</a></nav>`;
+const nav = `<nav><a href="/">Fund Road</a> · <a href="/entrepreneurs">Entrepreneurs</a> · <a href="/financeurs">Financeurs</a> · <a href="/referentiel">Le référentiel</a> · <a href="/annuaire">Annuaire</a> · <a href="/tarifs">Tarifs</a></nav>`;
 const list = (t: string, xs?: string[]) =>
   xs?.length
     ? `<h2>${esc(t)}</h2><ul>${xs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`
     : "";
 
+type Offer = { name: string; price: number; unit: string; description: string };
+/** Corps SSR de /tarifs : premier écran aligné sur le client, puis la liste des prix (hors écran). */
+export function tarifsBody(offers: Offer[]) {
+  return `${nav}<main class="section info-page"><h1>Un prix simple, selon votre rôle</h1>
+      <p class="lead">Les startups commencent gratuitement : dossier complet, envoi aux financeurs et suivi. L’offre complète ajoute les exports PDF et Word, à 149 € tous les 90 jours, résiliable. Les financeurs et incubateurs sont gratuits pendant le lancement.</p>
+      <h3>Découverte</h3><ul><li>Dossier de financement complet, envoi aux financeurs</li><li>Dépôt de vos pièces</li><li>Annuaire des financeurs</li><li>Une analyse IA offerte chaque mois</li><li>Partages révocables et suivi des étapes</li></ul>
+      <h3>Offre complète</h3><p>Tout Découverte, plus :</p><ul><li>Exports PDF et Word de vos dossiers</li></ul>
+      <h3>Fonds, business angels, incubateurs</h3><ul><li>Suivi de vos startups et de leur complétude</li><li>Vos critères, questions et pièces demandées</li><li>Adéquation calculée à chaque dossier reçu</li><li>Notes privées d’équipe</li></ul>
+      <dl class="tarifs-offres">
+        <dt>Découverte</dt><dd>0 €</dd>
+        ${offers.filter((o) => o.name !== "Découverte").map((o) => `<dt>${esc(o.name)}</dt><dd>${o.price} €${esc(o.unit)}</dd>`).join("")}
+        <dt>Fonds, business angels et incubateurs</dt><dd>0 € pendant le lancement</dd>
+      </dl>
+      <p>Le partage d’un dossier exige les neuf rubriques confirmées, sans contradiction ; les rubriques manquantes sont listées dans l’application.</p>
+      <p>Paiement par carte. L’offre complète est à 149 € tous les 90 jours, renouvellement automatique, résiliable à tout moment ; à l’expiration, vos dossiers restent accessibles et partageables, seuls les exports sont désactivés.</p>
+      <p>Aucune commission sur les levées ni sur les subventions obtenues. TVA non applicable, article 293 B du CGI.</p></main>`;
+}
+
+// Guide d'un programme public (critères vérifiés et sourcés) pour la page du financeur du même nom
+function programGuide(prog: Program, name: string) {
+  const conditions = prog.criteria.filter((c) => c.blocking).map((c) => c.label);
+  const pieces = prog.criteria.filter((c) => !c.blocking).map((c) => `${c.label} : ${c.question}`);
+  const faq: [string, string][] = programFaq(prog, name);
+  const body = `<h2>Montant et nature de l’aide</h2><p>${esc(prog.kind)} · ${esc(prog.amount)}. ${esc(prog.summary)}</p>
+    ${list(`Conditions d’éligibilité de ${name}`, conditions)}
+    ${list(`Ce qu’il faut préparer pour ${name}`, pieces)}
+    <p>Critères vérifiés le ${esc(prog.verifiedAt.split("-").reverse().join("/"))} auprès de : ${prog.sources.map((x) => `<a href="${esc(x.url)}" rel="nofollow noopener">${esc(x.label)}</a>`).join(", ")}.</p>
+    <h2>Questions fréquentes sur ${esc(name)}</h2>
+    ${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}
+    <p><a href="/aides">Guide complet des aides publiques</a> · <a href="/entrepreneurs">Préparer son dossier</a></p>`;
+  return { body, faq };
+}
+
 export function renderProfile(index: string, p: any) {
+  if (p?.slug && editorial[`/fonds/${p.slug}`]?.validated) return renderPage(index, editorialPage(`/fonds/${p.slug}`)!);
   const name = p.theme?.name || p.name;
+  const prog = programs.find((x) => slugify(x.name) === p.slug || x.id.replace(/_/g, "-") === p.slug);
+  const guide = prog && programGuide(prog, name);
   const c = p.criteria || {};
   const r = resume(c);
   const kind = kinds[p.kind] || p.kind || "Financeur";
   const path = `/fonds/${p.slug}`;
-  const title = `${name} : critères, ticket et candidature | Fund Road`;
+  const title = profileTitle(name);
   const facts = [
     ["Ticket", r.ticket],
     ["Stade", r.stage],
@@ -173,21 +215,22 @@ export function renderProfile(index: string, p: any) {
     ["Secteurs", r.sectors],
   ].filter(([, v]) => v);
   const extra = details(p.kind, c).map((d) => [d.champ.label, d.texte]);
-  const description = (
-    `${name} (${kind.toLowerCase()}) : ` +
-    (facts.map(([k, v]) => `${k.toLowerCase()} ${v}`).join(", ") ||
-      "critères d’investissement") +
-    ". Pièces demandées et comment candidater avec Fund Road."
-  )
-    // Google tronque vers 160 caractères : on coupe sur un mot
-    .replace(/^(.{0,157})\s.*$/s, "$1…");
+  const description = profileDescription(
+    prog
+      ? [`${name}.`, `Organisme : ${prog.operator}.`, `${prog.amount}.`, "Conditions et pièces détaillées sur la fiche."]
+      : [
+          `${name}.`,
+          ...(facts.map(([k, v]) => `${k} : ${v}.`)),
+          "Pièces demandées et conditions sur la fiche.",
+        ],
+  );
+  const faq: [string, string][] = guide ? guide.faq : profileFaq(name, r, p.applicationUrl);
   const logo = p.logo ? abs(`/api/${p.claimed ? "organizations" : "investors"}/${p.id}/logo`) : "";
   return renderPage(index, {
     path,
     title,
     description,
     ogType: "profile",
-    ...(logo && { image: logo }),
     ld: [
       {
         "@context": "https://schema.org",
@@ -206,6 +249,7 @@ export function renderProfile(index: string, p: any) {
         ["Annuaire des financeurs", "/annuaire"],
         [name, path],
       ]),
+      ...(faq.length ? [faqLd(faq)] : []),
     ],
     body: `<main>${nav}
     <h1>${esc(name)}</h1><p>${esc(kind)}</p>
@@ -219,8 +263,10 @@ export function renderProfile(index: string, p: any) {
       Object.entries<any>(c.sources || {}).map(([k, v]) => `${libelleCritere(p.kind, k)} : « ${v.citation} » (${v.url})`),
     )}
     ${list(`Questions de ${name}`, c.questions)}
-    <h2>Comment candidater auprès de ${esc(name)}</h2>
-    <p>Préparez votre dossier de financement sur Fund Road : vos documents sont structurés selon les critères de ${esc(name)} et vous voyez ce qui manque avant l’envoi.</p></main>`,
+    ${guide?.body ?? (faq.length ? `<h2>Questions fréquentes sur ${esc(name)}</h2>${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}` : "")}
+    ${!guide && showAidesLink(p.kind, !!prog) ? `<p><a href="/aides">Guide complet des aides publiques</a> · <a href="/entrepreneurs">Préparer son dossier</a></p>` : ""}
+    ${faq.some(([q]) => /candidater/i.test(q)) ? "" : `<h2>Comment candidater auprès de ${esc(name)}</h2>
+    <p>Préparez votre dossier de financement sur Fund Road : vos documents sont structurés selon les critères de ${esc(name)} et vous voyez ce qui manque avant l’envoi.</p>`}</main>`,
   });
 }
 
@@ -233,8 +279,32 @@ const faqLd = (items: [string, string][]) => ({
     acceptedAnswer: { "@type": "Answer", text: a },
   })),
 });
+/** Page éditoriale validée (contenus-seo) : HTML, FAQPage et fil d'Ariane. */
+function editorialPage(path: string): Page | null {
+  const e = editorial[path];
+  if (!e?.validated) return null;
+  const trail: [string, string][] = path.startsWith("/fonds/")
+    ? [["Annuaire des financeurs", "/annuaire"], [e.h1, path]]
+    : path.startsWith("/ressources/") ? [["Guides", "/ressources"], [e.h1, path]]
+    : path === "/aides" ? [["Aides publiques", "/aides"]] : [["Aides publiques", "/aides"], [e.h1, path]];
+  return {
+    path,
+    title: e.title,
+    description: e.description,
+    ogType: "article",
+    ld: [...(e.faq ? [e.faq] : []), crumbs(trail)],
+    body: `<main>${nav}<article><h1>${esc(e.h1)}</h1>${e.html}</article></main>`,
+  };
+}
+
+/** Guides /ressources/* validés, dans l'ordre du fichier généré. */
+const editorialGuides = () =>
+  Object.entries(editorial).filter(([p, e]) => p.startsWith("/ressources/") && e.validated);
+
 // Pages publiques fixes : textes partagés avec l'interface (shared/content.ts)
 async function staticPage(path: string): Promise<Page | null> {
+  const ed = editorialPage(path);
+  if (ed) return ed;
   const meta = pageMeta[path];
   if (!meta) return null;
   const base = { path, ...meta };
@@ -265,6 +335,14 @@ async function staticPage(path: string): Promise<Page | null> {
       <p>Neuf rubriques : entreprise, équipe, problème, marché, modèle économique, traction, finances, besoin de financement, utilisation des fonds. Fund Road confronte aussi le dossier aux critères publiés de programmes publics comme la Bourse French Tech, i-Lab ou le Pass PI de l’INPI : un critère n’est marqué rempli que s’il est cité dans vos documents, sinon il reste à vérifier.</p>
       <h2>Questions fréquentes</h2>
       ${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}
+      <h2>Aides et programmes</h2>
+      <ul>
+        <li><a href="/aides">Toutes les aides publiques</a></li>
+        <li><a href="/fonds/bourse-french-tech">Bourse French Tech</a></li>
+        <li><a href="/fonds/eic-accelerator">EIC Accelerator</a></li>
+        <li><a href="/fonds/concours-i-lab">Concours i-Lab</a></li>
+        <li><a href="/aides/subventions-bpifrance">Subventions Bpifrance</a></li>
+      </ul>
       <p><a href="/annuaire">Consulter l’annuaire des fonds, business angels et incubateurs</a> · <a href="/tarifs">Voir les tarifs</a></p></main>`,
     };
   }
@@ -273,10 +351,7 @@ async function staticPage(path: string): Promise<Page | null> {
     return {
       ...base,
       ld: [software(offers), crumbs([["Tarifs", path]])],
-      body: `<main>${nav}<h1>Un prix simple, selon votre rôle.</h1>
-      <ul>${offers.map((o) => `<li>${esc(o.name)} : ${o.price} € HT${o.unit}. ${esc(o.description)}</li>`).join("")}
-      <li>Fonds, business angels et incubateurs : gratuit pendant le lancement.</li></ul>
-      <p>Aucune commission sur les levées ni sur les subventions obtenues.</p></main>`,
+      body: tarifsBody(offers),
     };
   }
   if (path === "/annuaire") {
@@ -316,32 +391,38 @@ async function staticPage(path: string): Promise<Page | null> {
     return {
       ...base,
       ld: [faqLd(f.faq), crumbs([["Financeurs", path]])],
-      body: `<main>${nav}<h1>${esc(f.title)}</h1><p>${esc(f.intro)}</p>
-      ${f.steps.map((x, i) => `<h2>${i + 1}. ${esc(x.t)}</h2><p>${esc(x.s)}</p><ul>${x.pts.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>`).join("")}
+      body: `${nav}<main class="home"><section class="hero"><div class="hero-inner"><div class="hero-copy"><h1>${esc(f.title)}</h1><div><p>${esc(f.intro)}</p><div class="hero-actions"><a class="button accent" href="/inscription?profil=financeur">Créer mon espace financeur</a> <a class="button ghost" href="/annuaire">Voir l’annuaire</a></div></div></div><ul class="hero-points">${f.points.map((p) => `<li>${esc(p)}</li>`).join("")}</ul></div></section>
+      ${f.steps.map((x) => `<h3>${esc(x.t)}</h3><p>${esc(x.s)}</p><ul>${x.pts.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>`).join("")}
       ${f.features.map(([t, d]) => `<h2>${esc(t)}</h2><p>${esc(d)}</p>`).join("")}
       <h2>Questions fréquentes</h2>
       ${f.faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}
-      <p><a href="/inscription">Créer mon espace financeur</a> · <a href="/annuaire">Voir l’annuaire</a></p></main>`,
+      <p><a href="/inscription">Créer mon espace financeur</a></p><p><a href="/annuaire">Voir l’annuaire</a></p></main>`,
     };
   }
   const key = path.slice(1);
   const copy = publicCopy[key];
   if (!copy) return null;
-  const extra =
+  const resourceRows =
     key === "ressources"
       ? (
           await db.query(
-            "SELECT slug,title,excerpt FROM content_pages ORDER BY published_at DESC",
+            "SELECT slug,title,excerpt FROM content_pages WHERE validated=true ORDER BY published_at DESC",
           )
         ).rows
-          .map(
-            (r) =>
-              `<li><a href="/ressources/${esc(r.slug)}">${esc(r.title)}</a> · ${esc(r.excerpt)}</li>`,
-          )
-          .join("")
-      : "";
+      : [];
+  // Guides éditoriaux validés (contenus-seo) : listés sur /ressources avec ceux de la base
+  const guides = key === "ressources" ? editorialGuides() : [];
+  const extra = [
+    ...guides.map(([p, e]) => `<li><a href="${p}">${esc(e.h1)}</a> · ${esc(e.description)}</li>`),
+    ...resourceRows
+    .map(
+      (r: any) =>
+        `<li><a href="/ressources/${esc(r.slug)}">${esc(r.title)}</a> · ${esc(r.excerpt)}</li>`,
+    )
+    ].join("");
   return {
     ...base,
+    ...(key === "ressources" && resourceRows.length === 0 && guides.length === 0 ? { robots: "noindex,follow" } : {}),
     ld: [crumbs([[copy.title, path]])],
     body: `<main>${nav}<h1>${esc(copy.title)}</h1><p>${esc(copy.intro)}</p>
     ${copy.items.map(([t, d]) => `<h2>${esc(t)}</h2><p>${esc(d)}</p>`).join("")}
@@ -359,22 +440,22 @@ async function priced() {
       price: 0,
       unit: "",
       description:
-        "Dossier même incomplet, dépôt des pièces, annuaire et envoi aux financeurs, une analyse IA offerte par mois.",
+        "Dossier de financement complet, envoi aux financeurs, dépôt des pièces, annuaire, une analyse IA offerte chaque mois.",
     },
     ...(dossier
       ? [
           {
-            name: dossier.label,
+            name: "Offre complète",
             price: dossier.price_cents / 100,
-            unit: " pour 90 jours",
+            unit: " / 90 jours, résiliable",
             description:
-              "Analyses IA, critères des aides et des financeurs, exports PDF et Word, partages révocables.",
+              "Tout Découverte, plus : exports PDF et Word de vos dossiers.",
           },
         ]
       : []),
   ];
 }
-const software = (offers: Awaited<ReturnType<typeof priced>>) => ({
+export const software = (offers: Awaited<ReturnType<typeof priced>>) => ({
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   name: "Fund Road",
@@ -382,12 +463,17 @@ const software = (offers: Awaited<ReturnType<typeof priced>>) => ({
   operatingSystem: "Web",
   inLanguage: "fr-FR",
   url: abs("/"),
-  offers: offers.map((o) => ({
-    "@type": "Offer",
-    name: o.name,
-    price: o.price,
-    priceCurrency: "EUR",
-  })),
+  offers: offers.map((o) => {
+    // l'offre payante porte le nom et la description exacts affichés sur /tarifs
+    const libelle = `Offre complète : exports PDF et Word, ${o.price} € tous les 90 jours`;
+    return {
+      "@type": "Offer",
+      name: o.price > 0 ? libelle : o.name,
+      ...(o.price > 0 ? { description: libelle } : {}),
+      price: o.price,
+      priceCurrency: "EUR",
+    };
+  }),
 });
 
 // Pages applicatives : jamais indexées
@@ -400,14 +486,28 @@ const spaPaths =
 export function registerSeo(app: FastifyInstance, index: string) {
   const html = (reply: any) =>
     reply.type("text/html; charset=utf-8").header("Cache-Control", "no-cache");
+  // Casse et slash : 301 vers l'adresse canonique des pages publiques connues (jamais les routes privées)
+  app.addHook("onRequest", async (req, reply) => {
+    if (req.method !== "GET") return;
+    const raw = req.raw.url?.split("?")[0] ?? "";
+    const clean = raw.length > 1 ? raw.replace(/\/+$/, "") : raw;
+    const lower = clean.toLowerCase();
+    const known = (x: string) => x in pageMeta || x in editorial;
+    if (clean !== raw && known(lower)) return reply.redirect(lower + (req.raw.url?.includes("?") ? "?" + req.raw.url.split("?")[1] : ""), 301);
+    if (raw !== lower && known(lower)) return reply.redirect(lower + (req.raw.url?.includes("?") ? "?" + req.raw.url.split("?")[1] : ""), 301);
+  });
   for (const path of Object.keys(pageMeta))
     app.get(path, async (_req, reply) =>
       html(reply).send(renderPage(index, (await staticPage(path))!)),
     );
+  // Pas de doublon indexable : l'ancienne URL de ressource renvoie vers le hub /aides
+  app.get("/ressources/aides", async (_req, reply) => reply.redirect("/aides", 301));
   app.get("/ressources/:slug", async (req: any, reply) => {
+    const guide = editorialPage("/ressources/" + req.params.slug);
+    if (guide) return html(reply).send(renderPage(index, guide));
     const r = (
       await db.query(
-        "SELECT slug,title,excerpt,body FROM content_pages WHERE slug=$1",
+        "SELECT slug,title,excerpt,body FROM content_pages WHERE slug=$1 AND validated=true",
         [req.params.slug],
       )
     ).rows[0];
@@ -458,34 +558,64 @@ export function registerSeo(app: FastifyInstance, index: string) {
       return reply.code(404).send({ error: "Route inconnue" });
     const path = req.url.split("?")[0];
     html(reply);
+    const notFound = index
+      .replace(/<title>[\s\S]*?<\/title>/, "<title>Page introuvable | Fund Road</title>")
+      .replace(
+        '<div id="root"></div>',
+        `<div id="root"><main>${nav}<h1>Page introuvable</h1><p>Cette adresse n’existe pas ou a changé.</p><p><a href="/">Accueil</a> · <a href="/annuaire">Annuaire des financeurs</a> · <a href="/aides">Aides publiques</a></p></main></div>`,
+      );
+    const privateTitles: [RegExp, string][] = [
+      [/^\/app(\/|$)/, "Espace | Fund Road"],
+      [/^\/connexion/, "Connexion | Fund Road"],
+      [/^\/inscription/, "Créer un compte | Fund Road"],
+      [/^\/mot-de-passe/, "Mot de passe | Fund Road"],
+      [/^\/double-auth/, "Vérification en deux étapes | Fund Road"],
+      [/^\/partages/, "Partage de dossier | Fund Road"],
+      [/^\/invitation/, "Invitation | Fund Road"],
+      [/^\/verification/, "Vérification | Fund Road"],
+    ];
+    const privateTitle = privateTitles.find(([re]) => re.test(path))?.[1];
     const page = privatePaths.test(path)
-      ? index.replace(
-          "</head>",
-          '<meta name="robots" content="noindex" />\n  </head>',
-        )
-      : index;
+      ? index
+          .replace(/<title>[\s\S]*?<\/title>/, `<title>${privateTitle ?? "Fund Road"}</title>`)
+          .replace(
+            "</head>",
+            '<meta name="robots" content="noindex" />\n  </head>',
+          )
+      : spaPaths.test(path) ? index : notFound;
     return reply.code(spaPaths.test(path) ? 200 : 404).send(page);
   });
   app.get("/sitemap.xml", async (_req, reply) => {
+    const ressources = (
+      await db.query("SELECT slug FROM content_pages WHERE validated=true ORDER BY slug")
+    ).rows.map((r) => "/ressources/" + r.slug);
     const pages = [
-      ...Object.keys(pageMeta),
+      ...Object.keys(pageMeta).filter(
+        (p) => (!editorial[p] || editorial[p].validated) && (p !== "/ressources" || ressources.length > 0 || editorialGuides().length > 0),
+      ),
       ...(await listProfiles()).map((p) => "/fonds/" + p.slug),
-      ...(
-        await db.query("SELECT slug FROM content_pages ORDER BY slug")
-      ).rows.map((r) => "/ressources/" + r.slug),
+      ...editorialGuides().map(([p]) => p),
+      ...ressources,
     ];
     // date de dernière vérification des fiches d'annuaire, pour que Google repasse sur les fiches mises à jour
     const verifiees = new Map<string, string>(
       (
         await db.query(
-          "SELECT slug, verified_at FROM investors WHERE active=true AND slug IS NOT NULL AND verified_at IS NOT NULL",
+          `SELECT slug, COALESCE((to_jsonb(i)->>'updated_at')::timestamptz, i.verified_at) AS modified
+             FROM investors i
+            WHERE active=true AND slug IS NOT NULL
+              AND COALESCE((to_jsonb(i)->>'updated_at')::timestamptz, i.verified_at) IS NOT NULL`,
         )
-      ).rows.map((r) => ["/fonds/" + r.slug, new Date(r.verified_at).toISOString().slice(0, 10)]),
+      ).rows.map((r) => ["/fonds/" + r.slug, new Date(r.modified).toISOString().slice(0, 10)]),
     );
+    const editorialDates = new Map(Object.entries(editorial).map(([p, e]) => [p, e.date]));
     reply.type("application/xml");
     return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${pages.map((p) => `  <url><loc>${esc(abs(p))}</loc>${verifiees.has(p) ? `<lastmod>${verifiees.get(p)}</lastmod>` : ""}</url>`).join("\n")}
+${pages.map((p) => {
+  const last = editorialDates.get(p) ?? verifiees.get(p);
+  return `  <url><loc>${esc(abs(p))}</loc>${last ? `<lastmod>${last}</lastmod>` : ""}</url>`;
+}).join("\n")}
 </urlset>`;
   });
   app.get("/robots.txt", async (_req, reply) => {
