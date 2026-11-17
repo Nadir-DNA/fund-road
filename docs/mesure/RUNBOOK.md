@@ -7,9 +7,11 @@ Le pixel n'envoie que **l'URL, le référent, la langue et le nom**. Jamais : no
 
 | Événement | Émis | Réserve |
 |---|---|---|
+| `inscription_commencee` | première ouverture de `/inscription` après consentement | une fois par onglet |
 | `compte_cree` | après la réponse de succès de l'inscription | l'e-mail reste à confirmer ; la base fait foi |
 | `dossier_cree` | après la création d'un dossier | |
 | `analyse_ok` | quand une analyse vue « en cours » devient « terminée » dans la page ouverte | invisible si l'utilisateur a quitté la page : la base fait foi. **Il n'existe pas d'événement « activé »** : l'activation d'un pilote se mesure dans la base (requête `dossiers_actives`) |
+| `paiement_demarre` | clic sur « Choisir cette offre » | ne confirme ni ouverture du Checkout ni paiement |
 | `checkout_ouvert` | après la réponse du serveur qui ouvre la session de paiement | ni offre ni montant |
 | `paiement_retour` | à l'arrivée sur la page de retour (`success=1`) | **n'est pas une confirmation de paiement** et ne sert **jamais de KPI** ; seul le webhook en fait foi (le paiement se lit dans la base et chez Stripe) |
 | `cta-entete-inscription`, `cta-accueil-creer-dossier`, `cta-financeurs-inscription`, `cta-tarifs-inscription` | au clic (attribut `data-searchtide`) | |

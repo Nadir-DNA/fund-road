@@ -28,7 +28,7 @@ async function coupeGoogle(page: Page) {
 }
 const json = (body: unknown, status = 200) => ({ status, contentType: "application/json", body: JSON.stringify(body) });
 
-test("M2 : cinq événements — nom fixe, aucune charge utile, campagne conservée de l'arrivée à la page de retour (mesure acceptée)", async ({ page }) => {
+test("M2 : sept événements — nom fixe, aucune charge utile, campagne conservée de l'arrivée à la page de retour (mesure acceptée)", async ({ page }) => {
   const hits = await withPixel(page);
   await accepterMesure(page);
   const state = { org: null as any, dossiers: [] as any[], gets: 0, signup: null as any };
@@ -76,7 +76,7 @@ test("M2 : cinq événements — nom fixe, aucune charge utile, campagne conserv
   await expect(page).toHaveURL(/success=1/);
   await expect.poll(names).toContain("paiement_retour");
 
-  const expected = ["compte_cree", "dossier_cree", "analyse_ok", "checkout_ouvert", "paiement_retour"];
+  const expected = ["inscription_commencee", "compte_cree", "dossier_cree", "analyse_ok", "paiement_demarre", "checkout_ouvert", "paiement_retour"];
   for (const e of expected) {
     const found = hits.filter((h) => h.name === e);
     expect(found.length, `${e} envoyé une seule fois`).toBe(1);

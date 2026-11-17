@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { TRACK_EVENTS, UTM_KEYS, mesureAutorisee, parseUtm, pickUtm, withUtm } from "../shared/track.ts";
 
-test("événements : exactement les cinq noms fixes, sans donnée personnelle", () => {
-  assert.deepEqual([...TRACK_EVENTS], ["compte_cree", "dossier_cree", "analyse_ok", "checkout_ouvert", "paiement_retour"]);
+test("événements : noms fixes, sans donnée personnelle", () => {
+  assert.deepEqual([...TRACK_EVENTS], ["inscription_commencee", "compte_cree", "dossier_cree", "analyse_ok", "paiement_demarre", "checkout_ouvert", "paiement_retour"]);
   for (const n of TRACK_EVENTS) assert.match(n, /^[a-z_]+$/, n);
 });
 

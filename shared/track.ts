@@ -1,12 +1,14 @@
-// Mesure de l'entonnoir : cinq événements à noms fixes et SANS charge utile, et conservation des UTM dans l'URL.
+// Mesure de l'entonnoir : événements à noms fixes et SANS charge utile, et conservation des UTM dans l'URL.
 // Logique pure, testée sans navigateur. Le pixel n'envoie que l'URL, le référent, la langue et le nom : rien d'autre.
 export const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign"] as const;
 
 /** Étapes de l'entonnoir. Liste fermée : aucun nom libre, aucune donnée de dossier, d'organisation ni de paiement. */
 export const TRACK_EVENTS = [
+  "inscription_commencee", // ouverture de la page d'inscription
   "compte_cree",      // le serveur a accepté l'inscription (compte créé ; l'e-mail reste à confirmer)
   "dossier_cree",     // le serveur a créé un dossier
   "analyse_ok",       // une analyse vue « en cours » est passée à « terminée » sur le serveur
+  "paiement_demarre", // clic sur une offre active
   "checkout_ouvert",  // le serveur a ouvert une session de paiement : redirection vers Stripe
   "paiement_retour",      // arrivée sur la page de retour (success=1) : pas une confirmation, seul le webhook en fait foi
 ] as const;

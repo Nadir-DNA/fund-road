@@ -1413,6 +1413,7 @@ function AuthPage() {
   const location = useLocation(),
     signup = location.pathname === "/inscription",
     navigate = useNavigate();
+  useEffect(() => { if (signup && firstTime("inscription-commencee")) track("inscription_commencee"); }, [signup]);
   // arrivée depuis la page Financeurs : type d'organisation présélectionné ensuite.
   // localStorage : le lien de confirmation de l'email s'ouvre dans un autre onglet.
   // Une inscription sans ?profil efface un choix ancien.

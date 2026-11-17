@@ -3091,8 +3091,9 @@ function Billing() {
               <button
                 disabled={!o.active || busy}
                 className="button secondary"
-                onClick={() =>
-                  run(async () => {
+                onClick={() => {
+                  track("paiement_demarre");
+                  void run(async () => {
                     const r = await api("/billing/checkout", "POST", {
                       organizationId: org.id,
                       offerId: o.id,
@@ -3100,8 +3101,8 @@ function Billing() {
                     });
                     track("checkout_ouvert");   // session ouverte côté serveur ; ni offre ni montant envoyés
                     window.location.assign(r.url);
-                  })
-                }
+                  });
+                }}
               >
                 Choisir cette offre
               </button>
