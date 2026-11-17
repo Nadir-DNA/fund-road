@@ -69,3 +69,9 @@ Via le formulaire de la page Contact de headline.com. Préparez d'abord votre do
 - `https://headline.com/contact/` : formulaire de contact.
 - `https://blog.headline.com/p/headline-series-a-pitch-deck-template` : article du 20/01/2025 (200 le 17/11/2026).
 - Incohérence de la page About : la meta description parle de « Seed–C and beyond », le corps de la page de Seed à série A (Early) et série B et plus (Growth). **Le brouillon reprend le corps de la page.**
+
+## Voir aussi
+
+- [Ressources — guides pour préparer un dossier](/ressources)
+- [Sofinnova Partners](/fonds/sofinnova-partners)
+- [Serena](/fonds/serena)

@@ -78,3 +78,9 @@ Le site de Blast ne décrit pas de procédure de candidature pour les fondateurs
 - `https://www.blast.club/multi-stage-europe` : « Du Seed à la Series B en Europe ».
 - `https://www.blast.club/nos-levees` : « Blast n'est ni affilié, ni partenaire officiel de Y Combinator » ; exemples de startups financées.
 - Pied de page : « Prestataire de services de financement participatif agréé auprès de l'Autorité française des marchés financiers (AMF) ».
+
+## Voir aussi
+
+- [Ressources — guides pour préparer un dossier](/ressources)
+- [Kima Ventures](/fonds/kima-ventures)
+- [Antler](/fonds/antler)

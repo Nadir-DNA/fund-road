@@ -68,3 +68,9 @@ Le site ne décrit pas de procédure de candidature. Les coordonnées des bureau
 - `https://www.generalcatalyst.com/solutions` (page « Capital ») : trois stratégies Create, Seed, Grow ; citations « For us, Seed is the beating heart of GC » ; « Customer Value Fund (CVF) ».
 - `https://www.generalcatalyst.com/contact` : liste des bureaux, adresses et téléphones.
 - Les chiffres d'actifs et de portefeuille sont datés de 2025 sur le site : à ne pas présenter comme actuels.
+
+## Voir aussi
+
+- [Ressources — guides pour préparer un dossier](/ressources)
+- [Partech](/fonds/partech)
+- [Eurazeo](/fonds/eurazeo)

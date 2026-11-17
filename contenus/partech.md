@@ -71,3 +71,9 @@ Les pages lues ne décrivent pas de procédure pour les fondateurs. Contactez Pa
 - `https://partechpartners.com/funds` : Seed (« Initial checks from €300k to €3m »), Venture (« between €5 to 12m », revenus « about €1m to €10m ARR »), Africa (« from €1 to €15m, seed to series C »), Impact (« from €12 to €25m »), Growth (« spun out to establish Aletheon Investments », « Advised by Aletheon Investments since September 2026 »).
 - `https://partechpartners.com/contact` : bureaux (Paris, San Francisco, Berlin, Dakar, Milan) ; contacts investisseurs et presse.
 - La source déjà présente sur la fiche (« Global in scope… ») est confirmée à la même adresse.
+
+## Voir aussi
+
+- [Ressources — guides pour préparer un dossier](/ressources)
+- [Sofinnova Partners](/fonds/sofinnova-partners)
+- [Educapital](/fonds/educapital)

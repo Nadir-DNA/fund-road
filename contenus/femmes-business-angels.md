@@ -84,3 +84,9 @@ En déposant votre dossier sur le site de FBA, rubrique « Lever des fonds ». P
 - `https://femmesbusinessangels.org/fr/lever-fonds-avec-fba` : critères Innovation, Équipe, Montant, Stade ; 8 étapes ; « Étude gratuite » ; « 100 € » ; « Frais de réussite 5% ».
 - `https://femmesbusinessangels.org/fr/lever-fonds-avec-fba/faq-porteur-de-projet` : « Ticket minimum 10 000€ par Business Angel » ; secteurs ; délais ; hommes bienvenus ; création d'entreprise ; « 4,5% du montant investi ».
 - Contradiction non tranchée : FBA écrit 70 % de projets portés par des femmes (accueil, page « Lever des fonds ») et environ 30 % (FAQ). **Ce chiffre n'est pas repris.**
+
+## Voir aussi
+
+- [Ressources — guides pour préparer un dossier](/ressources)
+- [France Angels](/fonds/france-angels)
+- [Paris Business Angels](/fonds/paris-business-angels)
