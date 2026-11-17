@@ -1454,6 +1454,9 @@ function AuthPage() {
     const f = new FormData(e.currentTarget);
     setError("");
     const result = await run(async () => {
+      // Une session déjà ouverte (autre compte) ferait échouer le renvoi du lien de confirmation
+      // avec « Email mismatch » : on la ferme avant de créer le compte demandé.
+      if (signup) await api("/auth/sign-out", "POST", {}).catch(() => {});
       let r;
       try {
         r = await api(
