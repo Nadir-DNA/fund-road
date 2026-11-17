@@ -53,3 +53,28 @@ Au moins 2 jours par semaine à l'IoT Valley. Source : iot-valley.fr, programme 
 - [Ressources — guides pour préparer un dossier](/ressources)
 - [Bpifrance](/fonds/bpifrance) : opère French Tech Seed, dispositif relayé par l'IoT Valley
 - [Wilco](/fonds/wilco) : accélérateur de startups
+
+```json
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Le « ticket » de 30 000 € est-il un investissement ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Non : le site décrit une avance financière pour choisir des prestations, remboursable."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Quel est le critère de présence ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Au moins 2 jours par semaine à l'IoT Valley."
+   }
+  }
+ ]
+}
+```

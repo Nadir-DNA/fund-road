@@ -53,3 +53,28 @@ Quinze à vingt équipes par an. Source : serena.vc, 17/11/2026.
 - [Ressources — guides pour préparer un dossier](/ressources)
 - [Partech](/fonds/partech) : capital-risque européen et international
 - [Iris](/fonds/iris) : fonds européen, de la série A à la croissance
+
+```json
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Quel est le ticket initial de Serena ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "De 100 K€ à 15 M€ pour le premier ticket."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Combien de sociétés Serena finance-t-il par an ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Quinze à vingt équipes par an."
+   }
+  }
+ ]
+}
+```

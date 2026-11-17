@@ -31,7 +31,7 @@ Une équipe européenne, surtout liée à l'Allemagne ou à la France, qui déve
 
 ### Ce que le site ne dit pas
 
-Aucun ticket par tour dans les pages lues. Le formulaire « Submit a project » n'est pas lisible dans le texte récupéré : la procédure de dépôt n'est donc pas décrite ici.
+Le site ne publie pas de ticket par tour et ne décrit pas le contenu du formulaire « Submit a project ».
 
 ### Questions fréquentes sur Iris
 
@@ -52,3 +52,28 @@ Le site ne publie pas de ticket dans les pages lues.
 - [Ressources — guides pour préparer un dossier](/ressources)
 - [Partech](/fonds/partech) : capital-risque européen et international
 - [Serena](/fonds/serena) : fonds européen, du pré-amorçage à la série A
+
+```json
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Où est situé Iris ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "À Paris, Berlin et Munich."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Quel ticket Iris investit-il ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Le site ne publie pas de ticket dans les pages lues."
+   }
+  }
+ ]
+}
+```

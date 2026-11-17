@@ -9,6 +9,8 @@ date_verification: 2026-11-10
 
 # Les aides à l'innovation, classées par étape de projet
 
+Les aides à l'innovation se classent par étape du projet. Pour une société en création ou de moins de 2 ans, la Bourse French Tech va jusqu'à 30 000 € et la Bourse French Tech Émergence, pour une deeptech, jusqu'à 90 000 € ; le Concours i-Lab va jusqu'à 600 000 €, dans la limite de 60 % des dépenses éligibles. Les montants viennent de fiches Bpifrance lues le 10/11/2026 ; cette page ne remplace pas les fiches officielles.
+
 Chercher « aide à l'innovation » renvoie des dizaines de dispositifs qui ne s'adressent pas au même projet. Une bourse pour un projet sans société ne se demande pas comme une subvention pour une PME de trois ans.
 
 Cette page classe les principales aides publiques par **étape de projet**, avec leur montant et leur source. Elle ne remplace pas les fiches officielles : elle sert à savoir laquelle regarder.

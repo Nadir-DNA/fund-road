@@ -53,3 +53,28 @@ Le site vise des sociétés européennes qui cherchent à réussir aux États-Un
 - [Ressources — guides pour préparer un dossier](/ressources)
 - [Iris](/fonds/iris) : fonds européen, séries A et suivantes
 - [Serena](/fonds/serena) : fonds européen, du pré-amorçage à la série A, avec des équipes aux États-Unis
+
+```json
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Quel ticket Red River West investit-il ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Red : 5 à 20 M€ par investissement. >commit : jusqu'à 5 M€."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Red River West finance-t-il uniquement des sociétés européennes ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Le site vise des sociétés européennes qui cherchent à réussir aux États-Unis ; >commit mentionne Europe et États-Unis."
+   }
+  }
+ ]
+}
+```

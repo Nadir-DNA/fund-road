@@ -303,6 +303,11 @@ export const pageMeta: Record<string, { title: string; description: string }> =
       description:
         "Déposez business plan et deck : Fund Road structure un dossier de financement sourcé, montre ce qui manque et vous aide à le partager aux fonds.",
     },
+    "/contact": {
+      title: "Contacter Fund Road | Écrire à l'équipe",
+      description:
+        "Une question sur Fund Road, un dossier ou un tarif ? Écrivez à hello@fund-road.com ou créez votre compte pour commencer un dossier.",
+    },
     "/tarifs": {
       title: "Tarifs Fund Road : gratuit pour commencer, 149 € / 90 jours",
       description:

@@ -495,6 +495,7 @@ export function PublicLayout({
               <Link to="/cgv">CGV</Link>
               <Link to="/confidentialite">Confidentialité</Link>
               <Link to="/partenaires">Partenaires</Link>
+              <Link to="/contact">Contact</Link>
               <Link to="/ressources">Guides</Link>
             </nav>
           </div>

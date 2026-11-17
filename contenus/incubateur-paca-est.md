@@ -52,3 +52,28 @@ Seulement si elle a moins de 6 mois pour le programme principal. Source : incuba
 - [Ressources — guides pour préparer un dossier](/ressources)
 - [Incubateur Lorrain](/fonds/incubateur-lorrain) : autre incubateur de la recherche publique
 - [Concours i-Lab](/fonds/concours-i-lab) : cité par l'incubateur comme objectif de préparation
+
+```json
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Combien de temps dure l'incubation ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "18 mois pour le programme Deeptech."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Peut-on candidater avec une société déjà créée ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Seulement si elle a moins de 6 mois pour le programme principal."
+   }
+  }
+ ]
+}
+```

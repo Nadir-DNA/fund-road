@@ -54,3 +54,28 @@ Depuis 2003. Source : technopole-reunion.com, 17/11/2026.
 - [Ressources — guides pour préparer un dossier](/ressources)
 - [Incubateur Lorrain](/fonds/incubateur-lorrain) : autre incubateur de la recherche publique
 - [Incubateur PACA-Est](/fonds/incubateur-paca-est) : autre incubateur de la recherche publique
+
+```json
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "L'incubateur de La Réunion finance-t-il les projets ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Il prend en charge des prestations d'experts externes jusqu'à 50 000 euros selon un budget global établi."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Depuis quand l'incubateur existe-t-il ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Depuis 2003."
+   }
+  }
+ ]
+}
+```

@@ -52,3 +52,28 @@ Oui, par Sprint (500 k€ au premier tour) ou Scale (5 à 20 M€, participation
 - [Ressources — guides pour préparer un dossier](/ressources)
 - [Antler](/fonds/antler) : autre studio / programme de création à partir de zéro
 - [Entrepreneurs First](/fonds/entrepreneurs-first) : fonds qui constitue des équipes de fondateurs
+
+```json
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Hexa finance-t-il une startup existante ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Oui, par Sprint (500 k€ au premier tour) ou Scale (5 à 20 M€, participation majoritaire). Le parcours Start sert à créer une société avec le studio."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Que prend Hexa dans Start ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "25 % du capital, selon la page Start."
+   }
+  }
+ ]
+}
+```

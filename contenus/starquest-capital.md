@@ -49,3 +49,28 @@ La technologie verte et bas carbone. Source : starquest-capital.com, 17/11/2026.
 - [Ressources — guides pour préparer un dossier](/ressources)
 - [Demeter](/fonds/demeter) : investisseur transition énergétique et écologique
 - [Revaia](/fonds/revaia) : investisseur climat et impact
+
+```json
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Quels tickets Starquest Capital propose-t-il ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "De 500 k€ à 20 M€ selon le fonds (CCR : 500 k€ à 5 M€ ; Biodiversity : 3 à 15 M€ ; Protect : 3 à 20 M€)."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Quel est le thème de Starquest Capital ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "La technologie verte et bas carbone."
+   }
+  }
+ ]
+}
+```

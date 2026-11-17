@@ -47,3 +47,28 @@ Les pages lues décrivent un accompagnement et un réseau, pas un ticket d'inves
 - [Ressources — guides pour préparer un dossier](/ressources)
 - [Wilco](/fonds/wilco) : accélérateur de startups
 - [Station F](/fonds/station-f) : campus de startups
+
+```json
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Combien de Villages by CA existe-t-il ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "44 Villages ouverts selon la page Réseau."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Le Village by CA investit-il ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Les pages lues décrivent un accompagnement et un réseau, pas un ticket d'investissement."
+   }
+  }
+ ]
+}
+```

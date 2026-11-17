@@ -54,3 +54,28 @@ Les pages lues décrivent un accompagnement, y compris la recherche de financeme
 - [Ressources — guides pour préparer un dossier](/ressources)
 - [Incubateur PACA-Est](/fonds/incubateur-paca-est) : autre incubateur de la recherche publique
 - [Technopole de La Réunion](/fonds/technopole-de-la-reunion) : incubateur de la recherche publique en outre-mer
+
+```json
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Qui l'Incubateur Lorrain accompagne-t-il ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Des chercheurs, enseignants-chercheurs, doctorants et certains étudiants entrepreneurs liés à un laboratoire."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "L'incubateur finance-t-il les projets ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Les pages lues décrivent un accompagnement, y compris la recherche de financements, et ne publient pas de montant d'aide."
+   }
+  }
+ ]
+}
+```

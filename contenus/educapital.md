@@ -46,7 +46,7 @@ Jusqu'à 10 M€ par investissement. Source : educapitalvc.com, 17/11/2026. Le s
 
 - `https://www.educapitalvc.com/` : « From late seed to Series B » ; « Up to €10M per investment » ; « Innovative European companies » ; « With a strong impact mission » ; « Over 45 companies in our portfolio » ; thèmes éducation et travail.
 - `https://www.educapitalvc.com/about-us` : lancement en 2017 par Marie-Christine Levet et Litzie Maarek ; deuxième fonds en 2022 ; « With $200m assets under management today ».
-- `https://www.educapitalvc.com/news` : communiqués datés (Buddy.ai 03/01/2025, Female Invest 31/10/2024, Mendo et Rocapine 16/06/2026). Un communiqué de septembre 2026 annonce un soutien du Fonds européen d'investissement de 20 M€ dans Educapital III ; son texte n'est pas lisible dans la page, je n'en tire aucun chiffre.
+- `https://www.educapitalvc.com/news` : communiqués datés (Buddy.ai 03/01/2025, Female Invest 31/10/2024, Mendo et Rocapine 16/06/2026). Un communiqué de septembre 2026 est intitulé « The European Investment Fund renews its support with €20M in Educapital III ».
 - `https://www.educapitalvc.com/contact` : adresse et e-mail.
 
 ## Voir aussi
@@ -54,3 +54,28 @@ Jusqu'à 10 M€ par investissement. Source : educapitalvc.com, 17/11/2026. Le s
 - [Ressources — guides pour préparer un dossier](/ressources)
 - [Serena](/fonds/serena) : investit aussi dans l'éducation (pilier « Impact », cité sur sa fiche)
 - [Iris](/fonds/iris) : fonds européen, de la série A à la croissance
+
+```json
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Quel est le thème d'Educapital ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "L'éducation et le travail de demain, avec une mission d'impact."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Quel ticket Educapital investit-il ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Jusqu'à 10 M€ par investissement."
+   }
+  }
+ ]
+}
+```

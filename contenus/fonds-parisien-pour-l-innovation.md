@@ -50,3 +50,28 @@ Oui pour le volet incubation : il n'est accessible qu'aux structures incubées d
 - [Ressources — guides pour préparer un dossier](/ressources)
 - [Agoranov](/fonds/agoranov) : incubateur parisien cité dans la liste des incubateurs labellisés
 - [Bpifrance](/fonds/bpifrance) : cofinanceur et gestionnaire du fonds
+
+```json
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Quel montant propose le FPI ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Jusqu'à 30 000 euros par volet (incubation, expérimentation, fabrication)."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Faut-il être incubé pour obtenir l'aide ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Oui pour le volet incubation : il n'est accessible qu'aux structures incubées dans un incubateur labellisé."
+   }
+  }
+ ]
+}
+```

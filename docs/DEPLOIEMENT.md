@@ -28,7 +28,8 @@ Santé, depuis la box : `curl http://127.0.0.1:3190/api/health`.
 - `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` : `openssl rand -base64 36`
 - `TUNNEL_TOKEN` : jeton de l'étape 2
 - `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_BASE_URL` : fournisseur IA
-- `SMTP_URL`, `MAIL_FROM` : emails (inscription, notifications)
+- `SMTP_URL`, `MAIL_FROM` : emails (inscription, notifications). Production : `smtps://resend:<clé API>@smtp.resend.com:465`, `MAIL_FROM=Fund Road <contact@fund-road.com>`. Clé API Resend restreinte à l’envoi sur `fund-road.com`, jamais commitée.
+  DNS associé (Cloudflare) : TXT `resend._domainkey`, CNAME `rsend` → `rsend-euw1.forge.rmta.net` et `send` → `send.forge.rmta.net` (**DNS only**), TXT `_dmarc` = `v=DMARC1; p=none; rua=mailto:contact@fund-road.com`. Le SPF racine (`include:mx.ovh.com`) ne change pas.
 - `REQUIRE_EMAIL_VERIFICATION=false` uniquement pour la bêta sans SMTP ; remettre `true` dès que les emails sont actifs
 - `ADMIN_EMAILS`, `ADVISOR_ORG_ID`, Stripe quand prêt
 - `DATABASE_URL` est fourni par `compose.prod.yaml`, inutile de le renseigner.

@@ -25,7 +25,7 @@ Fondé en 1972, Sofinnova Partners a soutenu « more than 500 companies over 50 
 
 ### Comment présenter un projet
 
-Le site propose un bouton « Submit a project » sur chaque page. Le contenu du formulaire n'est pas lisible dans le texte récupéré.
+Le site propose un bouton « Submit a project » sur chaque page ; le contenu du formulaire n'est pas décrit sur le site.
 
 ### Pour quel porteur de projet
 
@@ -53,3 +53,28 @@ Oui, plusieurs stratégies visent le stade précoce, d'autres la croissance. Sou
 - [Ressources — guides pour préparer un dossier](/ressources)
 - [Kurma Partners](/fonds/kurma-partners) : capital-risque en sciences de la vie
 - [Eurasanté](/fonds/eurasante) : écosystème santé
+
+```json
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Quels secteurs Sofinnova Partners finance-t-il ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Biopharma, medtech, médecine numérique, agriculture et procédés industriels."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Sofinnova Partners finance-t-il le stade précoce ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Oui, plusieurs stratégies visent le stade précoce, d'autres la croissance."
+   }
+  }
+ ]
+}
+```
