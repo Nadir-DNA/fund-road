@@ -24,7 +24,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { Link, NavLink, useNavigate } from "./links.tsx";
-import { captureUtm, chargerMesure, firstTime, keepUtm, oublierMesure, persistUtm, track } from "./track.ts";
+import { captureUtm, chargerMesure, chargerMesureExemptee, firstTime, keepUtm, oublierMesure, persistUtm, track } from "./track.ts";
 import { editorial } from "../shared/editorial.generated.ts";
 import { profileTitle, slugify, showAidesLink } from "../shared/seo.ts";
 import { programs } from "../shared/programs.ts";
@@ -2625,10 +2625,11 @@ function Consentement() {
       aria-label="Cookies de mesure d’audience"
     >
       <p>
-        Nous mesurons l’audience du site — Google Analytics et une mesure interne
-        Fund Road — uniquement si vous l’acceptez. Nous enregistrons la page, la
-        page d’origine, la langue et l’étape atteinte (inscription, dossier,
-        analyse), jamais le contenu de vos dossiers.{" "}
+        Nous mesurons l’audience de deux façons. Une mesure interne sans cookie ni
+        identifiant persistant compte les visites de tous : page, domaine d’origine,
+        type d’appareil, pays et date, rien d’autre, sans profilage — elle est
+        exemptée de consentement. Google Analytics et le suivi d’étape (inscription,
+        dossier, analyse) ne se chargent qu’avec votre accord.{" "}
         <Link to="/confiance">En savoir plus</Link>
       </p>
       <div className="button-row">
@@ -2755,4 +2756,5 @@ function Root() {
   );
 }
 captureUtm();
+chargerMesureExemptee();   // mesure exemptée : tous les visiteurs, sans cookie ni stockage
 createRoot(document.getElementById("root")!).render(<Root />);

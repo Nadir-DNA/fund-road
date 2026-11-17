@@ -12,6 +12,7 @@ import { mesureAutorisee, pickUtm, withUtm, type TrackName, type Utm } from "../
 const KEY = "fundroad-utm";
 const CHOIX = "fundroad-cookies";   // même clé que le bandeau de consentement (app/main.tsx)
 const SRC = "https://stats.nadirdaoudi.com/script.js";
+const SRC_EXEMPT = "https://stats.nadirdaoudi.com/script.js?exempt=1";
 const SITE = "fund-road.com";
 let kept: Utm | null = null;
 const dejaVu = new Set<string>();
@@ -20,6 +21,21 @@ let refusee = false;
 
 const choix = () => { try { return localStorage.getItem(CHOIX); } catch { return null; } };
 const accepte = () => !refusee && mesureAutorisee(choix());
+
+/**
+ * Mesure d'audience exemptée de consentement (17/11) : chargée pour TOUS les visiteurs, avant tout choix.
+ * Le script ne pose aucun cookie et n'écrit rien dans le navigateur (voir /script-exempt.js de l'instance) ;
+ * il ne compte que la page et le domaine d'origine. Le pixel consenti ci-dessous reste séparé et étiqueté.
+ */
+export function chargerMesureExemptee(): void {
+  if (document.querySelector("script[data-mesure-exempte]")) return;
+  const s = document.createElement("script");
+  s.src = SRC_EXEMPT;
+  s.defer = true;
+  s.dataset.site = SITE;
+  s.dataset.mesureExempte = "1";   // marqueur interne : distinct du pixel consenti, jamais retiré par oublierMesure
+  document.head.appendChild(s);
+}
 
 /** Injecte le pixel une seule fois, et seulement après un accord explicite. */
 export function chargerMesure(): void {
