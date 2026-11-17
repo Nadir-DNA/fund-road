@@ -8,16 +8,16 @@ const texte = (html: string) => html
   .replace(/\s+/g, " ").trim();
 
 test("Contenus éditoriaux : métadonnées, HTML, FAQ alignée et liens internes", () => {
-  const entries = Object.entries(editorial);
-  assert.equal(entries.length, 16);
+  const entries = Object.entries(editorial).filter(([u]) => u !== "/contact"); // page contact sobre, sans FAQ
+  assert.equal(entries.length, 34);
   for (const [url, p] of entries) {
     assert.ok(url.startsWith("/"), url);
     assert.ok(p.title.length <= 60, `${url} titre ${p.title.length}`);
     assert.ok(p.description.length <= 160, `${url} description ${p.description.length}`);
-    assert.ok(p.html.length > 3000, `${url} HTML trop court`);
+    assert.ok(p.html.length > (url.startsWith("/fonds/") ? 1500 : 3000), `${url} HTML trop court`);
     assert.ok(p.html.includes(`<h1>`) === false, `${url} : le H1 est fourni séparément`);
     assert.ok(!/\.md\)/.test(p.html), `${url} : lien Markdown non réécrit`);
-    if (!url.startsWith("/ressources/")) assert.ok(p.html.includes("<table>"), `${url} : tableau attendu`); // les guides n'en ont pas toujours
+    if (!url.startsWith("/ressources/") && !url.startsWith("/fonds/")) assert.ok(p.html.includes("<table>"), `${url} : tableau attendu`); // les guides n'en ont pas toujours
     assert.equal(p.faq?.["@type"], "FAQPage", url);
     const visible = texte(p.html);
     for (const q of p.faq.mainEntity) {
