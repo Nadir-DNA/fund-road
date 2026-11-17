@@ -110,6 +110,8 @@ type Page = {
   image?: string;
   ogType?: string;
   robots?: string;
+  /** Canonique imposée (fiche qui pointe vers sa page de référence). */
+  canonical?: string;
 };
 const abs = (path: string) => config.baseURL + path;
 const crumbs = (items: [string, string][]) => ({
@@ -134,7 +136,7 @@ const organization = {
     "Plateforme française qui transforme les documents d’une startup en dossier de financement sourcé, signale ce qui manque face aux critères des financeurs et des aides publiques, et le partage avec business angels, fonds et incubateurs.",
 };
 export function renderPage(index: string, p: Page) {
-  const url = abs(p.path);
+  const url = abs(p.canonical || p.path);
   const image = p.image || abs("/brand/og.jpg");
   const head = `<title>${esc(p.title)}</title>
     <meta name="description" content="${esc(p.description)}" />${p.robots ? `\n    <meta name="robots" content="${esc(p.robots)}" />` : ""}
@@ -169,6 +171,7 @@ type Offer = { name: string; price: number; unit: string; description: string };
 /** Corps SSR de /tarifs : premier écran aligné sur le client, puis la liste des prix (hors écran). */
 export function tarifsBody(offers: Offer[]) {
   return `${nav}<main class="section info-page"><h1>Un prix simple, selon votre rôle</h1>
+    <p class="lede">Fund Road est gratuit pour commencer : l'offre Découverte (0 €) donne un dossier de financement complet et l'envoi aux financeurs. L'offre complète ajoute les exports PDF et Word, à 149 € tous les 90 jours, résiliable. Les fonds, business angels et incubateurs sont gratuits pendant le lancement, et Fund Road ne prend aucune commission sur les levées ni sur les subventions obtenues.</p>
       <p class="lead">Les startups commencent gratuitement : dossier complet, envoi aux financeurs et suivi. L’offre complète ajoute les exports PDF et Word, à 149 € tous les 90 jours, résiliable. Les financeurs et incubateurs sont gratuits pendant le lancement.</p>
       <h3>Découverte</h3><ul><li>Dossier de financement complet, envoi aux financeurs</li><li>Dépôt de vos pièces</li><li>Annuaire des financeurs</li><li>Une analyse IA offerte chaque mois</li><li>Partages révocables et suivi des étapes</li></ul>
       <h3>Offre complète</h3><p>Tout Découverte, plus :</p><ul><li>Exports PDF et Word de vos dossiers</li></ul>
@@ -215,7 +218,8 @@ export function renderProfile(index: string, p: any) {
     ["Secteurs", r.sectors],
   ].filter(([, v]) => v);
   const extra = details(p.kind, c).map((d) => [d.champ.label, d.texte]);
-  const description = profileDescription(
+  const metaImposee = typeof c.meta === "string" && c.meta.trim() ? c.meta.trim() : "";
+  const description = metaImposee || profileDescription(
     prog
       ? [`${name}.`, `Organisme : ${prog.operator}.`, `${prog.amount}.`, "Conditions et pièces détaillées sur la fiche."]
       : [
@@ -231,6 +235,7 @@ export function renderProfile(index: string, p: any) {
     title,
     description,
     ogType: "profile",
+    ...(typeof c.canonical === "string" && c.canonical ? { canonical: c.canonical } : {}),
     ld: [
       {
         "@context": "https://schema.org",
@@ -253,6 +258,7 @@ export function renderProfile(index: string, p: any) {
     ],
     body: `<main>${nav}
     <h1>${esc(name)}</h1><p>${esc(kind)}</p>
+    ${c.lien?.href ? `<p><a href="${esc(c.lien.href)}">${esc(c.lien.label || c.lien.href)}</a></p>` : ""}
     ${p.theme?.intro ? `<p>${esc(p.theme.intro)}</p>` : ""}
     <dl>${[...facts, ...extra].map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
     ${c.exclusions ? `<p>Hors périmètre : ${esc(c.exclusions)}</p>` : ""}
@@ -325,7 +331,8 @@ async function staticPage(path: string): Promise<Page | null> {
         faqLd(faq),
       ],
       body: `<main>${nav}
-      <h1>Votre dossier de levée, prêt pour le comité.</h1>
+      <h1>Votre dossier de levée, structuré pour le comité.</h1>
+      <p class="lede">Fund Road transforme les documents d'une startup (business plan, deck, prévisionnel) en dossier de financement sourcé : chaque information cite le passage exact du document, et ce qui manque reste marqué « à compléter ». Le dossier est confronté aux critères publiés de programmes publics comme la Bourse French Tech, i-Lab ou le Pass PI, puis partagé avec le financeur de votre choix. Fund Road ne garantit pas un financement : le score mesure la complétude du dossier, pas vos chances.</p>
       <p>${esc(organization.description)}</p>
       <h2>Comment ça marche</h2>
       <ol><li>Déposez vos documents : business plan, deck, prévisionnel (PDF, Word, PowerPoint, Excel).</li>
@@ -376,7 +383,7 @@ async function staticPage(path: string): Promise<Page | null> {
         },
         crumbs([["Annuaire des financeurs", path]]),
       ],
-      body: `<main>${nav}<h1>Annuaire des fonds, business angels et incubateurs</h1>
+      body: `<main>${nav}<h1>Annuaire des fonds, business angels et incubateurs</h1><p class="lede">L'annuaire de Fund Road recense des fonds d'investissement, des réseaux de business angels, des incubateurs et des organismes de financement, avec leurs critères, leur ticket quand il est publié, les pièces demandées et leurs questions. Il sert à repérer les financeurs dont le stade et le secteur correspondent au projet avant de candidater.</p>
       <p>Critères, tickets, pièces demandées et questions de chaque financeur, pour préparer votre candidature.</p>
       <ul>${profiles
         .map(
@@ -424,7 +431,7 @@ async function staticPage(path: string): Promise<Page | null> {
     ...base,
     ...(key === "ressources" && resourceRows.length === 0 && guides.length === 0 ? { robots: "noindex,follow" } : {}),
     ld: [crumbs([[copy.title, path]])],
-    body: `<main>${nav}<h1>${esc(copy.title)}</h1><p>${esc(copy.intro)}</p>
+    body: `<main>${nav}<h1>${esc(copy.title)}</h1>${path === "/aides" ? `<p class="lede">${esc("Les aides à l'innovation se classent par étape du projet. Pour une société en création ou de moins de 2 ans, la Bourse French Tech va jusqu'à 30 000 € et la Bourse French Tech Émergence, pour une deeptech, jusqu'à 90 000 € ; le Concours i-Lab va jusqu'à 600 000 €, dans la limite de 60 % des dépenses éligibles. Les montants viennent de fiches Bpifrance lues le 10/11/2026 ; cette page ne remplace pas les fiches officielles.")}</p>` : path === "/referentiel" ? `<p class="lede">${esc("Le score de Fund Road mesure la complétude documentaire : neuf rubriques documentées et confirmées, avec les pièces et exigences applicables. Il ne mesure pas la probabilité d'obtenir un financement. L'attestation est datée, porte sur une version du dossier et un référentiel donnés, et ne certifie ni l'authenticité des documents ni la qualité d'un investissement.")}</p>` : ""}<p>${esc(copy.intro)}</p>
     ${copy.items.map(([t, d]) => `<h2>${esc(t)}</h2><p>${esc(d)}</p>`).join("")}
     ${extra ? `<ul>${extra}</ul>` : ""}</main>`,
   };
@@ -593,7 +600,7 @@ export function registerSeo(app: FastifyInstance, index: string) {
       ...Object.keys(pageMeta).filter(
         (p) => (!editorial[p] || editorial[p].validated) && (p !== "/ressources" || ressources.length > 0 || editorialGuides().length > 0),
       ),
-      ...(await listProfiles()).map((p) => "/fonds/" + p.slug),
+      ...(await listProfiles()).filter((p) => !p.criteria?.canonical).map((p) => "/fonds/" + p.slug),
       ...editorialGuides().map(([p]) => p),
       ...ressources,
     ];
