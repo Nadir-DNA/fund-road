@@ -75,3 +75,7 @@ Via le formulaire de la page Contact de headline.com. Préparez d'abord votre do
 - [Ressources — guides pour préparer un dossier](/ressources)
 - [Sofinnova Partners](/fonds/sofinnova-partners)
 - [Serena](/fonds/serena)
+
+```json
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Quel stade vise Headline ?","acceptedAnswer":{"@type":"Answer","text":"Les fonds Early investissent en seed et en série A ; le fonds Growth intervient à partir de la série B. Source : headline.com/about, 17/11/2026."}},{"@type":"Question","name":"Où intervient Headline ?","acceptedAnswer":{"@type":"Answer","text":"Aux États-Unis, en Europe (Paris, Londres, Berlin, Hambourg, Luxembourg), au Brésil et en Asie. Source : headline.com/about, 17/11/2026."}},{"@type":"Question","name":"Quel ticket Headline investit-il ?","acceptedAnswer":{"@type":"Answer","text":"Le site ne publie pas de ticket dans les pages lues."}},{"@type":"Question","name":"Headline a-t-il un bureau à Paris ?","acceptedAnswer":{"@type":"Answer","text":"Oui : 24-26 rue de la Pépinière, 75008 Paris, selon la page About. La page du fonds EU Early cite Paris parmi les bureaux de l'équipe Europe."}},{"@type":"Question","name":"Comment candidater auprès de Headline ?","acceptedAnswer":{"@type":"Answer","text":"Via le formulaire de la page Contact de headline.com. Préparez d'abord votre dossier sur Fund Road."}}]}
+```
