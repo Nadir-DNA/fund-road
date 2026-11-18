@@ -115,6 +115,7 @@ export const champsParType: Record<TypeFinanceur, Champ[]> = {
     },
     { key: "duree", label: "Durée du programme", type: "text" },
     { key: "dateLimite", label: "Prochaine date limite", type: "date" },
+    { key: "etatCandidatures", label: "État des candidatures", type: "text" },
     {
       key: "contrepartie",
       label: "Contrepartie",

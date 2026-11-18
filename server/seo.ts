@@ -210,7 +210,9 @@ export function renderProfile(index: string, p: any) {
   const r = resume(c);
   const kind = kinds[p.kind] || p.kind || "Financeur";
   const path = `/fonds/${p.slug}`;
-  const title = profileTitle(name);
+  // Titre imposé par la fiche quand la formule générique ne dit rien du financeur (criteria.title).
+  const titreImpose = typeof c.title === "string" ? c.title.trim() : "";
+  const title = titreImpose || profileTitle(name);
   const facts = [
     ["Ticket", r.ticket],
     ["Stade", r.stage],
