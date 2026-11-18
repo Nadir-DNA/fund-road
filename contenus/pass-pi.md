@@ -1,7 +1,7 @@
 ---
 url: /aides/pass-pi
-title: "Pass PI INPI : 50 % de vos frais de propriété industrielle"
-meta_description: "Pass PI : l'INPI finance 50 % d'une prestation en propriété industrielle, jusqu'à 3 000 € par pass et 5 000 € par entreprise. Conditions et démarche."
+title: "Pass PI INPI : 50 % des frais, jusqu'à 3 000 €"
+meta_description: "Le Pass PI de l'INPI rembourse 50 % d'une prestation en propriété industrielle, jusqu'à 3 000 € par pass. Conditions, démarche et dépenses éligibles."
 h1: "Pass PI : faire financer sa propriété industrielle"
 statut: prêt-à-intégrer
 date_verification: 2026-11-10
