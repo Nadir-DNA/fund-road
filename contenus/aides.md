@@ -98,6 +98,10 @@ Non. Les dispositifs cités se demandent directement auprès de l'organisme (Bpi
 - [Prêt d'honneur Initiative France](pret-honneur-initiative-france.md)
 - [Annuaire des financeurs](/annuaire) : les autres sources de financement, par stade et par secteur.
 
+## Guides pour monter le dossier
+
+Cinq guides détaillent les pièces, les chiffres et les erreurs à éviter pièce par pièce : [Guides pour monter le dossier](/ressources).
+
 ## Sources
 
 - Bpifrance, fiches « Bourse French Tech », « Bourse French Tech Émergence », « Concours innovation i-Lab » : montants et taux. Lues le 10/11/2026.

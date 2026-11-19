@@ -1051,6 +1051,7 @@ function Landing() {
             <li><Link to="/fonds/eic-accelerator">EIC Accelerator</Link></li>
             <li><Link to="/fonds/concours-i-lab">Concours i-Lab</Link></li>
             <li><Link to="/aides/subventions-bpifrance">Subventions Bpifrance</Link></li>
+            <li><Link to="/ressources">5 guides pour préparer son dossier</Link></li>
           </ul>
         </section>
         <section className="cta-band">
@@ -1098,6 +1099,9 @@ function Resources() {
             <Link to="/referentiel">Comprendre le référentiel →</Link>
           </div>
         )}
+        <p>
+          <Link to="/aides">Toutes les aides</Link>
+        </p>
       </main>
     </PublicLayout>
   );

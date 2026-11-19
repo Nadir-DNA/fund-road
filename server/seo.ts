@@ -351,6 +351,7 @@ async function staticPage(path: string): Promise<Page | null> {
         <li><a href="/fonds/eic-accelerator">EIC Accelerator</a></li>
         <li><a href="/fonds/concours-i-lab">Concours i-Lab</a></li>
         <li><a href="/aides/subventions-bpifrance">Subventions Bpifrance</a></li>
+        <li><a href="/ressources">5 guides pour préparer son dossier</a></li>
       </ul>
       <p><a href="/annuaire">Consulter l’annuaire des fonds, business angels et incubateurs</a> · <a href="/tarifs">Voir les tarifs</a></p></main>`,
     };
@@ -435,7 +436,8 @@ async function staticPage(path: string): Promise<Page | null> {
     ld: [crumbs([[copy.title, path]])],
     body: `<main>${nav}<h1>${esc(copy.title)}</h1>${path === "/aides" ? `<p class="lede">${esc("Les aides à l'innovation se classent par étape du projet. Pour une société en création ou de moins de 2 ans, la Bourse French Tech va jusqu'à 30 000 € et la Bourse French Tech Émergence, pour une deeptech, jusqu'à 90 000 € ; le Concours i-Lab va jusqu'à 600 000 €, dans la limite de 60 % des dépenses éligibles. Les montants viennent de fiches Bpifrance lues le 10/11/2026 ; cette page ne remplace pas les fiches officielles.")}</p>` : path === "/referentiel" ? `<p class="lede">${esc("Le score de Fund Road mesure la complétude documentaire : neuf rubriques documentées et confirmées, avec les pièces et exigences applicables. Il ne mesure pas la probabilité d'obtenir un financement. L'attestation est datée, porte sur une version du dossier et un référentiel donnés, et ne certifie ni l'authenticité des documents ni la qualité d'un investissement.")}</p>` : ""}<p>${esc(copy.intro)}</p>
     ${copy.items.map(([t, d]) => `<h2>${esc(t)}</h2><p>${esc(d)}</p>`).join("")}
-    ${extra ? `<ul>${extra}</ul>` : ""}</main>`,
+    ${extra ? `<ul>${extra}</ul>` : ""}
+    ${key === "ressources" ? `<p><a href="/aides">Toutes les aides</a></p>` : ""}</main>`,
   };
 }
 // Offres affichées : Découverte gratuite + offre payante en base
