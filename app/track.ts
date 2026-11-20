@@ -24,10 +24,12 @@ const accepte = () => !refusee && mesureAutorisee(choix());
 
 /**
  * Mesure d'audience exemptée de consentement (17/11) : chargée pour TOUS les visiteurs, avant tout choix.
- * Le script ne pose aucun cookie et n'écrit rien dans le navigateur (voir /script-exempt.js de l'instance) ;
+ * Le script ne pose aucun cookie et n'écrit rien dans le navigateur (voir /script.js?exempt=1 de l'instance) ;
  * il ne compte que la page et le domaine d'origine. Le pixel consenti ci-dessous reste séparé et étiqueté.
+ * Un visiteur qui a déjà accepté ne charge PAS ce pixel : il aurait deux compteurs pour la même page.
  */
 export function chargerMesureExemptee(): void {
+  if (accepte()) return;
   if (document.querySelector("script[data-mesure-exempte]")) return;
   const s = document.createElement("script");
   s.src = SRC_EXEMPT;
@@ -42,6 +44,9 @@ export function chargerMesure(): void {
   refusee = false;
   if (charge || !mesureAutorisee(choix())) return;
   charge = true;
+  // Après acceptation, le pixel exempté est retiré avant d'installer le pixel consenti : sinon chaque page
+  // part deux fois (une mesure exemptée, une mesure consentie) et le total des pages vues est doublé.
+  document.querySelectorAll("script[data-mesure-exempte]").forEach((s) => s.remove());
   const s = document.createElement("script");
   s.src = SRC;
   s.defer = true;
