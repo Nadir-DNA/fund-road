@@ -553,6 +553,10 @@ export function registerSeo(app: FastifyInstance, index: string) {
         .join("")}</article></main>`,
     });
   });
+  // 301 définitive : la fiche Pass PI vit désormais sur /aides/pass-pi. Les deux URL répondaient 200
+  // avec la même intention et restaient indexées (la canonical seule n'est pas suivie) ; la route
+  // statique passe avant /fonds/:slug, donc aucune autre fiche ne change de comportement.
+  app.get("/fonds/pass-pi", async (_req, reply) => reply.redirect("/aides/pass-pi", 301));
   for (const route of ["/fonds/:slug", "/portail/:slug"])
     app.get(route, async (req: any, reply) => {
       const p = await findProfile(req.params.slug);
