@@ -557,6 +557,10 @@ export function registerSeo(app: FastifyInstance, index: string) {
   // avec la même intention et restaient indexées (la canonical seule n'est pas suivie) ; la route
   // statique passe avant /fonds/:slug, donc aucune autre fiche ne change de comportement.
   app.get("/fonds/pass-pi", async (_req, reply) => reply.redirect("/aides/pass-pi", 301));
+  // La section /fonds n'a pas de page d'entrée : l'annuaire en tient lieu. Autorisé par Nadir mot pour mot,
+  // pour les deux formes seulement (/fonds et /fonds/) ; les fiches /fonds/* gardent leur comportement.
+  app.get("/fonds", async (_req, reply) => reply.redirect("/annuaire", 301));
+  app.get("/fonds/", async (_req, reply) => reply.redirect("/annuaire", 301));
   for (const route of ["/fonds/:slug", "/portail/:slug"])
     app.get(route, async (req: any, reply) => {
       const p = await findProfile(req.params.slug);
