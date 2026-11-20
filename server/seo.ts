@@ -201,6 +201,18 @@ function programGuide(prog: Program, name: string) {
   return { body, faq };
 }
 
+/**
+ * Liens croisés saisis dans la fiche (criteria.voirAussi = [{ href, label }]) : rendus en fin de page
+ * sous « Voir aussi ». Aucun rendu quand la fiche n'en porte pas, donc les autres fiches ne changent pas.
+ */
+function voirAussiLiens(items: unknown): string {
+  const liens = Array.isArray(items)
+    ? items.filter((i: any) => i && typeof i.href === "string" && typeof i.label === "string" && i.href)
+    : [];
+  if (!liens.length) return "";
+  return `<h2>Voir aussi</h2><ul>${liens.map((i: any) => `<li><a href="${esc(i.href)}">${esc(i.label)}</a></li>`).join("")}</ul>`;
+}
+
 export function renderProfile(index: string, p: any) {
   if (p?.slug && editorial[`/fonds/${p.slug}`]?.validated) return renderPage(index, editorialPage(`/fonds/${p.slug}`)!);
   const name = p.theme?.name || p.name;
@@ -274,7 +286,8 @@ export function renderProfile(index: string, p: any) {
     ${guide?.body ?? (faq.length ? `<h2>Questions fréquentes sur ${esc(name)}</h2>${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}` : "")}
     ${!guide && showAidesLink(p.kind, !!prog) ? `<p><a href="/aides">Guide complet des aides publiques</a> · <a href="/entrepreneurs">Préparer son dossier</a></p>` : ""}
     ${faq.some(([q]) => /candidater/i.test(q)) ? "" : `<h2>Comment candidater auprès de ${esc(name)}</h2>
-    <p>Préparez votre dossier de financement sur Fund Road : vos documents sont structurés selon les critères de ${esc(name)} et vous voyez ce qui manque avant l’envoi.</p>`}</main>`,
+    <p>Préparez votre dossier de financement sur Fund Road : vos documents sont structurés selon les critères de ${esc(name)} et vous voyez ce qui manque avant l’envoi.</p>`}
+    ${voirAussiLiens(c.voirAussi)}</main>`,
   });
 }
 

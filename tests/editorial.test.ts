@@ -9,7 +9,7 @@ const texte = (html: string) => html
 
 test("Contenus éditoriaux : métadonnées, HTML, FAQ alignée et liens internes", () => {
   const entries = Object.entries(editorial).filter(([u]) => u !== "/contact"); // page contact sobre, sans FAQ
-  assert.equal(entries.length, 34);
+  assert.equal(entries.length, 35);
   for (const [url, p] of entries) {
     assert.ok(url.startsWith("/"), url);
     assert.ok(p.title.length <= 60, `${url} titre ${p.title.length}`);
