@@ -6,6 +6,7 @@ export const ongletsDossier = [
   "overview",
   "documents",
   "dossier",
+  "entretien",
   "questions",
   "eligibility",
   "share",

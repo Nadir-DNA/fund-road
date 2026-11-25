@@ -92,6 +92,29 @@ export type Critique = {
   priorites: string[];
   rubriques: Record<string, CritiqueRubrique>;
 };
+// Ce que l'IA a compris de la startup en lisant tous les documents : le porteur la corrige dans l'entretien
+export type Comprehension = {
+  activite: string;
+  clients: string;
+  proposition: string;
+  strategie: string;
+  modele: string;
+  hypotheses: string[];
+  zonesFloues: string[];
+};
+// Entretien : clarifier (information manquante), challenger (objection d'investisseur), orienter (rendre le dossier plus pertinent)
+export type TypeQuestion = "clarifier" | "challenger" | "orienter";
+export type VerdictReponse = "solide" | "a_preciser" | "contestable";
+export const typesQuestion: Record<TypeQuestion, string> = {
+  clarifier: "À clarifier",
+  challenger: "Objection d’investisseur",
+  orienter: "Piste pour le dossier",
+};
+export const verdictsReponse: Record<VerdictReponse, string> = {
+  solide: "Réponse solide",
+  a_preciser: "À préciser",
+  contestable: "Contestable",
+};
 export const niveaux: Record<NiveauRubrique, string> = {
   solide: "Solide",
   a_renforcer: "À renforcer",
@@ -106,6 +129,7 @@ export type DossierState = {
   programs?: string[];
   declarations?: Record<string, string>;
   critique?: Critique;
+  comprehension?: Comprehension;
   eligibility?: Record<
     string,
     Record<

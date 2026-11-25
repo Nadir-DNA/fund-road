@@ -69,3 +69,36 @@ BEGIN
     UPDATE content_pages SET validated = true;
   END IF;
 END $$;
+
+-- Offres startup (25/11/2026) : abonnement renouvelé tous les 90 jours, résiliable.
+-- « startups » : nombre de startups (organisations) couvertes par un même achat.
+ALTER TABLE offers ADD COLUMN IF NOT EXISTS startups integer NOT NULL DEFAULT 1;
+-- l'offre complète passe en abonnement trimestriel tant qu'elle n'est pas encore ouverte (un prix Stripe ponctuel déjà actif n'est pas touché)
+UPDATE offers SET cadence='quarter' WHERE id='dossier' AND cadence='once' AND active=false;
+UPDATE offers SET label='Offre complète' WHERE id='dossier' AND label='Dossier financement';
+INSERT INTO offers(id,label,price_cents,cadence,quota,stripe_price_id,active,startups) VALUES ('multi','Multi-startup',30000,'quarter',3,NULL,false,5) ON CONFLICT DO NOTHING;
+-- Financeurs gratuits jusqu'à la V2 : leurs offres restent en base, inactives
+UPDATE offers SET active=false WHERE id IN ('angel','network','fund');
+-- Acheteur d'une offre multi-startup : ses startups (dont il est propriétaire) sont couvertes
+ALTER TABLE entitlements ADD COLUMN IF NOT EXISTS buyer_user_id text;
+
+-- Entretien IA : questions préparées à l'analyse, réponses du porteur, retour critique et relances
+CREATE TABLE IF NOT EXISTS entretien(
+ id uuid PRIMARY KEY,
+ dossier_id uuid NOT NULL REFERENCES dossiers ON DELETE CASCADE,
+ parent_id uuid REFERENCES entretien ON DELETE CASCADE,
+ rubrique text NOT NULL,
+ type text NOT NULL CHECK(type IN ('clarifier','challenger','orienter')),
+ question text NOT NULL,
+ pourquoi text NOT NULL DEFAULT '',
+ attendu text NOT NULL DEFAULT '',
+ reponse text,
+ verdict text CHECK(verdict IN ('solide','a_preciser','contestable')),
+ retour text,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ repondu_at timestamptz
+);
+CREATE INDEX IF NOT EXISTS entretien_dossier ON entretien(dossier_id,created_at);
+-- Échanges d'entretien : plafond journalier par dossier, hors quota d'analyses
+CREATE TABLE IF NOT EXISTS echanges(id uuid PRIMARY KEY,dossier_id uuid REFERENCES dossiers ON DELETE CASCADE,created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS echanges_dossier ON echanges(dossier_id,created_at);

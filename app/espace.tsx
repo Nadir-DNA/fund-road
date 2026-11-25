@@ -65,6 +65,10 @@ import {
   requirements,
   score,
   niveaux,
+  typesQuestion,
+  verdictsReponse,
+  type TypeQuestion,
+  type VerdictReponse,
   type DossierState,
   type Critique,
   type CritiqueRubrique,
@@ -860,7 +864,7 @@ function DepotAnalyse({
                 <strong>Quota d’analyses épuisé</strong>
                 <p>{erreurAnalyse}</p>
                 <Link className="button small" to="/app/facturation">
-                  Passer à l’offre Dossier
+                  Voir les offres
                 </Link>
               </div>
             </div>
@@ -1039,6 +1043,7 @@ function DossierPage() {
           ["overview", "Vue d’ensemble"],
           ["documents", "Documents"],
           ["dossier", "Mon dossier"],
+          ["entretien", "Entretien IA"],
           ["questions", "À compléter"],
           ["eligibility", "Éligibilité"],
           ["share", "Partager"],
@@ -1050,6 +1055,10 @@ function DossierPage() {
           >
             {label}
             {key === "questions" && <span>{d.score.missing.length}</span>}
+            {key === "entretien" &&
+              d.entretien.some((q: any) => !q.reponse) && (
+                <span>{d.entretien.filter((q: any) => !q.reponse).length}</span>
+              )}
           </button>
         ))}
       </div>
@@ -1423,6 +1432,7 @@ function DossierPage() {
           </aside>
         </div>
       )}
+      {tab === "entretien" && <Entretien dossier={d} refresh={refresh} />}
       {tab === "eligibility" && (
         <EligibilityTab dossier={d} refresh={refresh} />
       )}
@@ -1444,6 +1454,208 @@ function DossierPage() {
         ))}
       </div>
     </>
+  );
+}
+
+// Entretien IA : ce que l'IA a compris de la startup, ses questions (clarifier, challenger, orienter),
+// le retour critique sur chaque réponse et ses relances. Les réponses sont relues à la prochaine analyse.
+function Entretien({ dossier: d, refresh }: { dossier: any; refresh: () => void }) {
+  const { run, busy } = useAction();
+  const [enCours, setEnCours] = useState("");
+  const c = d.state.comprehension;
+  const questions: any[] = d.entretien || [];
+  const racines = questions.filter((q) => !q.parent_id);
+  const enfants = (id: string) => questions.filter((q) => q.parent_id === id);
+  const derniere = d.jobs.find((j: any) => j.kind === "analysis" && j.status === "done");
+  const analyseEnCours = d.jobs.some(
+    (j: any) => j.kind === "analysis" && ["queued", "running"].includes(j.status),
+  );
+  // réponses données depuis la dernière analyse réussie : elles n'entreront dans le dossier qu'à la prochaine
+  const nouvelles = questions.filter(
+    (q) => q.repondu_at && (!derniere || new Date(q.repondu_at) > new Date(derniere.created_at)),
+  ).length;
+  const rubrique = (id: string) =>
+    requirements.find((r) => r.id === id)?.label || "Vue d’ensemble";
+  const repondre = (q: any, reponse: string) =>
+    run(async () => {
+      setEnCours(q.id);
+      try {
+        await api(`/dossiers/${d.id}/entretien/${q.id}`, "POST", { reponse });
+        refresh();
+      } finally {
+        setEnCours("");
+      }
+    });
+  const fil = (q: any, niveau = 0): React.ReactNode => (
+    <div key={q.id} className={niveau ? "entretien-relance" : ""}>
+      <div className="section-title">
+        <Badge good={q.type === "orienter"}>
+          {niveau ? "Relance" : typesQuestion[q.type as TypeQuestion] || "Question"}
+        </Badge>
+        {!niveau && <span className="smalltext">{rubrique(q.rubrique)}</span>}
+      </div>
+      <h3>{q.question}</h3>
+      {q.pourquoi && !niveau && (
+        <p className="smalltext">
+          <strong>Pourquoi on vous le demande :</strong> {q.pourquoi}
+        </p>
+      )}
+      {q.attendu && !niveau && (
+        <p className="smalltext">
+          <strong>Une bonne réponse contient :</strong> {q.attendu}
+        </p>
+      )}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const v = String(new FormData(e.currentTarget).get("reponse") || "").trim();
+          if (v.length >= 3) void repondre(q, v);
+        }}
+      >
+        <textarea
+          name="reponse"
+          defaultValue={q.reponse || ""}
+          placeholder="Votre réponse : chiffres, périodes, sources, preuves…"
+          aria-label={"Réponse à : " + q.question}
+          required
+          minLength={3}
+          maxLength={4000}
+        />
+        <button className="button secondary small" disabled={busy}>
+          {enCours === q.id
+            ? "L’IA lit votre réponse…"
+            : q.reponse
+              ? "Modifier ma réponse"
+              : "Répondre"}
+        </button>
+      </form>
+      {q.reponse && (q.verdict || q.retour) && (
+        <div className="entretien-retour">
+          {q.verdict && (
+            <Badge good={q.verdict === "solide"}>
+              {verdictsReponse[q.verdict as VerdictReponse]}
+            </Badge>
+          )}
+          {q.retour && <p>{q.retour}</p>}
+        </div>
+      )}
+      {q.reponse && !q.verdict && (
+        <p className="smalltext">
+          Réponse enregistrée. Le retour de l’IA n’a pas pu être produit : elle
+          sera relue à la prochaine analyse.
+        </p>
+      )}
+      {enfants(q.id).map((x) => fil(x, niveau + 1))}
+    </div>
+  );
+  return (
+    <div className="content-grid">
+      <section>
+        {c ? (
+          <div className="panel">
+            <Badge>Lecture de l’IA · À corriger si besoin</Badge>
+            <h3>Ce que l’IA a compris de votre startup</h3>
+            <dl className="comprehension">
+              {[
+                ["Activité", c.activite],
+                ["Clients visés", c.clients],
+                ["Proposition de valeur", c.proposition],
+                ["Stratégie", c.strategie],
+                ["Modèle économique", c.modele],
+              ]
+                .filter(([, v]) => v)
+                .map(([k, v]) => (
+                  <React.Fragment key={k}>
+                    <dt>{k}</dt>
+                    <dd>{v}</dd>
+                  </React.Fragment>
+                ))}
+            </dl>
+            {c.hypotheses?.length > 0 && (
+              <>
+                <h4>Hypothèses dont dépend votre projet</h4>
+                <ul>
+                  {c.hypotheses.map((h: string) => (
+                    <li key={h}>{h}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {c.zonesFloues?.length > 0 && (
+              <>
+                <h4>Zones floues ou contradictoires</h4>
+                <ul>
+                  {c.zonesFloues.map((h: string) => (
+                    <li key={h}>{h}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+            <p className="smalltext">
+              Si cette lecture est fausse, dites-le dans vos réponses : la
+              prochaine analyse en tiendra compte.
+            </p>
+          </div>
+        ) : (
+          <div className="panel">
+            <h3>L’entretien commence après une analyse</h3>
+            <p>
+              Déposez vos documents et lancez une analyse : l’IA lit toutes vos
+              pièces, reconstitue votre startup et votre stratégie, puis vous
+              pose les questions qu’un investisseur exigeant vous poserait.
+            </p>
+          </div>
+        )}
+        {racines.map((q) => (
+          <div className="panel" key={q.id}>
+            {fil(q)}
+          </div>
+        ))}
+        {c && !racines.length && (
+          <div className="panel">
+            <p>
+              Aucune question en attente. Relancez une analyse après avoir
+              ajouté des pièces : l’IA préparera un nouvel entretien.
+            </p>
+          </div>
+        )}
+      </section>
+      <aside className="panel compact sticky">
+        <Sparkles />
+        <h3>Un entretien, pas un formulaire.</h3>
+        <p>
+          L’IA vérifie chaque réponse comme un investisseur : précise, chiffrée,
+          cohérente avec vos pièces. Si elle ne tient pas, elle vous relance.
+        </p>
+        <p className="smalltext">
+          Les échanges ne consomment pas vos analyses du mois.
+        </p>
+        {nouvelles > 0 && (
+          <>
+            <p>
+              <strong>
+                {nouvelles} réponse{nouvelles > 1 ? "s" : ""} depuis la dernière
+                analyse.
+              </strong>{" "}
+              Relancez l’analyse pour les intégrer au dossier et recevoir les
+              questions suivantes.
+            </p>
+            <button
+              className="button small"
+              disabled={busy || analyseEnCours}
+              onClick={() =>
+                run(async () => {
+                  await api("/dossiers/" + d.id + "/analyze", "POST", {});
+                  refresh();
+                }, "Analyse lancée")
+              }
+            >
+              {analyseEnCours ? "Analyse en cours…" : "Relancer l’analyse"}
+            </button>
+          </>
+        )}
+      </aside>
+    </div>
   );
 }
 
@@ -3053,25 +3265,48 @@ function Billing() {
           <h3>
             {org.kind !== "startup"
               ? "Gratuit pendant le lancement"
-              : billing?.entitlement?.offer_name || "Découverte"}
+              : billing?.droit?.label || billing?.entitlement?.offer_name || "Découverte"}
           </h3>
           <Badge>
-            {billing?.entitlement
-              ? libelleDroit(billing.entitlement.status)
-              : "Gratuite"}
+            {billing?.droit
+              ? libelleDroit(billing.droit.status)
+              : billing?.entitlement
+                ? libelleDroit(billing.entitlement.status)
+                : "Gratuite"}
           </Badge>
         </div>
-        <p>
-          {billing?.usage?.analyses || 0} analyse(s) ce mois-ci
-          {billing?.entitlement?.quota ? ` sur ${billing.entitlement.quota}` : ""}
-          {billing?.entitlement?.expires_at &&
-            ` · accès jusqu’au ${new Date(billing.entitlement.expires_at).toLocaleDateString("fr")}`}
-          .
-        </p>
+        {org.kind === "startup" && (
+          <p>
+            {billing?.usage?.analyses || 0} analyse(s) complète(s) ce mois-ci
+            {billing?.usage?.quota ? ` sur ${billing.usage.quota}` : ""}
+            {billing?.droit?.expires_at &&
+              ` · accès jusqu’au ${new Date(billing.droit.expires_at).toLocaleDateString("fr")}`}
+            . L’entretien avec l’IA ne consomme pas d’analyse.
+          </p>
+        )}
+        {billing?.couvertPar && (
+          <p className="smalltext">
+            Cette startup est couverte par l’offre « {billing.droit.label} »
+            souscrite par {billing.couvertPar}.
+          </p>
+        )}
+        {billing?.couvertes?.length > 0 && (
+          <p className="smalltext">
+            Startups couvertes ({billing.couvertes.length} sur{" "}
+            {billing.droit.startups}) :{" "}
+            {billing.couvertes.map((s: any) => s.name).join(", ")}. Une
+            startup est couverte dès que vous en êtes propriétaire.
+          </p>
+        )}
       </div>
       <div className="pricing-grid">
         {offers
-          ?.filter((o) => org.kind === "startup" && o.id === "dossier")
+          ?.filter(
+            (o) =>
+              org.kind === "startup" &&
+              ["dossier", "multi"].includes(o.id) &&
+              !billing?.droit?.paid,
+          )
           .map((o) => (
             <div className="price-card" key={o.id}>
               <Badge>{o.active ? "Disponible" : "Ouverture prochaine"}</Badge>
@@ -3080,6 +3315,11 @@ function Billing() {
                 {o.price_cents / 100} €
               </div>
               <p>{o.cadence === "month" ? "Par mois" : o.cadence === "quarter" ? "Tous les 90 jours, résiliable à tout moment" : "Forfait 90 jours"}</p>
+              <p className="smalltext">
+                {o.startups > 1
+                  ? `Jusqu’à ${o.startups} startups, tous leurs dossiers, ${o.quota} analyses complètes par mois et par startup, exports PDF et Word.`
+                  : `Une startup, tous ses dossiers, ${o.quota} analyses complètes par mois, exports PDF et Word.`}
+              </p>
               <label>
                 Code de recommandation
                 <input

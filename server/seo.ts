@@ -171,10 +171,11 @@ type Offer = { name: string; price: number; unit: string; description: string };
 /** Corps SSR de /tarifs : premier écran aligné sur le client, puis la liste des prix (hors écran). */
 export function tarifsBody(offers: Offer[]) {
   return `${nav}<main class="section info-page"><h1>Un prix simple, selon votre rôle</h1>
-    <p class="lede">Fund Road est gratuit pour commencer : l'offre Découverte (0 €) donne un dossier de financement complet et l'envoi aux financeurs. L'offre complète ajoute les exports PDF et Word, à 149 € tous les 90 jours, résiliable. Les fonds, business angels et incubateurs sont gratuits pendant le lancement, et Fund Road ne prend aucune commission sur les levées ni sur les subventions obtenues.</p>
-      <p class="lead">Les startups commencent gratuitement : dossier complet, envoi aux financeurs et suivi. L’offre complète ajoute les exports PDF et Word, à 149 € tous les 90 jours, résiliable. Les financeurs et incubateurs sont gratuits pendant le lancement.</p>
-      <h3>Découverte</h3><ul><li>Dossier de financement complet, envoi aux financeurs</li><li>Dépôt de vos pièces</li><li>Annuaire des financeurs</li><li>Une analyse IA offerte chaque mois</li><li>Partages révocables et suivi des étapes</li></ul>
-      <h3>Offre complète</h3><p>Tout Découverte, plus :</p><ul><li>Exports PDF et Word de vos dossiers</li></ul>
+    <p class="lede">Fund Road est gratuit pour commencer : l'offre Découverte (0 €) donne un dossier de financement complet et l'envoi aux financeurs. L'offre complète (149 € tous les 90 jours, résiliable) ajoute 3 analyses complètes par mois, tous les dossiers de la startup et les exports PDF et Word ; l'offre multi-startup (300 € tous les 90 jours) fait de même pour cinq startups au plus. Les fonds, business angels et incubateurs sont gratuits pendant le lancement, et Fund Road ne prend aucune commission sur les levées ni sur les subventions obtenues.</p>
+      <p class="lead">Les startups commencent gratuitement : dossier complet, entretien avec l’IA, envoi aux financeurs et suivi. L’offre complète ajoute des analyses, tous les dossiers de votre startup et les exports PDF et Word ; l’offre multi-startup fait de même pour plusieurs startups. Les financeurs et incubateurs sont gratuits pendant le lancement.</p>
+      <h3>Découverte</h3><ul><li>Dossier de financement complet, envoi aux financeurs</li><li>Dépôt de vos pièces</li><li>Une analyse complète par mois : rubriques sourcées, regard investisseur, éligibilité</li><li>Entretien avec l’IA : questions, objections et relances sur vos réponses</li><li>Annuaire des financeurs</li><li>Partages révocables et suivi des étapes</li></ul>
+      <h3>Offre complète</h3><p>Tout Découverte, plus :</p><ul><li>3 analyses complètes par mois</li><li>Tous les dossiers de votre startup (levée, subvention, prêt d’honneur…)</li><li>Exports PDF et Word de vos dossiers</li></ul>
+      <h3>Multi-startup</h3><p>L’offre complète, pour plusieurs startups :</p><ul><li>Jusqu’à 5 startups, tous leurs dossiers</li><li>3 analyses complètes par mois et par startup</li><li>Exports PDF et Word pour chaque startup</li></ul>
       <h3>Fonds, business angels, incubateurs</h3><ul><li>Suivi de vos startups et de leur complétude</li><li>Vos critères, questions et pièces demandées</li><li>Adéquation calculée à chaque dossier reçu</li><li>Notes privées d’équipe</li></ul>
       <dl class="tarifs-offres">
         <dt>Découverte</dt><dd>0 €</dd>
@@ -182,7 +183,7 @@ export function tarifsBody(offers: Offer[]) {
         <dt>Fonds, business angels et incubateurs</dt><dd>0 € pendant le lancement</dd>
       </dl>
       <p>Le partage d’un dossier exige les neuf rubriques confirmées, sans contradiction ; les rubriques manquantes sont listées dans l’application.</p>
-      <p>Paiement par carte. L’offre complète est à 149 € tous les 90 jours, renouvellement automatique, résiliable à tout moment ; à l’expiration, vos dossiers restent accessibles et partageables, seuls les exports sont désactivés.</p>
+      <p>Paiement par carte. Les offres payantes sont des abonnements renouvelés tous les 90 jours (149 € pour l’offre complète, 300 € pour l’offre multi-startup), résiliables à tout moment ; à l’expiration, vos dossiers restent accessibles et partageables, les exports sont désactivés et le quota revient à une analyse par mois.</p>
       <p>Aucune commission sur les levées ni sur les subventions obtenues. TVA non applicable, article 293 B du CGI.</p></main>`;
 }
 
@@ -455,16 +456,20 @@ async function staticPage(path: string): Promise<Page | null> {
 }
 // Offres affichées : Découverte gratuite + offre payante en base
 async function priced() {
-  const dossier = (
-    await db.query("SELECT label,price_cents FROM offers WHERE id='dossier'")
-  ).rows[0];
+  const rows = (
+    await db.query(
+      "SELECT id,price_cents,quota,startups FROM offers WHERE id IN ('dossier','multi')",
+    )
+  ).rows;
+  const dossier = rows.find((o) => o.id === "dossier");
+  const multi = rows.find((o) => o.id === "multi");
   return [
     {
       name: "Découverte",
       price: 0,
       unit: "",
       description:
-        "Dossier de financement complet, envoi aux financeurs, dépôt des pièces, annuaire, une analyse IA offerte chaque mois.",
+        "Dossier de financement complet, envoi aux financeurs, dépôt des pièces, annuaire, une analyse complète par mois et l’entretien avec l’IA.",
     },
     ...(dossier
       ? [
@@ -472,8 +477,17 @@ async function priced() {
             name: "Offre complète",
             price: dossier.price_cents / 100,
             unit: " / 90 jours, résiliable",
-            description:
-              "Tout Découverte, plus : exports PDF et Word de vos dossiers.",
+            description: `Tout Découverte, plus : ${dossier.quota} analyses complètes par mois, tous les dossiers de votre startup, exports PDF et Word.`,
+          },
+        ]
+      : []),
+    ...(multi
+      ? [
+          {
+            name: "Multi-startup",
+            price: multi.price_cents / 100,
+            unit: " / 90 jours, résiliable",
+            description: `L’offre complète pour ${multi.startups} startups au plus : tous leurs dossiers, ${multi.quota} analyses complètes par mois et par startup, exports PDF et Word.`,
           },
         ]
       : []),
@@ -488,12 +502,12 @@ export const software = (offers: Awaited<ReturnType<typeof priced>>) => ({
   inLanguage: "fr-FR",
   url: abs("/"),
   offers: offers.map((o) => {
-    // l'offre payante porte le nom et la description exacts affichés sur /tarifs
-    const libelle = `Offre complète : exports PDF et Word, ${o.price} € tous les 90 jours`;
+    // chaque offre payante porte le nom et la description affichés sur /tarifs
+    const libelle = `${o.name} : ${o.price} € tous les 90 jours`;
     return {
       "@type": "Offer",
       name: o.price > 0 ? libelle : o.name,
-      ...(o.price > 0 ? { description: libelle } : {}),
+      ...(o.price > 0 ? { description: o.description } : {}),
       price: o.price,
       priceCurrency: "EUR",
     };

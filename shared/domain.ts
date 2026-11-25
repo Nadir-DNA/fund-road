@@ -43,12 +43,13 @@ export function etatPartage(state: any): any {
         : {},
     ]),
   );
-  // la critique, la synthèse et les contradictions de l'IA commentent des rubriques, y compris
-  // non confirmées : elles ne sortent jamais d'un partage (12a.2)
+  // la critique, la synthèse, les contradictions et la lecture de l'entretien commentent des rubriques,
+  // y compris non confirmées : elles ne sortent jamais d'un partage (12a.2)
   const {
     critique: _critique,
     summary: _summary,
     conflicts: _conflicts,
+    comprehension: _comprehension,
     ...reste
   } = state || {};
   return { ...reste, facts };

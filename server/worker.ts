@@ -102,10 +102,19 @@ while (!stopping) {
         )
       ).rows;
       if (!docs.length) throw new Error("Aucun document lisible");
+      // réponses déjà données à l'entretien : relues avec les pièces (les 60 plus récentes)
+      const reponses = (
+        await db.query(
+          "SELECT question,reponse FROM (SELECT question,reponse,repondu_at FROM entretien WHERE dossier_id=$1 AND reponse IS NOT NULL ORDER BY repondu_at DESC LIMIT 60) r ORDER BY repondu_at",
+          [d.id],
+        )
+      ).rows;
       const result = await analyze(
         d.state,
         docs,
         await resolvePrograms(d.state.programs),
+        reponses,
+        d.goal,
       );
       await transaction(async (c) => {
         const current = (
@@ -123,6 +132,18 @@ while (!stopping) {
           "UPDATE dossiers SET state=$2,revision=revision+1,updated_at=now() WHERE id=$1",
           [d.id, result.state],
         );
+        // nouvel entretien : les questions restées sans réponse sont remplacées, l'historique des réponses reste
+        if (result.questions) {
+          await c.query(
+            "DELETE FROM entretien WHERE dossier_id=$1 AND reponse IS NULL",
+            [d.id],
+          );
+          for (const q of result.questions)
+            await c.query(
+              "INSERT INTO entretien(id,dossier_id,rubrique,type,question,pourquoi,attendu) VALUES($1,$2,$3,$4,$5,$6,$7)",
+              [randomUUID(), d.id, q.rubrique, q.type, q.question, q.pourquoi, q.attendu],
+            );
+        }
         await c.query(
           "INSERT INTO usage(id,organization_id,job_id,input_tokens,output_tokens) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING",
           [
