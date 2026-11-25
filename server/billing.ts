@@ -7,6 +7,7 @@ import { user, owner, member, admin, fail } from "./access.ts";
 import { config } from "./config.ts";
 import { attribute, reward } from "./referrals.ts";
 import { netReceived, refundBalance } from "../shared/payments.ts";
+import { droitActif, startupsCouvertes, analysesDuMois, quotaDe, prixCompatible } from "./droits.ts";
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : null;
@@ -20,27 +21,42 @@ export async function registerBilling(app: FastifyInstance) {
     async () =>
       (
         await db.query(
-          "SELECT id,label,price_cents,cadence,quota,active FROM offers ORDER BY price_cents",
+          "SELECT id,label,price_cents,cadence,quota,startups,active FROM offers ORDER BY price_cents",
         )
       ).rows,
   );
   app.get("/api/billing/:org", async (req: any) => {
     const u = await user(req);
     await owner(u.id, req.params.org);
-    return {
-      entitlement:
-        (
-          await db.query(
-            "SELECT e.*,o.label AS offer_name,o.quota FROM entitlements e LEFT JOIN offers o ON o.id=e.offer_id WHERE e.organization_id=$1",
-            [req.params.org],
-          )
-        ).rows[0] || null,
-      usage: (
+    // droit propre de l'organisation (portail Stripe, état), et droit effectif (couverture multi-startup comprise)
+    const propre =
+      (
         await db.query(
-          "SELECT count(*) AS analyses,coalesce(sum(input_tokens),0) AS input_tokens,coalesce(sum(output_tokens),0) AS output_tokens FROM usage WHERE organization_id=$1 AND created_at>=date_trunc('month',now())",
+          "SELECT e.*,o.label AS offer_name,o.quota FROM entitlements e LEFT JOIN offers o ON o.id=e.offer_id WHERE e.organization_id=$1",
           [req.params.org],
         )
-      ).rows[0],
+      ).rows[0] || null;
+    const droit = await droitActif(db, req.params.org);
+    return {
+      entitlement: propre,
+      droit,
+      couvertPar:
+        droit && droit.holder_org !== req.params.org ? droit.holder_name : null,
+      couvertes:
+        droit && droit.holder_org === req.params.org && droit.startups > 1
+          ? await startupsCouvertes(db, req.params.org)
+          : [],
+      usage: {
+        // même compte que le quota : analyses complètes du mois (l'entretien n'en consomme pas)
+        analyses: await analysesDuMois(db, req.params.org),
+        quota: quotaDe(droit),
+        ...(
+          await db.query(
+            "SELECT coalesce(sum(input_tokens),0) AS input_tokens,coalesce(sum(output_tokens),0) AS output_tokens FROM usage WHERE organization_id=$1 AND created_at>=date_trunc('month',now())",
+            [req.params.org],
+          )
+        ).rows[0],
+      },
     };
   });
   app.post("/api/billing/checkout", async (req) => {
@@ -61,6 +77,22 @@ export async function registerBilling(app: FastifyInstance) {
     ).rows[0];
     if (!offer?.stripe_price_id)
       fail(409, "Cette offre est encore une hypothèse commerciale");
+    const org = (
+      await db.query("SELECT kind FROM organizations WHERE id=$1", [
+        b.organizationId,
+      ])
+    ).rows[0];
+    if (org?.kind !== "startup")
+      fail(400, "Les offres payantes sont réservées aux startups");
+    // pas de double paiement : une startup déjà couverte (son offre ou une offre multi-startup) gère son offre depuis le portail
+    const actuel = await droitActif(db, b.organizationId);
+    if (actuel?.paid)
+      fail(
+        409,
+        actuel.holder_org === b.organizationId
+          ? `Cette startup a déjà l’offre « ${actuel.label} ». Changez-la depuis « Gérer ma facturation ».`
+          : `Cette startup est déjà couverte par l’offre « ${actuel.label} » de ${actuel.holder_name}.`,
+      );
     let coupon: string | undefined;
     if (b.code) {
       const terms = await transaction((c) =>
@@ -76,7 +108,12 @@ export async function registerBilling(app: FastifyInstance) {
         ).id;
       }
     }
-    const metadata = { organizationId: b.organizationId, offerId: b.offerId };
+    // l'acheteur est retenu : une offre multi-startup couvre les startups dont il est propriétaire
+    const metadata = {
+      organizationId: b.organizationId,
+      offerId: b.offerId,
+      buyerUserId: u.id,
+    };
     // toute offre hors « once » est un abonnement (mois, ou 90 jours renouvelables)
     const abonnement = offer.cadence !== "once";
     const session = await stripe!.checkout.sessions.create({
@@ -180,6 +217,18 @@ export async function registerBilling(app: FastifyInstance) {
     const price = await stripe!.prices.retrieve(b.stripePriceId, {}, compte);
     if (price.currency !== "eur" || price.unit_amount !== b.priceCents)
       fail(400, "Prix Stripe différent");
+    const offre = (
+      await db.query("SELECT cadence FROM offers WHERE id=$1", [req.params.id])
+    ).rows[0];
+    if (!offre) fail(404, "Offre inconnue");
+    // un prix ponctuel sur une offre trimestrielle (ou l'inverse) casserait le paiement
+    if (!prixCompatible(offre.cadence, price))
+      fail(
+        400,
+        offre.cadence === "quarter"
+          ? "Cette offre est un abonnement : le prix Stripe doit être récurrent tous les 3 mois"
+          : "Le type du prix Stripe ne correspond pas à la cadence de l’offre",
+      );
     await db.query(
       "UPDATE offers SET price_cents=$2,quota=$3,stripe_price_id=$4,active=$5 WHERE id=$1",
       [req.params.id, b.priceCents, b.quota, b.stripePriceId, b.active],
@@ -249,8 +298,14 @@ export async function registerBilling(app: FastifyInstance) {
             await c.query("SELECT * FROM offers WHERE id=$1", [m.offerId])
           ).rows[0];
           await c.query(
-            "INSERT INTO entitlements(organization_id,offer_id,status,customer_id,subscription_id,expires_at) VALUES($1,$2,'active',$3,$4,now()+interval '90 days') ON CONFLICT(organization_id) DO UPDATE SET offer_id=$2,status='active',customer_id=$3,subscription_id=$4,expires_at=EXCLUDED.expires_at",
-            [m.organizationId, m.offerId, object.customer, object.subscription],
+            "INSERT INTO entitlements(organization_id,offer_id,status,customer_id,subscription_id,expires_at,buyer_user_id) VALUES($1,$2,'active',$3,$4,now()+interval '90 days',$5) ON CONFLICT(organization_id) DO UPDATE SET offer_id=$2,status='active',customer_id=$3,subscription_id=$4,expires_at=EXCLUDED.expires_at,buyer_user_id=$5",
+            [
+              m.organizationId,
+              m.offerId,
+              object.customer,
+              object.subscription,
+              m.buyerUserId || null,
+            ],
           );
           if (offer.cadence === "once")
             await reward(

@@ -1291,7 +1291,10 @@ function InfoPage() {
 function Pricing() {
   const { data, error } = useLoad<any[]>("/offers");
   const dossier = data?.find((p) => p.id === "dossier");
-  // offre Découverte et accès financeurs : gratuits, donc hors Stripe
+  const multi = data?.find((p) => p.id === "multi");
+  const prix = (o: any) => (o ? o.price_cents / 100 + " €" : "—");
+  // offre Découverte et accès financeurs : gratuits, donc hors Stripe.
+  // Les quotas affichés viennent des offres en base : la page dit ce que le serveur applique.
   const cards = [
     {
       badge: "Startups",
@@ -1302,8 +1305,9 @@ function Pricing() {
       features: [
         "Dossier de financement complet, envoi aux financeurs",
         "Dépôt de vos pièces",
+        "Une analyse complète par mois : rubriques sourcées, regard investisseur, éligibilité",
+        "Entretien avec l’IA : questions, objections et relances sur vos réponses",
         "Annuaire des financeurs",
-        "Une analyse IA offerte chaque mois",
         "Partages révocables et suivi des étapes",
       ],
       cta: "Commencer gratuitement",
@@ -1311,13 +1315,29 @@ function Pricing() {
     {
       badge: "Startups",
       label: "Offre complète",
-      price: dossier ? dossier.price_cents / 100 + " €" : "—",
+      price: prix(dossier),
       unit: " / 90 jours, résiliable",
-      // seuls les exports changent de camp : révocation et suivi restent gratuits (12/11)
       includes: "Tout Découverte, plus :",
-      features: ["Exports PDF et Word de vos dossiers"],
+      features: [
+        `${dossier?.quota ?? 3} analyses complètes par mois`,
+        "Tous les dossiers de votre startup (levée, subvention, prêt d’honneur…)",
+        "Exports PDF et Word de vos dossiers",
+      ],
       cta: dossier?.active ? "Choisir" : "Ouverture prochaine",
       featured: true,
+    },
+    {
+      badge: "Startups",
+      label: "Multi-startup",
+      price: prix(multi),
+      unit: " / 90 jours, résiliable",
+      includes: "L’offre complète, pour plusieurs startups :",
+      features: [
+        `Jusqu’à ${multi?.startups ?? 5} startups, tous leurs dossiers`,
+        `${multi?.quota ?? 3} analyses complètes par mois et par startup`,
+        "Exports PDF et Word pour chaque startup",
+      ],
+      cta: multi?.active ? "Choisir" : "Ouverture prochaine",
     },
     {
       badge: "Financeurs",
@@ -1340,10 +1360,11 @@ function Pricing() {
       <main className="section info-page">
         <h1>Un prix simple, selon votre rôle</h1>
         <p className="lead">
-          Les startups commencent gratuitement : dossier complet, envoi aux
-          financeurs et suivi. L’offre complète ajoute les exports PDF et Word,
-          à 149 € tous les 90 jours, résiliable. Les financeurs et incubateurs
-          sont gratuits pendant le lancement.
+          Les startups commencent gratuitement : dossier complet, entretien avec
+          l’IA, envoi aux financeurs et suivi. L’offre complète ajoute des
+          analyses, tous les dossiers de votre startup et les exports PDF et
+          Word ; l’offre multi-startup fait de même pour plusieurs startups. Les
+          financeurs et incubateurs sont gratuits pendant le lancement.
         </p>
         <ErrorBox text={error} />
         <div className="pricing-grid">
@@ -1382,10 +1403,11 @@ function Pricing() {
           l’application.
         </p>
         <p className="muted">
-          Paiement par carte. L’offre complète est à 149 € tous les 90 jours,
-          renouvellement automatique, résiliable à tout moment ; à l’expiration,
-          vos dossiers restent accessibles et partageables, seuls les exports
-          sont désactivés.
+          Paiement par carte. Les offres payantes sont des abonnements
+          renouvelés tous les 90 jours ({prix(dossier)} pour l’offre complète,{" "}
+          {prix(multi)} pour l’offre multi-startup), résiliables à tout moment ;
+          à l’expiration, vos dossiers restent accessibles et partageables, les
+          exports sont désactivés et le quota revient à une analyse par mois.
         </p>
         <p className="muted">
           Aucune commission sur les levées ni sur les subventions obtenues.

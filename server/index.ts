@@ -31,6 +31,8 @@ import { programScore, orgProgram } from "../shared/programs.ts";
 import { allPrograms, resolvePrograms } from "./programs.ts";
 import { registerContent } from "./content.ts";
 import { registerBilling } from "./billing.ts";
+import { droitActif, quotaDe, analysesDuMois } from "./droits.ts";
+import { registerEntretien, questionsEntretien } from "./entretien.ts";
 import { registerSeo, uniqueSlug, findProfile, listProfiles, slugify } from "./seo.ts";
 const app = Fastify({
   logger: { redact: ["req.headers.cookie", "req.headers.authorization"] },
@@ -146,22 +148,20 @@ app.get("/api/config", async () => ({
 }));
 app.get("/api/me", async (req) => {
   const u = await user(req);
-  // paid : la définition unique de « payant » (droit actif non expiré, offre payante,
-  // abonnement ou achat unique) — elle sert au menu du financeur et aux exports
-  const orgs = (
-    await db.query(
-      `SELECT o.*,m.role,EXISTS(
-         SELECT 1 FROM entitlements e JOIN offers f ON f.id=e.offer_id
-          WHERE e.organization_id=o.id AND e.status='active'
-            AND (e.expires_at IS NULL OR e.expires_at>now())
-            AND f.price_cents>0
-            AND (e.subscription_id IS NOT NULL OR f.cadence='once')
-       ) AS paid
-         FROM organizations o JOIN members m ON m.organization_id=o.id
-        WHERE m.user_id=$1 ORDER BY o.created_at`,
-      [u.id],
-    )
-  ).rows;
+  // paid : définition unique de « payant » (server/droits.ts), couverture multi-startup comprise
+  // — elle sert au menu du financeur et aux exports
+  const orgs = await Promise.all(
+    (
+      await db.query(
+        `SELECT o.*,m.role FROM organizations o JOIN members m ON m.organization_id=o.id
+          WHERE m.user_id=$1 ORDER BY o.created_at`,
+        [u.id],
+      )
+    ).rows.map(async (o) => ({
+      ...o,
+      paid: Boolean((await droitActif(db, o.id))?.paid),
+    })),
+  );
   return {
     user: {
       id: u.id,
@@ -375,6 +375,7 @@ app.get("/api/dossiers/:id", async (req: any) => {
     documents: docs,
     jobs,
     questions,
+    entretien: await questionsEntretien(d.id),
     recipientProgress: {
       completed: questions.filter(
         (q) => !q.application_id && q.answer?.trim().length >= 10,
@@ -731,23 +732,8 @@ app.get("/api/documents/:id", async (req: any, reply) => {
 });
 // Analyses du mois et quota du droit actif : une seule définition, utilisée par la fiche dossier
 async function quotaAnalyses(organizationId: string) {
-  const entitlement = (
-    await db.query(
-      "SELECT o.quota FROM entitlements e JOIN offers o ON o.id=e.offer_id WHERE e.organization_id=$1 AND e.status='active' AND (e.expires_at IS NULL OR e.expires_at>now())",
-      [organizationId],
-    )
-  ).rows[0];
-  const quota =
-    entitlement?.quota ??
-    (config.production ? config.freeQuota : config.pilotQuota);
-  const usage = Number(
-    (
-      await db.query(
-        "SELECT count(*) FROM jobs j JOIN dossiers d ON d.id=j.dossier_id WHERE d.organization_id=$1 AND j.kind='analysis' AND j.status IN ('queued','running','done') AND j.created_at>=date_trunc('month',now())",
-        [organizationId],
-      )
-    ).rows[0].count,
-  );
+  const quota = quotaDe(await droitActif(db, organizationId));
+  const usage = await analysesDuMois(db, organizationId);
   return { usage, quota };
 }
 app.post("/api/dossiers/:id/analyze", async (req: any) => {
@@ -762,27 +748,14 @@ app.post("/api/dossiers/:id/analyze", async (req: any) => {
     await c.query("SELECT id FROM organizations WHERE id=$1 FOR UPDATE", [
       d.organization_id,
     ]);
-    const entitlement = (
-      await c.query(
-        "SELECT o.quota FROM entitlements e JOIN offers o ON o.id=e.offer_id WHERE e.organization_id=$1 AND e.status='active' AND (e.expires_at IS NULL OR e.expires_at>now())",
-        [d.organization_id],
-      )
-    ).rows[0];
-    const quota =
-      entitlement?.quota ??
-      (config.production ? config.freeQuota : config.pilotQuota);
-    const n = Number(
-      (
-        await c.query(
-          "SELECT count(*) FROM jobs j JOIN dossiers d ON d.id=j.dossier_id WHERE d.organization_id=$1 AND j.kind='analysis' AND j.status IN ('queued','running','done') AND j.created_at>=date_trunc('month',now())",
-          [d.organization_id],
-        )
-      ).rows[0].count,
-    );
+    const droit = await droitActif(c, d.organization_id);
+    const quota = quotaDe(droit);
+    const n = await analysesDuMois(c, d.organization_id);
     if (n >= quota)
       fail(
         402,
-        `Vous avez utilisé vos ${quota} analyse${quota > 1 ? "s" : ""} du mois. Le quota se renouvelle le 1er du mois prochain ; pour continuer dès maintenant, passez à l’offre Dossier depuis la page Facturation.`,
+        `Vous avez utilisé vos ${quota} analyse${quota > 1 ? "s" : ""} complète${quota > 1 ? "s" : ""} du mois. Le quota se renouvelle le 1er du mois prochain. L’entretien avec l’IA reste disponible.` +
+          (droit?.paid ? "" : " Pour 3 analyses par mois, passez à l’offre complète depuis la page Facturation."),
       );
     const pending = Number(
       (
@@ -820,19 +793,9 @@ app.get("/api/dossiers/:id/export/:format", async (req: any, reply) => {
   const u = await user(req);
   const d = await dossier(u.id, req.params.id);
   const format = z.enum(["pdf", "docx"]).parse(req.params.format);
-  // 12b : l'export de son propre dossier est la fonction payante. Définition unique de
-  // « payant » : droit actif non expiré, offre payante, abonnement ou achat unique.
-  const droit = (
-    await db.query(
-      `SELECT 1 FROM entitlements e JOIN offers f ON f.id=e.offer_id
-        WHERE e.organization_id=$1 AND e.status='active'
-          AND (e.expires_at IS NULL OR e.expires_at>now())
-          AND f.price_cents>0
-          AND (e.subscription_id IS NOT NULL OR f.cadence='once')`,
-      [d.organization_id],
-    )
-  ).rowCount;
-  if (!droit)
+  // 12b : l'export de son propre dossier est une fonction payante. Définition unique de
+  // « payant » dans server/droits.ts (couverture multi-startup comprise).
+  if (!(await droitActif(db, d.organization_id))?.paid)
     fail(
       403,
       "Les exports PDF et Word sont réservés à l’offre payante. Votre dossier reste accessible et partageable ; voir la page Facturation.",
@@ -1500,6 +1463,7 @@ app.get("/api/applications/:id/documents/:doc", async (req: any, reply) => {
   return readFile(doc.path);
 });
 await registerBilling(app);
+await registerEntretien(app);
 await registerContent(app);
 try {
   await stat(path.resolve("dist"));

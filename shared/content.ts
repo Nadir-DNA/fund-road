@@ -21,14 +21,14 @@ export const publicCopy: Record<
   cgv: {
     kicker: "CONDITIONS GÉNÉRALES",
     title: "Conditions générales de vente et d’utilisation",
-    intro: "Les règles d’usage de Fund Road et les conditions d’achat de l’offre Dossier. Version du 1er novembre 2026.",
+    intro: "Les règles d’usage de Fund Road et les conditions d’achat de l’offre complète et de l’offre multi-startup. Version du 25 novembre 2026.",
     legal: true,
     items: [
       ["1. Objet", "Les présentes conditions régissent l’usage de fund-road.com (« le Service ») par les startups, entreprises et financeurs (« l’Utilisateur ») et la vente des offres payantes par Nadir DAOUDI, entrepreneur individuel (DigitalDNA), SIRET 890 997 349 00026 (« l’Éditeur »). Créer un compte vaut acceptation de ces conditions."],
       ["2. Clientèle professionnelle", "Le Service est réservé aux professionnels (sociétés, entrepreneurs, financeurs) agissant pour les besoins de leur activité. En créant un compte, l’Utilisateur déclare agir à ce titre."],
-      ["3. Offres et prix", "Découverte : gratuite, une analyse IA par mois. Dossier : 149 € pour 90 jours d’accès, renouvelé automatiquement par période de 90 jours jusqu’à résiliation. Espace financeur : gratuit pendant la période de lancement. TVA non applicable, article 293 B du CGI. Fund Road ne prélève aucune commission sur les financements obtenus."],
+      ["3. Offres et prix", "Découverte : gratuite, une analyse complète par mois et l’entretien avec l’IA (plafonné à 40 échanges par jour et par dossier). Offre complète : 149 € par période de 90 jours pour une startup et tous ses dossiers, 3 analyses complètes par mois, exports PDF et Word. Offre multi-startup : 300 € par période de 90 jours pour cinq startups au plus dont l’Utilisateur est propriétaire, tous leurs dossiers, 3 analyses complètes par mois et par startup, exports PDF et Word. Les offres payantes sont renouvelées automatiquement par période de 90 jours jusqu’à résiliation. Espace financeur : gratuit pendant la période de lancement. TVA non applicable, article 293 B du CGI. Fund Road ne prélève aucune commission sur les financements obtenus."],
       ["4. Paiement et accès", "Le paiement s’effectue en ligne par carte via Stripe. L’accès à l’offre est ouvert dès la confirmation du paiement, pour la durée indiquée. Une facture est émise pour chaque paiement."],
-      ["4 bis. Renouvellement, résiliation et remboursement", "L’offre Dossier se renouvelle automatiquement à la fin de chaque période de 90 jours, au même prix, par prélèvement sur la carte enregistrée. L’Utilisateur peut la résilier à tout moment depuis la page Facturation de son espace : l’accès reste ouvert jusqu’à la fin de la période payée et aucun nouveau prélèvement n’a lieu. En cas de renouvellement non souhaité, l’Utilisateur peut en demander le remboursement à contact@fund-road.com dans les 30 jours suivant le prélèvement : le montant du renouvellement est alors remboursé intégralement et l’abonnement résilié."],
+      ["4 bis. Renouvellement, résiliation et remboursement", "L’offre complète et l’offre multi-startup se renouvellent automatiquement à la fin de chaque période de 90 jours, au même prix, par prélèvement sur la carte enregistrée. L’Utilisateur peut la résilier à tout moment depuis la page Facturation de son espace : l’accès reste ouvert jusqu’à la fin de la période payée et aucun nouveau prélèvement n’a lieu. En cas de renouvellement non souhaité, l’Utilisateur peut en demander le remboursement à contact@fund-road.com dans les 30 jours suivant le prélèvement : le montant du renouvellement est alors remboursé intégralement et l’abonnement résilié."],
       ["5. Absence de droit de rétractation", "L’offre étant réservée aux professionnels, le droit de rétractation prévu par le Code de la consommation ne s’applique pas. L’accès commence dès le paiement à la demande de l’Utilisateur."],
       ["6. Engagements de l’Utilisateur", "L’Utilisateur garantit disposer des droits sur les documents qu’il dépose et l’exactitude de ses déclarations. Il s’interdit de déposer des contenus illicites, contrefaisants ou contenant du code actif, et de tenter d’accéder aux données d’autres utilisateurs."],
       ["7. Nature du service", "Le Service structure un dossier à partir des documents et déclarations de l’Utilisateur. Les extractions, évaluations et relectures automatisées sont des aides à la préparation : elles peuvent comporter des erreurs et doivent être relues et confirmées. Le score mesure la complétude documentaire, pas les chances de financement. L’attestation porte sur une version datée et un référentiel ; elle ne certifie pas l’authenticité des pièces. Aucune décision de financement n’est prise par Fund Road."],
@@ -309,9 +309,9 @@ export const pageMeta: Record<string, { title: string; description: string }> =
         "Une question sur Fund Road, un dossier ou un tarif ? Écrivez à hello@fund-road.com ou créez votre compte pour commencer un dossier.",
     },
     "/tarifs": {
-      title: "Tarifs Fund Road : gratuit pour commencer, 149 € / 90 jours",
+      title: "Tarifs Fund Road : gratuit, 149 € ou 300 € / 90 jours",
       description:
-        "Découverte gratuite : dossier de financement complet, envoi aux financeurs, suivi. Offre complète à 149 €/90 jours, exports PDF et Word. Financeurs gratuits.",
+        "Gratuit : dossier complet, entretien avec l’IA, envoi aux financeurs. Offre complète 149 €/90 jours, multi-startup 300 €/90 jours. Financeurs gratuits.",
     },
     "/annuaire": {
       title: "Annuaire des fonds et business angels | Fund Road",

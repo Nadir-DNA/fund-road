@@ -2992,3 +2992,39 @@ legend {
   margin: 0.5rem 0 0;
   font-size: 0.85rem;
 }
+
+/* ---------- Entretien IA ---------- */
+.comprehension {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) 1fr;
+  gap: var(--space-2xs) var(--space-sm);
+  margin: var(--space-sm) 0;
+}
+.comprehension dt {
+  font-weight: 600;
+}
+.comprehension dd {
+  margin: 0;
+}
+@media (max-width: 40rem) {
+  .comprehension {
+    grid-template-columns: 1fr;
+  }
+  .comprehension dd {
+    margin-bottom: var(--space-2xs);
+  }
+}
+.entretien-retour {
+  margin-top: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-left: 3px solid var(--color-rule);
+  background: var(--color-paper-3);
+}
+.entretien-retour p {
+  margin: var(--space-2xs) 0 0;
+}
+.entretien-relance {
+  margin-top: var(--space-sm);
+  padding-left: var(--space-sm);
+  border-left: 1px dashed var(--color-rule);
+}

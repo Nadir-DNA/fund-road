@@ -89,8 +89,8 @@ test("IA : citations exactes exigées, déclarations confirmées conservées", a
     assert.equal(result.state.facts.traction.confirmed, false);
     assert.equal(result.state.facts.financials, undefined);
     assert.deepEqual(result.state.conflicts, ["Deux périodes diffèrent"]);
-    // extraction + revue critique : deux appels au modèle
-    assert.equal(result.input, 200);
+    // extraction + revue critique + préparation de l'entretien : trois appels au modèle
+    assert.equal(result.input, 300);
   } finally {
     globalThis.fetch = original;
   }
